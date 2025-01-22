@@ -35,6 +35,11 @@ export function AdForm({
 }: AdFormProps) {
   const [selectedLanguage, setSelectedLanguage] = useState("he");
 
+  // Ensure a default template style is set if none is selected
+  if (!adData.template_style) {
+    onStyleChange('minimal');
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
