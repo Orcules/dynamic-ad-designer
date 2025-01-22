@@ -1,5 +1,5 @@
-import html2canvas from "html2canvas";
-import { getDimensions } from "./adDimensions";
+import puppeteer from 'puppeteer';
+import { getDimensions } from './adDimensions';
 
 export async function capturePreview(
   previewRef: React.RefObject<HTMLDivElement>,
@@ -11,108 +11,72 @@ export async function capturePreview(
   }
 
   try {
-    const previewElement = previewRef.current.querySelector(".ad-content") as HTMLElement;
+    const { width, height } = getDimensions(platform);
+    
+    // Launch browser
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    
+    // Set viewport to match ad dimensions
+    await page.setViewport({ 
+      width: width,
+      height: height,
+      deviceScaleFactor: 2 // For higher quality
+    });
+
+    // Get the HTML content of the preview
+    const previewElement = previewRef.current.querySelector('.ad-content') as HTMLElement;
     if (!previewElement) {
-      console.error("Ad content element not found");
-      return null;
+      throw new Error('Ad content element not found');
     }
 
-    const { width, height } = getDimensions(platform);
-    console.log(`Capturing preview with dimensions: ${width}x${height}`);
+    const htmlContent = `
+      <html>
+        <head>
+          <style>
+            ${document.head.getElementsByTagName('style')[0]?.innerHTML || ''}
+            body { margin: 0; }
+            .ad-content {
+              width: ${width}px;
+              height: ${height}px;
+              position: relative;
+              overflow: hidden;
+            }
+          </style>
+        </head>
+        <body>
+          ${previewElement.outerHTML}
+        </body>
+      </html>
+    `;
 
-    // Wait for all fonts to load with a timeout
-    await Promise.race([
-      document.fonts.ready,
-      new Promise(resolve => setTimeout(resolve, 3000))
-    ]);
+    // Set the content and wait for it to load
+    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
     
-    // Wait for all images to load
-    const images = previewElement.getElementsByTagName('img');
-    await Promise.all(
-      Array.from(images).map(
-        (img) =>
-          new Promise((resolve) => {
-            if (img.complete) resolve(null);
-            img.onload = () => resolve(null);
-            img.onerror = () => resolve(null);
-            // Add timeout for each image
-            setTimeout(() => resolve(null), 3000);
-          })
-      )
-    );
-
-    console.log("All resources loaded");
-
-    // Create canvas with high quality settings
-    const canvas = await html2canvas(previewElement, {
-      width,
-      height,
-      scale: 4, // Higher quality
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: true,
-      onclone: (clonedDoc) => {
-        const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
-        if (clonedElement) {
-          clonedElement.style.width = `${width}px`;
-          clonedElement.style.height = `${height}px`;
-          
-          // Preserve all styles for each element
-          const allElements = clonedElement.getElementsByTagName('*');
-          for (let i = 0; i < allElements.length; i++) {
-            const el = allElements[i] as HTMLElement;
-            const computedStyle = window.getComputedStyle(el);
-            
-            // Copy essential styles
-            Object.assign(el.style, {
-              fontFamily: computedStyle.fontFamily,
-              fontSize: computedStyle.fontSize,
-              fontWeight: computedStyle.fontWeight,
-              lineHeight: computedStyle.lineHeight,
-              letterSpacing: computedStyle.letterSpacing,
-              textAlign: computedStyle.textAlign,
-              color: computedStyle.color,
-              backgroundColor: computedStyle.backgroundColor,
-              backgroundImage: computedStyle.backgroundImage,
-              boxShadow: computedStyle.boxShadow,
-              textShadow: computedStyle.textShadow,
-              borderRadius: computedStyle.borderRadius,
-              padding: computedStyle.padding,
-              margin: computedStyle.margin,
-              transform: 'none',
-              transition: 'none'
-            });
-          }
-        }
-      }
+    // Take the screenshot
+    const screenshot = await page.screenshot({
+      type: 'png',
+      omitBackground: true,
+      encoding: 'binary'
     });
 
-    console.log("Canvas created, converting to blob");
+    await browser.close();
 
-    // Convert to high-quality PNG
-    return new Promise((resolve) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            console.error("Failed to create blob from canvas");
-            resolve(null);
-            return;
-          }
-          console.log("File created successfully");
-          const file = new File([blob], "ad-preview.png", {
-            type: "image/png",
-            lastModified: Date.now(),
-          });
-          resolve(file);
-        },
-        "image/png",
-        1.0 // Maximum quality
-      );
+    // Convert the screenshot to a File object
+    const file = new File([screenshot], 'ad-preview.png', {
+      type: 'image/png',
+      lastModified: Date.now()
     });
+
+    console.log('Preview captured successfully');
+    return file;
 
   } catch (error) {
-    console.error("Error capturing preview:", error);
+    console.error('Error capturing preview:', error);
     return null;
   }
 }
