@@ -3,6 +3,8 @@ import { Label } from "./ui/label";
 import { FontSelector } from "./FontSelector";
 import { PlatformSelector } from "./PlatformSelector";
 import { TemplateStyleSelector } from "./TemplateStyleSelector";
+import { LanguageSelector } from "./LanguageSelector";
+import { useState } from "react";
 
 interface AdFormProps {
   adData: {
@@ -31,6 +33,8 @@ export function AdForm({
   onColorChange,
   onImageChange,
 }: AdFormProps) {
+  const [selectedLanguage, setSelectedLanguage] = useState("he");
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -58,6 +62,11 @@ export function AdForm({
           required
         />
       </div>
+
+      <LanguageSelector 
+        value={selectedLanguage}
+        onChange={setSelectedLanguage}
+      />
 
       <PlatformSelector
         value={adData.platform}
@@ -97,7 +106,11 @@ export function AdForm({
         />
       </div>
 
-      <FontSelector value={adData.font_url} onChange={onFontChange} />
+      <FontSelector 
+        value={adData.font_url} 
+        onChange={onFontChange}
+        language={selectedLanguage}
+      />
     </div>
   );
 }
