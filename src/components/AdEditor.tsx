@@ -1,10 +1,8 @@
 import React, { useState, useRef } from "react";
-import { Button } from "./ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { AdForm } from "./AdForm";
+import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
-import html2canvas from "html2canvas";
+import { handleAdSubmission } from "./AdSubmissionHandler";
+import { getDimensions } from "@/utils/adDimensions";
 
 interface Template {
   id: string;
@@ -78,181 +76,32 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
-  const getDimensions = (platform: string) => {
-    switch (platform) {
-      case "facebook":
-        return { width: 1200, height: 628 };
-      case "instagram":
-        return { width: 1080, height: 1080 };
-      case "linkedin":
-        return { width: 1200, height: 627 };
-      case "twitter":
-        return { width: 1600, height: 900 };
-      default:
-        return { width: 1200, height: 628 };
-    }
-  };
-
-  const capturePreview = async () => {
-    if (!previewRef.current) return null;
-    
-    const previewElement = previewRef.current.querySelector('.ad-content');
-    if (!previewElement) return null;
-    
-    try {
-      await document.fonts.ready;
-      
-      const { width, height } = getDimensions(adData.platform);
-      
-      const previewContainer = document.createElement('div');
-      previewContainer.style.width = `${width}px`;
-      previewContainer.style.height = `${height}px`;
-      previewContainer.style.position = 'fixed';
-      previewContainer.style.top = '0';
-      previewContainer.style.left = '0';
-      previewContainer.style.zIndex = '-1000';
-      previewContainer.style.opacity = '0';
-      
-      const clone = previewElement.cloneNode(true) as HTMLElement;
-      clone.style.position = 'absolute';
-      clone.style.width = '100%';
-      clone.style.height = '100%';
-      
-      previewContainer.appendChild(clone);
-      document.body.appendChild(previewContainer);
-      
-      const canvas = await html2canvas(previewContainer, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        width: width,
-        height: height,
-        logging: true,
-      });
-      
-      document.body.removeChild(previewContainer);
-      
-      return new Promise<File>((resolve) => {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const file = new File([blob], `${adData.name || 'ad'}.png`, { type: 'image/png' });
-            resolve(file);
-          }
-        }, 'image/png', 1.0);
-      });
-    } catch (error) {
-      console.error('Error capturing preview:', error);
-      return null;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedImage) {
-      toast.error('נא לבחור תמונה');
-      return;
-    }
-    
-    setIsGenerating(true);
-    
-    try {
-      const { width, height } = getDimensions(adData.platform);
-      const timestamp = Date.now();
-      const fileExt = selectedImage.name.split('.').pop();
-      const filePath = `${timestamp}.${fileExt}`;
-      
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('ad-images')
-        .upload(`uploads/${filePath}`, selectedImage);
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error('Failed to upload image');
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('ad-images')
-        .getPublicUrl(`uploads/${filePath}`);
-
-      const previewFile = await capturePreview();
-      if (!previewFile) {
-        throw new Error('Failed to capture preview');
-      }
-
-      const previewPath = `generated/${timestamp}_preview.png`;
-      const { data: previewData, error: previewError } = await supabase.storage
-        .from('ad-images')
-        .upload(previewPath, previewFile);
-
-      if (previewError) {
-        console.error('Preview upload error:', previewError);
-        throw new Error('Failed to upload preview');
-      }
-
-      const { data: { publicUrl: previewUrl } } = supabase.storage
-        .from('ad-images')
-        .getPublicUrl(previewPath);
-
-      const { data: newAd, error: createError } = await supabase
-        .from('generated_ads')
-        .insert({
-          name: adData.name,
-          headline: adData.headline,
-          cta_text: adData.cta_text,
-          font_url: adData.font_url,
-          platform: adData.platform,
-          template_style: adData.template_style,
-          accent_color: adData.accent_color,
-          width,
-          height,
-          image_url: previewUrl,
-          status: 'completed'
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Create error:', createError);
-        throw new Error('Failed to create ad record');
-      }
-
-      toast.success('המודעה נוצרה בהצלחה!', {
-        action: {
-          label: 'הורד',
-          onClick: () => window.open(previewUrl, '_blank')
-        },
-      });
-      
-      onAdGenerated(newAd);
-      
-    } catch (error) {
-      console.error('Error creating ad:', error);
-      toast.error(error.message || 'אירעה שגיאה ביצירת המודעה');
-    } finally {
-      setIsGenerating(false);
-    }
+    await handleAdSubmission({
+      adData,
+      selectedImage,
+      previewRef,
+      onSuccess: onAdGenerated,
+      setIsGenerating,
+    });
   };
 
   const { width, height } = getDimensions(adData.platform);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <div className="bg-card p-6 rounded-lg">
-        <AdForm
-          adData={adData}
-          onInputChange={handleInputChange}
-          onFontChange={handleFontChange}
-          onPlatformChange={handlePlatformChange}
-          onStyleChange={handleStyleChange}
-          onColorChange={handleColorChange}
-          onImageChange={handleImageChange}
-        />
-        <Button type="submit" className="w-full mt-6" disabled={isGenerating} onClick={handleSubmit}>
-          {isGenerating ? 'יוצר מודעה...' : 'צור מודעה'}
-        </Button>
-      </div>
+      <AdFormContainer
+        adData={adData}
+        isGenerating={isGenerating}
+        onInputChange={handleInputChange}
+        onFontChange={handleFontChange}
+        onPlatformChange={handlePlatformChange}
+        onStyleChange={handleStyleChange}
+        onColorChange={handleColorChange}
+        onImageChange={handleImageChange}
+        onSubmit={handleSubmit}
+      />
 
       <div className="sticky top-8" ref={previewRef}>
         <AdPreview
