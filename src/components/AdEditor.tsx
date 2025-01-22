@@ -112,15 +112,21 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
       });
 
       toast({
-        title: "Success!",
-        description: "Ad generated successfully",
+        title: "המודעה נוצרה בהצלחה!",
+        description: (
+          <div className="rtl">
+            <p>המודעה נוצרה בהצלחה ותוכל למצוא אותה בטבלת המודעות למטה.</p>
+            <p>לחץ על השורה בטבלה כדי לצפות במודעה המלאה.</p>
+          </div>
+        ),
+        duration: 5000,
       });
       
     } catch (error) {
       console.error('Error generating ad:', error);
       toast({
-        title: "Error",
-        description: "Failed to generate ad. Please try again.",
+        title: "שגיאה",
+        description: "אירעה שגיאה ביצירת המודעה. אנא נסה שנית.",
         variant: "destructive",
       });
     }
@@ -133,8 +139,8 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
       setImage(file);
     } else {
       toast({
-        title: "Invalid file type",
-        description: "Please drop an image file",
+        title: "סוג קובץ לא תקין",
+        description: "אנא העלה קובץ תמונה בלבד",
         variant: "destructive",
       });
     }
@@ -155,10 +161,10 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="style">Template Style</Label>
+          <Label htmlFor="style">סגנון תבנית</Label>
           <Select value={selectedStyle} onValueChange={setSelectedStyle}>
             <SelectTrigger>
-              <SelectValue placeholder="Select style" />
+              <SelectValue placeholder="בחר סגנון" />
             </SelectTrigger>
             <SelectContent>
               {templateStyles.map((style) => (
@@ -173,22 +179,22 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
         <FontSelector value={selectedFont} onChange={setSelectedFont} />
 
         <div className="space-y-2">
-          <Label htmlFor="headline">Headline</Label>
+          <Label htmlFor="headline">כותרת</Label>
           <Input
             id="headline"
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
-            placeholder="Enter your headline"
+            placeholder="הכנס את הכותרת שלך"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="cta">CTA Text</Label>
+          <Label htmlFor="cta">טקסט CTA</Label>
           <Input
             id="cta"
             value={ctaText}
             onChange={(e) => setCtaText(e.target.value)}
-            placeholder="Enter CTA text"
+            placeholder="הכנס טקסט CTA"
           />
         </div>
 
@@ -204,7 +210,7 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
           <Upload className="w-12 h-12 mx-auto text-muted-foreground" />
           <div>
             <p className="text-sm text-muted-foreground">
-              Drag and drop your image here, or click to select
+              גרור ושחרר את התמונה שלך כאן, או לחץ כדי לבחור
             </p>
             {image && <p className="text-sm text-primary mt-2">{image.name}</p>}
           </div>
@@ -218,7 +224,7 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
           }}
           onClick={handleGenerateAds}
         >
-          Generate Ads
+          צור מודעות
         </Button>
       </div>
     </div>
