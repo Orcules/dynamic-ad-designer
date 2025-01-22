@@ -31,20 +31,21 @@ export async function capturePreview(
     tempContainer.style.overflow = "hidden";
     tempContainer.style.transform = "none";
     tempContainer.style.transformOrigin = "0 0";
+    tempContainer.style.backgroundColor = "transparent";
 
     // Clone the preview element
     const clone = previewElement.cloneNode(true) as HTMLElement;
     
     // Reset any transforms or animations that might affect the layout
     clone.classList.add('capturing');
-    clone.style.transform = "none";
-    clone.style.transition = "none";
-    clone.style.animation = "none";
-    clone.style.position = "absolute";
-    clone.style.top = "0";
-    clone.style.left = "0";
-    clone.style.width = "100%";
-    clone.style.height = "100%";
+    clone.style.transform = "none !important";
+    clone.style.transition = "none !important";
+    clone.style.animation = "none !important";
+    clone.style.position = "absolute !important";
+    clone.style.top = "0 !important";
+    clone.style.left = "0 !important";
+    clone.style.width = "100% !important";
+    clone.style.height = "100% !important";
     
     // Copy computed styles from original to clone
     const computedStyle = window.getComputedStyle(previewElement);
@@ -73,10 +74,19 @@ export async function capturePreview(
       }
       
       // Reset any transforms or animations on child elements
-      cloneChild.style.transform = "none";
-      cloneChild.style.transition = "none";
-      cloneChild.style.animation = "none";
-      cloneChild.style.position = originalChild.style.position;
+      cloneChild.style.transform = "none !important";
+      cloneChild.style.transition = "none !important";
+      cloneChild.style.animation = "none !important";
+      
+      // Handle images specifically
+      if (cloneChild.tagName.toLowerCase() === 'img') {
+        cloneChild.style.position = "absolute";
+        cloneChild.style.width = "100%";
+        cloneChild.style.height = "100%";
+        cloneChild.style.objectFit = "cover";
+        cloneChild.style.top = "0";
+        cloneChild.style.left = "0";
+      }
     }
 
     // Add clone to temporary container and append to body
@@ -87,7 +97,7 @@ export async function capturePreview(
     const canvas = await html2canvas(tempContainer, {
       width,
       height,
-      scale: 2,
+      scale: 4, // Increased scale for better quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -111,9 +121,10 @@ export async function capturePreview(
                 el.style.fontWeight = originalStyles.fontWeight;
                 el.style.color = originalStyles.color;
                 el.style.textShadow = originalStyles.textShadow;
-                el.style.transform = "none";
-                el.style.transition = "none";
-                el.style.animation = "none";
+                el.style.transform = "none !important";
+                el.style.transition = "none !important";
+                el.style.animation = "none !important";
+                el.style.position = "static";
               }
             }
           });

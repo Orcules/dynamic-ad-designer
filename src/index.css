@@ -75,20 +75,22 @@
   }
 }
 
-/* Styles for consistent ad preview capture */
 .ad-content.capturing {
   transform: none !important;
   transition: none !important;
+  animation: none !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
+  overflow: hidden !important;
 }
 
 .ad-content.capturing img {
   transform: none !important;
   transition: none !important;
+  animation: none !important;
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
@@ -101,4 +103,12 @@
   animation: none !important;
   transform: none !important;
   transition: none !important;
+  position: static !important;
+}
+
+.ad-content.capturing h2,
+.ad-content.capturing p,
+.ad-content.capturing button {
+  position: relative !important;
+  z-index: 10 !important;
 }
