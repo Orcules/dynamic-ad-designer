@@ -105,6 +105,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
+        logging: true, // Enable logging for debugging
+        onclone: (clonedDoc) => {
+          // Ensure styles are properly applied in the cloned document
+          const clonedElement = clonedDoc.querySelector('.ad-content');
+          if (clonedElement) {
+            clonedElement.classList.add('capturing');
+          }
+        }
       });
       
       return new Promise<File>((resolve) => {
@@ -113,7 +121,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             const file = new File([blob], `${adData.name || 'ad'}.png`, { type: 'image/png' });
             resolve(file);
           }
-        }, 'image/png');
+        }, 'image/png', 1.0); // Use maximum quality
       });
     } catch (error) {
       console.error('Error capturing preview:', error);
@@ -171,7 +179,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .from('ad-images')
         .getPublicUrl(previewPath);
 
-      // Create the ad record without specifying an ID
+      // Create the ad record
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
         .insert({

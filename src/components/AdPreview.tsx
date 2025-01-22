@@ -69,18 +69,20 @@ export function AdPreview({
               <img
                 src={imageUrl}
                 alt="Ad preview"
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                className="absolute inset-0 w-full h-full object-cover"
+                crossOrigin="anonymous"
+                style={{ transform: 'none' }} // Remove hover effect for consistent capture
               />
             )}
             <div
-              className="absolute inset-0 transition-all duration-500"
+              className="absolute inset-0"
               style={gradientStyle}
             />
             {headline && (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 <h2 
                   className={cn(
-                    "mb-6 transition-all duration-300 animate-fade-in",
+                    "mb-6",
                     templateStyle === 'minimal' ? 'text-black' : 'text-white'
                   )}
                   style={textStyle}
@@ -89,7 +91,7 @@ export function AdPreview({
                 </h2>
                 {ctaText && (
                   <button 
-                    className="transform transition-all duration-300 px-4 py-2"
+                    className="transform px-4 py-2"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
