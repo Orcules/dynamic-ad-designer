@@ -223,3 +223,4 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
       </div>
     </div>
   );
+}
