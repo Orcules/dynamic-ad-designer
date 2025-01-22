@@ -12,11 +12,13 @@ interface AdFormProps {
     font_url: string;
     platform: string;
     template_style: string;
+    accent_color: string;
   };
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFontChange: (value: string) => void;
   onPlatformChange: (value: string) => void;
   onStyleChange: (value: string) => void;
+  onColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -26,6 +28,7 @@ export function AdForm({
   onFontChange,
   onPlatformChange,
   onStyleChange,
+  onColorChange,
   onImageChange,
 }: AdFormProps) {
   return (
@@ -64,6 +67,8 @@ export function AdForm({
       <TemplateStyleSelector
         value={adData.template_style}
         onChange={onStyleChange}
+        accentColor={adData.accent_color}
+        onColorChange={onColorChange}
       />
 
       <div className="space-y-2">

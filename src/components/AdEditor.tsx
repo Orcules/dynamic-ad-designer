@@ -26,6 +26,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     font_url: "",
     platform: "",
     template_style: "",
+    accent_color: "#4A90E2",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -65,6 +66,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setAdData((prev) => ({
       ...prev,
       template_style: value,
+    }));
+  };
+
+  const handleColorChange = (value: string) => {
+    setAdData((prev) => ({
+      ...prev,
+      accent_color: value,
     }));
   };
 
@@ -121,6 +129,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           font_url: adData.font_url,
           platform: adData.platform,
           template_style: adData.template_style,
+          accent_color: adData.accent_color,
           width,
           height,
           image_url: publicUrl,
@@ -165,6 +174,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onFontChange={handleFontChange}
           onPlatformChange={handlePlatformChange}
           onStyleChange={handleStyleChange}
+          onColorChange={handleColorChange}
           onImageChange={handleImageChange}
         />
         <Button type="submit" className="w-full mt-6" disabled={isGenerating}>
@@ -179,6 +189,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         headline={adData.headline}
         ctaText={adData.cta_text}
         templateStyle={adData.template_style}
+        accentColor={adData.accent_color}
       />
     </form>
   );

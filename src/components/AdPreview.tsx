@@ -7,19 +7,45 @@ interface AdPreviewProps {
   headline?: string;
   ctaText?: string;
   templateStyle?: string;
+  accentColor?: string;
 }
 
-export function AdPreview({ imageUrl, width, height, headline, ctaText, templateStyle }: AdPreviewProps) {
-  const getGradientByStyle = (style: string = 'minimal') => {
+export function AdPreview({ 
+  imageUrl, 
+  width, 
+  height, 
+  headline, 
+  ctaText, 
+  templateStyle,
+  accentColor = "#4A90E2"
+}: AdPreviewProps) {
+  const getGradientByStyle = (style: string = 'minimal', color: string) => {
+    const adjustColor = (hex: string, percent: number) => {
+      const num = parseInt(hex.replace("#", ""), 16);
+      const amt = Math.round(2.55 * percent);
+      const R = (num >> 16) + amt;
+      const G = (num >> 8 & 0x00FF) + amt;
+      const B = (num & 0x0000FF) + amt;
+      return `#${(
+        0x1000000 +
+        (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+        (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+        (B < 255 ? (B < 1 ? 0 : B) : 255)
+      ).toString(16).slice(1)}`;
+    };
+
+    const lighterColor = adjustColor(color, 20);
+    const darkerColor = adjustColor(color, -20);
+
     switch (style) {
       case 'modern':
-        return 'linear-gradient(180deg, rgb(254,100,121) 0%, rgb(251,221,186) 100%)';
+        return `linear-gradient(180deg, ${color} 0%, ${lighterColor} 100%)`;
       case 'bold':
-        return 'linear-gradient(102.3deg, rgba(147,39,143,1) 5.9%, rgba(234,172,232,1) 64%, rgba(246,219,245,1) 89%)';
+        return `linear-gradient(102.3deg, ${darkerColor} 5.9%, ${color} 64%, ${lighterColor} 89%)`;
       case 'elegant':
-        return 'linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)';
-      default:
-        return 'linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)';
+        return `linear-gradient(225deg, ${lighterColor} 0%, ${color} 48%, ${darkerColor} 100%)`;
+      default: // minimal
+        return `linear-gradient(109.6deg, ${color}22 11.2%, ${color}44 91.1%)`;
     }
   };
 
@@ -30,16 +56,16 @@ export function AdPreview({ imageUrl, width, height, headline, ctaText, template
       </CardHeader>
       <CardContent>
         <div
-          className="w-full relative rounded-lg overflow-hidden"
+          className="w-full relative rounded-lg overflow-hidden shadow-xl"
           style={{
             aspectRatio: `${width}/${height}`,
           }}
         >
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 transition-all duration-500"
             style={{
-              background: getGradientByStyle(templateStyle),
-              opacity: imageUrl ? 0.7 : 1,
+              background: getGradientByStyle(templateStyle, accentColor),
+              opacity: imageUrl ? 0.85 : 1,
             }}
           />
           {imageUrl && (
@@ -51,11 +77,25 @@ export function AdPreview({ imageUrl, width, height, headline, ctaText, template
           )}
           {headline && (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              <h2 className="text-3xl font-bold text-white mb-4 drop-shadow-lg">
+              <h2 
+                className="text-3xl font-bold mb-4 transition-all duration-300"
+                style={{
+                  color: templateStyle === 'minimal' ? '#000000' : '#ffffff',
+                  textShadow: templateStyle === 'minimal' 
+                    ? 'none' 
+                    : '2px 2px 4px rgba(0,0,0,0.3)',
+                }}
+              >
                 {headline}
               </h2>
               {ctaText && (
-                <button className="px-6 py-2 bg-white text-black rounded-full font-semibold transform hover:scale-105 transition-transform">
+                <button 
+                  className="px-6 py-2 rounded-full font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg"
+                  style={{
+                    backgroundColor: templateStyle === 'minimal' ? accentColor : '#ffffff',
+                    color: templateStyle === 'minimal' ? '#ffffff' : '#000000',
+                  }}
+                >
                   {ctaText}
                 </button>
               )}
