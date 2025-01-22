@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AdForm } from "./AdForm";
 import { AdPreview } from "./AdPreview";
+import html2canvas from "html2canvas";
 
 interface Template {
   id: string;
@@ -31,6 +32,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -91,6 +93,31 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
+  const capturePreview = async () => {
+    if (!previewRef.current) return null;
+    
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+      });
+      
+      return new Promise<File>((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `${adData.name || 'ad'}.png`, { type: 'image/png' });
+            resolve(file);
+          }
+        }, 'image/png');
+      });
+    } catch (error) {
+      console.error('Error capturing preview:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -107,6 +134,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       const fileExt = selectedImage.name.split('.').pop();
       const filePath = `${timestamp}.${fileExt}`;
       
+      // Upload the background image
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ad-images')
         .upload(`uploads/${filePath}`, selectedImage);
@@ -120,6 +148,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .from('ad-images')
         .getPublicUrl(`uploads/${filePath}`);
 
+      // Capture and upload the preview
+      const previewFile = await capturePreview();
+      if (!previewFile) {
+        throw new Error('Failed to capture preview');
+      }
+
+      const previewPath = `generated/${timestamp}_preview.png`;
+      const { data: previewData, error: previewError } = await supabase.storage
+        .from('ad-images')
+        .upload(previewPath, previewFile);
+
+      if (previewError) {
+        console.error('Preview upload error:', previewError);
+        throw new Error('Failed to upload preview');
+      }
+
+      const { data: { publicUrl: previewUrl } } = supabase.storage
+        .from('ad-images')
+        .getPublicUrl(previewPath);
+
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
         .insert({
@@ -132,8 +180,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           accent_color: adData.accent_color,
           width,
           height,
-          image_url: publicUrl,
-          status: 'pending'
+          image_url: previewUrl, // Use the preview URL instead of the background image
+          status: 'completed'
         })
         .select()
         .single();
@@ -143,16 +191,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         throw new Error('Failed to create ad record');
       }
 
-      const { error: generateError } = await supabase.functions.invoke('generate-ad', {
-        body: { id: newAd.id }
+      toast.success('המודעה נוצרה בהצלחה!', {
+        action: {
+          label: 'הורד',
+          onClick: () => window.open(previewUrl, '_blank')
+        },
       });
-
-      if (generateError) {
-        console.error('Generate error:', generateError);
-        throw new Error('Failed to generate ad');
-      }
-
-      toast.success('המודעה נוצרה בהצלחה ותהיה מוכנה בקרוב');
+      
       onAdGenerated(newAd);
       
     } catch (error) {
@@ -182,7 +227,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         </Button>
       </div>
 
-      <div className="sticky top-8">
+      <div className="sticky top-8" ref={previewRef}>
         <AdPreview
           imageUrl={previewUrl || undefined}
           width={width}

@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       generated_ads: {
         Row: {
+          accent_color: string | null
           created_at: string | null
           cta_text: string | null
           font_url: string | null
@@ -25,6 +26,7 @@ export type Database = {
           width: number
         }
         Insert: {
+          accent_color?: string | null
           created_at?: string | null
           cta_text?: string | null
           font_url?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           width: number
         }
         Update: {
+          accent_color?: string | null
           created_at?: string | null
           cta_text?: string | null
           font_url?: string | null
