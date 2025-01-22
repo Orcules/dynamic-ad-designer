@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useState, CSSProperties } from "react";
+import { useState, CSSProperties, useEffect } from "react";
 
 interface AdPreviewProps {
   imageUrl?: string;
@@ -10,6 +10,7 @@ interface AdPreviewProps {
   ctaText?: string;
   templateStyle?: string;
   accentColor?: string;
+  fontUrl?: string;
 }
 
 const adjustColor = (hex: string, percent: number) => {
@@ -33,9 +34,30 @@ export function AdPreview({
   headline, 
   ctaText, 
   templateStyle,
-  accentColor = "#4A90E2"
+  accentColor = "#4A90E2",
+  fontUrl
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [fontFamily, setFontFamily] = useState<string>('');
+
+  useEffect(() => {
+    if (fontUrl) {
+      const familyMatch = fontUrl.match(/family=([^:&]+)/);
+      if (familyMatch && familyMatch[1]) {
+        const family = familyMatch[1].replace(/\+/g, ' ');
+        setFontFamily(family);
+
+        const link = document.createElement('link');
+        link.href = fontUrl;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
+        return () => {
+          document.head.removeChild(link);
+        };
+      }
+    }
+  }, [fontUrl]);
 
   const getGradientByStyle = (style: string = 'minimal', color: string): CSSProperties => {
     const lighterColor = adjustColor(color, 20);
@@ -99,6 +121,7 @@ export function AdPreview({
       WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      fontFamily: fontFamily || 'inherit',
     };
 
     switch (style) {
@@ -144,7 +167,7 @@ export function AdPreview({
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
       padding: '0.8em 2em',
-      fontSize: 'clamp(0.75rem, 1.2vw, 1.1rem)', // Updated for better responsiveness
+      fontSize: 'clamp(0.75rem, 1.2vw, 1.1rem)',
       fontWeight: '600',
       borderRadius: '9999px',
       cursor: 'pointer',
@@ -155,11 +178,12 @@ export function AdPreview({
       margin: '0 auto',
       whiteSpace: 'nowrap',
       textOverflow: 'ellipsis',
-      display: 'inline-block', // Added to ensure proper text containment
-      width: 'auto', // Added to ensure button fits content
-      minWidth: 'min(200px, 50%)', // Added to ensure minimum button width
-      maxHeight: '3em', // Added to maintain proportional height
-      lineHeight: '1.2', // Added for better text vertical alignment
+      display: 'inline-block',
+      width: 'auto',
+      minWidth: 'min(200px, 50%)',
+      maxHeight: '3em',
+      lineHeight: '1.2',
+      fontFamily: fontFamily || 'inherit',
     };
 
     switch (style) {

@@ -240,6 +240,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           ctaText={adData.cta_text}
           templateStyle={adData.template_style}
           accentColor={adData.accent_color}
+          fontUrl={adData.font_url}
         />
       </div>
     </div>
