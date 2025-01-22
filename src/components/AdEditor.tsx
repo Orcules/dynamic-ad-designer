@@ -65,6 +65,63 @@ export function AdEditor({ template }: AdEditorProps) {
   const [selectedStyle, setSelectedStyle] = useState(templateStyles[0].id);
   const { toast } = useToast();
 
+  const handleGenerateAds = async () => {
+    try {
+      const formData = new FormData();
+      if (image) {
+        formData.append('image', image);
+      }
+      
+      const data = {
+        Name: `${template.title}-${Date.now()}`,
+        W: parseInt(template.dimensions.split('x')[0]),
+        H: parseInt(template.dimensions.split('x')[1]),
+        TR: 'Yes',
+        'TR-Text': headline,
+        'TR-Font': selectedFont || 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
+        'TR-Font Size': 32,
+        'TR-Color': currentStyle.colors.primary,
+        'TR-Text Color': currentStyle.colors.accent,
+        'TR-H': 100,
+        BT: 'Yes',
+        'BT-Text': ctaText,
+        'BT-Font': selectedFont || 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
+        'BT-Font Size': 24,
+        'BT-Color': currentStyle.colors.secondary,
+        'BT-Text Color': currentStyle.colors.background,
+        'BT-H': 80,
+        'Button': 'Yes',
+        'Button Size': '80%'
+      };
+
+      formData.append('data', JSON.stringify(data));
+
+      const response = await fetch('/api/generate-ad', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate ad');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: "Success!",
+        description: "Ad generated successfully",
+      });
+      
+    } catch (error) {
+      console.error('Error generating ad:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate ad. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -155,6 +212,7 @@ export function AdEditor({ template }: AdEditorProps) {
             backgroundColor: currentStyle.colors.primary,
             color: currentStyle.colors.background,
           }}
+          onClick={handleGenerateAds}
         >
           Generate Ads
         </Button>
