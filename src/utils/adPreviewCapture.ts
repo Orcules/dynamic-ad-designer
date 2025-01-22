@@ -26,7 +26,7 @@ export async function capturePreview(
     const canvas = await html2canvas(previewElement, {
       width,
       height,
-      scale: 2, // Balance between quality and performance
+      scale: 2, // Higher quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -34,14 +34,11 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
-          // Remove any transforms or animations
-          clonedElement.style.transform = 'none';
-          clonedElement.style.transition = 'none';
-          clonedElement.style.animation = 'none';
-          
-          // Ensure proper dimensions
+          // Ensure proper dimensions and styling
           clonedElement.style.width = `${width}px`;
           clonedElement.style.height = `${height}px`;
+          clonedElement.style.transform = 'none';
+          clonedElement.style.transition = 'none';
           
           // Handle text elements
           const textElements = clonedElement.querySelectorAll("h2, button");
@@ -49,22 +46,20 @@ export async function capturePreview(
             if (el instanceof HTMLElement) {
               el.style.transform = 'none';
               el.style.transition = 'none';
-              el.style.animation = 'none';
               el.style.maxWidth = '100%';
-              el.style.overflow = 'visible';
               el.style.whiteSpace = 'normal';
               el.style.wordBreak = 'break-word';
             }
           });
 
-          // Handle the image specifically
-          const image = clonedElement.querySelector('img');
-          if (image) {
-            image.style.transform = 'none';
-            image.style.width = '100%';
-            image.style.height = '100%';
-            image.style.objectFit = 'cover';
-          }
+          // Handle images
+          const images = clonedElement.querySelectorAll('img');
+          images.forEach((img) => {
+            img.style.transform = 'none';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+          });
         }
       }
     });
@@ -82,7 +77,7 @@ export async function capturePreview(
           lastModified: Date.now()
         });
         resolve(file);
-      }, "image/png", 1.0);
+      }, "image/png", 1.0); // Maximum quality
     });
 
   } catch (error) {

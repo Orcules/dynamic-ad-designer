@@ -71,7 +71,7 @@ export const handleAdSubmission = async ({
         cta_text: adData.cta_text,
         font_url: adData.font_url,
         platform: adData.platform,
-        template_style: adData.template_style || 'minimal', // Ensure we always have a template style
+        template_style: adData.template_style || 'minimal',
         accent_color: adData.accent_color,
         width,
         height,
