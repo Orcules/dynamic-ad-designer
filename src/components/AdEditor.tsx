@@ -125,7 +125,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       // Create the ad record without specifying an ID
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
-        .insert([{
+        .insert({
           name: adData.name,
           headline: adData.headline,
           cta_text: adData.cta_text,
@@ -136,7 +136,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           height,
           image_url: publicUrl,
           status: 'pending'
-        }])
+        })
         .select()
         .single();
 
