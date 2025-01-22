@@ -19,42 +19,42 @@ interface AdEditorProps {
 const templateStyles = [
   {
     id: "modern",
-    name: "Modern & Clean",
+    name: "מודרני ונקי",
     colors: {
-      primary: "#9b87f5",
-      secondary: "#8E9196",
-      accent: "#0FA0CE",
-      background: "#FFFFFF"
+      primary: "#8B5CF6",
+      secondary: "#D946EF",
+      accent: "#0EA5E9",
+      background: "linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)"
     }
   },
   {
     id: "bold",
-    name: "Bold & Vibrant",
+    name: "נועז ותוסס",
     colors: {
       primary: "#F97316",
       secondary: "#D946EF",
-      accent: "#0EA5E9",
-      background: "#1A1F2C"
+      accent: "#FFFFFF",
+      background: "linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)"
     }
   },
   {
     id: "soft",
-    name: "Soft & Pastel",
+    name: "רך ופסטלי",
     colors: {
-      primary: "#F2FCE2",
-      secondary: "#FEF7CD",
-      accent: "#FEC6A1",
-      background: "#E5DEFF"
+      primary: "#D3E4FD",
+      secondary: "#FDE1D3",
+      accent: "#6E59A5",
+      background: "linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)"
     }
   },
   {
     id: "dark",
-    name: "Dark & Moody",
+    name: "כהה ומסתורי",
     colors: {
-      primary: "#221F26",
-      secondary: "#403E43",
+      primary: "#9b87f5",
+      secondary: "#7E69AB",
       accent: "#FFFFFF",
-      background: "#8A898C"
+      background: "linear-gradient(to right, #243949 0%, #517fa4 100%)"
     }
   }
 ];
@@ -74,26 +74,29 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
         formData.append('image', image);
       }
       
+      const currentStyle = templateStyles.find(style => style.id === selectedStyle) || templateStyles[0];
+      
       const data = {
         Name: `${template.title}-${Date.now()}`,
         W: parseInt(template.dimensions.split('x')[0]),
         H: parseInt(template.dimensions.split('x')[1]),
         TR: 'Yes',
         'TR-Text': headline,
-        'TR-Font': selectedFont || 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
-        'TR-Font Size': 32,
-        'TR-Color': currentStyle.colors.primary,
+        'TR-Font': selectedFont || 'https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap',
+        'TR-Font Size': 48,
+        'TR-Color': 'transparent',
         'TR-Text Color': currentStyle.colors.accent,
-        'TR-H': 100,
+        'TR-H': 120,
         BT: 'Yes',
         'BT-Text': ctaText,
-        'BT-Font': selectedFont || 'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
-        'BT-Font Size': 24,
-        'BT-Color': currentStyle.colors.secondary,
-        'BT-Text Color': currentStyle.colors.background,
-        'BT-H': 80,
+        'BT-Font': selectedFont || 'https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap',
+        'BT-Font Size': 32,
+        'BT-Color': currentStyle.colors.primary,
+        'BT-Text Color': currentStyle.colors.accent,
+        'BT-H': 100,
         'Button': 'Yes',
-        'Button Size': '80%'
+        'Button Size': '90%',
+        'Background': currentStyle.colors.background
       };
 
       formData.append('data', JSON.stringify(data));
@@ -104,7 +107,6 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
 
       if (error) throw error;
 
-      // Call the onAdGenerated callback with the preview data
       onAdGenerated?.({
         image_url: functionData?.image_url,
         headline: headline,
@@ -161,7 +163,7 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="style">סגנון תבנית</Label>
+          <Label htmlFor="style">סגנון עיצוב</Label>
           <Select value={selectedStyle} onValueChange={setSelectedStyle}>
             <SelectTrigger>
               <SelectValue placeholder="בחר סגנון" />
@@ -185,6 +187,7 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
             placeholder="הכנס את הכותרת שלך"
+            className="text-lg"
           />
         </div>
 
@@ -195,13 +198,14 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
             value={ctaText}
             onChange={(e) => setCtaText(e.target.value)}
             placeholder="הכנס טקסט CTA"
+            className="text-lg"
           />
         </div>
 
         <div
           className="border-2 border-dashed rounded-lg p-8 text-center space-y-4 cursor-pointer hover:border-primary transition-colors"
           style={{
-            backgroundColor: currentStyle.colors.background,
+            background: typeof currentStyle.colors.background === 'string' ? currentStyle.colors.background : 'transparent',
             borderColor: currentStyle.colors.accent,
           }}
           onDrop={handleDrop}
@@ -217,14 +221,14 @@ export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
         </div>
 
         <Button 
-          className="w-full"
+          className="w-full text-lg py-6 hover:scale-105 transition-transform"
           style={{
-            backgroundColor: currentStyle.colors.primary,
-            color: currentStyle.colors.background,
+            background: currentStyle.colors.primary,
+            color: currentStyle.colors.accent,
           }}
           onClick={handleGenerateAds}
         >
-          צור מודעות
+          צור מודעה
         </Button>
       </div>
     </div>

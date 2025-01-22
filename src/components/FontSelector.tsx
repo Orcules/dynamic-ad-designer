@@ -1,10 +1,11 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const fonts = [
-  { name: "Inter", url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" },
-  { name: "Roboto", url: "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" },
-  { name: "Playfair Display", url: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" },
-  { name: "Montserrat", url: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" },
+  { name: "Heebo", url: "https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" },
+  { name: "Assistant", url: "https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap" },
+  { name: "Rubik", url: "https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" },
+  { name: "Open Sans Hebrew", url: "https://fonts.googleapis.com/css2?family=Open+Sans+Hebrew:wght@400;700&display=swap" },
+  { name: "Varela Round", url: "https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" },
 ];
 
 interface FontSelectorProps {
@@ -15,10 +16,10 @@ interface FontSelectorProps {
 export function FontSelector({ value, onChange }: FontSelectorProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Font Family</label>
+      <label className="text-sm font-medium">גופן</label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
-          <SelectValue placeholder="Select font" />
+          <SelectValue placeholder="בחר גופן" />
         </SelectTrigger>
         <SelectContent>
           {fonts.map((font) => (
