@@ -195,7 +195,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .from('ad-images')
         .getPublicUrl(previewPath);
 
-      // Create the ad record without specifying an ID
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
         .insert({
