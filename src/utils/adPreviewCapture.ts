@@ -20,60 +20,27 @@ export async function capturePreview(
     const { width, height } = getDimensions(platform);
     console.log(`Capturing preview with dimensions: ${width}x${height}`);
 
-    // Create a clone of the preview element to manipulate
-    const clone = previewElement.cloneNode(true) as HTMLElement;
-    const container = document.createElement('div');
-    container.appendChild(clone);
+    // Wait for all fonts to load
+    await document.fonts.ready;
     
-    // Set up the clone with exact dimensions and styling
-    clone.style.width = `${width}px`;
-    clone.style.height = `${height}px`;
-    clone.style.position = 'absolute';
-    clone.style.top = '0';
-    clone.style.left = '0';
-    clone.style.transform = 'none';
-    clone.style.margin = '0';
-    clone.style.padding = '0';
-    clone.style.borderRadius = '0';
-    
-    // Ensure all child elements maintain their styles
-    const allElements = clone.getElementsByTagName('*');
-    for (let i = 0; i < allElements.length; i++) {
-      const el = allElements[i] as HTMLElement;
-      const computedStyle = window.getComputedStyle(el);
-      el.style.fontFamily = computedStyle.fontFamily;
-      el.style.fontSize = computedStyle.fontSize;
-      el.style.fontWeight = computedStyle.fontWeight;
-      el.style.lineHeight = computedStyle.lineHeight;
-      el.style.letterSpacing = computedStyle.letterSpacing;
-      el.style.textAlign = computedStyle.textAlign;
-      el.style.color = computedStyle.color;
-      el.style.backgroundColor = computedStyle.backgroundColor;
-      el.style.backgroundImage = computedStyle.backgroundImage;
-      el.style.boxShadow = computedStyle.boxShadow;
-      el.style.textShadow = computedStyle.textShadow;
-      el.style.transform = 'none';
-      el.style.transition = 'none';
-    }
-
-    // Ensure all images are loaded before capture
-    const images = clone.getElementsByTagName('img');
+    // Wait for all images to load
+    const images = previewElement.getElementsByTagName('img');
     await Promise.all(
       Array.from(images).map(
         (img) =>
-          new Promise((resolve, reject) => {
+          new Promise((resolve) => {
             if (img.complete) resolve(null);
             img.onload = () => resolve(null);
-            img.onerror = reject;
+            img.onerror = () => resolve(null); // Continue even if image fails
           })
       )
     );
 
-    // Capture the preview with high quality settings
-    const canvas = await html2canvas(clone, {
+    // Create canvas with the exact dimensions
+    const canvas = await html2canvas(previewElement, {
       width,
       height,
-      scale: 2,
+      scale: 2, // Higher quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -81,8 +48,36 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
+          // Preserve exact dimensions
           clonedElement.style.width = `${width}px`;
           clonedElement.style.height = `${height}px`;
+          
+          // Ensure all child elements maintain their styles
+          const allElements = clonedElement.getElementsByTagName('*');
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i] as HTMLElement;
+            const computedStyle = window.getComputedStyle(el);
+            
+            // Preserve essential styles
+            el.style.fontFamily = computedStyle.fontFamily;
+            el.style.fontSize = computedStyle.fontSize;
+            el.style.fontWeight = computedStyle.fontWeight;
+            el.style.lineHeight = computedStyle.lineHeight;
+            el.style.letterSpacing = computedStyle.letterSpacing;
+            el.style.textAlign = computedStyle.textAlign;
+            el.style.color = computedStyle.color;
+            el.style.backgroundColor = computedStyle.backgroundColor;
+            el.style.backgroundImage = computedStyle.backgroundImage;
+            el.style.boxShadow = computedStyle.boxShadow;
+            el.style.textShadow = computedStyle.textShadow;
+            el.style.borderRadius = computedStyle.borderRadius;
+            el.style.padding = computedStyle.padding;
+            el.style.margin = computedStyle.margin;
+            
+            // Remove any transforms or transitions
+            el.style.transform = 'none';
+            el.style.transition = 'none';
+          }
         }
       }
     });
@@ -103,7 +98,7 @@ export async function capturePreview(
           resolve(file);
         },
         "image/png",
-        1.0
+        1.0 // Maximum quality
       );
     });
 
