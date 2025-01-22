@@ -1,53 +1,88 @@
 import html2canvas from "html2canvas";
 import { getDimensions } from "./adDimensions";
 
-export const capturePreview = async (previewRef: React.RefObject<HTMLDivElement>, platform: string) => {
+export const capturePreview = async (previewRef: React.RefObject<HTMLDivElement>, platform: string): Promise<File | null> => {
   if (!previewRef.current) return null;
   
   const previewElement = previewRef.current.querySelector('.ad-content');
   if (!previewElement) return null;
   
   try {
+    // Wait for all fonts to load
     await document.fonts.ready;
     
     const { width, height } = getDimensions(platform);
     
-    const previewContainer = document.createElement('div');
-    previewContainer.style.width = `${width}px`;
-    previewContainer.style.height = `${height}px`;
-    previewContainer.style.position = 'fixed';
-    previewContainer.style.top = '0';
-    previewContainer.style.left = '0';
-    previewContainer.style.zIndex = '-1000';
-    previewContainer.style.opacity = '0';
+    // Create a temporary container with exact dimensions
+    const tempContainer = document.createElement('div');
+    tempContainer.style.width = `${width}px`;
+    tempContainer.style.height = `${height}px`;
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.top = '0';
+    tempContainer.style.left = '0';
+    tempContainer.style.zIndex = '-1000';
+    tempContainer.style.opacity = '0';
     
+    // Clone the preview element with all its styles
     const clone = previewElement.cloneNode(true) as HTMLElement;
     clone.style.position = 'absolute';
     clone.style.width = '100%';
     clone.style.height = '100%';
     
-    previewContainer.appendChild(clone);
-    document.body.appendChild(previewContainer);
+    // Copy computed styles from the original element to maintain exact appearance
+    const originalStyles = window.getComputedStyle(previewElement);
+    Array.from(originalStyles).forEach(key => {
+      clone.style[key as any] = originalStyles.getPropertyValue(key);
+    });
     
-    const canvas = await html2canvas(previewContainer, {
-      scale: 2,
+    // Copy styles for child elements (text, button, etc.)
+    const originalChildren = previewElement.getElementsByTagName('*');
+    const cloneChildren = clone.getElementsByTagName('*');
+    for (let i = 0; i < originalChildren.length; i++) {
+      const originalChild = originalChildren[i];
+      const cloneChild = cloneChildren[i];
+      const childStyles = window.getComputedStyle(originalChild);
+      Array.from(childStyles).forEach(key => {
+        cloneChild.style[key as any] = childStyles.getPropertyValue(key);
+      });
+    }
+    
+    tempContainer.appendChild(clone);
+    document.body.appendChild(tempContainer);
+    
+    // Use html2canvas with settings to maintain quality and styles
+    const canvas = await html2canvas(tempContainer, {
+      scale: 2, // Higher scale for better quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
       width: width,
       height: height,
       logging: true,
+      onclone: (clonedDoc) => {
+        // Additional style fixes can be added here if needed
+        const clonedElement = clonedDoc.querySelector('.ad-content');
+        if (clonedElement) {
+          // Ensure gradients and other effects are preserved
+          const styles = window.getComputedStyle(previewElement);
+          (clonedElement as HTMLElement).style.background = styles.background;
+          (clonedElement as HTMLElement).style.backgroundImage = styles.backgroundImage;
+        }
+      }
     });
     
-    document.body.removeChild(previewContainer);
+    document.body.removeChild(tempContainer);
     
+    // Convert to high-quality PNG file
     return new Promise<File>((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) {
-          const file = new File([blob], 'ad-preview.png', { type: 'image/png' });
+          const file = new File([blob], 'ad-preview.png', { 
+            type: 'image/png',
+          });
           resolve(file);
         }
-      }, 'image/png', 1.0);
+      }, 'image/png', 1.0); // Maximum quality
     });
   } catch (error) {
     console.error('Error capturing preview:', error);
