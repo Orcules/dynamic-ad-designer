@@ -46,34 +46,34 @@ export function AdPreview({
       case 'modern':
         return {
           background: `
-            linear-gradient(135deg, ${darkerColor}dd 0%, ${color}bb 50%, ${lighterColor}dd 100%),
-            radial-gradient(circle at top left, ${lighterColor}40, transparent 60%),
-            radial-gradient(circle at bottom right, ${darkerColor}40, transparent 60%)
+            linear-gradient(135deg, ${darkerColor}aa 0%, ${color}88 50%, ${lighterColor}aa 100%),
+            radial-gradient(circle at top left, ${lighterColor}20, transparent 60%),
+            radial-gradient(circle at bottom right, ${darkerColor}20, transparent 60%)
           `,
           backdropFilter: 'blur(8px)'
         };
       case 'bold':
         return {
           background: `
-            linear-gradient(to right, ${darkerColor}ee, ${color}ee),
-            radial-gradient(circle at top left, ${lighterColor}60, transparent 50%),
-            radial-gradient(circle at bottom right, ${darkerColor}60, transparent 50%)
+            linear-gradient(to right, ${darkerColor}cc, ${color}cc),
+            radial-gradient(circle at top left, ${lighterColor}40, transparent 50%),
+            radial-gradient(circle at bottom right, ${darkerColor}40, transparent 50%)
           `,
           backdropFilter: 'blur(12px)'
         };
       case 'elegant':
         return {
           background: `
-            linear-gradient(45deg, ${darkerColor}cc 0%, ${color}bb 45%, ${lighterColor}cc 100%),
+            linear-gradient(45deg, ${darkerColor}99 0%, ${color}88 45%, ${lighterColor}99 100%),
             linear-gradient(135deg, ${transparentColor} 0%, transparent 50%),
-            radial-gradient(circle at 70% 30%, ${lighterColor}40, transparent 50%)
+            radial-gradient(circle at 70% 30%, ${lighterColor}20, transparent 50%)
           `,
           backdropFilter: 'blur(4px)'
         };
       default: // minimal
         return {
           background: `
-            linear-gradient(to right, ${color}11, ${color}22),
+            linear-gradient(to right, ${color}08, ${color}11),
             linear-gradient(45deg, ${transparentColor} 0%, transparent 100%)
           `,
           backdropFilter: 'blur(2px)'
@@ -87,42 +87,55 @@ export function AdPreview({
       textShadow: 'none',
       fontWeight: 'normal',
       letterSpacing: 'normal',
-      fontSize: 'clamp(1.5rem, 4vw, 3rem)',
-      lineHeight: '1.2',
-      maxWidth: '90%',
+      fontSize: 'clamp(1rem, 3vw, 2.5rem)',
+      lineHeight: '1.3',
+      maxWidth: '85%',
       margin: '0 auto',
       padding: '0.5em',
+      wordBreak: 'break-word',
+      overflowWrap: 'break-word',
+      display: '-webkit-box',
+      WebkitLineClamp: 3,
+      WebkitBoxOrient: 'vertical' as const,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
     };
 
     switch (style) {
       case 'modern':
         return {
           ...baseStyle,
-          textShadow: '2px 2px 4px rgba(0,0,0,0.3), -1px -1px 1px rgba(255,255,255,0.2)',
+          textShadow: '2px 2px 4px rgba(0,0,0,0.2), -1px -1px 1px rgba(255,255,255,0.1)',
           fontWeight: 'bold',
           letterSpacing: '0.05em',
           background: `linear-gradient(45deg, ${adjustColor(accentColor, 30)}, ${adjustColor(accentColor, -30)})`,
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
+          textAlign: 'center' as const,
         };
       case 'bold':
         return {
           ...baseStyle,
-          textShadow: '3px 3px 6px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.2)',
+          textShadow: '3px 3px 6px rgba(0,0,0,0.3), -1px -1px 2px rgba(255,255,255,0.1)',
           fontWeight: '800',
           letterSpacing: '0.1em',
           textTransform: 'uppercase',
+          textAlign: 'center' as const,
         };
       case 'elegant':
         return {
           ...baseStyle,
-          textShadow: '1px 1px 2px rgba(0,0,0,0.2)',
+          textShadow: '1px 1px 2px rgba(0,0,0,0.1)',
           fontWeight: '500',
           letterSpacing: '0.15em',
           fontStyle: 'italic',
+          textAlign: 'center' as const,
         };
       default: // minimal
-        return baseStyle;
+        return {
+          ...baseStyle,
+          textAlign: 'center' as const,
+        };
     }
   };
 
@@ -131,13 +144,17 @@ export function AdPreview({
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
       padding: '0.8em 2em',
-      fontSize: 'clamp(1rem, 2vw, 1.5rem)',
+      fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)',
       fontWeight: '600',
       borderRadius: '9999px',
       cursor: 'pointer',
       position: 'relative',
       overflow: 'hidden',
       isolation: 'isolate' as const,
+      maxWidth: '90%',
+      margin: '0 auto',
+      whiteSpace: 'nowrap',
+      textOverflow: 'ellipsis',
     };
 
     switch (style) {
