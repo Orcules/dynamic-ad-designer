@@ -180,7 +180,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           accent_color: adData.accent_color,
           width,
           height,
-          image_url: previewUrl, // Use the preview URL instead of the background image
+          image_url: previewUrl,
           status: 'completed'
         })
         .select()
