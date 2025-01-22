@@ -28,8 +28,6 @@ export const handleAdSubmission = async ({
   try {
     const { width, height } = getDimensions(adData.platform);
     const timestamp = Date.now();
-    const fileExt = selectedImage.name.split('.').pop();
-    const filePath = `uploads/${timestamp}.${fileExt}`;
     
     console.log('Starting ad generation process...');
     console.log('Capturing preview...');
@@ -42,22 +40,29 @@ export const handleAdSubmission = async ({
 
     console.log('Preview captured, uploading to storage...');
     const previewPath = `generated/${timestamp}_preview.png`;
-    const { error: previewError } = await supabase.storage
+    
+    // Upload the preview image
+    const { error: previewError, data: uploadData } = await supabase.storage
       .from('ad-images')
-      .upload(previewPath, previewFile);
+      .upload(previewPath, previewFile, {
+        contentType: 'image/png',
+        cacheControl: '3600',
+        upsert: true
+      });
 
     if (previewError) {
       console.error('Preview upload error:', previewError);
       throw new Error('Failed to upload preview');
     }
 
+    // Get the public URL for the uploaded image
     const { data: { publicUrl: previewUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(previewPath);
 
     console.log('Preview uploaded, creating ad record...');
     
-    // Create ad record without specifying ID
+    // Create ad record
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
@@ -81,10 +86,6 @@ export const handleAdSubmission = async ({
       throw new Error('Failed to create ad record');
     }
 
-    if (!newAd) {
-      throw new Error('No ad record was created');
-    }
-    
     console.log('Ad created successfully:', newAd);
     
     toast.success('המודעה נוצרה בהצלחה!', {
@@ -96,7 +97,7 @@ export const handleAdSubmission = async ({
     
     onSuccess(newAd);
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating ad:', error);
     toast.error(error.message || 'אירעה שגיאה ביצירת המודעה');
   } finally {

@@ -11,50 +11,57 @@ export async function capturePreview(
   }
 
   try {
-    const previewElement = previewRef.current.querySelector(".ad-content");
+    const previewElement = previewRef.current.querySelector(".ad-content") as HTMLElement;
     if (!previewElement) {
       console.error("Ad content element not found");
       return null;
     }
 
-    // Create a temporary container with the correct dimensions
+    // Get dimensions based on platform
     const { width, height } = getDimensions(platform);
+
+    // Create a temporary container with exact dimensions
     const tempContainer = document.createElement("div");
     tempContainer.style.position = "fixed";
     tempContainer.style.left = "-9999px";
     tempContainer.style.width = `${width}px`;
     tempContainer.style.height = `${height}px`;
+    tempContainer.style.overflow = "hidden";
 
-    // Clone the preview element
+    // Clone the preview element with all its children
     const clone = previewElement.cloneNode(true) as HTMLElement;
+    
+    // Copy all computed styles from original to clone
+    const computedStyle = window.getComputedStyle(previewElement);
+    for (const prop of computedStyle) {
+      clone.style[prop as any] = computedStyle.getPropertyValue(prop);
+    }
+
+    // Ensure proper positioning and dimensions
     clone.style.position = "absolute";
     clone.style.width = "100%";
     clone.style.height = "100%";
+    clone.style.transform = "none";
 
-    // Copy computed styles from the original element to maintain exact appearance
-    const originalStyles = window.getComputedStyle(previewElement as HTMLElement);
-    Array.from(originalStyles).forEach(key => {
-      clone.style[key as any] = originalStyles.getPropertyValue(key);
-    });
-
-    // Copy styles for child elements (text, button, etc.)
-    const originalChildren = Array.from(previewElement.getElementsByTagName("*"));
-    const cloneChildren = Array.from(clone.getElementsByTagName("*"));
-
-    originalChildren.forEach((originalChild, index) => {
-      const cloneChild = cloneChildren[index];
-      if (originalChild instanceof HTMLElement && cloneChild instanceof HTMLElement) {
-        const childStyles = window.getComputedStyle(originalChild);
-        Array.from(childStyles).forEach(key => {
-          cloneChild.style[key as any] = childStyles.getPropertyValue(key);
-        });
+    // Copy styles for all child elements
+    const originalChildren = previewElement.getElementsByTagName("*");
+    const cloneChildren = clone.getElementsByTagName("*");
+    
+    for (let i = 0; i < originalChildren.length; i++) {
+      const originalChild = originalChildren[i] as HTMLElement;
+      const cloneChild = cloneChildren[i] as HTMLElement;
+      
+      const childComputedStyle = window.getComputedStyle(originalChild);
+      for (const prop of childComputedStyle) {
+        cloneChild.style[prop as any] = childComputedStyle.getPropertyValue(prop);
       }
-    });
+    }
 
+    // Add clone to temporary container and append to body
     tempContainer.appendChild(clone);
     document.body.appendChild(tempContainer);
 
-    // Use html2canvas with improved settings
+    // Capture the preview with html2canvas
     const canvas = await html2canvas(clone, {
       width,
       height,
@@ -64,13 +71,28 @@ export async function capturePreview(
       backgroundColor: null,
       logging: true,
       onclone: (clonedDoc) => {
-        // Additional style fixes can be added here if needed
-        const clonedElement = clonedDoc.querySelector(".ad-content");
-        if (clonedElement instanceof HTMLElement) {
-          // Ensure gradients and other effects are preserved
-          const styles = window.getComputedStyle(previewElement as HTMLElement);
+        const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
+        if (clonedElement) {
+          // Preserve background styles
+          const styles = window.getComputedStyle(previewElement);
           clonedElement.style.background = styles.background;
           clonedElement.style.backgroundImage = styles.backgroundImage;
+          
+          // Ensure text styles are preserved
+          const textElements = clonedElement.querySelectorAll("h2, p, button");
+          textElements.forEach((el) => {
+            if (el instanceof HTMLElement) {
+              const originalEl = previewElement.querySelector(`${el.tagName.toLowerCase()}`) as HTMLElement;
+              if (originalEl) {
+                const originalStyles = window.getComputedStyle(originalEl);
+                el.style.fontFamily = originalStyles.fontFamily;
+                el.style.fontSize = originalStyles.fontSize;
+                el.style.fontWeight = originalStyles.fontWeight;
+                el.style.color = originalStyles.color;
+                el.style.textShadow = originalStyles.textShadow;
+              }
+            }
+          });
         }
       }
     });
@@ -86,9 +108,12 @@ export async function capturePreview(
           resolve(null);
           return;
         }
-        const file = new File([blob], "ad-preview.png", { type: "image/png" });
+        const file = new File([blob], "ad-preview.png", { 
+          type: "image/png",
+          lastModified: Date.now()
+        });
         resolve(file);
-      }, "image/png", 1.0);
+      }, "image/png", 1.0); // Maximum quality
     });
 
   } catch (error) {
