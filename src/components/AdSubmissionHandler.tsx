@@ -31,27 +31,16 @@ export const handleAdSubmission = async ({
     const fileExt = selectedImage.name.split('.').pop();
     const filePath = `uploads/${timestamp}.${fileExt}`;
     
-    // Upload the original image
-    const { error: uploadError } = await supabase.storage
-      .from('ad-images')
-      .upload(filePath, selectedImage);
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      throw new Error('Failed to upload image');
-    }
-
-    // Get the public URL for the uploaded image
-    const { data: { publicUrl } } = supabase.storage
-      .from('ad-images')
-      .getPublicUrl(filePath);
-
+    console.log('Starting ad generation process...');
+    console.log('Capturing preview...');
+    
     // Capture and upload preview
     const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
       throw new Error('Failed to capture preview');
     }
 
+    console.log('Preview captured, uploading to storage...');
     const previewPath = `generated/${timestamp}_preview.png`;
     const { error: previewError } = await supabase.storage
       .from('ad-images')
@@ -66,7 +55,9 @@ export const handleAdSubmission = async ({
       .from('ad-images')
       .getPublicUrl(previewPath);
 
-    // Create ad record
+    console.log('Preview uploaded, creating ad record...');
+    
+    // Create ad record without specifying ID
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
@@ -93,6 +84,8 @@ export const handleAdSubmission = async ({
     if (!newAd) {
       throw new Error('No ad record was created');
     }
+    
+    console.log('Ad created successfully:', newAd);
     
     toast.success('המודעה נוצרה בהצלחה!', {
       action: {
