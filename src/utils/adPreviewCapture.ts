@@ -11,6 +11,7 @@ export async function capturePreview(
   }
 
   try {
+    // Get the actual preview element that contains the ad content
     const previewElement = previewRef.current.querySelector(".ad-content") as HTMLElement;
     if (!previewElement) {
       console.error("Ad content element not found");
@@ -21,83 +22,11 @@ export async function capturePreview(
     const { width, height } = getDimensions(platform);
     console.log(`Capturing preview with dimensions: ${width}x${height}`);
 
-    // Create a temporary container with exact dimensions
-    const tempContainer = document.createElement("div");
-    tempContainer.style.width = `${width}px`;
-    tempContainer.style.height = `${height}px`;
-    tempContainer.style.position = "fixed";
-    tempContainer.style.left = "-9999px";
-    tempContainer.style.top = "0";
-    tempContainer.style.overflow = "hidden";
-    tempContainer.style.transform = "none";
-    tempContainer.style.transformOrigin = "0 0";
-    tempContainer.style.backgroundColor = "transparent";
-
-    // Clone the preview element
-    const clone = previewElement.cloneNode(true) as HTMLElement;
-    
-    // Reset any transforms or animations that might affect the layout
-    clone.classList.add('capturing');
-    clone.style.transform = "none !important";
-    clone.style.transition = "none !important";
-    clone.style.animation = "none !important";
-    clone.style.position = "absolute !important";
-    clone.style.top = "0 !important";
-    clone.style.left = "0 !important";
-    clone.style.width = "100% !important";
-    clone.style.height = "100% !important";
-    
-    // Copy computed styles from original to clone
-    const computedStyle = window.getComputedStyle(previewElement);
-    for (const prop of computedStyle) {
-      if (!prop.includes("transform") && !prop.includes("animation") && !prop.includes("transition")) {
-        clone.style[prop as any] = computedStyle.getPropertyValue(prop);
-      }
-    }
-
-    // Copy styles for child elements, excluding animations and transforms
-    const originalChildren = previewElement.getElementsByTagName("*");
-    const cloneChildren = clone.getElementsByTagName("*");
-    
-    for (let i = 0; i < originalChildren.length; i++) {
-      const originalChild = originalChildren[i] as HTMLElement;
-      const cloneChild = cloneChildren[i] as HTMLElement;
-      
-      cloneChild.classList.add('capturing');
-      const childComputedStyle = window.getComputedStyle(originalChild);
-      
-      // Copy all styles except transforms and animations
-      for (const prop of childComputedStyle) {
-        if (!prop.includes("transform") && !prop.includes("animation") && !prop.includes("transition")) {
-          cloneChild.style[prop as any] = childComputedStyle.getPropertyValue(prop);
-        }
-      }
-      
-      // Reset any transforms or animations on child elements
-      cloneChild.style.transform = "none !important";
-      cloneChild.style.transition = "none !important";
-      cloneChild.style.animation = "none !important";
-      
-      // Handle images specifically
-      if (cloneChild.tagName.toLowerCase() === 'img') {
-        cloneChild.style.position = "absolute";
-        cloneChild.style.width = "100%";
-        cloneChild.style.height = "100%";
-        cloneChild.style.objectFit = "cover";
-        cloneChild.style.top = "0";
-        cloneChild.style.left = "0";
-      }
-    }
-
-    // Add clone to temporary container and append to body
-    tempContainer.appendChild(clone);
-    document.body.appendChild(tempContainer);
-
-    // Capture the preview with html2canvas
-    const canvas = await html2canvas(tempContainer, {
+    // Create canvas at the exact dimensions we want
+    const canvas = await html2canvas(previewElement, {
       width,
       height,
-      scale: 4, // Increased scale for better quality
+      scale: 2, // Balance between quality and performance
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -105,35 +34,40 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
-          // Preserve background styles
-          clonedElement.style.background = computedStyle.background;
-          clonedElement.style.backgroundImage = computedStyle.backgroundImage;
+          // Remove any transforms or animations
+          clonedElement.style.transform = 'none';
+          clonedElement.style.transition = 'none';
+          clonedElement.style.animation = 'none';
           
-          // Ensure text styles are preserved
-          const textElements = clonedElement.querySelectorAll("h2, p, button");
+          // Ensure proper dimensions
+          clonedElement.style.width = `${width}px`;
+          clonedElement.style.height = `${height}px`;
+          
+          // Handle text elements
+          const textElements = clonedElement.querySelectorAll("h2, button");
           textElements.forEach((el) => {
             if (el instanceof HTMLElement) {
-              const originalEl = previewElement.querySelector(`${el.tagName.toLowerCase()}`) as HTMLElement;
-              if (originalEl) {
-                const originalStyles = window.getComputedStyle(originalEl);
-                el.style.fontFamily = originalStyles.fontFamily;
-                el.style.fontSize = originalStyles.fontSize;
-                el.style.fontWeight = originalStyles.fontWeight;
-                el.style.color = originalStyles.color;
-                el.style.textShadow = originalStyles.textShadow;
-                el.style.transform = "none !important";
-                el.style.transition = "none !important";
-                el.style.animation = "none !important";
-                el.style.position = "static";
-              }
+              el.style.transform = 'none';
+              el.style.transition = 'none';
+              el.style.animation = 'none';
+              el.style.maxWidth = '100%';
+              el.style.overflow = 'visible';
+              el.style.whiteSpace = 'normal';
+              el.style.wordBreak = 'break-word';
             }
           });
+
+          // Handle the image specifically
+          const image = clonedElement.querySelector('img');
+          if (image) {
+            image.style.transform = 'none';
+            image.style.width = '100%';
+            image.style.height = '100%';
+            image.style.objectFit = 'cover';
+          }
         }
       }
     });
-
-    // Clean up
-    document.body.removeChild(tempContainer);
 
     // Convert canvas to blob/file
     return new Promise((resolve) => {

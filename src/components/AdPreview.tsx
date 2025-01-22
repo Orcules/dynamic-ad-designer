@@ -36,13 +36,11 @@ export function AdPreview({
         const family = familyMatch[1].replace(/\+/g, ' ');
         setFontFamily(family);
 
-        // Load font explicitly
         const link = document.createElement('link');
         link.href = fontUrl;
         link.rel = 'stylesheet';
         document.head.appendChild(link);
 
-        // Wait for font to load
         document.fonts.ready.then(() => {
           console.log(`Font ${family} loaded successfully`);
         }).catch(err => {
@@ -72,14 +70,13 @@ export function AdPreview({
             aspectRatio: `${width}/${height}`,
           }}
         >
-          <div className="ad-content absolute inset-0">
+          <div className="ad-content absolute inset-0 flex flex-col items-center justify-center">
             {imageUrl && (
               <img
                 src={imageUrl}
                 alt="Ad preview"
                 className="absolute inset-0 w-full h-full object-cover"
                 crossOrigin="anonymous"
-                style={{ transform: 'none' }}
               />
             )}
             <div
@@ -87,28 +84,24 @@ export function AdPreview({
               style={gradientStyle}
             />
             {headline && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+              <div className="relative z-10 flex flex-col items-center justify-center p-6 text-center w-full h-full">
                 <h2 
                   className={cn(
                     "mb-6 max-w-[90%]",
                     templateStyle === 'minimal' ? 'text-black' : 'text-white'
                   )}
-                  style={{
-                    ...textStyle,
-                    wordBreak: 'break-word',
-                    overflowWrap: 'break-word'
-                  }}
+                  style={textStyle}
                 >
                   {headline}
                 </h2>
                 {ctaText && (
                   <button 
-                    className="transform px-4 py-2 max-w-[90%]"
+                    className="relative z-10 transform px-4 py-2 max-w-[90%]"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
                   >
-                    <span className="block truncate">
+                    <span className="block">
                       {ctaText}
                     </span>
                   </button>
