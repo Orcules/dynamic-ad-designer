@@ -144,7 +144,7 @@ export function AdPreview({
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
       padding: '0.8em 2em',
-      fontSize: 'clamp(0.875rem, 1.5vw, 1.25rem)',
+      fontSize: 'clamp(0.75rem, 1.2vw, 1.1rem)', // Updated for better responsiveness
       fontWeight: '600',
       borderRadius: '9999px',
       cursor: 'pointer',
@@ -155,6 +155,11 @@ export function AdPreview({
       margin: '0 auto',
       whiteSpace: 'nowrap',
       textOverflow: 'ellipsis',
+      display: 'inline-block', // Added to ensure proper text containment
+      width: 'auto', // Added to ensure button fits content
+      minWidth: 'min(200px, 50%)', // Added to ensure minimum button width
+      maxHeight: '3em', // Added to maintain proportional height
+      lineHeight: '1.2', // Added for better text vertical alignment
     };
 
     switch (style) {
@@ -240,12 +245,14 @@ export function AdPreview({
                 </h2>
                 {ctaText && (
                   <button 
-                    className="transform transition-all duration-300"
+                    className="transform transition-all duration-300 px-4 py-2"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
                   >
-                    {ctaText}
+                    <span className="block truncate">
+                      {ctaText}
+                    </span>
                   </button>
                 )}
               </div>
