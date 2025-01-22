@@ -100,12 +100,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     if (!previewElement) return null;
     
     try {
-      // Wait for fonts to load
       await document.fonts.ready;
       
       const { width, height } = getDimensions(adData.platform);
       
-      // Set explicit dimensions on the preview element
       const previewContainer = document.createElement('div');
       previewContainer.style.width = `${width}px`;
       previewContainer.style.height = `${height}px`;
@@ -115,7 +113,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       previewContainer.style.zIndex = '-1000';
       previewContainer.style.opacity = '0';
       
-      // Clone the preview content
       const clone = previewElement.cloneNode(true) as HTMLElement;
       clone.style.position = 'absolute';
       clone.style.width = '100%';
@@ -124,7 +121,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       previewContainer.appendChild(clone);
       document.body.appendChild(previewContainer);
       
-      // Capture with higher quality settings
       const canvas = await html2canvas(previewContainer, {
         scale: 2,
         useCORS: true,
@@ -135,7 +131,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         logging: true,
       });
       
-      // Clean up
       document.body.removeChild(previewContainer);
       
       return new Promise<File>((resolve) => {
@@ -168,7 +163,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       const fileExt = selectedImage.name.split('.').pop();
       const filePath = `${timestamp}.${fileExt}`;
       
-      // Upload the background image
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ad-images')
         .upload(`uploads/${filePath}`, selectedImage);
@@ -182,7 +176,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .from('ad-images')
         .getPublicUrl(`uploads/${filePath}`);
 
-      // Capture and upload the preview
       const previewFile = await capturePreview();
       if (!previewFile) {
         throw new Error('Failed to capture preview');
@@ -202,7 +195,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .from('ad-images')
         .getPublicUrl(previewPath);
 
-      // Create the ad record - removed id from the insert
+      // Create the ad record without specifying an ID
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
         .insert({
