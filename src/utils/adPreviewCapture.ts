@@ -30,22 +30,24 @@ export const capturePreview = async (previewRef: React.RefObject<HTMLDivElement>
     clone.style.height = '100%';
     
     // Copy computed styles from the original element to maintain exact appearance
-    const originalStyles = window.getComputedStyle(previewElement);
+    const originalStyles = window.getComputedStyle(previewElement as HTMLElement);
     Array.from(originalStyles).forEach(key => {
       clone.style[key as any] = originalStyles.getPropertyValue(key);
     });
     
     // Copy styles for child elements (text, button, etc.)
-    const originalChildren = previewElement.getElementsByTagName('*');
-    const cloneChildren = clone.getElementsByTagName('*');
-    for (let i = 0; i < originalChildren.length; i++) {
-      const originalChild = originalChildren[i];
-      const cloneChild = cloneChildren[i];
-      const childStyles = window.getComputedStyle(originalChild);
-      Array.from(childStyles).forEach(key => {
-        cloneChild.style[key as any] = childStyles.getPropertyValue(key);
-      });
-    }
+    const originalChildren = Array.from(previewElement.getElementsByTagName('*'));
+    const cloneChildren = Array.from(clone.getElementsByTagName('*'));
+    
+    originalChildren.forEach((originalChild, index) => {
+      const cloneChild = cloneChildren[index];
+      if (originalChild instanceof HTMLElement && cloneChild instanceof HTMLElement) {
+        const childStyles = window.getComputedStyle(originalChild);
+        Array.from(childStyles).forEach(key => {
+          cloneChild.style[key as any] = childStyles.getPropertyValue(key);
+        });
+      }
+    });
     
     tempContainer.appendChild(clone);
     document.body.appendChild(tempContainer);
@@ -62,11 +64,11 @@ export const capturePreview = async (previewRef: React.RefObject<HTMLDivElement>
       onclone: (clonedDoc) => {
         // Additional style fixes can be added here if needed
         const clonedElement = clonedDoc.querySelector('.ad-content');
-        if (clonedElement) {
+        if (clonedElement instanceof HTMLElement) {
           // Ensure gradients and other effects are preserved
-          const styles = window.getComputedStyle(previewElement);
-          (clonedElement as HTMLElement).style.background = styles.background;
-          (clonedElement as HTMLElement).style.backgroundImage = styles.backgroundImage;
+          const styles = window.getComputedStyle(previewElement as HTMLElement);
+          clonedElement.style.background = styles.background;
+          clonedElement.style.backgroundImage = styles.backgroundImage;
         }
       }
     });
