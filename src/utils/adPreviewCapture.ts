@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import html2canvas from 'html2canvas';
 
 export async function capturePreview(
   previewRef: React.RefObject<HTMLDivElement>,
@@ -10,67 +10,28 @@ export async function capturePreview(
   }
 
   try {
-    // Launch browser with correct configuration for browser environment
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
-    const page = await browser.newPage();
-    
-    // Get the HTML content of the preview
     const previewElement = previewRef.current.querySelector('.ad-content') as HTMLElement;
     if (!previewElement) {
       throw new Error('Ad content element not found');
     }
 
-    // Get computed styles
-    const styles = window.getComputedStyle(previewElement);
-    const width = parseInt(styles.width);
-    const height = parseInt(styles.height);
-
-    // Set viewport to match ad dimensions
-    await page.setViewport({ 
-      width,
-      height,
-      deviceScaleFactor: 2 // For higher quality
+    // Capture the preview using html2canvas
+    const canvas = await html2canvas(previewElement, {
+      scale: 2, // For higher quality
+      useCORS: true, // To handle cross-origin images
+      logging: false,
+      backgroundColor: null // For transparent background
     });
 
-    // Include all necessary styles and content
-    const htmlContent = `
-      <html>
-        <head>
-          <style>
-            ${document.head.getElementsByTagName('style')[0]?.innerHTML || ''}
-            body { margin: 0; }
-            .ad-content {
-              width: ${width}px;
-              height: ${height}px;
-              position: relative;
-              overflow: hidden;
-            }
-          </style>
-        </head>
-        <body>
-          ${previewElement.outerHTML}
-        </body>
-      </html>
-    `;
-
-    // Set the content and wait for it to load
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-    
-    // Take the screenshot
-    const screenshot = await page.screenshot({
-      type: 'png',
-      omitBackground: true,
-      encoding: 'binary'
+    // Convert the canvas to a blob
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob!);
+      }, 'image/png');
     });
 
-    await browser.close();
-
-    // Convert the screenshot to a File object
-    const file = new File([screenshot], 'ad-preview.png', {
+    // Create a File object from the blob
+    const file = new File([blob], 'ad-preview.png', {
       type: 'image/png',
       lastModified: Date.now()
     });
