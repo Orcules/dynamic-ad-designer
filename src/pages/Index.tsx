@@ -89,8 +89,8 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Ad Creator</h1>
-          <p className="text-muted-foreground">Create beautiful ads for multiple platforms</p>
+          <h1 className="text-4xl font-bold">יוצר המודעות</h1>
+          <p className="text-muted-foreground">צור מודעות מרהיבות למגוון פלטפורמות</p>
         </div>
 
         {!selectedTemplate ? (
@@ -109,7 +109,7 @@ const Index = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <AdEditor template={selectedTemplate} onAdGenerated={handleAdGenerated} />
               <div className="bg-card rounded-lg p-6 animate-fade-in">
-                <h3 className="text-xl font-bold mb-4">Preview</h3>
+                <h3 className="text-xl font-bold mb-4">תצוגה מקדימה</h3>
                 <div
                   className="w-full bg-muted rounded-lg overflow-hidden"
                   style={{ aspectRatio: selectedTemplate.id === "story" ? "9/16" : "16/9" }}
