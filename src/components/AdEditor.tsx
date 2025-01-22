@@ -30,6 +30,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     platform: "",
     template_style: "",
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,6 +39,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
   };
 
   const handleFontChange = (value: string) => {
@@ -63,6 +70,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!selectedImage) {
+      toast.error('נא לבחור תמונה');
+      return;
+    }
+    
     setIsGenerating(true);
     
     try {
@@ -90,6 +103,22 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           height = 628;
       }
 
+      // Upload the image first
+      const timestamp = Date.now();
+      const fileExt = selectedImage.name.split('.').pop();
+      const filePath = `${timestamp}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('ad-images')
+        .upload(`uploads/${filePath}`, selectedImage);
+
+      if (uploadError) throw uploadError;
+
+      // Get the public URL of the uploaded image
+      const { data: { publicUrl } } = supabase.storage
+        .from('ad-images')
+        .getPublicUrl(`uploads/${filePath}`);
+
       // Create the ad record
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
@@ -97,6 +126,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           ...adData,
           width,
           height,
+          image_url: publicUrl,
           status: 'pending'
         }])
         .select()
@@ -104,7 +134,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
       if (createError) throw createError;
 
-      // Call the edge function to generate the image
+      // Call the edge function to generate the styled ad
       const { error: generateError } = await supabase.functions.invoke('generate-ad', {
         body: { id: newAd.id }
       });
@@ -132,6 +162,19 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           value={adData.name}
           onChange={handleInputChange}
           placeholder="הזן שם למודעה"
+          className="text-right"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="image">תמונה</Label>
+        <Input
+          id="image"
+          name="image"
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
           className="text-right"
           required
         />
