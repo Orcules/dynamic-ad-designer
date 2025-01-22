@@ -6,6 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Upload } from "lucide-react";
 import { FontSelector } from "./FontSelector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdEditorProps {
   template: {
@@ -96,17 +97,12 @@ export function AdEditor({ template }: AdEditorProps) {
 
       formData.append('data', JSON.stringify(data));
 
-      const response = await fetch('/api/generate-ad', {
-        method: 'POST',
-        body: formData,
+      const { data: functionData, error } = await supabase.functions.invoke('generate-ad', {
+        body: formData
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate ad');
-      }
+      if (error) throw error;
 
-      const result = await response.json();
-      
       toast({
         title: "Success!",
         description: "Ad generated successfully",
