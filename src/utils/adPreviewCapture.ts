@@ -20,38 +20,27 @@ export async function capturePreview(
     const { width, height } = getDimensions(platform);
     console.log(`Capturing preview with dimensions: ${width}x${height}`);
 
-    // Force all fonts to load first
+    // Wait for all fonts to load
     await document.fonts.ready;
-    console.log("Fonts loaded");
-
-    // Set exact dimensions on the preview element
-    previewElement.style.width = `${width}px`;
-    previewElement.style.height = `${height}px`;
-
-    // Wait for all images to load completely
-    const images = Array.from(previewElement.getElementsByTagName('img'));
-    console.log(`Waiting for ${images.length} images to load`);
     
+    // Wait for all images to load
+    const images = previewElement.getElementsByTagName('img');
     await Promise.all(
-      images.map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise((resolve) => {
-          img.onload = () => resolve(null);
-          img.onerror = () => {
-            console.error(`Failed to load image: ${img.src}`);
-            resolve(null);
-          };
-        });
-      })
+      Array.from(images).map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) resolve(null);
+            img.onload = () => resolve(null);
+            img.onerror = () => resolve(null); // Continue even if image fails
+          })
+      )
     );
-    
-    console.log("All images loaded");
 
-    // Create high-quality canvas
+    // Create canvas with the exact dimensions
     const canvas = await html2canvas(previewElement, {
       width,
       height,
-      scale: 4, // Increased for better quality
+      scale: 2, // Higher quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -59,45 +48,39 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
-          // Set exact dimensions
+          // Preserve exact dimensions
           clonedElement.style.width = `${width}px`;
           clonedElement.style.height = `${height}px`;
-          clonedElement.style.position = 'relative';
-          clonedElement.style.overflow = 'hidden';
           
-          // Process all elements to maintain styles
+          // Ensure all child elements maintain their styles
           const allElements = clonedElement.getElementsByTagName('*');
-          Array.from(allElements).forEach((el) => {
-            if (el instanceof HTMLElement) {
-              const computedStyle = window.getComputedStyle(el);
-              
-              // Copy all essential styles
-              const stylesToCopy = [
-                'fontFamily', 'fontSize', 'fontWeight', 'lineHeight',
-                'letterSpacing', 'textAlign', 'color', 'backgroundColor',
-                'backgroundImage', 'boxShadow', 'textShadow', 'borderRadius',
-                'padding', 'margin', 'border', 'opacity', 'filter'
-              ];
-              
-              stylesToCopy.forEach(style => {
-                el.style[style as any] = computedStyle[style as any];
-              });
-
-              // Remove transformations and transitions
-              el.style.transform = 'none';
-              el.style.transition = 'none';
-              
-              // Ensure text remains crisp
-              el.style.textRendering = 'optimizeLegibility';
-              el.style.webkitFontSmoothing = 'antialiased';
-              el.style.mozOsxFontSmoothing = 'grayscale';
-            }
-          });
+          for (let i = 0; i < allElements.length; i++) {
+            const el = allElements[i] as HTMLElement;
+            const computedStyle = window.getComputedStyle(el);
+            
+            // Preserve essential styles
+            el.style.fontFamily = computedStyle.fontFamily;
+            el.style.fontSize = computedStyle.fontSize;
+            el.style.fontWeight = computedStyle.fontWeight;
+            el.style.lineHeight = computedStyle.lineHeight;
+            el.style.letterSpacing = computedStyle.letterSpacing;
+            el.style.textAlign = computedStyle.textAlign;
+            el.style.color = computedStyle.color;
+            el.style.backgroundColor = computedStyle.backgroundColor;
+            el.style.backgroundImage = computedStyle.backgroundImage;
+            el.style.boxShadow = computedStyle.boxShadow;
+            el.style.textShadow = computedStyle.textShadow;
+            el.style.borderRadius = computedStyle.borderRadius;
+            el.style.padding = computedStyle.padding;
+            el.style.margin = computedStyle.margin;
+            
+            // Remove any transforms or transitions
+            el.style.transform = 'none';
+            el.style.transition = 'none';
+          }
         }
       }
     });
-
-    console.log("Canvas created, converting to blob");
 
     // Convert to high-quality PNG
     return new Promise((resolve) => {
@@ -112,7 +95,6 @@ export async function capturePreview(
             type: "image/png",
             lastModified: Date.now(),
           });
-          console.log("File created successfully");
           resolve(file);
         },
         "image/png",
