@@ -5,6 +5,8 @@ import { Label } from "./ui/label";
 import { FontSelector } from "./FontSelector";
 import { PlatformSelector } from "./PlatformSelector";
 import { TemplateStyleSelector } from "./TemplateStyleSelector";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Template {
   id: string;
@@ -58,38 +60,62 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Get dimensions based on platform
-    let width, height;
-    switch (adData.platform) {
-      case "facebook":
-        width = 1200;
-        height = 628;
-        break;
-      case "instagram":
-        width = 1080;
-        height = 1080;
-        break;
-      case "linkedin":
-        width = 1200;
-        height = 627;
-        break;
-      case "twitter":
-        width = 1600;
-        height = 900;
-        break;
-      default:
-        width = 1200;
-        height = 628;
-    }
+    try {
+      // Get dimensions based on platform
+      let width, height;
+      switch (adData.platform) {
+        case "facebook":
+          width = 1200;
+          height = 628;
+          break;
+        case "instagram":
+          width = 1080;
+          height = 1080;
+          break;
+        case "linkedin":
+          width = 1200;
+          height = 627;
+          break;
+        case "twitter":
+          width = 1600;
+          height = 900;
+          break;
+        default:
+          width = 1200;
+          height = 628;
+      }
 
-    onAdGenerated({
-      ...adData,
-      width,
-      height,
-    });
+      // Create the ad record
+      const { data: newAd, error: createError } = await supabase
+        .from('generated_ads')
+        .insert([{
+          ...adData,
+          width,
+          height,
+          status: 'pending'
+        }])
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Call the edge function to generate the image
+      const { error: generateError } = await supabase.functions.invoke('generate-ad', {
+        body: { id: newAd.id }
+      });
+
+      if (generateError) throw generateError;
+
+      toast.success('המודעה נוצרה בהצלחה ותהיה מוכנה בקרוב');
+      onAdGenerated(newAd);
+      
+    } catch (error) {
+      console.error('Error creating ad:', error);
+      toast.error('אירעה שגיאה ביצירת המודעה');
+    }
   };
 
   return (
