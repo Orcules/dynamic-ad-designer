@@ -128,26 +128,8 @@ const Index = () => {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="w-full">
             <AdEditor template={selectedTemplate} onAdGenerated={handleAdGenerated} />
-            <Card className="h-fit">
-              <CardHeader>
-                <CardTitle className="text-right">תצוגה מקדימה</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div
-                  className="w-full bg-muted rounded-lg overflow-hidden"
-                  style={{
-                    aspectRatio:
-                      selectedTemplate.id === "story" ? "9/16" : "16/9",
-                  }}
-                >
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    תצוגה מקדימה תופיע כאן
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         )}
 

@@ -166,7 +166,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const { width, height } = getDimensions(adData.platform);
 
   return (
-    <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="bg-card p-6 rounded-lg">
         <AdForm
           adData={adData}
@@ -177,21 +177,23 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onColorChange={handleColorChange}
           onImageChange={handleImageChange}
         />
-        <Button type="submit" className="w-full mt-6" disabled={isGenerating}>
+        <Button type="submit" className="w-full mt-6" disabled={isGenerating} onClick={handleSubmit}>
           {isGenerating ? 'יוצר מודעה...' : 'צור מודעה'}
         </Button>
       </div>
 
-      <AdPreview
-        imageUrl={previewUrl || undefined}
-        width={width}
-        height={height}
-        headline={adData.headline}
-        ctaText={adData.cta_text}
-        templateStyle={adData.template_style}
-        accentColor={adData.accent_color}
-      />
-    </form>
+      <div className="sticky top-8">
+        <AdPreview
+          imageUrl={previewUrl || undefined}
+          width={width}
+          height={height}
+          headline={adData.headline}
+          ctaText={adData.cta_text}
+          templateStyle={adData.template_style}
+          accentColor={adData.accent_color}
+        />
+      </div>
+    </div>
   );
 };
 
