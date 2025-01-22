@@ -67,7 +67,7 @@ export function AdPreview({
       </CardHeader>
       <CardContent className="flex justify-center">
         <div
-          className="relative w-full max-w-[600px] overflow-hidden rounded-lg shadow-2xl"
+          className="ad-content relative w-full max-w-[600px] overflow-hidden rounded-lg shadow-2xl"
           style={{
             aspectRatio,
           }}
