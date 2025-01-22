@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Configuration, OpenAIApi } from "https://esm.sh/openai@3.1.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,7 +15,7 @@ serve(async (req: Request) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     // Get form data
@@ -22,9 +23,25 @@ serve(async (req: Request) => {
     const data = JSON.parse(formData.get('data') as string);
     const image = formData.get('image') as File;
 
-    // Upload image if provided
+    // Generate background image using DALL-E if no image was uploaded
     let imageUrl = null;
-    if (image) {
+    if (!image) {
+      const configuration = new Configuration({
+        apiKey: Deno.env.get('OPENAI_API_KEY'),
+      });
+      const openai = new OpenAIApi(configuration);
+
+      const prompt = `Create a ${data.template_style} style advertisement background for ${data.platform}. The ad should be ${data.width}x${data.height} pixels.`;
+      
+      const response = await openai.createImage({
+        prompt,
+        n: 1,
+        size: `${data.width}x${data.height}`,
+      });
+
+      imageUrl = response.data.data[0].url;
+    } else {
+      // Upload the provided image
       const { data: uploadData, error: uploadError } = await supabase
         .storage
         .from('ad-images')
@@ -44,13 +61,15 @@ serve(async (req: Request) => {
     const { data: adData, error: adError } = await supabase
       .from('generated_ads')
       .insert({
-        name: data.Name,
-        width: data.W,
-        height: data.H,
-        headline: data['TR-Text'],
-        cta_text: data['BT-Text'],
+        name: data.name,
+        width: data.width,
+        height: data.height,
+        headline: data.headline,
+        cta_text: data.cta_text,
         image_url: imageUrl,
-        font_url: data['TR-Font'],
+        font_url: data.font_url,
+        platform: data.platform,
+        template_style: data.template_style,
       })
       .select()
       .single();
