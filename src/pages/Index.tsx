@@ -4,7 +4,7 @@ import { AdEditor } from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -49,11 +49,33 @@ const Index = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof templates[0] | null>(null);
   const [previewData, setPreviewData] = useState<any>(null);
   const [selectedAd, setSelectedAd] = useState<any>(null);
+  const queryClient = useQueryClient();
 
   const { data: generatedAds, isLoading } = useQuery({
     queryKey: ["generated-ads"],
     queryFn: fetchGeneratedAds,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:generated_ads')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'generated_ads'
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['generated-ads'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const handleAdGenerated = (adData: any) => {
     setPreviewData(adData);

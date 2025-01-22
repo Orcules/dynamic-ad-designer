@@ -23,7 +23,7 @@ const templateStyles = [
     colors: {
       primary: "#8B5CF6",
       secondary: "#D946EF",
-      accent: "#0EA5E9",
+      accent: "#FFFFFF",
       background: "linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)"
     }
   },
@@ -32,7 +32,7 @@ const templateStyles = [
     name: "נועז ותוסס",
     colors: {
       primary: "#F97316",
-      secondary: "#D946EF",
+      secondary: "#FEC6A1",
       accent: "#FFFFFF",
       background: "linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)"
     }
