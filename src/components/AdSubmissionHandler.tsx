@@ -47,7 +47,7 @@ export const handleAdSubmission = async ({
     console.log('Original image uploaded, capturing preview...');
     
     // Capture the exact preview as shown
-    const previewFile = await capturePreview(previewRef, adData.platform);
+    const previewFile = await capturePreview(previewRef);
     if (!previewFile) {
       throw new Error('Failed to capture preview');
     }
@@ -76,7 +76,7 @@ export const handleAdSubmission = async ({
 
     console.log('Preview uploaded, creating ad record...');
     
-    // Create ad record with the exact preview image - removed id field to let Supabase generate it
+    // Create ad record without specifying the id field
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
