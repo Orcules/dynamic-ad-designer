@@ -19,31 +19,41 @@ export async function capturePreview(
 
     // Get dimensions based on platform
     const { width, height } = getDimensions(platform);
+    console.log(`Capturing preview with dimensions: ${width}x${height}`);
 
     // Create a temporary container with exact dimensions
     const tempContainer = document.createElement("div");
-    tempContainer.style.position = "fixed";
-    tempContainer.style.left = "-9999px";
     tempContainer.style.width = `${width}px`;
     tempContainer.style.height = `${height}px`;
+    tempContainer.style.position = "fixed";
+    tempContainer.style.left = "-9999px";
+    tempContainer.style.top = "0";
     tempContainer.style.overflow = "hidden";
 
-    // Clone the preview element with all its children
+    // Clone the preview element
     const clone = previewElement.cloneNode(true) as HTMLElement;
     
-    // Copy all computed styles from original to clone
-    const computedStyle = window.getComputedStyle(previewElement);
-    for (const prop of computedStyle) {
-      clone.style[prop as any] = computedStyle.getPropertyValue(prop);
-    }
-
-    // Ensure proper positioning and dimensions
-    clone.style.position = "absolute";
+    // Reset any transforms or animations that might affect the layout
+    clone.style.transform = "none";
+    clone.style.transition = "none";
+    clone.style.animation = "none";
+    
+    // Ensure proper dimensions and positioning
     clone.style.width = "100%";
     clone.style.height = "100%";
-    clone.style.transform = "none";
+    clone.style.position = "absolute";
+    clone.style.top = "0";
+    clone.style.left = "0";
+    
+    // Copy computed styles from original to clone
+    const computedStyle = window.getComputedStyle(previewElement);
+    for (const prop of computedStyle) {
+      if (prop !== "transform" && prop !== "animation" && prop !== "transition") {
+        clone.style[prop as any] = computedStyle.getPropertyValue(prop);
+      }
+    }
 
-    // Copy styles for all child elements
+    // Copy styles for child elements, excluding animations and transforms
     const originalChildren = previewElement.getElementsByTagName("*");
     const cloneChildren = clone.getElementsByTagName("*");
     
@@ -53,8 +63,15 @@ export async function capturePreview(
       
       const childComputedStyle = window.getComputedStyle(originalChild);
       for (const prop of childComputedStyle) {
-        cloneChild.style[prop as any] = childComputedStyle.getPropertyValue(prop);
+        if (prop !== "transform" && prop !== "animation" && prop !== "transition") {
+          cloneChild.style[prop as any] = childComputedStyle.getPropertyValue(prop);
+        }
       }
+      
+      // Reset any transforms or animations on child elements
+      cloneChild.style.transform = "none";
+      cloneChild.style.transition = "none";
+      cloneChild.style.animation = "none";
     }
 
     // Add clone to temporary container and append to body
@@ -65,7 +82,7 @@ export async function capturePreview(
     const canvas = await html2canvas(clone, {
       width,
       height,
-      scale: 2, // Higher scale for better quality
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -74,9 +91,8 @@ export async function capturePreview(
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
           // Preserve background styles
-          const styles = window.getComputedStyle(previewElement);
-          clonedElement.style.background = styles.background;
-          clonedElement.style.backgroundImage = styles.backgroundImage;
+          clonedElement.style.background = computedStyle.background;
+          clonedElement.style.backgroundImage = computedStyle.backgroundImage;
           
           // Ensure text styles are preserved
           const textElements = clonedElement.querySelectorAll("h2, p, button");
@@ -113,7 +129,7 @@ export async function capturePreview(
           lastModified: Date.now()
         });
         resolve(file);
-      }, "image/png", 1.0); // Maximum quality
+      }, "image/png", 1.0);
     });
 
   } catch (error) {
