@@ -76,7 +76,7 @@ export const handleAdSubmission = async ({
 
     console.log('Preview uploaded, creating ad record...');
     
-    // Create ad record with the exact preview image
+    // Create ad record with the exact preview image - removed id field to let Supabase generate it
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{

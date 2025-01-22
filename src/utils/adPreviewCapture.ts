@@ -36,11 +36,14 @@ export async function capturePreview(
       )
     );
 
+    console.log("All images loaded");
+    console.log("Fonts loaded");
+
     // Create canvas with the exact dimensions
     const canvas = await html2canvas(previewElement, {
       width,
       height,
-      scale: 2, // Higher quality
+      scale: 4, // Higher quality
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -82,6 +85,8 @@ export async function capturePreview(
       }
     });
 
+    console.log("Canvas created, converting to blob");
+
     // Convert to high-quality PNG
     return new Promise((resolve) => {
       canvas.toBlob(
@@ -91,6 +96,7 @@ export async function capturePreview(
             resolve(null);
             return;
           }
+          console.log("File created successfully");
           const file = new File([blob], "ad-preview.png", {
             type: "image/png",
             lastModified: Date.now(),
