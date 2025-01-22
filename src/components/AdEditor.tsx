@@ -1,12 +1,9 @@
 import React, { useState } from "react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { FontSelector } from "./FontSelector";
-import { PlatformSelector } from "./PlatformSelector";
-import { TemplateStyleSelector } from "./TemplateStyleSelector";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdForm } from "./AdForm";
+import { AdPreview } from "./AdPreview";
 
 interface Template {
   id: string;
@@ -31,6 +28,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     template_style: "",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -43,7 +41,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setSelectedImage(e.target.files[0]);
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -68,6 +68,21 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
+  const getDimensions = (platform: string) => {
+    switch (platform) {
+      case "facebook":
+        return { width: 1200, height: 628 };
+      case "instagram":
+        return { width: 1080, height: 1080 };
+      case "linkedin":
+        return { width: 1200, height: 627 };
+      case "twitter":
+        return { width: 1600, height: 900 };
+      default:
+        return { width: 1200, height: 628 };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -79,31 +94,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setIsGenerating(true);
     
     try {
-      // Get dimensions based on platform
-      let width, height;
-      switch (adData.platform) {
-        case "facebook":
-          width = 1200;
-          height = 628;
-          break;
-        case "instagram":
-          width = 1080;
-          height = 1080;
-          break;
-        case "linkedin":
-          width = 1200;
-          height = 627;
-          break;
-        case "twitter":
-          width = 1600;
-          height = 900;
-          break;
-        default:
-          width = 1200;
-          height = 628;
-      }
-
-      // Upload the image first
+      const { width, height } = getDimensions(adData.platform);
       const timestamp = Date.now();
       const fileExt = selectedImage.name.split('.').pop();
       const filePath = `${timestamp}.${fileExt}`;
@@ -117,12 +108,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         throw new Error('Failed to upload image');
       }
 
-      // Get the public URL of the uploaded image
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
         .getPublicUrl(`uploads/${filePath}`);
 
-      // Create the ad record without specifying an ID
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
         .insert({
@@ -145,7 +134,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         throw new Error('Failed to create ad record');
       }
 
-      // Call the edge function to generate the styled ad
       const { error: generateError } = await supabase.functions.invoke('generate-ad', {
         body: { id: newAd.id }
       });
@@ -166,75 +154,32 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
+  const { width, height } = getDimensions(adData.platform);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg">
-      <div className="space-y-2">
-        <Label htmlFor="name">שם המודעה</Label>
-        <Input
-          id="name"
-          name="name"
-          value={adData.name}
-          onChange={handleInputChange}
-          placeholder="הזן שם למודעה"
-          className="text-right"
-          required
+    <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="bg-card p-6 rounded-lg">
+        <AdForm
+          adData={adData}
+          onInputChange={handleInputChange}
+          onFontChange={handleFontChange}
+          onPlatformChange={handlePlatformChange}
+          onStyleChange={handleStyleChange}
+          onImageChange={handleImageChange}
         />
+        <Button type="submit" className="w-full mt-6" disabled={isGenerating}>
+          {isGenerating ? 'יוצר מודעה...' : 'צור מודעה'}
+        </Button>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="image">תמונה</Label>
-        <Input
-          id="image"
-          name="image"
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="text-right"
-          required
-        />
-      </div>
-
-      <PlatformSelector
-        value={adData.platform}
-        onChange={handlePlatformChange}
+      <AdPreview
+        imageUrl={previewUrl || undefined}
+        width={width}
+        height={height}
+        headline={adData.headline}
+        ctaText={adData.cta_text}
+        templateStyle={adData.template_style}
       />
-
-      <TemplateStyleSelector
-        value={adData.template_style}
-        onChange={handleStyleChange}
-      />
-
-      <div className="space-y-2">
-        <Label htmlFor="headline">כותרת</Label>
-        <Input
-          id="headline"
-          name="headline"
-          value={adData.headline}
-          onChange={handleInputChange}
-          placeholder="הזן כותרת למודעה"
-          className="text-right"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="cta_text">טקסט CTA</Label>
-        <Input
-          id="cta_text"
-          name="cta_text"
-          value={adData.cta_text}
-          onChange={handleInputChange}
-          placeholder="הזן טקסט לכפתור"
-          className="text-right"
-          required
-        />
-      </div>
-
-      <FontSelector value={adData.font_url} onChange={handleFontChange} />
-
-      <Button type="submit" className="w-full" disabled={isGenerating}>
-        {isGenerating ? 'יוצר מודעה...' : 'צור מודעה'}
-      </Button>
     </form>
   );
 };
