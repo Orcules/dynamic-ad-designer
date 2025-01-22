@@ -11,7 +11,8 @@ export async function POST(request: Request) {
       data['Image Link'] = await uploadImage(image);
     }
 
-    const data_sheet, db_sheet = await initialize_gspread();
+    // Fix the destructuring syntax
+    const [data_sheet, db_sheet] = await initialize_gspread();
     const bucket = await initialize_storage();
     
     await create_image([data], db_sheet, bucket);
