@@ -28,6 +28,7 @@ export function AdPreview({
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   useEffect(() => {
     if (fontUrl) {
@@ -60,6 +61,11 @@ export function AdPreview({
 
   const aspectRatio = `${width} / ${height}`;
 
+  const handleImageLoad = () => {
+    setIsImageLoaded(true);
+    console.log('Image loaded successfully');
+  };
+
   return (
     <Card className="h-fit w-full">
       <CardHeader>
@@ -78,8 +84,12 @@ export function AdPreview({
               <img
                 src={imageUrl}
                 alt="Ad preview"
-                className="absolute inset-0 h-full w-full object-cover"
+                className={cn(
+                  "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
+                  isImageLoaded ? "opacity-100" : "opacity-0"
+                )}
                 crossOrigin="anonymous"
+                onLoad={handleImageLoad}
               />
             )}
             <div

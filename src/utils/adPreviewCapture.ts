@@ -20,8 +20,11 @@ export async function capturePreview(
     const { width, height } = getDimensions(platform);
     console.log(`Capturing preview with dimensions: ${width}x${height}`);
 
-    // Wait for all fonts to load
-    await document.fonts.ready;
+    // Wait for all fonts to load with a timeout
+    await Promise.race([
+      document.fonts.ready,
+      new Promise(resolve => setTimeout(resolve, 3000))
+    ]);
     
     // Wait for all images to load
     const images = previewElement.getElementsByTagName('img');
@@ -31,15 +34,16 @@ export async function capturePreview(
           new Promise((resolve) => {
             if (img.complete) resolve(null);
             img.onload = () => resolve(null);
-            img.onerror = () => resolve(null); // Continue even if image fails
+            img.onerror = () => resolve(null);
+            // Add timeout for each image
+            setTimeout(() => resolve(null), 3000);
           })
       )
     );
 
-    console.log("All images loaded");
-    console.log("Fonts loaded");
+    console.log("All resources loaded");
 
-    // Create canvas with the exact dimensions
+    // Create canvas with high quality settings
     const canvas = await html2canvas(previewElement, {
       width,
       height,
@@ -51,35 +55,34 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
-          // Preserve exact dimensions
           clonedElement.style.width = `${width}px`;
           clonedElement.style.height = `${height}px`;
           
-          // Ensure all child elements maintain their styles
+          // Preserve all styles for each element
           const allElements = clonedElement.getElementsByTagName('*');
           for (let i = 0; i < allElements.length; i++) {
             const el = allElements[i] as HTMLElement;
             const computedStyle = window.getComputedStyle(el);
             
-            // Preserve essential styles
-            el.style.fontFamily = computedStyle.fontFamily;
-            el.style.fontSize = computedStyle.fontSize;
-            el.style.fontWeight = computedStyle.fontWeight;
-            el.style.lineHeight = computedStyle.lineHeight;
-            el.style.letterSpacing = computedStyle.letterSpacing;
-            el.style.textAlign = computedStyle.textAlign;
-            el.style.color = computedStyle.color;
-            el.style.backgroundColor = computedStyle.backgroundColor;
-            el.style.backgroundImage = computedStyle.backgroundImage;
-            el.style.boxShadow = computedStyle.boxShadow;
-            el.style.textShadow = computedStyle.textShadow;
-            el.style.borderRadius = computedStyle.borderRadius;
-            el.style.padding = computedStyle.padding;
-            el.style.margin = computedStyle.margin;
-            
-            // Remove any transforms or transitions
-            el.style.transform = 'none';
-            el.style.transition = 'none';
+            // Copy essential styles
+            Object.assign(el.style, {
+              fontFamily: computedStyle.fontFamily,
+              fontSize: computedStyle.fontSize,
+              fontWeight: computedStyle.fontWeight,
+              lineHeight: computedStyle.lineHeight,
+              letterSpacing: computedStyle.letterSpacing,
+              textAlign: computedStyle.textAlign,
+              color: computedStyle.color,
+              backgroundColor: computedStyle.backgroundColor,
+              backgroundImage: computedStyle.backgroundImage,
+              boxShadow: computedStyle.boxShadow,
+              textShadow: computedStyle.textShadow,
+              borderRadius: computedStyle.borderRadius,
+              padding: computedStyle.padding,
+              margin: computedStyle.margin,
+              transform: 'none',
+              transition: 'none'
+            });
           }
         }
       }
