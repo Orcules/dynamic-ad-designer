@@ -30,6 +30,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     platform: "",
     template_style: "",
   });
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -62,6 +63,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsGenerating(true);
     
     try {
       // Get dimensions based on platform
@@ -115,6 +117,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     } catch (error) {
       console.error('Error creating ad:', error);
       toast.error('אירעה שגיאה ביצירת המודעה');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -171,8 +175,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
       <FontSelector value={adData.font_url} onChange={handleFontChange} />
 
-      <Button type="submit" className="w-full">
-        צור מודעה
+      <Button type="submit" className="w-full" disabled={isGenerating}>
+        {isGenerating ? 'יוצר מודעה...' : 'צור מודעה'}
       </Button>
     </form>
   );
