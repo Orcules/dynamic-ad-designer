@@ -10,24 +10,46 @@ import { toast } from "sonner";
 
 const templates = [
   {
-    id: "facebook",
-    title: "מודעת פייסבוק",
+    id: "elearning",
+    title: "מודעת קורס דיגיטלי",
     dimensions: "1200 x 628",
+    imageUrl: "/lovable-uploads/b700e3ee-5602-402a-9a40-47c6ee76cea0.png",
+    description: "מודעה בסגנון אנימה עם רקע ירקרק ואלמנטים יפניים",
   },
   {
-    id: "taboola",
-    title: "מודעת טאבולה",
+    id: "business",
+    title: "מודעת עסקים",
     dimensions: "1000 x 600",
+    imageUrl: "/lovable-uploads/cc9dde94-1e79-43e0-9124-038f8676f0d3.png",
+    description: "מודעה בסגנון איור עם רקע צהוב ואלמנטים עסקיים",
   },
   {
-    id: "google",
-    title: "מודעת גוגל",
-    dimensions: "300 x 250",
+    id: "fitness",
+    title: "מודעת כושר",
+    dimensions: "1080 x 1080",
+    imageUrl: "/lovable-uploads/5134090b-0112-4dd0-984d-a38015143104.png",
+    description: "מודעה בסגנון מינימליסטי עם רקע כתום וכפתורי CTA",
   },
   {
-    id: "story",
-    title: "מודעת סטורי",
-    dimensions: "1080 x 1920",
+    id: "product",
+    title: "מודעת מוצר",
+    dimensions: "1080 x 1080",
+    imageUrl: "/lovable-uploads/07cbb6aa-223f-4a55-b5ae-c6378e45dff0.png",
+    description: "מודעת מוצר עם תמונה ומסר פשוט",
+  },
+  {
+    id: "service",
+    title: "מודעת שירות",
+    dimensions: "1200 x 628",
+    imageUrl: "/lovable-uploads/55761d47-e2d4-4681-986a-4f47b6f275a2.png",
+    description: "מודעת שירות עם תמונה אווירתית",
+  },
+  {
+    id: "launch",
+    title: "מודעת השקה",
+    dimensions: "1080 x 1080",
+    imageUrl: "/lovable-uploads/f4d6be66-e9f9-47e4-b18b-93c72843d4c3.png",
+    description: "מודעת השקת מוצר בסגנון מינימליסטי",
   },
 ];
 
@@ -93,12 +115,14 @@ const Index = () => {
         </div>
 
         {!selectedTemplate ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {templates.map((template) => (
               <AdTemplateCard
                 key={template.id}
                 title={template.title}
                 dimensions={template.dimensions}
+                imageUrl={template.imageUrl}
+                description={template.description}
                 onClick={() => setSelectedTemplate(template)}
               />
             ))}
