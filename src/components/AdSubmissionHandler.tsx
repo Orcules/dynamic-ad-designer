@@ -29,11 +29,12 @@ export const handleAdSubmission = async ({
     const { width, height } = getDimensions(adData.platform);
     const timestamp = Date.now();
     const fileExt = selectedImage.name.split('.').pop();
-    const filePath = `${timestamp}.${fileExt}`;
+    const filePath = `uploads/${timestamp}.${fileExt}`;
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // Upload the original image
+    const { error: uploadError } = await supabase.storage
       .from('ad-images')
-      .upload(`uploads/${filePath}`, selectedImage);
+      .upload(filePath, selectedImage);
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
@@ -42,15 +43,16 @@ export const handleAdSubmission = async ({
 
     const { data: { publicUrl } } = supabase.storage
       .from('ad-images')
-      .getPublicUrl(`uploads/${filePath}`);
+      .getPublicUrl(filePath);
 
+    // Capture and upload preview
     const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
       throw new Error('Failed to capture preview');
     }
 
     const previewPath = `generated/${timestamp}_preview.png`;
-    const { data: previewData, error: previewError } = await supabase.storage
+    const { error: previewError } = await supabase.storage
       .from('ad-images')
       .upload(previewPath, previewFile);
 
@@ -63,9 +65,10 @@ export const handleAdSubmission = async ({
       .from('ad-images')
       .getPublicUrl(previewPath);
 
-    const { data: newAd, error: createError } = await supabase
+    // Create ad record without specifying an ID
+    const { data: ads, error: createError } = await supabase
       .from('generated_ads')
-      .insert({
+      .insert([{
         name: adData.name,
         headline: adData.headline,
         cta_text: adData.cta_text,
@@ -77,15 +80,21 @@ export const handleAdSubmission = async ({
         height,
         image_url: previewUrl,
         status: 'completed'
-      })
+      }])
       .select()
-      .single();
+      .limit(1);
 
     if (createError) {
       console.error('Create error:', createError);
       throw new Error('Failed to create ad record');
     }
 
+    if (!ads || ads.length === 0) {
+      throw new Error('No ad record was created');
+    }
+
+    const newAd = ads[0];
+    
     toast.success('המודעה נוצרה בהצלחה!', {
       action: {
         label: 'הורד',
