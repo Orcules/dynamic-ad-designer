@@ -112,18 +112,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .from('ad-images')
         .upload(`uploads/${filePath}`, selectedImage);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw new Error('Failed to upload image');
+      }
 
       // Get the public URL of the uploaded image
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
         .getPublicUrl(`uploads/${filePath}`);
 
-      // Create the ad record
+      // Create the ad record without specifying an ID
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
         .insert([{
-          ...adData,
+          name: adData.name,
+          headline: adData.headline,
+          cta_text: adData.cta_text,
+          font_url: adData.font_url,
+          platform: adData.platform,
+          template_style: adData.template_style,
           width,
           height,
           image_url: publicUrl,
@@ -132,21 +140,27 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error('Create error:', createError);
+        throw new Error('Failed to create ad record');
+      }
 
       // Call the edge function to generate the styled ad
       const { error: generateError } = await supabase.functions.invoke('generate-ad', {
         body: { id: newAd.id }
       });
 
-      if (generateError) throw generateError;
+      if (generateError) {
+        console.error('Generate error:', generateError);
+        throw new Error('Failed to generate ad');
+      }
 
       toast.success('המודעה נוצרה בהצלחה ותהיה מוכנה בקרוב');
       onAdGenerated(newAd);
       
     } catch (error) {
       console.error('Error creating ad:', error);
-      toast.error('אירעה שגיאה ביצירת המודעה');
+      toast.error(error.message || 'אירעה שגיאה ביצירת המודעה');
     } finally {
       setIsGenerating(false);
     }
