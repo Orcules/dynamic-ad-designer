@@ -5,6 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const templates = [
   {
@@ -42,6 +48,7 @@ const fetchGeneratedAds = async () => {
 const Index = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof templates[0] | null>(null);
   const [previewData, setPreviewData] = useState<any>(null);
+  const [selectedAd, setSelectedAd] = useState<any>(null);
 
   const { data: generatedAds, isLoading } = useQuery({
     queryKey: ["generated-ads"],
@@ -50,6 +57,10 @@ const Index = () => {
 
   const handleAdGenerated = (adData: any) => {
     setPreviewData(adData);
+  };
+
+  const handleAdClick = (ad: any) => {
+    setSelectedAd(ad);
   };
 
   return (
@@ -108,28 +119,32 @@ const Index = () => {
 
             <Card className="mt-8">
               <CardHeader>
-                <CardTitle>Generated Ads</CardTitle>
+                <CardTitle>מודעות שנוצרו</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Dimensions</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created At</TableHead>
+                      <TableHead>שם</TableHead>
+                      <TableHead>מידות</TableHead>
+                      <TableHead>סטטוס</TableHead>
+                      <TableHead>נוצר ב</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center">Loading...</TableCell>
+                        <TableCell colSpan={4} className="text-center">טוען...</TableCell>
                       </TableRow>
                     ) : generatedAds?.map((ad) => (
-                      <TableRow key={ad.id}>
+                      <TableRow 
+                        key={ad.id} 
+                        className="cursor-pointer hover:bg-muted"
+                        onClick={() => handleAdClick(ad)}
+                      >
                         <TableCell>{ad.name}</TableCell>
                         <TableCell>{ad.width} x {ad.height} px</TableCell>
-                        <TableCell>{ad.status}</TableCell>
+                        <TableCell>{ad.status === 'pending' ? 'בתהליך יצירה' : ad.status}</TableCell>
                         <TableCell>{new Date(ad.created_at!).toLocaleDateString()}</TableCell>
                       </TableRow>
                     ))}
@@ -140,6 +155,39 @@ const Index = () => {
           </>
         )}
       </div>
+
+      <Dialog open={!!selectedAd} onOpenChange={() => setSelectedAd(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="text-right">תצוגה מקדימה של המודעה</DialogTitle>
+          </DialogHeader>
+          {selectedAd && (
+            <div className="w-full relative rounded-lg overflow-hidden" style={{ aspectRatio: "16/9" }}>
+              {selectedAd.image_url ? (
+                <img
+                  src={selectedAd.image_url}
+                  alt="Ad preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-muted">
+                  <p className="text-muted-foreground">המודעה בתהליך יצירה...</p>
+                </div>
+              )}
+              {selectedAd.headline && (
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50">
+                  <h4 className="text-white text-lg font-bold">{selectedAd.headline}</h4>
+                  {selectedAd.cta_text && (
+                    <button className="mt-2 px-4 py-2 bg-primary text-white rounded">
+                      {selectedAd.cta_text}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
