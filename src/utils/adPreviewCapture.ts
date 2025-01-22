@@ -29,26 +29,27 @@ export async function capturePreview(
     tempContainer.style.left = "-9999px";
     tempContainer.style.top = "0";
     tempContainer.style.overflow = "hidden";
+    tempContainer.style.transform = "none";
+    tempContainer.style.transformOrigin = "0 0";
 
     // Clone the preview element
     const clone = previewElement.cloneNode(true) as HTMLElement;
     
     // Reset any transforms or animations that might affect the layout
+    clone.classList.add('capturing');
     clone.style.transform = "none";
     clone.style.transition = "none";
     clone.style.animation = "none";
-    
-    // Ensure proper dimensions and positioning
-    clone.style.width = "100%";
-    clone.style.height = "100%";
     clone.style.position = "absolute";
     clone.style.top = "0";
     clone.style.left = "0";
+    clone.style.width = "100%";
+    clone.style.height = "100%";
     
     // Copy computed styles from original to clone
     const computedStyle = window.getComputedStyle(previewElement);
     for (const prop of computedStyle) {
-      if (prop !== "transform" && prop !== "animation" && prop !== "transition") {
+      if (!prop.includes("transform") && !prop.includes("animation") && !prop.includes("transition")) {
         clone.style[prop as any] = computedStyle.getPropertyValue(prop);
       }
     }
@@ -61,9 +62,12 @@ export async function capturePreview(
       const originalChild = originalChildren[i] as HTMLElement;
       const cloneChild = cloneChildren[i] as HTMLElement;
       
+      cloneChild.classList.add('capturing');
       const childComputedStyle = window.getComputedStyle(originalChild);
+      
+      // Copy all styles except transforms and animations
       for (const prop of childComputedStyle) {
-        if (prop !== "transform" && prop !== "animation" && prop !== "transition") {
+        if (!prop.includes("transform") && !prop.includes("animation") && !prop.includes("transition")) {
           cloneChild.style[prop as any] = childComputedStyle.getPropertyValue(prop);
         }
       }
@@ -72,6 +76,7 @@ export async function capturePreview(
       cloneChild.style.transform = "none";
       cloneChild.style.transition = "none";
       cloneChild.style.animation = "none";
+      cloneChild.style.position = originalChild.style.position;
     }
 
     // Add clone to temporary container and append to body
@@ -79,7 +84,7 @@ export async function capturePreview(
     document.body.appendChild(tempContainer);
 
     // Capture the preview with html2canvas
-    const canvas = await html2canvas(clone, {
+    const canvas = await html2canvas(tempContainer, {
       width,
       height,
       scale: 2,
@@ -106,6 +111,9 @@ export async function capturePreview(
                 el.style.fontWeight = originalStyles.fontWeight;
                 el.style.color = originalStyles.color;
                 el.style.textShadow = originalStyles.textShadow;
+                el.style.transform = "none";
+                el.style.transition = "none";
+                el.style.animation = "none";
               }
             }
           });
