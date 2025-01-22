@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useState, CSSProperties } from "react";
 
 interface AdPreviewProps {
   imageUrl?: string;
@@ -34,7 +35,9 @@ export function AdPreview({
   templateStyle,
   accentColor = "#4A90E2"
 }: AdPreviewProps) {
-  const getGradientByStyle = (style: string = 'minimal', color: string) => {
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
+
+  const getGradientByStyle = (style: string = 'minimal', color: string): CSSProperties => {
     const lighterColor = adjustColor(color, 20);
     const darkerColor = adjustColor(color, -20);
     const transparentColor = `${color}80`;
@@ -78,11 +81,11 @@ export function AdPreview({
     }
   };
 
-  const getTextStyle = (style: string = 'minimal') => {
-    const baseStyle = {
+  const getTextStyle = (style: string = 'minimal'): CSSProperties => {
+    const baseStyle: CSSProperties = {
       transition: 'all 0.4s ease',
       textShadow: 'none',
-      fontWeight: 'normal' as const,
+      fontWeight: 'normal',
       letterSpacing: 'normal',
       fontSize: 'clamp(1.5rem, 4vw, 3rem)',
       lineHeight: '1.2',
@@ -96,7 +99,7 @@ export function AdPreview({
         return {
           ...baseStyle,
           textShadow: '2px 2px 4px rgba(0,0,0,0.3), -1px -1px 1px rgba(255,255,255,0.2)',
-          fontWeight: 'bold' as const,
+          fontWeight: 'bold',
           letterSpacing: '0.05em',
           background: `linear-gradient(45deg, ${adjustColor(accentColor, 30)}, ${adjustColor(accentColor, -30)})`,
           WebkitBackgroundClip: 'text',
@@ -106,15 +109,15 @@ export function AdPreview({
         return {
           ...baseStyle,
           textShadow: '3px 3px 6px rgba(0,0,0,0.4), -1px -1px 2px rgba(255,255,255,0.2)',
-          fontWeight: '800' as const,
+          fontWeight: '800',
           letterSpacing: '0.1em',
-          textTransform: 'uppercase' as const,
+          textTransform: 'uppercase',
         };
       case 'elegant':
         return {
           ...baseStyle,
           textShadow: '1px 1px 2px rgba(0,0,0,0.2)',
-          fontWeight: '500' as const,
+          fontWeight: '500',
           letterSpacing: '0.15em',
           fontStyle: 'italic',
         };
@@ -123,19 +126,18 @@ export function AdPreview({
     }
   };
 
-  const getButtonStyle = (style: string = 'minimal') => {
-    const baseStyle = {
+  const getButtonStyle = (style: string = 'minimal', isHovered: boolean): CSSProperties => {
+    const baseStyle: CSSProperties = {
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      transform: 'translateY(0)',
+      transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
       padding: '0.8em 2em',
       fontSize: 'clamp(1rem, 2vw, 1.5rem)',
       fontWeight: '600',
       borderRadius: '9999px',
       cursor: 'pointer',
-      position: 'relative' as const,
+      position: 'relative',
       overflow: 'hidden',
-      isolation: 'isolate',
-      boxShadow: 'none',
+      isolation: 'isolate' as const,
     };
 
     switch (style) {
@@ -143,53 +145,46 @@ export function AdPreview({
         return {
           ...baseStyle,
           background: `linear-gradient(135deg, ${adjustColor(accentColor, 30)}, ${accentColor}, ${adjustColor(accentColor, -30)})`,
-          boxShadow: `0 4px 15px ${adjustColor(accentColor, -30)}80`,
+          boxShadow: isHovered 
+            ? `0 6px 20px ${adjustColor(accentColor, -30)}90`
+            : `0 4px 15px ${adjustColor(accentColor, -30)}80`,
           border: '2px solid rgba(255,255,255,0.1)',
           backdropFilter: 'blur(5px)',
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: `0 6px 20px ${adjustColor(accentColor, -30)}90`,
-          }
         };
       case 'bold':
         return {
           ...baseStyle,
           background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
-          boxShadow: `0 6px 20px ${adjustColor(accentColor, -30)}80`,
-          border: 'none',
-          '&:hover': {
-            transform: 'translateY(-3px) scale(1.02)',
-            boxShadow: `0 8px 25px ${adjustColor(accentColor, -30)}90`,
-          }
+          boxShadow: isHovered 
+            ? `0 8px 25px ${adjustColor(accentColor, -30)}90`
+            : `0 6px 20px ${adjustColor(accentColor, -30)}80`,
+          transform: isHovered ? 'translateY(-3px) scale(1.02)' : 'translateY(0) scale(1)',
         };
       case 'elegant':
         return {
           ...baseStyle,
-          background: `linear-gradient(to right, ${adjustColor(accentColor, 20)}, ${accentColor})`,
-          boxShadow: `0 2px 10px ${adjustColor(accentColor, -30)}40`,
+          background: isHovered 
+            ? `linear-gradient(to right, ${accentColor}, ${adjustColor(accentColor, 20)})`
+            : `linear-gradient(to right, ${adjustColor(accentColor, 20)}, ${accentColor})`,
+          boxShadow: isHovered 
+            ? `0 4px 15px ${adjustColor(accentColor, -30)}50`
+            : `0 2px 10px ${adjustColor(accentColor, -30)}40`,
           border: `2px solid ${adjustColor(accentColor, 30)}`,
-          '&:hover': {
-            transform: 'translateY(-1px)',
-            boxShadow: `0 4px 15px ${adjustColor(accentColor, -30)}50`,
-            background: `linear-gradient(to right, ${accentColor}, ${adjustColor(accentColor, 20)})`,
-          }
         };
       default: // minimal
         return {
           ...baseStyle,
           background: accentColor,
-          boxShadow: `0 2px 5px ${adjustColor(accentColor, -30)}40`,
-          '&:hover': {
-            transform: 'translateY(-1px)',
-            boxShadow: `0 4px 10px ${adjustColor(accentColor, -30)}50`,
-          }
+          boxShadow: isHovered 
+            ? `0 4px 10px ${adjustColor(accentColor, -30)}50`
+            : `0 2px 5px ${adjustColor(accentColor, -30)}40`,
         };
     }
   };
 
   const gradientStyle = getGradientByStyle(templateStyle, accentColor);
   const textStyle = getTextStyle(templateStyle);
-  const buttonStyle = getButtonStyle(templateStyle);
+  const buttonStyle = getButtonStyle(templateStyle, isButtonHovered);
 
   return (
     <Card className="h-fit">
@@ -227,8 +222,10 @@ export function AdPreview({
               </h2>
               {ctaText && (
                 <button 
-                  className="transform hover:scale-105 transition-all duration-300"
+                  className="transform transition-all duration-300"
                   style={buttonStyle}
+                  onMouseEnter={() => setIsButtonHovered(true)}
+                  onMouseLeave={() => setIsButtonHovered(false)}
                 >
                   {ctaText}
                 </button>
