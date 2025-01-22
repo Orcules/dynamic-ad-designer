@@ -11,22 +11,69 @@ export async function capturePreview(
   }
 
   try {
-    // Get the actual preview element that contains the ad content
     const previewElement = previewRef.current.querySelector(".ad-content") as HTMLElement;
     if (!previewElement) {
       console.error("Ad content element not found");
       return null;
     }
 
-    // Get dimensions based on platform
     const { width, height } = getDimensions(platform);
     console.log(`Capturing preview with dimensions: ${width}x${height}`);
 
-    // Create canvas at the exact dimensions we want
-    const canvas = await html2canvas(previewElement, {
+    // Create a clone of the preview element to manipulate
+    const clone = previewElement.cloneNode(true) as HTMLElement;
+    const container = document.createElement('div');
+    container.appendChild(clone);
+    
+    // Set up the clone with exact dimensions and styling
+    clone.style.width = `${width}px`;
+    clone.style.height = `${height}px`;
+    clone.style.position = 'absolute';
+    clone.style.top = '0';
+    clone.style.left = '0';
+    clone.style.transform = 'none';
+    clone.style.margin = '0';
+    clone.style.padding = '0';
+    clone.style.borderRadius = '0';
+    
+    // Ensure all child elements maintain their styles
+    const allElements = clone.getElementsByTagName('*');
+    for (let i = 0; i < allElements.length; i++) {
+      const el = allElements[i] as HTMLElement;
+      const computedStyle = window.getComputedStyle(el);
+      el.style.fontFamily = computedStyle.fontFamily;
+      el.style.fontSize = computedStyle.fontSize;
+      el.style.fontWeight = computedStyle.fontWeight;
+      el.style.lineHeight = computedStyle.lineHeight;
+      el.style.letterSpacing = computedStyle.letterSpacing;
+      el.style.textAlign = computedStyle.textAlign;
+      el.style.color = computedStyle.color;
+      el.style.backgroundColor = computedStyle.backgroundColor;
+      el.style.backgroundImage = computedStyle.backgroundImage;
+      el.style.boxShadow = computedStyle.boxShadow;
+      el.style.textShadow = computedStyle.textShadow;
+      el.style.transform = 'none';
+      el.style.transition = 'none';
+    }
+
+    // Ensure all images are loaded before capture
+    const images = clone.getElementsByTagName('img');
+    await Promise.all(
+      Array.from(images).map(
+        (img) =>
+          new Promise((resolve, reject) => {
+            if (img.complete) resolve(null);
+            img.onload = () => resolve(null);
+            img.onerror = reject;
+          })
+      )
+    );
+
+    // Capture the preview with high quality settings
+    const canvas = await html2canvas(clone, {
       width,
       height,
-      scale: 2, // Higher quality
+      scale: 2,
       useCORS: true,
       allowTaint: true,
       backgroundColor: null,
@@ -34,50 +81,30 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector(".ad-content") as HTMLElement;
         if (clonedElement) {
-          // Ensure proper dimensions and styling
           clonedElement.style.width = `${width}px`;
           clonedElement.style.height = `${height}px`;
-          clonedElement.style.transform = 'none';
-          clonedElement.style.transition = 'none';
-          
-          // Handle text elements
-          const textElements = clonedElement.querySelectorAll("h2, button");
-          textElements.forEach((el) => {
-            if (el instanceof HTMLElement) {
-              el.style.transform = 'none';
-              el.style.transition = 'none';
-              el.style.maxWidth = '100%';
-              el.style.whiteSpace = 'normal';
-              el.style.wordBreak = 'break-word';
-            }
-          });
-
-          // Handle images
-          const images = clonedElement.querySelectorAll('img');
-          images.forEach((img) => {
-            img.style.transform = 'none';
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-          });
         }
       }
     });
 
-    // Convert canvas to blob/file
+    // Convert to high-quality PNG
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          console.error("Failed to create blob from canvas");
-          resolve(null);
-          return;
-        }
-        const file = new File([blob], "ad-preview.png", { 
-          type: "image/png",
-          lastModified: Date.now()
-        });
-        resolve(file);
-      }, "image/png", 1.0); // Maximum quality
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            console.error("Failed to create blob from canvas");
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], "ad-preview.png", {
+            type: "image/png",
+            lastModified: Date.now(),
+          });
+          resolve(file);
+        },
+        "image/png",
+        1.0
+      );
     });
 
   } catch (error) {

@@ -30,7 +30,21 @@ export const handleAdSubmission = async ({
     const timestamp = Date.now();
     
     console.log('Starting ad generation process...');
-    console.log('Capturing preview...');
+    
+    // Upload the original image first
+    const originalImagePath = `original/${timestamp}_${selectedImage.name}`;
+    const { error: originalUploadError } = await supabase.storage
+      .from('ad-images')
+      .upload(originalImagePath, selectedImage, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (originalUploadError) {
+      throw new Error('Failed to upload original image');
+    }
+
+    console.log('Original image uploaded, capturing preview...');
     
     // Capture the exact preview as shown
     const previewFile = await capturePreview(previewRef, adData.platform);
@@ -55,7 +69,7 @@ export const handleAdSubmission = async ({
       throw new Error('Failed to upload preview');
     }
 
-    // Get the public URL for the uploaded image
+    // Get the public URL for the preview image
     const { data: { publicUrl: previewUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(previewPath);
