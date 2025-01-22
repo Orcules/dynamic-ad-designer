@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const fontsByLanguage = {
@@ -31,12 +32,11 @@ interface FontSelectorProps {
 export function FontSelector({ value, onChange, language }: FontSelectorProps) {
   const fonts = fontsByLanguage[language as keyof typeof fontsByLanguage] || fontsByLanguage.he;
 
-  // Set default font if none selected or if language changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (!value || !fonts.some(font => font.url === value)) {
       onChange(fonts[0].url);
     }
-  }, [language, value, onChange]);
+  }, [language, value, onChange, fonts]);
 
   return (
     <div className="space-y-2">
