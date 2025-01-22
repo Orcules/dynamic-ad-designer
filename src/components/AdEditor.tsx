@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { FontSelector } from "./FontSelector";
 
 interface AdEditorProps {
   template: {
@@ -10,79 +14,84 @@ interface AdEditorProps {
 }
 
 const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
-  const [adData, setAdData] = useState<any>(null);
+  const [adData, setAdData] = useState({
+    name: "",
+    headline: "",
+    cta_text: "",
+    font_url: "",
+  });
 
-  const templates = {
-    classic: {
-      name: "קלאסי ואלגנטי",
-      colors: {
-        primary: "#8B5CF6",
-        secondary: "#D946EF",
-        accent: "#FFFFFF",
-        background: "linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)"
-      }
-    },
-    bold: {
-      name: "נועז ותוסס",
-      colors: {
-        primary: "#F97316",
-        secondary: "#FEC6A1",
-        accent: "#FFFFFF",
-        background: "linear-gradient(225deg, #FFE29F 0%, #FFA99F 48%, #FF719A 100%)"
-      }
-    },
-    minimal: {
-      name: "מינימליסטי",
-      colors: {
-        primary: "#000000",
-        secondary: "#404040",
-        accent: "#FFFFFF",
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)"
-      }
-    },
-    nature: {
-      name: "טבעי ורענן",
-      colors: {
-        primary: "#059669",
-        secondary: "#34D399",
-        accent: "#FFFFFF",
-        background: "linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%)"
-      }
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAdData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  useEffect(() => {
-    // Simulate ad generation
-    const generatedAd = {
-      image_url: "https://example.com/ad-preview.png",
-      headline: "מודעה לדוגמה",
-      cta_text: "למידע נוסף"
-    };
-    setAdData(generatedAd);
-    onAdGenerated(generatedAd);
-  }, [template, onAdGenerated]);
+  const handleFontChange = (value: string) => {
+    setAdData((prev) => ({
+      ...prev,
+      font_url: value,
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onAdGenerated({
+      ...adData,
+      width: parseInt(template.dimensions.split(" x ")[0]),
+      height: parseInt(template.dimensions.split(" x ")[1]),
+    });
+  };
 
   return (
-    <div
-      className="ad-editor"
-      style={{
-        background: templates[template.id]?.colors.background,
-        color: templates[template.id]?.colors.accent,
-        padding: "20px",
-        borderRadius: "8px"
-      }}
-    >
-      <h2>{templates[template.id]?.name}</h2>
-      {adData && (
-        <div>
-          <img src={adData.image_url} alt="Ad preview" />
-          <h3>{adData.headline}</h3>
-          <button style={{ backgroundColor: templates[template.id]?.colors.primary }}>
-            {adData.cta_text}
-          </button>
-        </div>
-      )}
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-6 bg-card p-6 rounded-lg">
+      <div className="space-y-2">
+        <Label htmlFor="name">שם המודעה</Label>
+        <Input
+          id="name"
+          name="name"
+          value={adData.name}
+          onChange={handleInputChange}
+          placeholder="הזן שם למודעה"
+          className="text-right"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="headline">כותרת</Label>
+        <Input
+          id="headline"
+          name="headline"
+          value={adData.headline}
+          onChange={handleInputChange}
+          placeholder="הזן כותרת למודעה"
+          className="text-right"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cta_text">טקסט CTA</Label>
+        <Input
+          id="cta_text"
+          name="cta_text"
+          value={adData.cta_text}
+          onChange={handleInputChange}
+          placeholder="הזן טקסט לכפתור"
+          className="text-right"
+          required
+        />
+      </div>
+
+      <FontSelector value={adData.font_url} onChange={handleFontChange} />
+
+      <Button type="submit" className="w-full">
+        צור מודעה
+      </Button>
+    </form>
   );
 };
 

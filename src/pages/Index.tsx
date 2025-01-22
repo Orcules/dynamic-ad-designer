@@ -5,33 +5,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const templates = [
   {
     id: "facebook",
-    title: "Facebook Ad",
-    dimensions: "1200 x 628 px",
+    title: "מודעת פייסבוק",
+    dimensions: "1200 x 628",
   },
   {
     id: "taboola",
-    title: "Taboola Ad",
-    dimensions: "1000 x 600 px",
+    title: "מודעת טאבולה",
+    dimensions: "1000 x 600",
   },
   {
     id: "google",
-    title: "Google Display Ad",
-    dimensions: "300 x 250 px",
+    title: "מודעת גוגל",
+    dimensions: "300 x 250",
   },
   {
     id: "story",
-    title: "Story Ad",
-    dimensions: "1080 x 1920 px",
+    title: "מודעת סטורי",
+    dimensions: "1080 x 1920",
   },
 ];
 
@@ -47,7 +43,6 @@ const fetchGeneratedAds = async () => {
 
 const Index = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof templates[0] | null>(null);
-  const [previewData, setPreviewData] = useState<any>(null);
   const [selectedAd, setSelectedAd] = useState<any>(null);
   const queryClient = useQueryClient();
 
@@ -58,16 +53,16 @@ const Index = () => {
 
   useEffect(() => {
     const channel = supabase
-      .channel('public:generated_ads')
+      .channel("public:generated_ads")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'generated_ads'
+          event: "*",
+          schema: "public",
+          table: "generated_ads",
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['generated-ads'] });
+          queryClient.invalidateQueries({ queryKey: ["generated-ads"] });
         }
       )
       .subscribe();
@@ -77,20 +72,24 @@ const Index = () => {
     };
   }, [queryClient]);
 
-  const handleAdGenerated = (adData: any) => {
-    setPreviewData(adData);
-  };
-
-  const handleAdClick = (ad: any) => {
-    setSelectedAd(ad);
+  const handleAdGenerated = async (adData: any) => {
+    try {
+      const { error } = await supabase.from("generated_ads").insert([adData]);
+      if (error) throw error;
+      toast.success("המודעה נוצרה בהצלחה");
+      setSelectedTemplate(null);
+    } catch (error) {
+      console.error("Error generating ad:", error);
+      toast.error("אירעה שגיאה ביצירת המודעה");
+    }
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">יוצר המודעות</h1>
-          <p className="text-muted-foreground">צור מודעות מרהיבות למגוון פלטפורמות</p>
+          <h1 className="text-4xl font-bold text-right">יוצר המודעות</h1>
+          <p className="text-muted-foreground text-right">צור מודעות מרהיבות למגוון פלטפורמות</p>
         </div>
 
         {!selectedTemplate ? (
@@ -105,77 +104,74 @@ const Index = () => {
             ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <AdEditor template={selectedTemplate} onAdGenerated={handleAdGenerated} />
-              <div className="bg-card rounded-lg p-6 animate-fade-in">
-                <h3 className="text-xl font-bold mb-4">תצוגה מקדימה</h3>
-                <div
-                  className="w-full bg-muted rounded-lg overflow-hidden"
-                  style={{ aspectRatio: selectedTemplate.id === "story" ? "9/16" : "16/9" }}
-                >
-                  {previewData && (
-                    <div className="w-full h-full relative">
-                      {previewData.image_url && (
-                        <img
-                          src={previewData.image_url}
-                          alt="Ad preview"
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                      {previewData.headline && (
-                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50">
-                          <h4 className="text-white text-lg font-bold">{previewData.headline}</h4>
-                          {previewData.cta_text && (
-                            <button className="mt-2 px-4 py-2 bg-primary text-white rounded">
-                              {previewData.cta_text}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <Card className="mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <AdEditor template={selectedTemplate} onAdGenerated={handleAdGenerated} />
+            <Card className="h-fit">
               <CardHeader>
-                <CardTitle>מודעות שנוצרו</CardTitle>
+                <CardTitle className="text-right">תצוגה מקדימה</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>שם</TableHead>
-                      <TableHead>מידות</TableHead>
-                      <TableHead>סטטוס</TableHead>
-                      <TableHead>נוצר ב</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={4} className="text-center">טוען...</TableCell>
-                      </TableRow>
-                    ) : generatedAds?.map((ad) => (
-                      <TableRow 
-                        key={ad.id} 
-                        className="cursor-pointer hover:bg-muted"
-                        onClick={() => handleAdClick(ad)}
-                      >
-                        <TableCell>{ad.name}</TableCell>
-                        <TableCell>{ad.width} x {ad.height} px</TableCell>
-                        <TableCell>{ad.status === 'pending' ? 'בתהליך יצירה' : ad.status}</TableCell>
-                        <TableCell>{new Date(ad.created_at!).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div
+                  className="w-full bg-muted rounded-lg overflow-hidden"
+                  style={{
+                    aspectRatio:
+                      selectedTemplate.id === "story" ? "9/16" : "16/9",
+                  }}
+                >
+                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                    תצוגה מקדימה תופיע כאן
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </>
+          </div>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-right">מודעות שנוצרו</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-right">שם</TableHead>
+                  <TableHead className="text-right">מידות</TableHead>
+                  <TableHead className="text-right">סטטוס</TableHead>
+                  <TableHead className="text-right">נוצר ב</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      טוען...
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  generatedAds?.map((ad) => (
+                    <TableRow
+                      key={ad.id}
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => setSelectedAd(ad)}
+                    >
+                      <TableCell className="text-right">{ad.name}</TableCell>
+                      <TableCell className="text-right">
+                        {ad.width} x {ad.height} px
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {ad.status === "pending" ? "בתהליך יצירה" : ad.status}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {new Date(ad.created_at!).toLocaleDateString()}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
 
       <Dialog open={!!selectedAd} onOpenChange={() => setSelectedAd(null)}>
@@ -184,7 +180,10 @@ const Index = () => {
             <DialogTitle className="text-right">תצוגה מקדימה של המודעה</DialogTitle>
           </DialogHeader>
           {selectedAd && (
-            <div className="w-full relative rounded-lg overflow-hidden" style={{ aspectRatio: "16/9" }}>
+            <div
+              className="w-full relative rounded-lg overflow-hidden"
+              style={{ aspectRatio: "16/9" }}
+            >
               {selectedAd.image_url ? (
                 <img
                   src={selectedAd.image_url}
@@ -194,16 +193,6 @@ const Index = () => {
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-muted">
                   <p className="text-muted-foreground">המודעה בתהליך יצירה...</p>
-                </div>
-              )}
-              {selectedAd.headline && (
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-black/50">
-                  <h4 className="text-white text-lg font-bold">{selectedAd.headline}</h4>
-                  {selectedAd.cta_text && (
-                    <button className="mt-2 px-4 py-2 bg-primary text-white rounded">
-                      {selectedAd.cta_text}
-                    </button>
-                  )}
                 </div>
               )}
             </div>
