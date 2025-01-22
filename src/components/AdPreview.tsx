@@ -215,40 +215,42 @@ export function AdPreview({
             aspectRatio: `${width}/${height}`,
           }}
         >
-          {imageUrl && (
-            <img
-              src={imageUrl}
-              alt="Ad preview"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+          <div className="ad-content absolute inset-0">
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="Ad preview"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              />
+            )}
+            <div
+              className="absolute inset-0 transition-all duration-500"
+              style={gradientStyle}
             />
-          )}
-          <div
-            className="absolute inset-0 transition-all duration-500"
-            style={gradientStyle}
-          />
-          {headline && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              <h2 
-                className={cn(
-                  "mb-6 transition-all duration-300 animate-fade-in",
-                  templateStyle === 'minimal' ? 'text-black' : 'text-white'
-                )}
-                style={textStyle}
-              >
-                {headline}
-              </h2>
-              {ctaText && (
-                <button 
-                  className="transform transition-all duration-300"
-                  style={buttonStyle}
-                  onMouseEnter={() => setIsButtonHovered(true)}
-                  onMouseLeave={() => setIsButtonHovered(false)}
+            {headline && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                <h2 
+                  className={cn(
+                    "mb-6 transition-all duration-300 animate-fade-in",
+                    templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                  )}
+                  style={textStyle}
                 >
-                  {ctaText}
-                </button>
-              )}
-            </div>
-          )}
+                  {headline}
+                </h2>
+                {ctaText && (
+                  <button 
+                    className="transform transition-all duration-300"
+                    style={buttonStyle}
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                  >
+                    {ctaText}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

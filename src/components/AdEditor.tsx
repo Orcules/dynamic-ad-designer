@@ -96,8 +96,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const capturePreview = async () => {
     if (!previewRef.current) return null;
     
+    const adContentElement = previewRef.current.querySelector('.ad-content');
+    if (!adContentElement) return null;
+    
     try {
-      const canvas = await html2canvas(previewRef.current, {
+      const canvas = await html2canvas(adContentElement as HTMLElement, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
