@@ -6,11 +6,20 @@ import { FontSelector } from "./FontSelector";
 import { PlatformSelector } from "./PlatformSelector";
 import { TemplateStyleSelector } from "./TemplateStyleSelector";
 
+interface Template {
+  id: string;
+  title: string;
+  dimensions: string;
+  imageUrl: string;
+  description: string;
+}
+
 interface AdEditorProps {
+  template: Template;
   onAdGenerated: (adData: any) => void;
 }
 
-const AdEditor: React.FC<AdEditorProps> = ({ onAdGenerated }) => {
+const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [adData, setAdData] = useState({
     name: "",
     headline: "",
