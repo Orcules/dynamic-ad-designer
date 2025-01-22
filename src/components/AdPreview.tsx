@@ -58,57 +58,57 @@ export function AdPreview({
   const textStyle = getTextStyle({ style: templateStyle, accentColor, fontFamily });
   const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
 
+  const aspectRatio = `${width} / ${height}`;
+
   return (
-    <Card className="h-fit">
+    <Card className="h-fit w-full">
       <CardHeader>
         <CardTitle className="text-right">תצוגה מקדימה</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex justify-center">
         <div
-          className="w-full relative rounded-lg overflow-hidden shadow-2xl"
+          className="relative w-full max-w-[600px] overflow-hidden rounded-lg shadow-2xl"
           style={{
-            aspectRatio: `${width}/${height}`,
+            aspectRatio,
           }}
         >
-          <div className="ad-content absolute inset-0 flex flex-col items-center justify-center">
-            {imageUrl && (
-              <img
-                src={imageUrl}
-                alt="Ad preview"
-                className="absolute inset-0 w-full h-full object-cover"
-                crossOrigin="anonymous"
-              />
-            )}
-            <div
-              className="absolute inset-0"
-              style={gradientStyle}
+          {imageUrl && (
+            <img
+              src={imageUrl}
+              alt="Ad preview"
+              className="absolute inset-0 h-full w-full object-cover"
+              crossOrigin="anonymous"
             />
-            {headline && (
-              <div className="relative z-10 flex flex-col items-center justify-center p-6 text-center w-full h-full">
-                <h2 
-                  className={cn(
-                    "mb-6 max-w-[90%]",
-                    templateStyle === 'minimal' ? 'text-black' : 'text-white'
-                  )}
-                  style={textStyle}
-                >
-                  {headline}
-                </h2>
-                {ctaText && (
-                  <button 
-                    className="relative z-10 transform px-4 py-2 max-w-[90%]"
-                    style={buttonStyle}
-                    onMouseEnter={() => setIsButtonHovered(true)}
-                    onMouseLeave={() => setIsButtonHovered(false)}
-                  >
-                    <span className="block">
-                      {ctaText}
-                    </span>
-                  </button>
+          )}
+          <div
+            className="absolute inset-0"
+            style={gradientStyle}
+          />
+          {headline && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
+              <h2 
+                className={cn(
+                  "mb-6 max-w-[80%] text-center break-words",
+                  templateStyle === 'minimal' ? 'text-black' : 'text-white'
                 )}
-              </div>
-            )}
-          </div>
+                style={textStyle}
+              >
+                {headline}
+              </h2>
+              {ctaText && (
+                <button 
+                  className="relative z-20 transform px-6 py-3 max-w-[80%]"
+                  style={buttonStyle}
+                  onMouseEnter={() => setIsButtonHovered(true)}
+                  onMouseLeave={() => setIsButtonHovered(false)}
+                >
+                  <span className="block whitespace-normal break-words text-center">
+                    {ctaText}
+                  </span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
