@@ -41,6 +41,7 @@ export const handleAdSubmission = async ({
       throw new Error('Failed to upload image');
     }
 
+    // Get the public URL for the uploaded image
     const { data: { publicUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(filePath);
@@ -65,8 +66,8 @@ export const handleAdSubmission = async ({
       .from('ad-images')
       .getPublicUrl(previewPath);
 
-    // Create ad record without specifying an ID
-    const { data: ads, error: createError } = await supabase
+    // Create ad record
+    const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
         name: adData.name,
@@ -82,18 +83,16 @@ export const handleAdSubmission = async ({
         status: 'completed'
       }])
       .select()
-      .limit(1);
+      .single();
 
     if (createError) {
       console.error('Create error:', createError);
       throw new Error('Failed to create ad record');
     }
 
-    if (!ads || ads.length === 0) {
+    if (!newAd) {
       throw new Error('No ad record was created');
     }
-
-    const newAd = ads[0];
     
     toast.success('המודעה נוצרה בהצלחה!', {
       action: {
