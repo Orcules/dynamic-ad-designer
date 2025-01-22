@@ -36,10 +36,18 @@ export function AdPreview({
         const family = familyMatch[1].replace(/\+/g, ' ');
         setFontFamily(family);
 
+        // Load font explicitly
         const link = document.createElement('link');
         link.href = fontUrl;
         link.rel = 'stylesheet';
         document.head.appendChild(link);
+
+        // Wait for font to load
+        document.fonts.ready.then(() => {
+          console.log(`Font ${family} loaded successfully`);
+        }).catch(err => {
+          console.error(`Error loading font ${family}:`, err);
+        });
 
         return () => {
           document.head.removeChild(link);
@@ -59,7 +67,7 @@ export function AdPreview({
       </CardHeader>
       <CardContent>
         <div
-          className="w-full relative rounded-lg overflow-hidden shadow-2xl transition-all duration-500"
+          className="w-full relative rounded-lg overflow-hidden shadow-2xl"
           style={{
             aspectRatio: `${width}/${height}`,
           }}
@@ -71,7 +79,7 @@ export function AdPreview({
                 alt="Ad preview"
                 className="absolute inset-0 w-full h-full object-cover"
                 crossOrigin="anonymous"
-                style={{ transform: 'none' }} // Remove hover effect for consistent capture
+                style={{ transform: 'none' }}
               />
             )}
             <div
@@ -82,16 +90,20 @@ export function AdPreview({
               <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                 <h2 
                   className={cn(
-                    "mb-6",
+                    "mb-6 max-w-[90%]",
                     templateStyle === 'minimal' ? 'text-black' : 'text-white'
                   )}
-                  style={textStyle}
+                  style={{
+                    ...textStyle,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}
                 >
                   {headline}
                 </h2>
                 {ctaText && (
                   <button 
-                    className="transform px-4 py-2"
+                    className="transform px-4 py-2 max-w-[90%]"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}

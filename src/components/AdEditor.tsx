@@ -100,20 +100,45 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     if (!adContentElement) return null;
     
     try {
-      const canvas = await html2canvas(adContentElement as HTMLElement, {
+      // Wait for fonts to load before capturing
+      await document.fonts.ready;
+      
+      // Create a clone of the element for capturing
+      const clone = adContentElement.cloneNode(true) as HTMLElement;
+      const container = document.createElement('div');
+      container.appendChild(clone);
+      document.body.appendChild(container);
+      
+      // Apply capture-specific styles
+      clone.style.transform = 'none';
+      clone.style.transition = 'none';
+      clone.style.animation = 'none';
+      
+      // Set explicit dimensions
+      const { width, height } = getDimensions(adData.platform);
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      
+      // Capture with higher quality settings
+      const canvas = await html2canvas(clone, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        logging: true, // Enable logging for debugging
+        logging: true,
+        width: width,
+        height: height,
         onclone: (clonedDoc) => {
-          // Ensure styles are properly applied in the cloned document
           const clonedElement = clonedDoc.querySelector('.ad-content');
           if (clonedElement) {
-            clonedElement.classList.add('capturing');
+            (clonedElement as HTMLElement).style.position = 'static';
+            (clonedElement as HTMLElement).style.transform = 'none';
           }
         }
       });
+      
+      // Clean up
+      document.body.removeChild(container);
       
       return new Promise<File>((resolve) => {
         canvas.toBlob((blob) => {
@@ -121,7 +146,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             const file = new File([blob], `${adData.name || 'ad'}.png`, { type: 'image/png' });
             resolve(file);
           }
-        }, 'image/png', 1.0); // Use maximum quality
+        }, 'image/png', 1.0);
       });
     } catch (error) {
       console.error('Error capturing preview:', error);
