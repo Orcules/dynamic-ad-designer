@@ -13,6 +13,7 @@ interface AdEditorProps {
     title: string;
     dimensions: string;
   };
+  onAdGenerated?: (adData: any) => void;
 }
 
 const templateStyles = [
@@ -58,7 +59,7 @@ const templateStyles = [
   }
 ];
 
-export function AdEditor({ template }: AdEditorProps) {
+export function AdEditor({ template, onAdGenerated }: AdEditorProps) {
   const [headline, setHeadline] = useState("");
   const [ctaText, setCtaText] = useState("");
   const [image, setImage] = useState<File | null>(null);
@@ -102,6 +103,13 @@ export function AdEditor({ template }: AdEditorProps) {
       });
 
       if (error) throw error;
+
+      // Call the onAdGenerated callback with the preview data
+      onAdGenerated?.({
+        image_url: functionData?.image_url,
+        headline: headline,
+        cta_text: ctaText
+      });
 
       toast({
         title: "Success!",
@@ -215,4 +223,3 @@ export function AdEditor({ template }: AdEditorProps) {
       </div>
     </div>
   );
-}
