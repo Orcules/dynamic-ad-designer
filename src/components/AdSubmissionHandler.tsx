@@ -32,7 +32,7 @@ export const handleAdSubmission = async ({
     console.log('Starting ad generation process...');
     console.log('Capturing preview...');
     
-    // Capture and upload preview
+    // Capture the exact preview as shown
     const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
       throw new Error('Failed to capture preview');
@@ -42,7 +42,7 @@ export const handleAdSubmission = async ({
     const previewPath = `generated/${timestamp}_preview.png`;
     
     // Upload the preview image
-    const { error: previewError, data: uploadData } = await supabase.storage
+    const { error: previewError } = await supabase.storage
       .from('ad-images')
       .upload(previewPath, previewFile, {
         contentType: 'image/png',
@@ -62,7 +62,7 @@ export const handleAdSubmission = async ({
 
     console.log('Preview uploaded, creating ad record...');
     
-    // Create ad record
+    // Create ad record with the exact preview image
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
@@ -71,7 +71,7 @@ export const handleAdSubmission = async ({
         cta_text: adData.cta_text,
         font_url: adData.font_url,
         platform: adData.platform,
-        template_style: adData.template_style,
+        template_style: adData.template_style || 'minimal', // Ensure we always have a template style
         accent_color: adData.accent_color,
         width,
         height,
