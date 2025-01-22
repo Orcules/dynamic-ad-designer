@@ -9,7 +9,7 @@ interface AdEditorProps {
   onAdGenerated: (adData: any) => void;
 }
 
-export const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
+const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [adData, setAdData] = useState<any>(null);
 
   const templates = {
@@ -85,3 +85,5 @@ export const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) =
     </div>
   );
 };
+
+export default AdEditor;

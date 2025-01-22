@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { AdTemplateCard } from "@/components/AdTemplateCard";
-import { AdEditor } from "@/components/AdEditor";
+import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
