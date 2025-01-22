@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Upload } from "lucide-react";
+import { FontSelector } from "./FontSelector";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AdEditorProps {
   template: {
@@ -13,10 +14,55 @@ interface AdEditorProps {
   };
 }
 
+const templateStyles = [
+  {
+    id: "modern",
+    name: "Modern & Clean",
+    colors: {
+      primary: "#9b87f5",
+      secondary: "#8E9196",
+      accent: "#0FA0CE",
+      background: "#FFFFFF"
+    }
+  },
+  {
+    id: "bold",
+    name: "Bold & Vibrant",
+    colors: {
+      primary: "#F97316",
+      secondary: "#D946EF",
+      accent: "#0EA5E9",
+      background: "#1A1F2C"
+    }
+  },
+  {
+    id: "soft",
+    name: "Soft & Pastel",
+    colors: {
+      primary: "#F2FCE2",
+      secondary: "#FEF7CD",
+      accent: "#FEC6A1",
+      background: "#E5DEFF"
+    }
+  },
+  {
+    id: "dark",
+    name: "Dark & Moody",
+    colors: {
+      primary: "#221F26",
+      secondary: "#403E43",
+      accent: "#FFFFFF",
+      background: "#8A898C"
+    }
+  }
+];
+
 export function AdEditor({ template }: AdEditorProps) {
   const [headline, setHeadline] = useState("");
   const [ctaText, setCtaText] = useState("");
   const [image, setImage] = useState<File | null>(null);
+  const [selectedFont, setSelectedFont] = useState("");
+  const [selectedStyle, setSelectedStyle] = useState(templateStyles[0].id);
   const { toast } = useToast();
 
   const handleDrop = (e: React.DragEvent) => {
@@ -37,6 +83,8 @@ export function AdEditor({ template }: AdEditorProps) {
     e.preventDefault();
   };
 
+  const currentStyle = templateStyles.find(style => style.id === selectedStyle) || templateStyles[0];
+
   return (
     <div className="space-y-6 p-6 bg-card rounded-lg animate-fade-in">
       <div className="space-y-2">
@@ -45,6 +93,24 @@ export function AdEditor({ template }: AdEditorProps) {
       </div>
 
       <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="style">Template Style</Label>
+          <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select style" />
+            </SelectTrigger>
+            <SelectContent>
+              {templateStyles.map((style) => (
+                <SelectItem key={style.id} value={style.id}>
+                  {style.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <FontSelector value={selectedFont} onChange={setSelectedFont} />
+
         <div className="space-y-2">
           <Label htmlFor="headline">Headline</Label>
           <Input
@@ -67,6 +133,10 @@ export function AdEditor({ template }: AdEditorProps) {
 
         <div
           className="border-2 border-dashed rounded-lg p-8 text-center space-y-4 cursor-pointer hover:border-primary transition-colors"
+          style={{
+            backgroundColor: currentStyle.colors.background,
+            borderColor: currentStyle.colors.accent,
+          }}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
@@ -79,7 +149,15 @@ export function AdEditor({ template }: AdEditorProps) {
           </div>
         </div>
 
-        <Button className="w-full">Generate Ads</Button>
+        <Button 
+          className="w-full"
+          style={{
+            backgroundColor: currentStyle.colors.primary,
+            color: currentStyle.colors.background,
+          }}
+        >
+          Generate Ads
+        </Button>
       </div>
     </div>
   );
