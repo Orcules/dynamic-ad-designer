@@ -10,59 +10,83 @@ export async function capturePreview(
   }
 
   try {
-    const previewElement = previewRef.current.querySelector('.ad-content') as HTMLElement;
+    // Specifically target the ad-content element
+    const previewElement = previewRef.current.querySelector('.ad-content');
     if (!previewElement) {
-      throw new Error('Ad content element not found');
+      console.error('Ad content element not found');
+      return null;
     }
+
+    console.log('Starting preview capture...');
 
     // Wait for fonts to load
     await document.fonts.ready;
+    console.log('Fonts loaded');
 
     // Wait for all images to load
-    const images = previewElement.getElementsByTagName("img");
-    await Promise.all(
-      Array.from(images).map((img) => {
-        return new Promise<void>((resolve, reject) => {
-          if (img.complete && img.naturalHeight !== 0) {
-            resolve();
-          } else {
-            img.onload = () => resolve();
-            img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
-          }
-        });
-      })
-    );
+    const images = previewElement.getElementsByTagName('img');
+    if (images.length > 0) {
+      console.log(`Waiting for ${images.length} images to load...`);
+      await Promise.all(
+        Array.from(images).map((img) => {
+          return new Promise<void>((resolve, reject) => {
+            if (img.complete && img.naturalHeight !== 0) {
+              resolve();
+            } else {
+              img.onload = () => resolve();
+              img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+            }
+          });
+        })
+      );
+      console.log('All images loaded');
+    }
 
-    // Add capturing class to ensure proper rendering
-    previewElement.classList.add('capturing');
+    // Add a small delay to ensure everything is rendered
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-    // Capture the preview using html2canvas
-    const canvas = await html2canvas(previewElement, {
-      useCORS: true, // Allow external images
-      scale: 2, // For higher quality
-      logging: true, // For debugging
-      backgroundColor: null, // For transparent background
-      allowTaint: true, // Allow cross-origin images
-      foreignObjectRendering: true // Better handling of external content
+    console.log('Capturing with html2canvas...');
+
+    // Capture the preview using html2canvas with optimized settings
+    const canvas = await html2canvas(previewElement as HTMLElement, {
+      useCORS: true,
+      scale: 2,
+      logging: true,
+      backgroundColor: null,
+      allowTaint: true,
+      foreignObjectRendering: true,
+      removeContainer: false,
+      imageTimeout: 15000, // Increased timeout for image loading
+      onclone: (clonedDoc) => {
+        // Ensure styles are properly applied to the cloned element
+        const clonedElement = clonedDoc.querySelector('.ad-content');
+        if (clonedElement) {
+          clonedElement.classList.add('capturing');
+        }
+      }
     });
 
-    // Remove capturing class
-    previewElement.classList.remove('capturing');
+    console.log('Canvas captured, converting to file...');
 
-    // Convert canvas to file
+    // Convert canvas to file with maximum quality
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          console.error("Failed to create blob from canvas");
-          resolve(null);
-          return;
-        }
-        const file = new File([blob], "ad-preview.png", { 
-          type: "image/png",
-          lastModified: Date.now()
-        });
-        resolve(file);
-      }, "image/png", 1.0); // Maximum quality
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            console.error("Failed to create blob from canvas");
+            resolve(null);
+            return;
+          }
+          const file = new File([blob], "ad-preview.png", { 
+            type: "image/png",
+            lastModified: Date.now()
+          });
+          console.log('File created successfully');
+          resolve(file);
+        }, 
+        "image/png",
+        1.0 // Maximum quality
+      );
     });
 
   } catch (error) {
