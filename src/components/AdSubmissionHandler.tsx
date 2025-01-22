@@ -46,8 +46,8 @@ export const handleAdSubmission = async ({
 
     console.log('Original image uploaded, capturing preview...');
     
-    // Capture the exact preview as shown
-    const previewFile = await capturePreview(previewRef);
+    // Capture the exact preview as shown, passing both required arguments
+    const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
       throw new Error('Failed to capture preview');
     }
