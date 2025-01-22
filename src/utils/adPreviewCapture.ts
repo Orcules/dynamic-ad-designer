@@ -1,5 +1,4 @@
 import puppeteer from 'puppeteer';
-import { getDimensions } from './adDimensions';
 
 export async function capturePreview(
   previewRef: React.RefObject<HTMLDivElement>,
@@ -11,29 +10,33 @@ export async function capturePreview(
   }
 
   try {
-    const { width, height } = getDimensions(platform);
-    
-    // Launch browser
+    // Launch browser with correct configuration for browser environment
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     
     const page = await browser.newPage();
     
-    // Set viewport to match ad dimensions
-    await page.setViewport({ 
-      width: width,
-      height: height,
-      deviceScaleFactor: 2 // For higher quality
-    });
-
     // Get the HTML content of the preview
     const previewElement = previewRef.current.querySelector('.ad-content') as HTMLElement;
     if (!previewElement) {
       throw new Error('Ad content element not found');
     }
 
+    // Get computed styles
+    const styles = window.getComputedStyle(previewElement);
+    const width = parseInt(styles.width);
+    const height = parseInt(styles.height);
+
+    // Set viewport to match ad dimensions
+    await page.setViewport({ 
+      width,
+      height,
+      deviceScaleFactor: 2 // For higher quality
+    });
+
+    // Include all necessary styles and content
     const htmlContent = `
       <html>
         <head>
