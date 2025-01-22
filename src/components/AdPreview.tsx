@@ -1,4 +1,9 @@
-import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
+import { AdGradient } from "./ad/AdGradient";
+import { getTextStyle } from "./ad/AdText";
+import { getButtonStyle } from "./ad/AdButton";
 
 interface AdPreviewProps {
   imageUrl?: string;
@@ -11,69 +16,104 @@ interface AdPreviewProps {
   fontUrl?: string;
 }
 
-export const AdPreview: React.FC<AdPreviewProps> = ({
-  imageUrl,
-  width,
-  height,
-  headline,
-  ctaText,
-  templateStyle = 'minimal',
-  accentColor = '#4A90E2',
-  fontUrl,
-}) => {
+export function AdPreview({ 
+  imageUrl, 
+  width, 
+  height, 
+  headline, 
+  ctaText, 
+  templateStyle,
+  accentColor = "#4A90E2",
+  fontUrl
+}: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [fontFamily, setFontFamily] = useState<string>('');
+
+  useEffect(() => {
+    if (fontUrl) {
+      const familyMatch = fontUrl.match(/family=([^:&]+)/);
+      if (familyMatch && familyMatch[1]) {
+        const family = familyMatch[1].replace(/\+/g, ' ');
+        setFontFamily(family);
+
+        const link = document.createElement('link');
+        link.href = fontUrl;
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+
+        document.fonts.ready.then(() => {
+          console.log(`Font ${family} loaded successfully`);
+        }).catch(err => {
+          console.error(`Error loading font ${family}:`, err);
+        });
+
+        return () => {
+          document.head.removeChild(link);
+        };
+      }
+    }
+  }, [fontUrl]);
+
+  const gradientStyle = AdGradient({ style: templateStyle, color: accentColor });
+  const textStyle = getTextStyle({ style: templateStyle, accentColor, fontFamily });
+  const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
+
+  const aspectRatio = `${width} / ${height}`;
 
   return (
-    <div 
-      className="relative bg-white shadow-lg rounded-lg overflow-hidden ad-preview mx-auto"
-      style={{ 
-        width: `${width}px`, 
-        height: `${height}px`,
-        fontFamily: fontUrl ? fontUrl.split('/').pop()?.split(':')[0].replace('+', ' ') : 'inherit',
-      }}
-    >
-      <div className="absolute inset-0 ad-content">
-        {imageUrl && (
-          <img
-            src={imageUrl}
-            alt="Ad preview"
-            className="w-full h-full object-cover"
-            crossOrigin="anonymous"
-          />
-        )}
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        
-        <div className="absolute bottom-0 left-0 right-0 p-6 text-white space-y-4 flex flex-col items-center justify-end h-full">
-          {headline && (
-            <h2 
-              className="text-2xl font-bold leading-tight text-center max-w-[90%] mx-auto"
-              style={{
-                fontSize: `${Math.min(width * 0.05, 32)}px`,
-                lineHeight: 1.2,
-              }}
-            >
-              {headline}
-            </h2>
-          )}
-          
-          {ctaText && (
-            <button
-              className="px-6 py-2 rounded-full transition-all duration-300 transform text-center"
-              style={{
-                backgroundColor: isButtonHovered ? `${accentColor}dd` : accentColor,
-                transform: isButtonHovered ? 'scale(1.05)' : 'scale(1)',
-                fontSize: `${Math.min(width * 0.03, 18)}px`,
-                maxWidth: '80%',
-              }}
-              onMouseEnter={() => setIsButtonHovered(true)}
-              onMouseLeave={() => setIsButtonHovered(false)}
-            >
-              {ctaText}
-            </button>
-          )}
+    <Card className="h-fit w-full">
+      <CardHeader>
+        <CardTitle className="text-right">תצוגה מקדימה</CardTitle>
+      </CardHeader>
+      <CardContent className="flex justify-center p-4">
+        <div className="relative w-full max-w-[600px]">
+          <div
+            className="ad-content relative overflow-hidden rounded-lg shadow-2xl"
+            style={{
+              aspectRatio,
+              width: '100%',
+            }}
+          >
+            {imageUrl && (
+              <img
+                src={imageUrl}
+                alt="Ad preview"
+                className="absolute inset-0 h-full w-full object-cover"
+                crossOrigin="anonymous"
+              />
+            )}
+            <div
+              className="absolute inset-0"
+              style={gradientStyle}
+            />
+            {headline && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
+                <h2 
+                  className={cn(
+                    "mb-4 max-w-[80%] text-center break-words",
+                    templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                  )}
+                  style={textStyle}
+                >
+                  {headline}
+                </h2>
+                {ctaText && (
+                  <button 
+                    className="relative z-20 transform px-6 py-3 max-w-[80%] mt-4"
+                    style={buttonStyle}
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                  >
+                    <span className="block whitespace-normal break-words text-center">
+                      {ctaText}
+                    </span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
-};
+}
