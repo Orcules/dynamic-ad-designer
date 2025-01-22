@@ -96,49 +96,47 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const capturePreview = async () => {
     if (!previewRef.current) return null;
     
-    const adContentElement = previewRef.current.querySelector('.ad-content');
-    if (!adContentElement) return null;
+    const previewElement = previewRef.current.querySelector('.ad-content');
+    if (!previewElement) return null;
     
     try {
-      // Wait for fonts to load before capturing
+      // Wait for fonts to load
       await document.fonts.ready;
       
-      // Create a clone of the element for capturing
-      const clone = adContentElement.cloneNode(true) as HTMLElement;
-      const container = document.createElement('div');
-      container.appendChild(clone);
-      document.body.appendChild(container);
-      
-      // Apply capture-specific styles
-      clone.style.transform = 'none';
-      clone.style.transition = 'none';
-      clone.style.animation = 'none';
-      
-      // Set explicit dimensions
       const { width, height } = getDimensions(adData.platform);
-      clone.style.width = `${width}px`;
-      clone.style.height = `${height}px`;
+      
+      // Set explicit dimensions on the preview element
+      const previewContainer = document.createElement('div');
+      previewContainer.style.width = `${width}px`;
+      previewContainer.style.height = `${height}px`;
+      previewContainer.style.position = 'fixed';
+      previewContainer.style.top = '0';
+      previewContainer.style.left = '0';
+      previewContainer.style.zIndex = '-1000';
+      previewContainer.style.opacity = '0';
+      
+      // Clone the preview content
+      const clone = previewElement.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.width = '100%';
+      clone.style.height = '100%';
+      
+      previewContainer.appendChild(clone);
+      document.body.appendChild(previewContainer);
       
       // Capture with higher quality settings
-      const canvas = await html2canvas(clone, {
+      const canvas = await html2canvas(previewContainer, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        logging: true,
         width: width,
         height: height,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('.ad-content');
-          if (clonedElement) {
-            (clonedElement as HTMLElement).style.position = 'static';
-            (clonedElement as HTMLElement).style.transform = 'none';
-          }
-        }
+        logging: true,
       });
       
       // Clean up
-      document.body.removeChild(container);
+      document.body.removeChild(previewContainer);
       
       return new Promise<File>((resolve) => {
         canvas.toBlob((blob) => {
