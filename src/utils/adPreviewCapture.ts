@@ -10,7 +10,7 @@ export async function capturePreview(
   }
 
   try {
-    // Specifically target the ad-content element
+    // מצא את האלמנט הספציפי שמכיל את המודעה
     const previewElement = previewRef.current.querySelector('.ad-content');
     if (!previewElement) {
       console.error('Ad content element not found');
@@ -19,11 +19,11 @@ export async function capturePreview(
 
     console.log('Starting preview capture...');
 
-    // Wait for fonts to load
+    // חכה שכל הפונטים יטענו
     await document.fonts.ready;
     console.log('Fonts loaded');
 
-    // Wait for all images to load
+    // חכה שכל התמונות יטענו
     const images = previewElement.getElementsByTagName('img');
     if (images.length > 0) {
       console.log(`Waiting for ${images.length} images to load...`);
@@ -42,15 +42,15 @@ export async function capturePreview(
       console.log('All images loaded');
     }
 
-    // Add a small delay to ensure everything is rendered
+    // הוסף השהייה קטנה כדי לוודא שהכל נטען
     await new Promise(resolve => setTimeout(resolve, 100));
 
     console.log('Capturing with html2canvas...');
 
-    // Capture the preview using html2canvas with optimized settings
+    // צלם את התצוגה המקדימה עם הגדרות אופטימליות
     const canvas = await html2canvas(previewElement as HTMLElement, {
       useCORS: true,
-      scale: 2,
+      scale: 2, // איכות גבוהה יותר
       logging: true,
       backgroundColor: null,
       allowTaint: true,
@@ -67,14 +67,14 @@ export async function capturePreview(
 
     console.log('Canvas captured, converting to data URL...');
 
-    // Convert canvas to data URL with maximum quality PNG
+    // המר את הקנבס ל-URL עם איכות מקסימלית
     const dataUrl = canvas.toDataURL('image/png', 1.0);
     
-    // Convert data URL to Blob
+    // המר את ה-URL ל-Blob
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     
-    // Create File from Blob
+    // צור קובץ מה-Blob
     const file = new File([blob], "ad-preview.png", { 
       type: "image/png",
       lastModified: Date.now()
