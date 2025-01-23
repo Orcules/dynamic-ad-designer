@@ -56,9 +56,8 @@ export async function capturePreview(
       allowTaint: true,
       foreignObjectRendering: true,
       removeContainer: false,
-      imageTimeout: 15000, // Increased timeout for image loading
+      imageTimeout: 15000,
       onclone: (clonedDoc) => {
-        // Ensure styles are properly applied to the cloned element
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
           clonedElement.classList.add('capturing');
@@ -66,28 +65,23 @@ export async function capturePreview(
       }
     });
 
-    console.log('Canvas captured, converting to file...');
+    console.log('Canvas captured, converting to data URL...');
 
-    // Convert canvas to file with maximum quality
-    return new Promise((resolve) => {
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) {
-            console.error("Failed to create blob from canvas");
-            resolve(null);
-            return;
-          }
-          const file = new File([blob], "ad-preview.png", { 
-            type: "image/png",
-            lastModified: Date.now()
-          });
-          console.log('File created successfully');
-          resolve(file);
-        }, 
-        "image/png",
-        1.0 // Maximum quality
-      );
+    // Convert canvas to data URL with maximum quality PNG
+    const dataUrl = canvas.toDataURL('image/png', 1.0);
+    
+    // Convert data URL to Blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    
+    // Create File from Blob
+    const file = new File([blob], "ad-preview.png", { 
+      type: "image/png",
+      lastModified: Date.now()
     });
+    
+    console.log('File created successfully');
+    return file;
 
   } catch (error) {
     console.error("Error capturing preview:", error);
