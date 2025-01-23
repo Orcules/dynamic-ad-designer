@@ -112,153 +112,192 @@ serve(async (req) => {
   }
 })
 
-// Style application functions with enhanced designs
+function createGradient(ctx: any, x: number, y: number, width: number, height: number, color1: string, color2: string) {
+  const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
+  gradient.addColorStop(0, color1);
+  gradient.addColorStop(1, color2);
+  return gradient;
+}
+
+function adjustColor(hex: string, percent: number) {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) + amt;
+  const G = (num >> 8 & 0x00FF) + amt;
+  const B = (num & 0x0000FF) + amt;
+  return `#${(
+    0x1000000 +
+    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+    (B < 255 ? (B < 1 ? 0 : B) : 255)
+  ).toString(16).slice(1)}`;
+}
+
 async function applyMinimalStyle(ctx: any, ad: any) {
-  // Create semi-transparent overlay
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
-  ctx.fillRect(0, ad.height - 200, ad.width, 200)
+  if (ad.headline) {
+    // Set up text style
+    ctx.font = '48px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = ad.accent_color
+    ctx.fillText(ad.headline, ad.width / 2, ad.height - 120)
+  }
   
-  // Add headline with shadow
-  ctx.font = '48px Arial'
-  ctx.textAlign = 'center'
-  ctx.fillStyle = '#000000'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
-  ctx.shadowBlur = 10
-  ctx.fillText(ad.headline, ad.width / 2, ad.height - 120)
-  
-  // Add CTA button
-  const btnWidth = 200
-  const btnHeight = 50
-  const btnX = (ad.width - btnWidth) / 2
-  const btnY = ad.height - 80
-  
-  // Button shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)'
-  ctx.shadowBlur = 15
-  ctx.fillStyle = '#4A90E2'
-  ctx.fillRect(btnX, btnY, btnWidth, btnHeight)
-  
-  // Button text
-  ctx.shadowBlur = 0
-  ctx.font = '24px Arial'
-  ctx.fillStyle = '#FFFFFF'
-  ctx.fillText(ad.cta_text, ad.width / 2, btnY + 35)
+  if (ad.cta_text) {
+    // Draw button
+    const btnWidth = Math.min(200, ad.width * 0.8)
+    const btnHeight = 50
+    const btnX = (ad.width - btnWidth) / 2
+    const btnY = ad.height - 80
+    
+    ctx.fillStyle = ad.accent_color
+    roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 25)
+    
+    // Button text
+    ctx.font = '24px Arial'
+    ctx.fillStyle = '#FFFFFF'
+    const textMetrics = ctx.measureText(ad.cta_text)
+    const textX = ad.width / 2
+    const textY = btnY + (btnHeight / 2) + (textMetrics.actualBoundingBoxAscent / 2)
+    ctx.fillText(ad.cta_text, textX, textY)
+  }
 }
 
 async function applyModernStyle(ctx: any, ad: any) {
-  // Create gradient overlay
-  const gradient = ctx.createLinearGradient(0, 0, 0, ad.height)
-  gradient.addColorStop(0, 'rgba(66, 134, 244, 0.3)')
-  gradient.addColorStop(1, 'rgba(66, 134, 244, 0.8)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, ad.width, ad.height)
+  if (ad.headline) {
+    // Create gradient for headline
+    const gradient = createGradient(
+      ctx,
+      0,
+      ad.height - 160,
+      ad.width,
+      80,
+      adjustColor(ad.accent_color, 30),
+      adjustColor(ad.accent_color, -30)
+    )
+    
+    ctx.font = 'bold 56px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = gradient
+    ctx.fillText(ad.headline, ad.width / 2, ad.height - 100)
+  }
   
-  // Add headline with modern font
-  ctx.font = 'bold 56px Arial'
-  ctx.fillStyle = '#FFFFFF'
-  ctx.textAlign = 'center'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
-  ctx.shadowBlur = 20
-  ctx.fillText(ad.headline, ad.width / 2, ad.height - 100)
-  
-  // Add modern CTA button
-  const btnWidth = 220
-  const btnHeight = 60
-  const btnX = (ad.width - btnWidth) / 2
-  const btnY = ad.height - 90
-  
-  // Button with gradient
-  const btnGradient = ctx.createLinearGradient(btnX, btnY, btnX + btnWidth, btnY + btnHeight)
-  btnGradient.addColorStop(0, '#FF4B2B')
-  btnGradient.addColorStop(1, '#FF416C')
-  ctx.fillStyle = btnGradient
-  
-  // Rounded rectangle function
-  roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 30)
-  
-  // Button text
-  ctx.font = 'bold 24px Arial'
-  ctx.fillStyle = '#FFFFFF'
-  ctx.shadowBlur = 0
-  ctx.fillText(ad.cta_text, ad.width / 2, btnY + 40)
+  if (ad.cta_text) {
+    const btnWidth = Math.min(220, ad.width * 0.8)
+    const btnHeight = 60
+    const btnX = (ad.width - btnWidth) / 2
+    const btnY = ad.height - 90
+    
+    // Create gradient for button
+    const btnGradient = createGradient(
+      ctx,
+      btnX,
+      btnY,
+      btnWidth,
+      btnHeight,
+      adjustColor(ad.accent_color, 20),
+      ad.accent_color
+    )
+    
+    ctx.fillStyle = btnGradient
+    roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 30)
+    
+    // Button text
+    ctx.font = 'bold 24px Arial'
+    ctx.fillStyle = '#FFFFFF'
+    const textMetrics = ctx.measureText(ad.cta_text)
+    const textX = ad.width / 2
+    const textY = btnY + (btnHeight / 2) + (textMetrics.actualBoundingBoxAscent / 2)
+    ctx.fillText(ad.cta_text, textX, textY)
+  }
 }
 
 async function applyBoldStyle(ctx: any, ad: any) {
-  // Create dramatic gradient overlay
-  const gradient = ctx.createLinearGradient(0, 0, ad.width, ad.height)
-  gradient.addColorStop(0, 'rgba(0, 0, 0, 0.7)')
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0.9)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, ad.width, ad.height)
+  if (ad.headline) {
+    // Create gradient for headline
+    const gradient = createGradient(
+      ctx,
+      0,
+      ad.height - 160,
+      ad.width,
+      80,
+      ad.accent_color,
+      adjustColor(ad.accent_color, 20)
+    )
+    
+    ctx.font = 'bold 72px Arial'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = gradient
+    ctx.fillText(ad.headline, ad.width / 2, ad.height - 120)
+  }
   
-  // Add bold headline with stroke
-  ctx.font = 'bold 72px Arial'
-  ctx.textAlign = 'center'
-  ctx.strokeStyle = '#FFFFFF'
-  ctx.lineWidth = 3
-  ctx.strokeText(ad.headline, ad.width / 2, ad.height - 120)
-  ctx.fillStyle = '#FF5722'
-  ctx.fillText(ad.headline, ad.width / 2, ad.height - 120)
-  
-  // Add dramatic CTA button
-  const btnWidth = 250
-  const btnHeight = 70
-  const btnX = (ad.width - btnWidth) / 2
-  const btnY = ad.height - 100
-  
-  // Button with glow effect
-  ctx.shadowColor = '#FF5722'
-  ctx.shadowBlur = 30
-  ctx.fillStyle = '#FFFFFF'
-  roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 35)
-  
-  // Button text
-  ctx.font = 'bold 28px Arial'
-  ctx.fillStyle = '#000000'
-  ctx.shadowBlur = 0
-  ctx.fillText(ad.cta_text, ad.width / 2, btnY + 45)
+  if (ad.cta_text) {
+    const btnWidth = Math.min(250, ad.width * 0.8)
+    const btnHeight = 70
+    const btnX = (ad.width - btnWidth) / 2
+    const btnY = ad.height - 100
+    
+    ctx.fillStyle = '#FFFFFF'
+    roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 35)
+    
+    // Button text
+    ctx.font = 'bold 28px Arial'
+    ctx.fillStyle = '#000000'
+    const textMetrics = ctx.measureText(ad.cta_text)
+    const textX = ad.width / 2
+    const textY = btnY + (btnHeight / 2) + (textMetrics.actualBoundingBoxAscent / 2)
+    ctx.fillText(ad.cta_text, textX, textY)
+  }
 }
 
 async function applyElegantStyle(ctx: any, ad: any) {
-  // Create subtle gradient overlay
-  const gradient = ctx.createLinearGradient(0, 0, 0, ad.height)
-  gradient.addColorStop(0, 'rgba(0, 0, 0, 0)')
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)')
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, 0, ad.width, ad.height)
+  if (ad.headline) {
+    // Create gradient for headline
+    const gradient = createGradient(
+      ctx,
+      0,
+      ad.height - 160,
+      ad.width,
+      80,
+      ad.accent_color,
+      adjustColor(ad.accent_color, 30)
+    )
+    
+    ctx.font = 'italic 54px Georgia'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = gradient
+    ctx.fillText(ad.headline, ad.width / 2, ad.height - 100)
+  }
   
-  // Add elegant headline
-  ctx.font = 'italic 54px Georgia'
-  ctx.textAlign = 'center'
-  ctx.fillStyle = '#FFFFFF'
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
-  ctx.shadowBlur = 15
-  ctx.fillText(ad.headline, ad.width / 2, ad.height - 100)
-  
-  // Add elegant CTA button
-  const btnWidth = 220
-  const btnHeight = 60
-  const btnX = (ad.width - btnWidth) / 2
-  const btnY = ad.height - 90
-  
-  // Button with subtle gradient
-  const btnGradient = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnHeight)
-  btnGradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)')
-  btnGradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)')
-  ctx.fillStyle = btnGradient
-  
-  // Rounded rectangle with border
-  ctx.shadowBlur = 20
-  roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 30)
-  
-  // Button text
-  ctx.font = '24px Georgia'
-  ctx.fillStyle = '#000000'
-  ctx.shadowBlur = 0
-  ctx.fillText(ad.cta_text, ad.width / 2, btnY + 40)
+  if (ad.cta_text) {
+    const btnWidth = Math.min(220, ad.width * 0.8)
+    const btnHeight = 60
+    const btnX = (ad.width - btnWidth) / 2
+    const btnY = ad.height - 90
+    
+    // Create gradient for button
+    const btnGradient = createGradient(
+      ctx,
+      btnX,
+      btnY,
+      btnWidth,
+      btnHeight,
+      'rgba(255, 255, 255, 0.9)',
+      'rgba(255, 255, 255, 0.8)'
+    )
+    
+    ctx.fillStyle = btnGradient
+    roundRect(ctx, btnX, btnY, btnWidth, btnHeight, 30)
+    
+    // Button text
+    ctx.font = '24px Georgia'
+    ctx.fillStyle = '#000000'
+    const textMetrics = ctx.measureText(ad.cta_text)
+    const textX = ad.width / 2
+    const textY = btnY + (btnHeight / 2) + (textMetrics.actualBoundingBoxAscent / 2)
+    ctx.fillText(ad.cta_text, textX, textY)
+  }
 }
 
-// Helper function for drawing rounded rectangles
 function roundRect(ctx: any, x: number, y: number, width: number, height: number, radius: number) {
   ctx.beginPath()
   ctx.moveTo(x + radius, y)
