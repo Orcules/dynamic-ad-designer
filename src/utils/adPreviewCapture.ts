@@ -10,7 +10,6 @@ export async function capturePreview(
   }
 
   try {
-    // מצא את האלמנט הספציפי שמכיל את המודעה
     const previewElement = previewRef.current.querySelector('.ad-content');
     if (!previewElement) {
       console.error('Ad content element not found');
@@ -18,70 +17,92 @@ export async function capturePreview(
     }
 
     console.log('Starting preview capture...');
+    
+    // Force a layout calculation
+    previewElement.getBoundingClientRect();
 
-    // חכה שכל הפונטים יטענו
+    // Wait for fonts to load
     await document.fonts.ready;
     console.log('Fonts loaded');
 
-    // חכה שכל התמונות יטענו
+    // Wait for all images to load
     const images = previewElement.getElementsByTagName('img');
     if (images.length > 0) {
       console.log(`Waiting for ${images.length} images to load...`);
       await Promise.all(
         Array.from(images).map((img) => {
+          if (img.complete) {
+            console.log(`Image ${img.src} already loaded`);
+            return Promise.resolve();
+          }
           return new Promise<void>((resolve, reject) => {
-            if (img.complete && img.naturalHeight !== 0) {
+            img.onload = () => {
+              console.log(`Image ${img.src} loaded successfully`);
               resolve();
-            } else {
-              img.onload = () => resolve();
-              img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
-            }
+            };
+            img.onerror = () => {
+              console.error(`Failed to load image: ${img.src}`);
+              reject(new Error(`Failed to load image: ${img.src}`));
+            };
           });
         })
       );
       console.log('All images loaded');
     }
 
-    // הוסף השהייה קטנה כדי לוודא שהכל נטען
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Add a delay to ensure everything is rendered
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     console.log('Capturing with html2canvas...');
+    
+    // Clone the element to avoid modifying the original
+    const clone = previewElement.cloneNode(true) as HTMLElement;
+    const container = document.createElement('div');
+    container.appendChild(clone);
+    document.body.appendChild(container);
 
-    // צלם את התצוגה המקדימה עם הגדרות אופטימליות
-    const canvas = await html2canvas(previewElement as HTMLElement, {
-      useCORS: true,
-      scale: 2, // איכות גבוהה יותר
-      logging: true,
-      backgroundColor: null,
-      allowTaint: true,
-      foreignObjectRendering: true,
-      removeContainer: false,
-      imageTimeout: 15000,
-      onclone: (clonedDoc) => {
-        const clonedElement = clonedDoc.querySelector('.ad-content');
-        if (clonedElement) {
-          clonedElement.classList.add('capturing');
+    try {
+      const canvas = await html2canvas(clone, {
+        useCORS: true,
+        scale: 2,
+        logging: true,
+        backgroundColor: null,
+        allowTaint: true,
+        foreignObjectRendering: true,
+        removeContainer: true,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('.ad-content');
+          if (clonedElement) {
+            // Force all computed styles to be applied
+            const styles = window.getComputedStyle(previewElement);
+            Array.from(styles).forEach(key => {
+              (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
+            });
+          }
         }
-      }
-    });
+      });
 
-    console.log('Canvas captured, converting to data URL...');
+      console.log('Canvas captured, converting to data URL...');
+      
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      console.log('Data URL created');
+      
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      
+      const file = new File([blob], "ad-preview.png", { 
+        type: "image/png",
+        lastModified: Date.now()
+      });
+      
+      console.log('File created successfully');
+      return file;
 
-    // המר את הקנבס ל-URL עם איכות מקסימלית
-    const dataUrl = canvas.toDataURL('image/png', 1.0);
-    
-    // המר את ה-URL ל-Blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    
-    // צור קובץ מה-Blob
-    const file = new File([blob], "ad-preview.png", { 
-      type: "image/png",
-      lastModified: Date.now()
-    });
-    
-    console.log('File created successfully');
-    return file;
+    } finally {
+      // Clean up
+      document.body.removeChild(container);
+    }
 
   } catch (error) {
     console.error("Error capturing preview:", error);
