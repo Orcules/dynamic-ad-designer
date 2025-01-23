@@ -96,9 +96,29 @@ const Index = () => {
 
   const handleAdGenerated = async (adData: any) => {
     try {
-      // Instead of inserting, just invalidate the query to refresh the list
+      // Get the latest ad after invalidating the query
       queryClient.invalidateQueries({ queryKey: ["generated-ads"] });
-      toast.success("המודעה נוצרה בהצלחה");
+      
+      // Fetch the latest ad to get its URL
+      const { data: latestAds } = await supabase
+        .from("generated_ads")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      
+      const latestAd = latestAds?.[0];
+      
+      if (latestAd?.image_url) {
+        toast.success("המודעה נוצרה בהצלחה", {
+          action: {
+            label: "צפה במודעה",
+            onClick: () => window.open(latestAd.image_url, '_blank')
+          },
+        });
+      } else {
+        toast.success("המודעה נוצרה בהצלחה");
+      }
+      
       setSelectedTemplate(null);
     } catch (error) {
       console.error("Error generating ad:", error);
