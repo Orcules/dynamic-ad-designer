@@ -18,9 +18,9 @@ export async function capturePreview(
 
     console.log('Starting preview capture...');
     
-    // Force a layout calculation
+    // Force a layout calculation and wait for all CSS to be applied
     previewElement.getBoundingClientRect();
-
+    
     // Wait for fonts to load
     await document.fonts.ready;
     console.log('Fonts loaded');
@@ -55,13 +55,28 @@ export async function capturePreview(
 
     console.log('Capturing with html2canvas...');
     
-    // Clone the element to avoid modifying the original
+    // Create an exact clone of the preview element
     const clone = previewElement.cloneNode(true) as HTMLElement;
     const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '-9999px';
     container.appendChild(clone);
     document.body.appendChild(container);
 
     try {
+      // Copy all computed styles from the original element to the clone
+      const originalStyles = window.getComputedStyle(previewElement);
+      Array.from(originalStyles).forEach(key => {
+        clone.style[key as any] = originalStyles.getPropertyValue(key);
+      });
+
+      // Set explicit dimensions on the clone
+      const rect = previewElement.getBoundingClientRect();
+      clone.style.width = `${rect.width}px`;
+      clone.style.height = `${rect.height}px`;
+
+      // Capture the clone with html2canvas
       const canvas = await html2canvas(clone, {
         useCORS: true,
         scale: 2,
@@ -71,10 +86,12 @@ export async function capturePreview(
         foreignObjectRendering: true,
         removeContainer: true,
         imageTimeout: 15000,
+        width: rect.width,
+        height: rect.height,
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.querySelector('.ad-content');
           if (clonedElement) {
-            // Force all computed styles to be applied
+            // Copy all styles again in the cloned document
             const styles = window.getComputedStyle(previewElement);
             Array.from(styles).forEach(key => {
               (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
@@ -83,20 +100,21 @@ export async function capturePreview(
         }
       });
 
-      console.log('Canvas captured, converting to data URL...');
+      console.log('Canvas captured, converting to JPEG...');
       
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
-      console.log('Data URL created');
+      // Convert to JPEG with high quality
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      console.log('JPEG Data URL created');
       
       const response = await fetch(dataUrl);
       const blob = await response.blob();
       
-      const file = new File([blob], "ad-preview.png", { 
-        type: "image/png",
+      const file = new File([blob], "ad-preview.jpg", { 
+        type: "image/jpeg",
         lastModified: Date.now()
       });
       
-      console.log('File created successfully');
+      console.log('JPEG File created successfully');
       return file;
 
     } finally {
