@@ -98,16 +98,16 @@ export function AdPreview({
                   {headline}
                 </h2>
                 {ctaText && (
-                  <button 
-                    className="relative z-20 transform px-6 py-3 max-w-[80%] mt-4"
+                  <div 
+                    className="relative z-20 transform px-6 py-3 max-w-[80%] mt-4 flex items-center justify-center"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
                   >
-                    <span className="block whitespace-normal break-words text-center">
+                    <span className="block">
                       {ctaText}
                     </span>
-                  </button>
+                  </div>
                 )}
               </div>
             )}
