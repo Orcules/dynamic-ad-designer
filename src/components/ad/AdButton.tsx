@@ -29,6 +29,11 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     color: '#FFFFFF',
     border: 'none',
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    verticalAlign: 'middle',
+    height: 'auto',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
   };
 
   switch (style) {
