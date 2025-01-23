@@ -96,8 +96,8 @@ const Index = () => {
 
   const handleAdGenerated = async (adData: any) => {
     try {
-      const { error } = await supabase.from("generated_ads").insert([adData]);
-      if (error) throw error;
+      // Instead of inserting, just invalidate the query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["generated-ads"] });
       toast.success("המודעה נוצרה בהצלחה");
       setSelectedTemplate(null);
     } catch (error) {
