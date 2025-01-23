@@ -24,6 +24,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     fontFamily: fontFamily || 'inherit',
+    textAlign: 'center',
   };
 
   function adjustColor(hex: string, percent: number) {
@@ -46,10 +47,10 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         ...baseStyle,
         fontWeight: 'bold',
         letterSpacing: '0.05em',
+        background: `linear-gradient(45deg, ${adjustColor(accentColor, 30)}, ${adjustColor(accentColor, -30)})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        backgroundImage: `linear-gradient(45deg, ${adjustColor(accentColor, 30)}, ${adjustColor(accentColor, -30)})`,
-        textAlign: 'center',
+        color: 'transparent',
       };
     case 'bold':
       return {
@@ -57,10 +58,10 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         fontWeight: '800',
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
+        background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        backgroundImage: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
-        textAlign: 'center',
+        color: 'transparent',
       };
     case 'elegant':
       return {
@@ -68,15 +69,14 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         fontWeight: '500',
         letterSpacing: '0.15em',
         fontStyle: 'italic',
+        background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 30)})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        backgroundImage: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 30)})`,
-        textAlign: 'center',
+        color: 'transparent',
       };
     default: // minimal
       return {
         ...baseStyle,
-        textAlign: 'center',
         color: accentColor,
       };
   }
