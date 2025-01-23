@@ -29,11 +29,11 @@ export const handleAdSubmission = async ({
     const { width, height } = getDimensions(adData.platform);
     const timestamp = Date.now();
     
-    console.log('Starting ad generation process...');
+    console.log('Starting ad generation process with data:', { adData, width, height });
     
     // Upload the original image first
     const originalImagePath = `original/${timestamp}_${selectedImage.name}`;
-    const { error: originalUploadError } = await supabase.storage
+    const { error: originalUploadError, data: originalUploadData } = await supabase.storage
       .from('ad-images')
       .upload(originalImagePath, selectedImage, {
         cacheControl: '3600',
@@ -41,22 +41,24 @@ export const handleAdSubmission = async ({
       });
 
     if (originalUploadError) {
+      console.error('Original image upload error:', originalUploadError);
       throw new Error('Failed to upload original image');
     }
 
-    console.log('Original image uploaded, capturing preview...');
+    console.log('Original image uploaded successfully:', originalUploadData);
     
     // Capture the exact preview as shown
     const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
+      console.error('Preview capture failed - no file returned');
       throw new Error('Failed to capture preview');
     }
 
-    console.log('Preview captured, uploading to storage...');
+    console.log('Preview captured successfully, uploading to storage...');
     const previewPath = `generated/${timestamp}_preview.png`;
     
     // Upload the preview image
-    const { error: previewError } = await supabase.storage
+    const { error: previewError, data: previewUploadData } = await supabase.storage
       .from('ad-images')
       .upload(previewPath, previewFile, {
         contentType: 'image/png',
@@ -69,12 +71,14 @@ export const handleAdSubmission = async ({
       throw new Error('Failed to upload preview');
     }
 
+    console.log('Preview uploaded successfully:', previewUploadData);
+
     // Get the public URL for the preview image
     const { data: { publicUrl: previewUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(previewPath);
 
-    console.log('Preview uploaded, creating ad record...');
+    console.log('Got public URL for preview:', previewUrl);
     
     // Create ad record with the exact preview image
     const { data: newAd, error: createError } = await supabase
@@ -96,15 +100,15 @@ export const handleAdSubmission = async ({
       .single();
 
     if (createError) {
-      console.error('Create error:', createError);
+      console.error('Create ad record error:', createError);
       throw new Error('Failed to create ad record');
     }
 
-    console.log('Ad created successfully:', newAd);
+    console.log('Ad record created successfully:', newAd);
     
     toast.success('המודעה נוצרה בהצלחה!', {
       action: {
-        label: 'הורד',
+        label: 'צפה במודעה',
         onClick: () => window.open(previewUrl, '_blank')
       },
     });
@@ -112,7 +116,7 @@ export const handleAdSubmission = async ({
     onSuccess(newAd);
     
   } catch (error: any) {
-    console.error('Error creating ad:', error);
+    console.error('Error in handleAdSubmission:', error);
     toast.error(error.message || 'אירעה שגיאה ביצירת המודעה');
   } finally {
     setIsGenerating(false);
