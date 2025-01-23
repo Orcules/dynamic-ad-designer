@@ -12,7 +12,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
     padding: '0.8em 2em',
-    fontSize: 'clamp(0.75rem, 1.2vw, 1.1rem)',
+    fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)',
     fontWeight: '600',
     borderRadius: '9999px',
     cursor: 'pointer',
@@ -21,14 +21,15 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     isolation: 'isolate',
     maxWidth: '90%',
     margin: '0 auto',
-    whiteSpace: 'nowrap',
-    textOverflow: 'ellipsis',
-    display: 'inline-block',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     width: 'auto',
     minWidth: 'min(200px, 50%)',
-    maxHeight: '3em',
+    minHeight: '2.5em',
     lineHeight: '1.2',
     fontFamily: fontFamily || 'inherit',
+    textAlign: 'center',
   };
 
   function adjustColor(hex: string, percent: number) {
