@@ -50,7 +50,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: `linear-gradient(45deg, ${adjustColor(accentColor, 30)}, ${adjustColor(accentColor, -30)})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        color: 'transparent',
+        backgroundClip: 'text',
       };
     case 'bold':
       return {
@@ -61,7 +61,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        color: 'transparent',
+        backgroundClip: 'text',
       };
     case 'elegant':
       return {
@@ -72,7 +72,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 30)})`,
         WebkitBackgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
-        color: 'transparent',
+        backgroundClip: 'text',
       };
     default: // minimal
       return {
