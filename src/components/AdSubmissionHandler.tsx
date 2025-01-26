@@ -5,10 +5,47 @@ import { getDimensions } from "@/utils/adDimensions";
 
 interface AdSubmissionHandlerProps {
   adData: any;
-  selectedImage: File | string;  // Updated type to allow both File and string (URL)
+  selectedImage: File | string;
   previewRef: React.RefObject<HTMLDivElement>;
   onSuccess: (newAd: any) => void;
   setIsGenerating: (value: boolean) => void;
+}
+
+const CORS_PROXIES = [
+  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+];
+
+async function fetchWithRetry(url: string): Promise<Response> {
+  let lastError;
+  
+  // Try each proxy in sequence
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxyFn(url);
+      console.log('Attempting to fetch with proxy:', proxyUrl);
+      const response = await fetch(proxyUrl);
+      if (response.ok) {
+        return response;
+      }
+    } catch (error) {
+      console.error('Proxy fetch failed:', error);
+      lastError = error;
+    }
+  }
+
+  // If all proxies fail, try direct fetch as last resort
+  try {
+    const response = await fetch(url);
+    if (response.ok) {
+      return response;
+    }
+  } catch (error) {
+    lastError = error;
+  }
+
+  throw lastError || new Error('Failed to fetch image after all attempts');
 }
 
 export const handleAdSubmission = async ({
@@ -36,12 +73,9 @@ export const handleAdSubmission = async ({
     if (selectedImage instanceof File) {
       imageBlob = selectedImage;
     } else {
-      // If it's a URL, we need to fetch it through a CORS proxy
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(selectedImage)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        throw new Error('Failed to fetch image through proxy');
-      }
+      // If it's a URL, try multiple CORS proxies
+      console.log('Fetching image from URL:', selectedImage);
+      const response = await fetchWithRetry(selectedImage);
       imageBlob = await response.blob();
     }
     
