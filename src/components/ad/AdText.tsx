@@ -22,7 +22,6 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     fontFamily: fontFamily || 'inherit',
-    textAlign: 'center',
   };
 
   switch (style) {
@@ -31,6 +30,11 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         ...baseStyle,
         color: '#FFFFFF',
         textShadow: `2px 2px 4px ${accentColor}`,
+        position: 'absolute',
+        top: '10%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
       };
     case 'bold':
       return {
@@ -40,6 +44,11 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         letterSpacing: '0.1em',
         textTransform: 'uppercase',
         textShadow: `0 2px 4px rgba(0,0,0,0.3)`,
+        position: 'absolute',
+        bottom: '30%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
       };
     case 'elegant':
       return {
@@ -48,11 +57,22 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         fontWeight: '500',
         letterSpacing: '0.05em',
         textShadow: `1px 1px 2px ${accentColor}`,
+        position: 'absolute',
+        left: '10%',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        textAlign: 'left',
+        maxWidth: '45%',
       };
     default: // minimal
       return {
         ...baseStyle,
         color: '#000000',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        textAlign: 'center',
       };
   }
 }

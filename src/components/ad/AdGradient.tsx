@@ -26,18 +26,45 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
   switch (style) {
     case 'modern':
       return {
-        background: `linear-gradient(135deg, ${darkerColor}dd, ${color}dd)`,
-        backdropFilter: 'blur(2px)'
+        background: `linear-gradient(135deg, ${darkerColor}dd, transparent)`,
+        backdropFilter: 'blur(2px)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `radial-gradient(circle at top right, transparent, ${color}aa)`,
+        }
       };
     case 'bold':
       return {
-        background: `linear-gradient(to right, ${darkerColor}ee, ${color}ee)`,
-        backdropFilter: 'blur(4px)'
+        background: `linear-gradient(to bottom, transparent, ${darkerColor}ee)`,
+        backdropFilter: 'blur(4px)',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '100%',
+          height: '60%',
+          background: `linear-gradient(to top, ${color}ee, transparent)`,
+        }
       };
     case 'elegant':
       return {
-        background: `linear-gradient(45deg, ${darkerColor}cc, ${color}cc)`,
-        backdropFilter: 'blur(2px)'
+        background: `linear-gradient(45deg, ${darkerColor}ee, transparent)`,
+        backdropFilter: 'blur(2px)',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(to right, ${color}cc, transparent)`,
+        }
       };
     default: // minimal
       return {

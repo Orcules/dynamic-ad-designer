@@ -22,6 +22,11 @@ const Index = () => {
   const [selectedAd, setSelectedAd] = useState<any>(null);
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    // Set dark mode by default
+    document.documentElement.classList.add('dark');
+  }, []);
+
   const { data: generatedAds, isLoading } = useQuery({
     queryKey: ["generated-ads"],
     queryFn: fetchGeneratedAds,
@@ -80,18 +85,18 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/10 text-foreground p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="space-y-4 text-center">
-          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full animate-fade-in">
             <Sparkles className="h-5 w-5 text-primary animate-pulse" />
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
               Dynamic Ad Designer
             </h1>
           </div>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-lg animate-fade-in">
             Create stunning ads for multiple platforms with ease
           </p>
         </div>
 
-        <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
+        <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6 animate-scale-in">
           <AdEditor 
             template={{ 
               id: "default", 
@@ -104,7 +109,7 @@ const Index = () => {
           />
         </div>
 
-        <Card className="backdrop-blur-sm bg-background/50">
+        <Card className="backdrop-blur-sm bg-background/50 animate-fade-in">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <span>Generated Ads</span>
