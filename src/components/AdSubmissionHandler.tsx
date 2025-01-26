@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capturePreview } from "@/utils/adPreviewCapture";
 import { getDimensions } from "@/utils/adDimensions";
+import { format } from 'date-fns';
 
 interface AdSubmissionHandlerProps {
   adData: any;
@@ -46,6 +47,22 @@ async function fetchWithRetry(url: string): Promise<Response> {
   }
 
   throw lastError || new Error('Failed to fetch image after all attempts');
+}
+
+function generateAdName(adData: any, imageIndex: number, totalImages: number) {
+  const today = format(new Date(), 'ddMMyy');
+  const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
+  const lang = adData.language || 'he';
+  const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
+  const template = adData.template_style || 'default';
+  const color = adData.accent_color.replace('#', '');
+  
+  const suffix = totalImages > 1 ? `-${imageIndex + 1}` : '';
+  
+  return `${today}-${baseName}-${lang}-${font}-${template}-${color}${suffix}`
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 export const handleAdSubmission = async ({
@@ -129,10 +146,11 @@ export const handleAdSubmission = async ({
     console.log('Got public URL for preview:', previewUrl);
     
     // Create ad record with the exact preview image
+    const adName = generateAdName(adData, 0, 1);
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
-        name: adData.name,
+        name: adName,
         headline: adData.headline,
         cta_text: adData.cta_text,
         font_url: adData.font_url,

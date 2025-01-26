@@ -3,6 +3,7 @@ import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
 import { handleAdSubmission } from "./AdSubmissionHandler";
 import { getDimensions } from "@/utils/adDimensions";
+import { format } from 'date-fns';
 
 interface Template {
   id: string;
@@ -86,6 +87,22 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
+  const generateAdName = (adData: any, imageIndex: number, totalImages: number) => {
+    const today = format(new Date(), 'ddMMyy');
+    const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
+    const lang = adData.language || 'he';
+    const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
+    const template = adData.template_style || 'default';
+    const color = adData.accent_color.replace('#', '');
+    
+    const suffix = totalImages > 1 ? `-${imageIndex + 1}` : '';
+    
+    return `${today}-${baseName}-${lang}-${font}-${template}-${color}${suffix}`
+      .replace(/[^a-z0-9-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
@@ -93,10 +110,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     try {
       if (selectedImages.length > 0) {
         // Handle multiple file uploads
-        for (const image of selectedImages) {
+        for (let i = 0; i < selectedImages.length; i++) {
+          const modifiedAdData = {
+            ...adData,
+            name: generateAdName(adData, i, selectedImages.length)
+          };
+          
           await handleAdSubmission({
-            adData,
-            selectedImage: image,
+            adData: modifiedAdData,
+            selectedImage: selectedImages[i],
             previewRef,
             onSuccess: onAdGenerated,
             setIsGenerating,
@@ -104,13 +126,18 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         }
       } else if (imageUrls.length > 0) {
         // Handle multiple URLs
-        for (const url of imageUrls) {
-          const response = await fetch(url);
+        for (let i = 0; i < imageUrls.length; i++) {
+          const modifiedAdData = {
+            ...adData,
+            name: generateAdName(adData, i, imageUrls.length)
+          };
+          
+          const response = await fetch(imageUrls[i]);
           const blob = await response.blob();
           const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
           
           await handleAdSubmission({
-            adData,
+            adData: modifiedAdData,
             selectedImage: file,
             previewRef,
             onSuccess: onAdGenerated,
