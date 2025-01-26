@@ -5,6 +5,7 @@ import { PlatformSelector } from "./PlatformSelector";
 import { TemplateStyleSelector } from "./TemplateStyleSelector";
 import { LanguageSelector } from "./LanguageSelector";
 import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
 interface AdFormProps {
   adData: {
@@ -22,6 +23,7 @@ interface AdFormProps {
   onStyleChange: (value: string) => void;
   onColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageUrlsChange: (urls: string[]) => void;
 }
 
 export function AdForm({
@@ -32,13 +34,24 @@ export function AdForm({
   onStyleChange,
   onColorChange,
   onImageChange,
+  onImageUrlsChange,
 }: AdFormProps) {
   const [selectedLanguage, setSelectedLanguage] = useState("he");
+  const [imageUrls, setImageUrls] = useState<string>("");
 
   // Ensure a default template style is set if none is selected
   if (!adData.template_style) {
     onStyleChange('minimal');
   }
+
+  const handleImageUrlsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setImageUrls(e.target.value);
+    const urls = e.target.value
+      .split('\n')
+      .map(url => url.trim())
+      .filter(url => url.length > 0);
+    onImageUrlsChange(urls);
+  };
 
   return (
     <div className="space-y-6">
@@ -55,18 +68,39 @@ export function AdForm({
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="image">תמונה</Label>
-        <Input
-          id="image"
-          name="image"
-          type="file"
-          accept="image/*"
-          onChange={onImageChange}
-          className="text-right"
-          required
-        />
-      </div>
+      <Tabs defaultValue="upload" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload">העלאת תמונות</TabsTrigger>
+          <TabsTrigger value="urls">הזנת קישורים</TabsTrigger>
+        </TabsList>
+        <TabsContent value="upload">
+          <div className="space-y-2">
+            <Label htmlFor="image">תמונות</Label>
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/*"
+              onChange={onImageChange}
+              className="text-right"
+              multiple
+              required
+            />
+          </div>
+        </TabsContent>
+        <TabsContent value="urls">
+          <div className="space-y-2">
+            <Label htmlFor="imageUrls">קישורי תמונות</Label>
+            <textarea
+              id="imageUrls"
+              value={imageUrls}
+              onChange={handleImageUrlsChange}
+              placeholder="הזן קישור לכל תמונה בשורה נפרדת"
+              className="w-full min-h-[100px] p-2 border rounded-md text-right"
+            />
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <LanguageSelector 
         value={selectedLanguage}

@@ -19,6 +19,7 @@ interface AdFormContainerProps {
   onStyleChange: (value: string) => void;
   onColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onImageUrlsChange: (urls: string[]) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -31,6 +32,7 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
   onStyleChange,
   onColorChange,
   onImageChange,
+  onImageUrlsChange,
   onSubmit,
 }) => {
   return (
@@ -43,6 +45,7 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         onStyleChange={onStyleChange}
         onColorChange={onColorChange}
         onImageChange={onImageChange}
+        onImageUrlsChange={onImageUrlsChange}
       />
       <Button 
         type="submit" 

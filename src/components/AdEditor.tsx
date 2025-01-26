@@ -27,7 +27,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     template_style: "",
     accent_color: "#4A90E2",
   });
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
@@ -41,10 +42,19 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedImage(file);
-      setPreviewUrl(URL.createObjectURL(file));
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedImages(files);
+      if (files.length > 0) {
+        setPreviewUrl(URL.createObjectURL(files[0]));
+      }
+    }
+  };
+
+  const handleImageUrlsChange = (urls: string[]) => {
+    setImageUrls(urls);
+    if (urls.length > 0) {
+      setPreviewUrl(urls[0]);
     }
   };
 
@@ -78,13 +88,41 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await handleAdSubmission({
-      adData,
-      selectedImage,
-      previewRef,
-      onSuccess: onAdGenerated,
-      setIsGenerating,
-    });
+    setIsGenerating(true);
+
+    try {
+      if (selectedImages.length > 0) {
+        // Handle multiple file uploads
+        for (const image of selectedImages) {
+          await handleAdSubmission({
+            adData,
+            selectedImage: image,
+            previewRef,
+            onSuccess: onAdGenerated,
+            setIsGenerating,
+          });
+        }
+      } else if (imageUrls.length > 0) {
+        // Handle multiple URLs
+        for (const url of imageUrls) {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+          
+          await handleAdSubmission({
+            adData,
+            selectedImage: file,
+            previewRef,
+            onSuccess: onAdGenerated,
+            setIsGenerating,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const { width, height } = getDimensions(adData.platform);
@@ -100,6 +138,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         onStyleChange={handleStyleChange}
         onColorChange={handleColorChange}
         onImageChange={handleImageChange}
+        onImageUrlsChange={handleImageUrlsChange}
         onSubmit={handleSubmit}
       />
 
