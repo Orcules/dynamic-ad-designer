@@ -5,7 +5,7 @@ import { getDimensions } from "@/utils/adDimensions";
 
 interface AdSubmissionHandlerProps {
   adData: any;
-  selectedImage: File | null;
+  selectedImage: File | string;  // Updated type to allow both File and string (URL)
   previewRef: React.RefObject<HTMLDivElement>;
   onSuccess: (newAd: any) => void;
   setIsGenerating: (value: boolean) => void;
@@ -37,7 +37,7 @@ export const handleAdSubmission = async ({
       imageBlob = selectedImage;
     } else {
       // If it's a URL, we need to fetch it through a CORS proxy
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(selectedImage.toString())}`;
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(selectedImage)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) {
         throw new Error('Failed to fetch image through proxy');
