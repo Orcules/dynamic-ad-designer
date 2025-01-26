@@ -4,6 +4,7 @@ import { AdPreview } from "./AdPreview";
 import { handleAdSubmission } from "./AdSubmissionHandler";
 import { getDimensions } from "@/utils/adDimensions";
 import { format } from 'date-fns';
+import { toast } from "sonner";
 
 interface Template {
   id: string;
@@ -53,10 +54,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   };
 
   const handleImageUrlsChange = (urls: string[]) => {
-    setImageUrls(urls);
-    if (urls.length > 0) {
-      setPreviewUrl(urls[0]);
+    const secureUrls = urls.map(ensureHttps);
+    setImageUrls(secureUrls);
+    if (secureUrls.length > 0) {
+      setPreviewUrl(secureUrls[0]);
     }
+  };
+
+  const ensureHttps = (url: string) => {
+    return url.replace(/^http:/, 'https:');
   };
 
   const handleFontChange = (value: string) => {
@@ -116,13 +122,18 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             name: generateAdName(adData, i, selectedImages.length)
           };
           
-          await handleAdSubmission({
-            adData: modifiedAdData,
-            selectedImage: selectedImages[i],
-            previewRef,
-            onSuccess: onAdGenerated,
-            setIsGenerating,
-          });
+          try {
+            await handleAdSubmission({
+              adData: modifiedAdData,
+              selectedImage: selectedImages[i],
+              previewRef,
+              onSuccess: onAdGenerated,
+              setIsGenerating,
+            });
+          } catch (error) {
+            console.error(`Error processing image ${i + 1}:`, error);
+            toast.error(`שגיאה בעיבוד תמונה ${i + 1}`);
+          }
         }
       } else if (imageUrls.length > 0) {
         // Handle multiple URLs
@@ -132,21 +143,38 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             name: generateAdName(adData, i, imageUrls.length)
           };
           
-          const response = await fetch(imageUrls[i]);
-          const blob = await response.blob();
-          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
-          
-          await handleAdSubmission({
-            adData: modifiedAdData,
-            selectedImage: file,
-            previewRef,
-            onSuccess: onAdGenerated,
-            setIsGenerating,
-          });
+          try {
+            const secureUrl = ensureHttps(imageUrls[i]);
+            const response = await fetch(secureUrl, {
+              mode: 'cors',
+              headers: {
+                'Accept': 'image/*'
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch image ${i + 1}`);
+            }
+            
+            const blob = await response.blob();
+            const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            
+            await handleAdSubmission({
+              adData: modifiedAdData,
+              selectedImage: file,
+              previewRef,
+              onSuccess: onAdGenerated,
+              setIsGenerating,
+            });
+          } catch (error) {
+            console.error(`Error processing URL ${i + 1}:`, error);
+            toast.error(`שגיאה בעיבוד קישור ${i + 1}`);
+          }
         }
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
+      toast.error('אירעה שגיאה ביצירת המודעה');
     } finally {
       setIsGenerating(false);
     }
