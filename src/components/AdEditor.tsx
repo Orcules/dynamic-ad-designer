@@ -93,17 +93,17 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
-  const generateAdName = (adData: any, imageIndex: number, totalImages: number) => {
+  const generateAdName = (adData: any, imageIndex: number) => {
     const today = format(new Date(), 'ddMMyy');
-    const lang = 'EN'; // Default language code for file name
     const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
-    const contentLang = 'he'; // Content language
+    const lang = 'EN';
+    const contentLang = 'he';
     const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
-    const fontWeight = adData.font_url.includes('wght@') ? '-bold' : '';
+    const fontWeight = adData.font_url.includes('wght@700') ? '-bold' : '';
     const dimensions = `${adData.width}x${adData.height}`;
     const template = adData.template_style || 'default';
     const color = adData.accent_color.replace('#', '');
-    const picNumber = totalImages > 1 ? `-Pic${imageIndex + 1}` : '';
+    const picNumber = imageIndex > 0 ? `-Pic${imageIndex + 1}` : '';
     
     return `${today}-${lang}-${baseName}-${contentLang}-${font}${fontWeight}-${dimensions}-${template}-${color}${picNumber}`
       .replace(/[^a-z0-9-]/g, '-')
@@ -124,7 +124,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         for (let i = 0; i < selectedImages.length; i++) {
           const modifiedAdData = {
             ...enrichedAdData,
-            name: generateAdName(enrichedAdData, i, selectedImages.length)
+            name: generateAdName(enrichedAdData, i)
           };
           
           try {
@@ -145,7 +145,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         for (let i = 0; i < imageUrls.length; i++) {
           const modifiedAdData = {
             ...enrichedAdData,
-            name: generateAdName(enrichedAdData, i, imageUrls.length)
+            name: generateAdName(enrichedAdData, i)
           };
           
           try {
