@@ -54,12 +54,28 @@ export function AdForm({
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     if (!url) return false;
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      return response.ok && response.headers.get('content-type')?.startsWith('image/');
-    } catch (error) {
-      return false;
-    }
+    
+    // Try loading the image directly first
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = async () => {
+        try {
+          // Fallback to HEAD request if direct loading fails
+          const response = await fetch(url, { method: 'HEAD' });
+          resolve(response.ok);
+        } catch (error) {
+          // If both methods fail, try one last time with a direct GET request
+          try {
+            const response = await fetch(url);
+            resolve(response.ok);
+          } catch (error) {
+            resolve(false);
+          }
+        }
+      };
+      img.src = url;
+    });
   };
 
   const handleUrlChange = async (index: number, newUrl: string) => {
