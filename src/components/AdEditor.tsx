@@ -98,12 +98,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
     const lang = adData.language || 'he';
     const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
+    const dimensions = `${adData.width}x${adData.height}`;
     const template = adData.template_style || 'default';
     const color = adData.accent_color.replace('#', '');
+    const picNumber = totalImages > 1 ? `-Pic${imageIndex + 1}` : '';
     
-    const suffix = totalImages > 1 ? `-${imageIndex + 1}` : '';
-    
-    return `${today}-${baseName}-${lang}-${font}-${template}-${color}${suffix}`
+    return `${today}-${lang}-${baseName}-${lang}-${font}-${dimensions}-${template}-${color}${picNumber}`
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
@@ -114,12 +114,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setIsGenerating(true);
 
     try {
+      const { width, height } = getDimensions(adData.platform);
+      const enrichedAdData = { ...adData, width, height };
+
       if (selectedImages.length > 0) {
         // Handle multiple file uploads
         for (let i = 0; i < selectedImages.length; i++) {
           const modifiedAdData = {
-            ...adData,
-            name: generateAdName(adData, i, selectedImages.length)
+            ...enrichedAdData,
+            name: generateAdName(enrichedAdData, i, selectedImages.length)
           };
           
           try {
@@ -139,8 +142,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         // Handle multiple URLs
         for (let i = 0; i < imageUrls.length; i++) {
           const modifiedAdData = {
-            ...adData,
-            name: generateAdName(adData, i, imageUrls.length)
+            ...enrichedAdData,
+            name: generateAdName(enrichedAdData, i, imageUrls.length)
           };
           
           try {
