@@ -5,26 +5,26 @@ import { Label } from "@/components/ui/label";
 const styles = [
   { 
     id: "minimal", 
-    name: "מינימליסטי", 
-    description: "עיצוב נקי ופשוט",
+    name: "Minimal", 
+    description: "Clean and simple design",
     defaultColor: "#4A90E2"
   },
   { 
     id: "modern", 
-    name: "מודרני", 
-    description: "עיצוב עדכני ודינמי",
+    name: "Modern", 
+    description: "Contemporary and dynamic",
     defaultColor: "#FF4B2B"
   },
   { 
     id: "bold", 
-    name: "בולט", 
-    description: "עיצוב חזק ומושך תשומת לב",
+    name: "Bold", 
+    description: "Strong and attention-grabbing",
     defaultColor: "#8B5CF6"
   },
   { 
     id: "elegant", 
-    name: "אלגנטי", 
-    description: "עיצוב מעודן ויוקרתי",
+    name: "Elegant", 
+    description: "Refined and luxurious",
     defaultColor: "#D946EF"
   },
 ];
@@ -53,10 +53,10 @@ export function TemplateStyleSelector({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label>סגנון עיצוב</Label>
+        <Label>Design Style</Label>
         <Select value={value} onValueChange={handleStyleChange}>
           <SelectTrigger>
-            <SelectValue placeholder="בחר סגנון" />
+            <SelectValue placeholder="Select style" />
           </SelectTrigger>
           <SelectContent>
             {styles.map((style) => (
@@ -69,7 +69,7 @@ export function TemplateStyleSelector({
       </div>
       
       <div className="space-y-2">
-        <Label>צבע מותאם אישית</Label>
+        <Label>Custom Color</Label>
         <div className="flex gap-2">
           <Input
             type="color"
@@ -82,7 +82,7 @@ export function TemplateStyleSelector({
             value={accentColor}
             onChange={(e) => onColorChange(e.target.value)}
             placeholder="#000000"
-            className="flex-1 text-right"
+            className="flex-1"
           />
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { Sparkles } from "lucide-react";
 
 const fetchGeneratedAds = async () => {
   const { data, error } = await supabase
@@ -60,69 +61,87 @@ const Index = () => {
       const latestAd = latestAds?.[0];
       
       if (latestAd?.image_url) {
-        toast.success("המודעה נוצרה בהצלחה", {
+        toast.success("Ad created successfully", {
           action: {
-            label: "צפה במודעה",
+            label: "View Ad",
             onClick: () => window.open(latestAd.image_url, '_blank')
           },
         });
       } else {
-        toast.success("המודעה נוצרה בהצלחה");
+        toast.success("Ad created successfully");
       }
     } catch (error) {
       console.error("Error generating ad:", error);
-      toast.error("אירעה שגיאה ביצירת המודעה");
+      toast.error("Error creating ad");
     }
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-accent/10 text-foreground p-8">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-right">יוצר המודעות</h1>
-          <p className="text-muted-foreground text-right">צור מודעות מרהיבות למגוון פלטפורמות</p>
+        <div className="space-y-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+              Dynamic Ad Designer
+            </h1>
+          </div>
+          <p className="text-muted-foreground text-lg">
+            Create stunning ads for multiple platforms with ease
+          </p>
         </div>
 
-        <div className="w-full">
-          <AdEditor template={{ id: "default", title: "", dimensions: "", imageUrl: "", description: "" }} onAdGenerated={handleAdGenerated} />
+        <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
+          <AdEditor 
+            template={{ 
+              id: "default", 
+              title: "", 
+              dimensions: "", 
+              imageUrl: "", 
+              description: "" 
+            }} 
+            onAdGenerated={handleAdGenerated} 
+          />
         </div>
 
-        <Card>
+        <Card className="backdrop-blur-sm bg-background/50">
           <CardHeader>
-            <CardTitle className="text-right">מודעות שנוצרו</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <span>Generated Ads</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">שם</TableHead>
-                  <TableHead className="text-right">מידות</TableHead>
-                  <TableHead className="text-right">סטטוס</TableHead>
-                  <TableHead className="text-right">נוצר ב</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Dimensions</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Created At</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-center">
-                      טוען...
+                      Loading...
                     </TableCell>
                   </TableRow>
                 ) : (
                   generatedAds?.map((ad) => (
                     <TableRow
                       key={ad.id}
-                      className="cursor-pointer hover:bg-muted"
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => setSelectedAd(ad)}
                     >
-                      <TableCell className="text-right">{ad.name}</TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>{ad.name}</TableCell>
+                      <TableCell>
                         {ad.width} x {ad.height} px
                       </TableCell>
-                      <TableCell className="text-right">
-                        {ad.status === "pending" ? "בתהליך יצירה" : ad.status}
+                      <TableCell>
+                        {ad.status === "pending" ? "Creating..." : ad.status}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell>
                         {new Date(ad.created_at!).toLocaleDateString()}
                       </TableCell>
                     </TableRow>
@@ -137,7 +156,7 @@ const Index = () => {
       <Dialog open={!!selectedAd} onOpenChange={() => setSelectedAd(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="text-right">תצוגה מקדימה של המודעה</DialogTitle>
+            <DialogTitle>Ad Preview</DialogTitle>
           </DialogHeader>
           {selectedAd && (
             <div
@@ -152,7 +171,7 @@ const Index = () => {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-muted">
-                  <p className="text-muted-foreground">המודעה בתהליך יצירה...</p>
+                  <p className="text-muted-foreground">Creating ad...</p>
                 </div>
               )}
             </div>

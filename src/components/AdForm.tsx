@@ -44,10 +44,9 @@ export function AdForm({
   onImageChange,
   onImageUrlsChange,
 }: AdFormProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState("he");
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [imageUrls, setImageUrls] = useState<ImageUrlState[]>([{ url: "", isValid: true, isChecking: false }]);
 
-  // Ensure a default template style is set if none is selected
   if (!adData.template_style) {
     onStyleChange('minimal');
   }
@@ -55,17 +54,14 @@ export function AdForm({
   const checkImageUrl = async (url: string): Promise<boolean> => {
     if (!url) return false;
     
-    // Try loading the image directly first
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => resolve(true);
       img.onerror = async () => {
         try {
-          // Fallback to HEAD request if direct loading fails
           const response = await fetch(url, { method: 'HEAD' });
           resolve(response.ok);
         } catch (error) {
-          // If both methods fail, try one last time with a direct GET request
           try {
             const response = await fetch(url);
             resolve(response.ok);
@@ -89,12 +85,10 @@ export function AdForm({
       setImageUrls(newImageUrls);
     }
 
-    // Add new empty field if this is the last one and it's not empty
     if (index === imageUrls.length - 1 && newUrl) {
       setImageUrls([...newImageUrls, { url: "", isValid: true, isChecking: false }]);
     }
 
-    // Update parent component with valid URLs
     const validUrls = newImageUrls
       .filter(item => item.url && item.isValid)
       .map(item => item.url);
@@ -104,33 +98,31 @@ export function AdForm({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="name">שם המודעה</Label>
+        <Label htmlFor="name">Ad Name</Label>
         <Input
           id="name"
           name="name"
           value={adData.name}
           onChange={onInputChange}
-          placeholder="הזן שם למודעה"
-          className="text-right"
+          placeholder="Enter ad name"
           required
         />
       </div>
 
       <Tabs defaultValue="upload" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upload">העלאת תמונות</TabsTrigger>
-          <TabsTrigger value="urls">הזנת קישורים</TabsTrigger>
+          <TabsTrigger value="upload">Upload Images</TabsTrigger>
+          <TabsTrigger value="urls">Image URLs</TabsTrigger>
         </TabsList>
         <TabsContent value="upload">
           <div className="space-y-2">
-            <Label htmlFor="image">תמונות</Label>
+            <Label htmlFor="image">Images</Label>
             <Input
               id="image"
               name="image"
               type="file"
               accept="image/*"
               onChange={onImageChange}
-              className="text-right"
               multiple
               required
             />
@@ -138,21 +130,20 @@ export function AdForm({
         </TabsContent>
         <TabsContent value="urls">
           <div className="space-y-4">
-            <Label>קישורי תמונות</Label>
+            <Label>Image URLs</Label>
             {imageUrls.map((imageUrl, index) => (
               <div key={index} className="flex gap-4 items-start">
                 <div className="flex-grow space-y-2">
                   <Input
                     value={imageUrl.url}
                     onChange={(e) => handleUrlChange(index, e.target.value)}
-                    placeholder="הכנס קישור לתמונה"
-                    className="text-right"
+                    placeholder="Enter image URL"
                   />
                   {imageUrl.url && !imageUrl.isValid && !imageUrl.isChecking && (
                     <Alert variant="destructive" className="py-2">
                       <AlertCircle className="h-4 w-4" />
                       <AlertDescription>
-                        הקישור אינו תקין או שאינו מוביל לתמונה
+                        Invalid URL or not an image
                       </AlertDescription>
                     </Alert>
                   )}
@@ -161,7 +152,7 @@ export function AdForm({
                   <div className="w-16 h-16 rounded-lg overflow-hidden border">
                     <img
                       src={imageUrl.url}
-                      alt="תצוגה מקדימה"
+                      alt="Preview"
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -190,27 +181,25 @@ export function AdForm({
       />
 
       <div className="space-y-2">
-        <Label htmlFor="headline">כותרת</Label>
+        <Label htmlFor="headline">Headline</Label>
         <Input
           id="headline"
           name="headline"
           value={adData.headline}
           onChange={onInputChange}
-          placeholder="הזן כותרת למודעה"
-          className="text-right"
+          placeholder="Enter ad headline"
           required
         />
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="cta_text">טקסט CTA</Label>
+        <Label htmlFor="cta_text">CTA Text</Label>
         <Input
           id="cta_text"
           name="cta_text"
           value={adData.cta_text}
           onChange={onInputChange}
-          placeholder="הזן טקסט לכפתור"
-          className="text-right"
+          placeholder="Enter button text"
           required
         />
       </div>

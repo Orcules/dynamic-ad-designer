@@ -1,10 +1,10 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const platforms = [
-  { id: "facebook", name: "פייסבוק", dimensions: "1200 x 628" },
-  { id: "instagram", name: "אינסטגרם", dimensions: "1080 x 1080" },
-  { id: "linkedin", name: "לינקדאין", dimensions: "1200 x 627" },
-  { id: "twitter", name: "טוויטר", dimensions: "1600 x 900" },
+  { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
+  { id: "instagram", name: "Instagram", dimensions: "1080 x 1080" },
+  { id: "linkedin", name: "LinkedIn", dimensions: "1200 x 627" },
+  { id: "twitter", name: "Twitter", dimensions: "1600 x 900" },
 ];
 
 interface PlatformSelectorProps {
@@ -15,10 +15,10 @@ interface PlatformSelectorProps {
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">פלטפורמה</label>
+      <label className="text-sm font-medium">Platform</label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
-          <SelectValue placeholder="בחר פלטפורמה" />
+          <SelectValue placeholder="Select platform" />
         </SelectTrigger>
         <SelectContent>
           {platforms.map((platform) => (

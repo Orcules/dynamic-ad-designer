@@ -1,9 +1,9 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const languages = [
-  { code: "he", name: "עברית" },
   { code: "en", name: "English" },
-  { code: "ar", name: "العربية" },
+  { code: "he", name: "Hebrew" },
+  { code: "ar", name: "Arabic" },
 ];
 
 interface LanguageSelectorProps {
@@ -14,10 +14,10 @@ interface LanguageSelectorProps {
 export function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">שפה</label>
+      <label className="text-sm font-medium">Language</label>
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger>
-          <SelectValue placeholder="בחר שפה" />
+          <SelectValue placeholder="Select language" />
         </SelectTrigger>
         <SelectContent>
           {languages.map((lang) => (
