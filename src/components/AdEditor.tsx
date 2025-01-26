@@ -180,6 +180,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
+  const { width, height } = getDimensions(adData.platform);
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <AdFormContainer
