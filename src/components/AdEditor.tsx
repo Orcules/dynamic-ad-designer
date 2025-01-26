@@ -95,15 +95,17 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const generateAdName = (adData: any, imageIndex: number, totalImages: number) => {
     const today = format(new Date(), 'ddMMyy');
+    const lang = 'EN'; // Default language code for file name
     const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
-    const lang = adData.language || 'he';
+    const contentLang = 'he'; // Content language
     const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
+    const fontWeight = adData.font_url.includes('wght@') ? '-bold' : '';
     const dimensions = `${adData.width}x${adData.height}`;
     const template = adData.template_style || 'default';
     const color = adData.accent_color.replace('#', '');
     const picNumber = totalImages > 1 ? `-Pic${imageIndex + 1}` : '';
     
-    return `${today}-${lang}-${baseName}-${lang}-${font}-${dimensions}-${template}-${color}${picNumber}`
+    return `${today}-${lang}-${baseName}-${contentLang}-${font}${fontWeight}-${dimensions}-${template}-${color}${picNumber}`
       .replace(/[^a-z0-9-]/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
@@ -148,19 +150,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           
           try {
             const secureUrl = ensureHttps(imageUrls[i]);
-            const response = await fetch(secureUrl, {
-              mode: 'cors',
-              headers: {
-                'Accept': 'image/*'
-              }
-            });
+            const response = await fetch(secureUrl);
             
             if (!response.ok) {
               throw new Error(`Failed to fetch image ${i + 1}`);
             }
             
             const blob = await response.blob();
-            const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            const file = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
             
             await handleAdSubmission({
               adData: modifiedAdData,
@@ -182,8 +179,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       setIsGenerating(false);
     }
   };
-
-  const { width, height } = getDimensions(adData.platform);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
