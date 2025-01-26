@@ -116,8 +116,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setIsGenerating(true);
 
     try {
-      const { width, height } = getDimensions(adData.platform);
-      const enrichedAdData = { ...adData, width, height };
+      const dimensions = getDimensions(adData.platform);
+      const enrichedAdData = { ...adData, ...dimensions };
 
       if (selectedImages.length > 0) {
         // Handle multiple file uploads
