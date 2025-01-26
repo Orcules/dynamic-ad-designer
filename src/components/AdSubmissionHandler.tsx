@@ -31,11 +31,25 @@ export const handleAdSubmission = async ({
     
     console.log('Starting ad generation process with data:', { adData, width, height });
     
-    // Upload the original image first
-    const originalImagePath = `original/${timestamp}_${selectedImage.name}`;
+    // Create a blob from the image file
+    let imageBlob: Blob;
+    if (selectedImage instanceof File) {
+      imageBlob = selectedImage;
+    } else {
+      // If it's a URL, we need to fetch it through a CORS proxy
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(selectedImage.toString())}`;
+      const response = await fetch(proxyUrl);
+      if (!response.ok) {
+        throw new Error('Failed to fetch image through proxy');
+      }
+      imageBlob = await response.blob();
+    }
+    
+    // Upload the original image
+    const originalImagePath = `original/${timestamp}_${selectedImage instanceof File ? selectedImage.name : 'image.jpg'}`;
     const { error: originalUploadError, data: originalUploadData } = await supabase.storage
       .from('ad-images')
-      .upload(originalImagePath, selectedImage, {
+      .upload(originalImagePath, imageBlob, {
         cacheControl: '3600',
         upsert: true
       });
