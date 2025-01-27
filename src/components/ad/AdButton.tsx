@@ -10,7 +10,7 @@ interface AdButtonProps {
 export function getButtonStyle({ style = 'minimal', accentColor, isHovered, fontFamily }: AdButtonProps): CSSProperties {
   const baseStyle: CSSProperties = {
     padding: '0.8em 2em',
-    fontSize: 'clamp(0.75rem, 1.5vw, 1.1rem)',
+    fontSize: 'clamp(0.75rem, 1.25vw, 1rem)',
     fontWeight: '600',
     cursor: 'pointer',
     position: 'relative',
@@ -20,7 +20,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     alignItems: 'center',
     justifyContent: 'center',
     width: 'auto',
-    minWidth: 'min(200px, 50%)',
+    minWidth: 'min(180px, 45%)',
     minHeight: '2.5em',
     lineHeight: '1',
     fontFamily: fontFamily || 'inherit',
@@ -30,6 +30,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
     transform: isHovered ? 'translateY(-2px)' : 'none',
     transition: 'all 0.3s ease',
+    zIndex: 10,
   };
 
   switch (style) {
@@ -39,11 +40,11 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '4px',
         position: 'absolute',
-        bottom: '15%',
+        bottom: '12%',
         left: '50%',
         transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
         clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0 100%)',
-        padding: '1em 3em',
+        padding: '1em 2.5em',
       };
     case 'bold':
       return {
@@ -51,10 +52,10 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '50px',
         position: 'absolute',
-        bottom: '20%',
+        bottom: '15%',
         left: '50%',
         transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
-        padding: '1.2em 3em',
+        padding: '1em 2.5em',
         letterSpacing: '0.05em',
         boxShadow: isHovered 
           ? `0 8px 20px ${accentColor}66` 
@@ -66,10 +67,10 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '0 50px 50px 0',
         position: 'absolute',
-        bottom: '25%',
+        bottom: '20%',
         left: '8%',
         transform: isHovered ? 'translateY(-2px)' : 'none',
-        padding: '1em 3em',
+        padding: '1em 2.5em',
         maxWidth: '45%',
         boxShadow: isHovered 
           ? `4px 4px 12px ${accentColor}66` 
@@ -81,7 +82,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '8px',
         position: 'absolute',
-        bottom: '20%',
+        bottom: '15%',
         left: '50%',
         transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
         backdropFilter: 'blur(4px)',
