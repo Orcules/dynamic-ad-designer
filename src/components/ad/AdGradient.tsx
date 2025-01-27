@@ -26,31 +26,35 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
   switch (style) {
     case 'dynamic':
       return {
-        background: `linear-gradient(135deg, ${darkerColor}dd 0%, transparent 75%)`,
+        background: `linear-gradient(135deg, ${darkerColor}ee 0%, ${color}88 50%, transparent 100%)`,
         position: 'relative',
         overflow: 'hidden',
+        backdropFilter: 'blur(4px)',
       };
     case 'spotlight':
       return {
-        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}cc 70%)`,
+        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}dd 80%)`,
         position: 'relative',
+        backdropFilter: 'blur(8px)',
       };
     case 'wave':
       return {
-        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}aa 100%)`,
+        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}cc 70%, ${darkerColor}ee 100%)`,
         position: 'relative',
-        clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0% 100%)',
+        clipPath: 'polygon(0 0, 100% 0, 100% 90%, 0% 100%)',
+        backdropFilter: 'blur(6px)',
       };
     case 'geometric':
       return {
-        background: `linear-gradient(120deg, ${darkerColor}ee 0%, transparent 100%)`,
+        background: `linear-gradient(120deg, ${darkerColor}ee 0%, ${color}99 50%, transparent 100%)`,
         position: 'relative',
-        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 85%)',
+        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 25% 100%, 0 85%)',
+        backdropFilter: 'blur(4px)',
       };
     default:
       return {
-        background: 'rgba(255,255,255,0.9)',
-        backdropFilter: 'blur(4px)',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(8px)',
         position: 'relative',
       };
   }
