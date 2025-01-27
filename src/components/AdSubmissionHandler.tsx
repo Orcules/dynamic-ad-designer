@@ -55,7 +55,7 @@ function generateAdName(adData: any) {
   const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
   const fontWeight = adData.font_url.includes('wght@700') ? '-bold' : '';
   const dimensions = `${adData.width}x${adData.height}`;
-  const template = adData.template_style || 'default';
+  const template = adData.template_style || 'modern';
   const color = adData.accent_color.replace('#', '');
   
   return `${today}-${lang}-${baseName}-${contentLang}-${font}${fontWeight}-${dimensions}-${template}-${color}`
@@ -137,17 +137,20 @@ export const handleAdSubmission = async ({
       .getPublicUrl(previewPath);
 
     console.log('Got public URL for preview:', previewUrl);
+
+    // Ensure template_style is one of the allowed values
+    const validTemplateStyles = ['modern', 'elegant', 'dynamic', 'spotlight', 'wave', 'cinematic', 'minimal-fade', 'duotone', 'vignette'];
+    const templateStyle = validTemplateStyles.includes(adData.template_style) ? adData.template_style : 'modern';
     
-    const adName = generateAdName(adData);
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
-        name: adName,
+        name: adData.name,
         headline: adData.headline,
         cta_text: adData.cta_text,
         font_url: adData.font_url,
         platform: adData.platform,
-        template_style: adData.template_style || 'minimal',
+        template_style: templateStyle,
         accent_color: adData.accent_color,
         width,
         height,
