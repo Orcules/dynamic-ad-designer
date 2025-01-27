@@ -22,6 +22,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     fontFamily: fontFamily || 'inherit',
+    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
   };
 
   switch (style) {
@@ -29,26 +30,31 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: `2px 2px 4px ${accentColor}`,
         position: 'absolute',
-        top: '10%',
+        top: '15%',
         left: '50%',
-        transform: 'translateX(-50%)',
+        transform: 'translateX(-50%) rotate(-2deg)',
         textAlign: 'center',
+        background: `linear-gradient(135deg, ${accentColor}ee, ${accentColor}99)`,
+        borderRadius: '8px',
+        padding: '1em 2em',
+        maxWidth: '90%',
       };
     case 'bold':
       return {
         ...baseStyle,
         color: '#FFFFFF',
         fontWeight: '800',
-        letterSpacing: '0.1em',
-        textTransform: 'uppercase',
-        textShadow: `0 2px 4px rgba(0,0,0,0.3)`,
+        letterSpacing: '0.05em',
         position: 'absolute',
-        bottom: '30%',
+        top: '10%',
         left: '50%',
         transform: 'translateX(-50%)',
         textAlign: 'center',
+        background: 'rgba(0,0,0,0.6)',
+        borderRadius: '16px',
+        padding: '1.5em',
+        backdropFilter: 'blur(8px)',
       };
     case 'elegant':
       return {
@@ -56,13 +62,15 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         color: '#FFFFFF',
         fontWeight: '500',
         letterSpacing: '0.05em',
-        textShadow: `1px 1px 2px ${accentColor}`,
         position: 'absolute',
-        left: '10%',
+        left: '8%',
         top: '50%',
         transform: 'translateY(-50%)',
         textAlign: 'left',
         maxWidth: '45%',
+        background: `linear-gradient(90deg, ${accentColor}dd, transparent)`,
+        borderRadius: '0 50px 50px 0',
+        padding: '2em 3em 2em 2em',
       };
     default: // minimal
       return {
@@ -73,6 +81,10 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         left: '50%',
         transform: 'translate(-50%, -50%)',
         textAlign: 'center',
+        background: 'rgba(255,255,255,0.9)',
+        borderRadius: '12px',
+        padding: '1.5em',
+        backdropFilter: 'blur(4px)',
       };
   }
 }

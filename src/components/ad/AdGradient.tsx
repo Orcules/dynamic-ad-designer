@@ -21,32 +21,70 @@ function adjustColor(hex: string, percent: number) {
 
 export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSProperties {
   const darkerColor = adjustColor(color, -20);
-  const transparentColor = `${color}80`;
+  const lighterColor = adjustColor(color, 20);
 
   switch (style) {
     case 'modern':
       return {
-        background: `linear-gradient(135deg, ${darkerColor}dd, transparent)`,
-        backdropFilter: 'blur(2px)',
+        background: `linear-gradient(135deg, transparent 15%, ${darkerColor}dd 15%)`,
         position: 'relative',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(45deg, transparent, ${color}40)`,
+          mixBlendMode: 'overlay',
+        }
       };
     case 'bold':
       return {
-        background: `linear-gradient(to bottom, transparent, ${darkerColor}ee)`,
-        backdropFilter: 'blur(4px)',
+        background: `linear-gradient(180deg, 
+          rgba(0,0,0,0.4) 0%,
+          transparent 30%,
+          ${darkerColor}99 100%)`,
         position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `radial-gradient(circle at top right, ${lighterColor}40, transparent 70%)`,
+        }
       };
     case 'elegant':
       return {
-        background: `linear-gradient(45deg, ${darkerColor}ee, transparent)`,
-        backdropFilter: 'blur(2px)',
+        background: `linear-gradient(90deg, ${darkerColor}ee, transparent 70%)`,
         position: 'relative',
+        '&::after': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(45deg, transparent, ${color}30)`,
+          mixBlendMode: 'overlay',
+        }
       };
     default: // minimal
       return {
-        background: `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.95))`,
-        backdropFilter: 'blur(1px)',
+        background: 'rgba(255,255,255,0.9)',
+        backdropFilter: 'blur(4px)',
         position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(to right, transparent, ${color}10)`,
+        }
       };
   }
 }
