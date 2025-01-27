@@ -1,4 +1,5 @@
 import { CSSProperties } from "react";
+import { ArrowBigDown } from "lucide-react";
 
 interface AdTextProps {
   style?: string;
@@ -9,73 +10,82 @@ interface AdTextProps {
 export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: 'bold',
-    fontSize: 'clamp(1rem, 3vw, 2.5rem)',
+    fontSize: 'clamp(1rem, 4vw, 2.5rem)',
     lineHeight: '1.2',
-    maxWidth: '85%',
+    maxWidth: '90%',
     margin: '0 auto',
     padding: '1rem',
     wordBreak: 'break-word',
     overflowWrap: 'break-word',
-    textShadow: '0 2px 4px rgba(0,0,0,0.2)',
     fontFamily: fontFamily || 'inherit',
     display: '-webkit-box',
-    WebkitLineClamp: '4',
+    WebkitLineClamp: 3,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
+    maxHeight: '45%',
   };
 
   switch (style) {
-    case 'modern':
+    case 'dynamic':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        position: 'absolute',
+        top: '15%',
+        left: '10%',
+        transform: 'skew(-5deg)',
+        textAlign: 'left',
+        background: `linear-gradient(135deg, ${accentColor}ee, ${accentColor}99)`,
+        borderRadius: '0 16px 16px 0',
+        padding: '1.5rem 2.5rem',
+        maxWidth: '75%',
+        boxShadow: '4px 4px 15px rgba(0,0,0,0.2)',
+      };
+    case 'spotlight':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        position: 'absolute',
+        top: '20%',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        textAlign: 'center',
+        background: `${accentColor}dd`,
+        borderRadius: '20px',
+        padding: '1.5rem',
+        maxWidth: '80%',
+        backdropFilter: 'blur(8px)',
+      };
+    case 'wave':
       return {
         ...baseStyle,
         color: '#FFFFFF',
         position: 'absolute',
         top: '10%',
         left: '50%',
-        transform: 'translateX(-50%) rotate(-2deg)',
-        textAlign: 'center',
-        background: `linear-gradient(135deg, ${accentColor}ee, ${accentColor}99)`,
-        borderRadius: '8px',
-        padding: '1.5rem 2rem',
-        maxWidth: '80%',
-        maxHeight: '50%',
-      };
-    case 'bold':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        fontWeight: '800',
-        letterSpacing: '0.05em',
-        position: 'absolute',
-        top: '8%',
-        left: '50%',
         transform: 'translateX(-50%)',
         textAlign: 'center',
-        background: 'rgba(0,0,0,0.6)',
-        borderRadius: '16px',
-        padding: '1.5rem',
-        maxWidth: '75%',
-        maxHeight: '45%',
+        background: `${accentColor}cc`,
+        borderRadius: '30px',
+        padding: '1.5rem 2rem',
+        maxWidth: '85%',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
       };
-    case 'elegant':
+    case 'geometric':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        fontWeight: '500',
-        letterSpacing: '0.05em',
         position: 'absolute',
+        top: '15%',
         left: '8%',
-        top: '40%',
-        transform: 'translateY(-50%)',
         textAlign: 'left',
-        maxWidth: '50%',
-        background: `linear-gradient(90deg, ${accentColor}dd, transparent)`,
-        borderRadius: '0 50px 50px 0',
-        padding: '2rem 2.5rem 2rem 1.5rem',
-        maxHeight: '60%',
+        background: `${accentColor}dd`,
+        clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)',
+        padding: '1.5rem 3rem 1.5rem 2rem',
+        maxWidth: '70%',
       };
-    default: // minimal
+    default:
       return {
         ...baseStyle,
         color: '#000000',
@@ -87,8 +97,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: 'rgba(255,255,255,0.9)',
         borderRadius: '12px',
         padding: '1.5rem',
-        maxWidth: '70%',
-        maxHeight: '45%',
+        maxWidth: '75%',
       };
   }
 }

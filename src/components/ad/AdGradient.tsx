@@ -24,25 +24,30 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
   const lighterColor = adjustColor(color, 20);
 
   switch (style) {
-    case 'modern':
+    case 'dynamic':
       return {
-        background: `linear-gradient(135deg, transparent 15%, ${darkerColor}dd 15%)`,
+        background: `linear-gradient(135deg, ${darkerColor}dd 0%, transparent 75%)`,
+        position: 'relative',
+        overflow: 'hidden',
+      };
+    case 'spotlight':
+      return {
+        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}cc 70%)`,
         position: 'relative',
       };
-    case 'bold':
+    case 'wave':
       return {
-        background: `linear-gradient(180deg, 
-          rgba(0,0,0,0.4) 0%,
-          transparent 30%,
-          ${darkerColor}99 100%)`,
+        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}aa 100%)`,
         position: 'relative',
+        clipPath: 'polygon(0 0, 100% 0, 100% 85%, 0% 100%)',
       };
-    case 'elegant':
+    case 'geometric':
       return {
-        background: `linear-gradient(90deg, ${darkerColor}ee, transparent 70%)`,
+        background: `linear-gradient(120deg, ${darkerColor}ee 0%, transparent 100%)`,
         position: 'relative',
+        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 30% 100%, 0 85%)',
       };
-    default: // minimal
+    default:
       return {
         background: 'rgba(255,255,255,0.9)',
         backdropFilter: 'blur(4px)',

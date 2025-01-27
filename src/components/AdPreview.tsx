@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
+import { ArrowBigDown } from "lucide-react";
 
 interface AdPreviewProps {
   imageUrl?: string;
@@ -59,6 +60,7 @@ export function AdPreview({
   const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
 
   const aspectRatio = `${width} / ${height}`;
+  const showArrow = ['dynamic', 'spotlight', 'wave'].includes(templateStyle || '');
 
   return (
     <Card className="h-fit w-full">
@@ -87,7 +89,7 @@ export function AdPreview({
               style={gradientStyle}
             />
             {headline && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
                 <h2 
                   className={cn(
                     "break-words",
@@ -99,7 +101,7 @@ export function AdPreview({
                 </h2>
                 {ctaText && (
                   <div 
-                    className="relative z-20 transform px-6 py-3 mt-4 flex items-center justify-center"
+                    className="relative z-20 transform flex items-center justify-center gap-2"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
@@ -107,6 +109,14 @@ export function AdPreview({
                     <span className="block">
                       {ctaText}
                     </span>
+                    {showArrow && (
+                      <ArrowBigDown 
+                        className={cn(
+                          "w-4 h-4 transition-transform",
+                          isButtonHovered ? "translate-y-1" : ""
+                        )}
+                      />
+                    )}
                   </div>
                 )}
               </div>

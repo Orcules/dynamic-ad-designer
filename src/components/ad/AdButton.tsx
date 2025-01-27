@@ -1,4 +1,5 @@
 import { CSSProperties } from "react";
+import { ArrowBigDown } from "lucide-react";
 
 interface AdButtonProps {
   style?: string;
@@ -10,17 +11,20 @@ interface AdButtonProps {
 export function getButtonStyle({ style = 'minimal', accentColor, isHovered, fontFamily }: AdButtonProps): CSSProperties {
   const baseStyle: CSSProperties = {
     padding: '0.8em 2em',
-    fontSize: 'clamp(0.75rem, 1.25vw, 1rem)',
+    fontSize: 'clamp(0.75rem, 1.5vw, 1rem)',
     fontWeight: '600',
     cursor: 'pointer',
-    position: 'relative',
-    maxWidth: '90%',
-    margin: '0 auto',
+    position: 'absolute',
+    bottom: '10%',
+    left: '50%',
+    transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: '0.5em',
     width: 'auto',
-    minWidth: 'min(180px, 45%)',
+    minWidth: 'min(160px, 40%)',
+    maxWidth: '80%',
     minHeight: '2.5em',
     lineHeight: '1',
     fontFamily: fontFamily || 'inherit',
@@ -28,64 +32,52 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     color: '#FFFFFF',
     border: 'none',
     boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
-    transform: isHovered ? 'translateY(-2px)' : 'none',
     transition: 'all 0.3s ease',
     zIndex: 10,
   };
 
   switch (style) {
-    case 'modern':
+    case 'dynamic':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
-        position: 'absolute',
-        bottom: '12%',
-        left: '50%',
-        transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
-        clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0 100%)',
+        transform: `translateX(-50%) skew(-5deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
+        borderRadius: '0 12px 12px 0',
+        clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)',
         padding: '1em 2.5em',
       };
-    case 'bold':
+    case 'spotlight':
       return {
         ...baseStyle,
         background: accentColor,
         borderRadius: '50px',
-        position: 'absolute',
-        bottom: '15%',
-        left: '50%',
-        transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
         padding: '1em 2.5em',
-        letterSpacing: '0.05em',
         boxShadow: isHovered 
           ? `0 8px 20px ${accentColor}66` 
           : `0 4px 12px ${accentColor}40`,
       };
-    case 'elegant':
+    case 'wave':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '0 50px 50px 0',
-        position: 'absolute',
-        bottom: '20%',
+        borderRadius: '20px',
+        clipPath: 'polygon(5% 0, 95% 0, 100% 50%, 95% 100%, 5% 100%, 0 50%)',
+        padding: '1em 3em',
+      };
+    case 'geometric':
+      return {
+        ...baseStyle,
+        background: accentColor,
         left: '8%',
         transform: isHovered ? 'translateY(-2px)' : 'none',
+        clipPath: 'polygon(0 0, 100% 0, 95% 100%, 5% 100%)',
         padding: '1em 2.5em',
-        maxWidth: '45%',
-        boxShadow: isHovered 
-          ? `4px 4px 12px ${accentColor}66` 
-          : `2px 2px 8px ${accentColor}40`,
       };
-    default: // minimal
+    default:
       return {
         ...baseStyle,
         background: accentColor,
         borderRadius: '8px',
-        position: 'absolute',
-        bottom: '15%',
-        left: '50%',
-        transform: `translateX(-50%) ${isHovered ? 'translateY(-2px)' : 'none'}`,
-        backdropFilter: 'blur(4px)',
       };
   }
 }
