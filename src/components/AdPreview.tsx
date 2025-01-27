@@ -63,7 +63,7 @@ export function AdPreview({
   return (
     <Card className="h-fit w-full">
       <CardHeader>
-        <CardTitle className="text-right">תצוגה מקדימה</CardTitle>
+        <CardTitle>Preview</CardTitle>
       </CardHeader>
       <CardContent className="flex justify-center p-4">
         <div className="relative w-full max-w-[600px]">
@@ -90,7 +90,7 @@ export function AdPreview({
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6">
                 <h2 
                   className={cn(
-                    "mb-4 max-w-[80%] text-center break-words",
+                    "break-words",
                     templateStyle === 'minimal' ? 'text-black' : 'text-white'
                   )}
                   style={textStyle}
@@ -99,7 +99,7 @@ export function AdPreview({
                 </h2>
                 {ctaText && (
                   <div 
-                    className="relative z-20 transform px-6 py-3 max-w-[80%] mt-4 flex items-center justify-center"
+                    className="relative z-20 transform px-6 py-3 mt-4 flex items-center justify-center"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}

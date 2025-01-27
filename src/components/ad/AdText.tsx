@@ -9,20 +9,15 @@ interface AdTextProps {
 export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: 'bold',
-    fontSize: 'clamp(1rem, 3vw, 2.5rem)',
-    lineHeight: '1.3',
-    maxWidth: '85%',
+    fontSize: 'clamp(1.2rem, 4vw, 2.8rem)',
+    lineHeight: '1.4',
+    maxWidth: '90%',
     margin: '0 auto',
-    padding: '0.5em',
+    padding: '1rem',
     wordBreak: 'break-word',
     overflowWrap: 'break-word',
-    display: '-webkit-box',
-    WebkitLineClamp: 3,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    fontFamily: fontFamily || 'inherit',
     textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+    fontFamily: fontFamily || 'inherit',
   };
 
   switch (style) {
@@ -37,8 +32,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         textAlign: 'center',
         background: `linear-gradient(135deg, ${accentColor}ee, ${accentColor}99)`,
         borderRadius: '8px',
-        padding: '1em 2em',
-        maxWidth: '90%',
+        padding: '1.5rem 2rem',
+        maxWidth: '85%',
       };
     case 'bold':
       return {
@@ -53,8 +48,9 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         textAlign: 'center',
         background: 'rgba(0,0,0,0.6)',
         borderRadius: '16px',
-        padding: '1.5em',
+        padding: '2rem',
         backdropFilter: 'blur(8px)',
+        maxWidth: '80%',
       };
     case 'elegant':
       return {
@@ -67,10 +63,10 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         top: '50%',
         transform: 'translateY(-50%)',
         textAlign: 'left',
-        maxWidth: '45%',
+        maxWidth: '55%',
         background: `linear-gradient(90deg, ${accentColor}dd, transparent)`,
         borderRadius: '0 50px 50px 0',
-        padding: '2em 3em 2em 2em',
+        padding: '2.5rem 3rem 2.5rem 2rem',
       };
     default: // minimal
       return {
@@ -83,8 +79,9 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         textAlign: 'center',
         background: 'rgba(255,255,255,0.9)',
         borderRadius: '12px',
-        padding: '1.5em',
+        padding: '2rem',
         backdropFilter: 'blur(4px)',
+        maxWidth: '75%',
       };
   }
 }
