@@ -2,9 +2,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
+  { id: "taboola", name: "Taboola", dimensions: "1200 x 628" },
+  { id: "google", name: "Google", dimensions: "1200 x 628" },
   { id: "instagram", name: "Instagram", dimensions: "1080 x 1080" },
-  { id: "linkedin", name: "LinkedIn", dimensions: "1200 x 627" },
-  { id: "twitter", name: "Twitter", dimensions: "1600 x 900" },
 ];
 
 interface PlatformSelectorProps {
