@@ -28,48 +28,25 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
       return {
         background: `linear-gradient(135deg, ${darkerColor}dd, transparent)`,
         backdropFilter: 'blur(2px)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: `radial-gradient(circle at top right, transparent, ${color}aa)`,
-        }
+        position: 'relative',
       };
     case 'bold':
       return {
         background: `linear-gradient(to bottom, transparent, ${darkerColor}ee)`,
         backdropFilter: 'blur(4px)',
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: '100%',
-          height: '60%',
-          background: `linear-gradient(to top, ${color}ee, transparent)`,
-        }
+        position: 'relative',
       };
     case 'elegant':
       return {
         background: `linear-gradient(45deg, ${darkerColor}ee, transparent)`,
         backdropFilter: 'blur(2px)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          background: `linear-gradient(to right, ${color}cc, transparent)`,
-        }
+        position: 'relative',
       };
     default: // minimal
       return {
         background: `linear-gradient(to bottom, rgba(255,255,255,0.9), rgba(255,255,255,0.95))`,
-        backdropFilter: 'blur(1px)'
+        backdropFilter: 'blur(1px)',
+        position: 'relative',
       };
   }
 }

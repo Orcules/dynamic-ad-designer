@@ -13,7 +13,7 @@ export function AdTemplateCard({ title, dimensions, onClick, imageUrl, descripti
   return (
     <Card className="w-full hover:border-primary transition-colors cursor-pointer" onClick={onClick}>
       <CardHeader>
-        <CardTitle className="text-lg text-right">{title}</CardTitle>
+        <CardTitle className="text-lg">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col items-center gap-4">
@@ -22,15 +22,15 @@ export function AdTemplateCard({ title, dimensions, onClick, imageUrl, descripti
               <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center">
-                <p className="text-muted-foreground">תצוגה מקדימה</p>
+                <p className="text-muted-foreground">Preview</p>
               </div>
             )}
           </div>
           {description && (
-            <p className="text-sm text-muted-foreground text-right w-full">{description}</p>
+            <p className="text-sm text-muted-foreground">{description}</p>
           )}
           <p className="text-sm text-muted-foreground">{dimensions}</p>
-          <Button className="w-full">בחר תבנית</Button>
+          <Button className="w-full">Select Template</Button>
         </div>
       </CardContent>
     </Card>

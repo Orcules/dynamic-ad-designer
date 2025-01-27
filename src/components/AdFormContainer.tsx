@@ -53,7 +53,7 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         disabled={isGenerating} 
         onClick={onSubmit}
       >
-        {isGenerating ? 'יוצר מודעה...' : 'צור מודעה'}
+        {isGenerating ? 'Generating Ad...' : 'Generate Ad'}
       </Button>
     </div>
   );

@@ -137,7 +137,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             });
           } catch (error) {
             console.error(`Error processing image ${i + 1}:`, error);
-            toast.error(`שגיאה בעיבוד תמונה ${i + 1}`);
+            toast.error(`Error processing image ${i + 1}`);
           }
         }
       } else if (imageUrls.length > 0) {
@@ -168,13 +168,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             });
           } catch (error) {
             console.error(`Error processing URL ${i + 1}:`, error);
-            toast.error(`שגיאה בעיבוד קישור ${i + 1}`);
+            toast.error(`Error processing URL ${i + 1}`);
           }
         }
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast.error('אירעה שגיאה ביצירת המודעה');
+      toast.error('Error generating ad');
     } finally {
       setIsGenerating(false);
     }
