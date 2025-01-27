@@ -54,7 +54,7 @@ export function AdPreview({
   const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
 
   const aspectRatio = `${width} / ${height}`;
-  const showArrow = ['dynamic', 'spotlight', 'wave', 'modern', 'neon', 'elegant'].includes(templateStyle || '');
+  const showArrow = ['dynamic', 'spotlight', 'wave', 'modern', 'neon', 'elegant', 'cinematic', 'sunset', 'minimal-fade', 'duotone', 'vignette'].includes(templateStyle || '');
 
   return (
     <Card className="h-fit w-full">
@@ -87,7 +87,7 @@ export function AdPreview({
                   <div className="flex-1 flex items-center justify-center px-4 w-full">
                     <h2 
                       className={cn(
-                        "text-center max-w-[90%]",
+                        "text-center max-w-[90%] leading-tight",
                         templateStyle === 'minimal' ? 'text-black' : 'text-white'
                       )}
                       style={textStyle}
@@ -97,23 +97,25 @@ export function AdPreview({
                   </div>
                 )}
                 {ctaText && (
-                  <div 
-                    className="relative mt-auto mb-4 transform flex items-center justify-center gap-2 mx-auto"
-                    style={buttonStyle}
-                    onMouseEnter={() => setIsButtonHovered(true)}
-                    onMouseLeave={() => setIsButtonHovered(false)}
-                  >
-                    <span className="block">
-                      {ctaText}
-                    </span>
-                    {showArrow && (
-                      <ArrowBigDown 
-                        className={cn(
-                          "w-4 h-4 transition-transform duration-300",
-                          isButtonHovered ? "translate-y-1" : ""
-                        )}
-                      />
-                    )}
+                  <div className="w-full px-4 mt-auto">
+                    <div 
+                      className="relative transform flex items-center justify-center gap-2 mx-auto"
+                      style={buttonStyle}
+                      onMouseEnter={() => setIsButtonHovered(true)}
+                      onMouseLeave={() => setIsButtonHovered(false)}
+                    >
+                      <span className="block">
+                        {ctaText}
+                      </span>
+                      {showArrow && (
+                        <ArrowBigDown 
+                          className={cn(
+                            "w-4 h-4 transition-transform duration-300",
+                            isButtonHovered ? "translate-y-1" : ""
+                          )}
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
               </div>

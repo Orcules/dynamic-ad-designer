@@ -29,6 +29,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     border: 'none',
     boxShadow: isHovered ? '0 8px 20px rgba(0,0,0,0.2)' : '0 4px 12px rgba(0,0,0,0.15)',
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+    marginBottom: '1rem',
     zIndex: 10,
   };
 
@@ -67,7 +68,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
       return {
         ...baseStyle,
         background: accentColor,
-        transform: `translateX(-50%) skew(-5deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
+        transform: `skew(-5deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
         borderRadius: '0 12px 12px 0',
         clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)',
         padding: '1em 2.5em',
@@ -86,6 +87,48 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '20px',
         clipPath: 'polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0 50%)',
+        padding: '1em 3em',
+      };
+    case 'cinematic':
+      return {
+        ...baseStyle,
+        background: `linear-gradient(90deg, ${adjustColor(accentColor, -20)}, ${accentColor})`,
+        borderRadius: '4px',
+        letterSpacing: '1px',
+        boxShadow: isHovered 
+          ? `0 12px 24px ${accentColor}40` 
+          : `0 6px 16px ${accentColor}30`,
+      };
+    case 'sunset':
+      return {
+        ...baseStyle,
+        background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
+        borderRadius: '8px',
+        boxShadow: isHovered 
+          ? `0 12px 24px ${accentColor}66` 
+          : `0 6px 16px ${accentColor}40`,
+      };
+    case 'minimal-fade':
+      return {
+        ...baseStyle,
+        background: accentColor,
+        borderRadius: '4px',
+        border: `1px solid ${adjustColor(accentColor, 20)}`,
+      };
+    case 'duotone':
+      return {
+        ...baseStyle,
+        background: accentColor,
+        borderRadius: '8px',
+        boxShadow: isHovered 
+          ? `0 8px 20px ${accentColor}40` 
+          : `0 4px 12px ${accentColor}30`,
+      };
+    case 'vignette':
+      return {
+        ...baseStyle,
+        background: `linear-gradient(90deg, ${adjustColor(accentColor, -10)}, ${accentColor})`,
+        borderRadius: '50px',
         padding: '1em 3em',
       };
     default:

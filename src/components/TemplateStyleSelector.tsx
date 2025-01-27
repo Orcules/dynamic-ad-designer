@@ -102,6 +102,71 @@ export function TemplateStyleSelector({
               <span>Wave</span>
             </Label>
           </div>
+          <div>
+            <RadioGroupItem
+              value="cinematic"
+              id="cinematic"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="cinematic"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Cinematic</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="sunset"
+              id="sunset"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="sunset"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Sunset</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="minimal-fade"
+              id="minimal-fade"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="minimal-fade"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Minimal Fade</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="duotone"
+              id="duotone"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="duotone"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Duotone</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="vignette"
+              id="vignette"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="vignette"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Vignette</span>
+            </Label>
+          </div>
         </RadioGroup>
       </div>
       <div className="space-y-2">

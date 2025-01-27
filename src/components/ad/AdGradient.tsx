@@ -61,6 +61,36 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
         position: 'relative',
         backdropFilter: 'blur(6px)',
       };
+    case 'cinematic':
+      return {
+        background: `linear-gradient(0deg, ${darkerColor}ee 0%, transparent 50%, ${darkerColor}aa 100%)`,
+        position: 'relative',
+        backdropFilter: 'blur(4px)',
+      };
+    case 'sunset':
+      return {
+        background: `linear-gradient(180deg, ${lighterColor}88 0%, ${color}aa 50%, ${darkerColor}ee 100%)`,
+        position: 'relative',
+        backdropFilter: 'blur(5px)',
+      };
+    case 'minimal-fade':
+      return {
+        background: `linear-gradient(to top, ${darkerColor}ee 0%, transparent 100%)`,
+        position: 'relative',
+        backdropFilter: 'blur(3px)',
+      };
+    case 'duotone':
+      return {
+        background: `linear-gradient(45deg, ${darkerColor}cc, ${lighterColor}cc)`,
+        mixBlendMode: 'color',
+        position: 'relative',
+      };
+    case 'vignette':
+      return {
+        background: `radial-gradient(circle at center, transparent 0%, ${darkerColor}ee 120%)`,
+        position: 'relative',
+        backdropFilter: 'blur(4px)',
+      };
     default:
       return {
         background: 'rgba(255,255,255,0.95)',
