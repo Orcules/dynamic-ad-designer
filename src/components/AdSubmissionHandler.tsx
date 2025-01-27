@@ -21,7 +21,6 @@ const CORS_PROXIES = [
 async function fetchWithRetry(url: string): Promise<Response> {
   let lastError;
   
-  // Try each proxy in sequence
   for (const proxyFn of CORS_PROXIES) {
     try {
       const proxyUrl = proxyFn(url);
@@ -36,7 +35,6 @@ async function fetchWithRetry(url: string): Promise<Response> {
     }
   }
 
-  // If all proxies fail, try direct fetch as last resort
   try {
     const response = await fetch(url);
     if (response.ok) {
@@ -49,17 +47,18 @@ async function fetchWithRetry(url: string): Promise<Response> {
   throw lastError || new Error('Failed to fetch image after all attempts');
 }
 
-function generateAdName(adData: any, imageIndex: number, totalImages: number) {
+function generateAdName(adData: any) {
   const today = format(new Date(), 'ddMMyy');
   const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
-  const lang = adData.language || 'he';
+  const lang = 'EN';
+  const contentLang = 'he';
   const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
+  const fontWeight = adData.font_url.includes('wght@700') ? '-bold' : '';
+  const dimensions = `${adData.width}x${adData.height}`;
   const template = adData.template_style || 'default';
   const color = adData.accent_color.replace('#', '');
   
-  const suffix = totalImages > 1 ? `-${imageIndex + 1}` : '';
-  
-  return `${today}-${baseName}-${lang}-${font}-${template}-${color}${suffix}`
+  return `${today}-${lang}-${baseName}-${contentLang}-${font}${fontWeight}-${dimensions}-${template}-${color}`
     .replace(/[^a-z0-9-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
@@ -81,22 +80,19 @@ export const handleAdSubmission = async ({
   
   try {
     const { width, height } = getDimensions(adData.platform);
-    const timestamp = Date.now();
+    const timestamp = Date.now() + Math.floor(Math.random() * 1000); // Add random offset to ensure uniqueness
     
     console.log('Starting ad generation process with data:', { adData, width, height });
     
-    // Create a blob from the image file
     let imageBlob: Blob;
     if (selectedImage instanceof File) {
       imageBlob = selectedImage;
     } else {
-      // If it's a URL, try multiple CORS proxies
       console.log('Fetching image from URL:', selectedImage);
       const response = await fetchWithRetry(selectedImage);
       imageBlob = await response.blob();
     }
     
-    // Upload the original image
     const originalImagePath = `original/${timestamp}_${selectedImage instanceof File ? selectedImage.name : 'image.jpg'}`;
     const { error: originalUploadError, data: originalUploadData } = await supabase.storage
       .from('ad-images')
@@ -112,7 +108,6 @@ export const handleAdSubmission = async ({
 
     console.log('Original image uploaded successfully:', originalUploadData);
     
-    // Capture the exact preview as shown
     const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
       console.error('Preview capture failed - no file returned');
@@ -122,7 +117,6 @@ export const handleAdSubmission = async ({
     console.log('Preview captured successfully, uploading to storage...');
     const previewPath = `generated/${timestamp}_preview.png`;
     
-    // Upload the preview image
     const { error: previewError, data: previewUploadData } = await supabase.storage
       .from('ad-images')
       .upload(previewPath, previewFile, {
@@ -138,15 +132,13 @@ export const handleAdSubmission = async ({
 
     console.log('Preview uploaded successfully:', previewUploadData);
 
-    // Get the public URL for the preview image
     const { data: { publicUrl: previewUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(previewPath);
 
     console.log('Got public URL for preview:', previewUrl);
     
-    // Create ad record with the exact preview image
-    const adName = generateAdName(adData, 0, 1);
+    const adName = generateAdName(adData);
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
