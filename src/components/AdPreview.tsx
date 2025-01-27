@@ -96,7 +96,7 @@ export function AdPreview({
                 </div>
               )}
               {ctaText && (
-                <div className="w-full px-4 pb-8">
+                <div className="w-full flex justify-center items-center pb-8">
                   <div 
                     className="relative transform flex items-center justify-center gap-2 mx-auto"
                     style={buttonStyle}
