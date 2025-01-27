@@ -80,7 +80,7 @@ export const handleAdSubmission = async ({
   
   try {
     const { width, height } = getDimensions(adData.platform);
-    const timestamp = Date.now() + Math.floor(Math.random() * 1000); // Add random offset to ensure uniqueness
+    const timestamp = Date.now() + Math.floor(Math.random() * 1000);
     
     console.log('Starting ad generation process with data:', { adData, width, height });
     
@@ -142,10 +142,11 @@ export const handleAdSubmission = async ({
     const validTemplateStyles = ['modern', 'elegant', 'dynamic', 'spotlight', 'wave', 'cinematic', 'minimal-fade', 'duotone', 'vignette'];
     const templateStyle = validTemplateStyles.includes(adData.template_style) ? adData.template_style : 'modern';
     
+    const adName = generateAdName(adData);
     const { data: newAd, error: createError } = await supabase
       .from('generated_ads')
       .insert([{
-        name: adData.name,
+        name: adName,
         headline: adData.headline,
         cta_text: adData.cta_text,
         font_url: adData.font_url,

@@ -104,19 +104,6 @@ export function TemplateStyleSelector({
           </div>
           <div>
             <RadioGroupItem
-              value="sunset"
-              id="sunset"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="sunset"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <span>Sunset</span>
-            </Label>
-          </div>
-          <div>
-            <RadioGroupItem
               value="minimal-fade"
               id="minimal-fade"
               className="peer sr-only"
