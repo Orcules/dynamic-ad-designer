@@ -26,15 +26,41 @@ export function TemplateStyleSelector({
         >
           <div>
             <RadioGroupItem
-              value="minimal"
-              id="minimal"
+              value="modern"
+              id="modern"
               className="peer sr-only"
             />
             <Label
-              htmlFor="minimal"
+              htmlFor="modern"
               className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
             >
-              <span>Minimal</span>
+              <span>Modern</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="neon"
+              id="neon"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="neon"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Neon</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="elegant"
+              id="elegant"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="elegant"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Elegant</span>
             </Label>
           </div>
           <div>
@@ -74,19 +100,6 @@ export function TemplateStyleSelector({
               className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
             >
               <span>Wave</span>
-            </Label>
-          </div>
-          <div>
-            <RadioGroupItem
-              value="geometric"
-              id="geometric"
-              className="peer sr-only"
-            />
-            <Label
-              htmlFor="geometric"
-              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-            >
-              <span>Geometric</span>
             </Label>
           </div>
         </RadioGroup>

@@ -42,12 +42,6 @@ export function AdPreview({
         link.rel = 'stylesheet';
         document.head.appendChild(link);
 
-        document.fonts.ready.then(() => {
-          console.log(`Font ${family} loaded successfully`);
-        }).catch(err => {
-          console.error(`Error loading font ${family}:`, err);
-        });
-
         return () => {
           document.head.removeChild(link);
         };
@@ -60,7 +54,7 @@ export function AdPreview({
   const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
 
   const aspectRatio = `${width} / ${height}`;
-  const showArrow = ['dynamic', 'spotlight', 'wave'].includes(templateStyle || '');
+  const showArrow = ['dynamic', 'spotlight', 'wave', 'modern', 'neon', 'elegant'].includes(templateStyle || '');
 
   return (
     <Card className="h-fit w-full">
@@ -85,23 +79,26 @@ export function AdPreview({
               />
             )}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 flex items-center justify-center"
               style={gradientStyle}
-            />
-            {headline && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                <h2 
-                  className={cn(
-                    "break-words",
-                    templateStyle === 'minimal' ? 'text-black' : 'text-white'
-                  )}
-                  style={textStyle}
-                >
-                  {headline}
-                </h2>
+            >
+              <div className="relative w-full h-full flex flex-col items-center justify-between py-8">
+                {headline && (
+                  <div className="flex-1 flex items-center justify-center px-4 w-full">
+                    <h2 
+                      className={cn(
+                        "text-center max-w-[90%]",
+                        templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                      )}
+                      style={textStyle}
+                    >
+                      {headline}
+                    </h2>
+                  </div>
+                )}
                 {ctaText && (
                   <div 
-                    className="relative z-20 transform flex items-center justify-center gap-2"
+                    className="relative mt-auto mb-4 transform flex items-center justify-center gap-2 mx-auto"
                     style={buttonStyle}
                     onMouseEnter={() => setIsButtonHovered(true)}
                     onMouseLeave={() => setIsButtonHovered(false)}
@@ -112,7 +109,7 @@ export function AdPreview({
                     {showArrow && (
                       <ArrowBigDown 
                         className={cn(
-                          "w-4 h-4 transition-transform",
+                          "w-4 h-4 transition-transform duration-300",
                           isButtonHovered ? "translate-y-1" : ""
                         )}
                       />
@@ -120,7 +117,7 @@ export function AdPreview({
                   </div>
                 )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </CardContent>

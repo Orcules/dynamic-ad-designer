@@ -24,11 +24,29 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
   const lighterColor = adjustColor(color, 20);
 
   switch (style) {
+    case 'modern':
+      return {
+        background: `linear-gradient(135deg, ${color}ee 0%, ${darkerColor}dd 100%)`,
+        backdropFilter: 'blur(8px)',
+        position: 'relative',
+      };
+    case 'neon':
+      return {
+        background: `linear-gradient(45deg, ${darkerColor}ee 0%, transparent 100%)`,
+        boxShadow: `inset 0 0 100px ${color}66`,
+        backdropFilter: 'blur(4px)',
+        position: 'relative',
+      };
+    case 'elegant':
+      return {
+        background: `linear-gradient(to bottom, transparent 0%, ${darkerColor}dd 50%, ${darkerColor}ee 100%)`,
+        backdropFilter: 'blur(6px)',
+        position: 'relative',
+      };
     case 'dynamic':
       return {
         background: `linear-gradient(135deg, ${darkerColor}ee 0%, ${color}88 50%, transparent 100%)`,
         position: 'relative',
-        overflow: 'hidden',
         backdropFilter: 'blur(4px)',
       };
     case 'spotlight':
@@ -41,15 +59,7 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
       return {
         background: `linear-gradient(180deg, transparent 0%, ${darkerColor}cc 70%, ${darkerColor}ee 100%)`,
         position: 'relative',
-        clipPath: 'polygon(0 0, 100% 0, 100% 90%, 0% 100%)',
         backdropFilter: 'blur(6px)',
-      };
-    case 'geometric':
-      return {
-        background: `linear-gradient(120deg, ${darkerColor}ee 0%, ${color}99 50%, transparent 100%)`,
-        position: 'relative',
-        clipPath: 'polygon(0 0, 100% 0, 100% 100%, 25% 100%, 0 85%)',
-        backdropFilter: 'blur(4px)',
       };
     default:
       return {
