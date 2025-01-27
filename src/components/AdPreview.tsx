@@ -79,46 +79,44 @@ export function AdPreview({
               />
             )}
             <div
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0 flex flex-col justify-between"
               style={gradientStyle}
             >
-              <div className="relative w-full h-full flex flex-col items-center justify-between py-8">
-                {headline && (
-                  <div className="flex-1 flex items-center justify-center px-4 w-full">
-                    <h2 
-                      className={cn(
-                        "text-center max-w-[90%] leading-tight",
-                        templateStyle === 'minimal' ? 'text-black' : 'text-white'
-                      )}
-                      style={textStyle}
-                    >
-                      {headline}
-                    </h2>
+              {headline && (
+                <div className="flex-1 flex items-center justify-center px-4 w-full">
+                  <h2 
+                    className={cn(
+                      "text-center max-w-[90%] leading-tight",
+                      templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                    )}
+                    style={textStyle}
+                  >
+                    {headline}
+                  </h2>
+                </div>
+              )}
+              {ctaText && (
+                <div className="w-full px-4 pb-8">
+                  <div 
+                    className="relative transform flex items-center justify-center gap-2 mx-auto"
+                    style={buttonStyle}
+                    onMouseEnter={() => setIsButtonHovered(true)}
+                    onMouseLeave={() => setIsButtonHovered(false)}
+                  >
+                    <span className="block">
+                      {ctaText}
+                    </span>
+                    {showArrow && (
+                      <ArrowBigDown 
+                        className={cn(
+                          "w-4 h-4 transition-transform duration-300",
+                          isButtonHovered ? "translate-y-1" : ""
+                        )}
+                      />
+                    )}
                   </div>
-                )}
-                {ctaText && (
-                  <div className="w-full px-4 mt-auto">
-                    <div 
-                      className="relative transform flex items-center justify-center gap-2 mx-auto"
-                      style={buttonStyle}
-                      onMouseEnter={() => setIsButtonHovered(true)}
-                      onMouseLeave={() => setIsButtonHovered(false)}
-                    >
-                      <span className="block">
-                        {ctaText}
-                      </span>
-                      {showArrow && (
-                        <ArrowBigDown 
-                          className={cn(
-                            "w-4 h-4 transition-transform duration-300",
-                            isButtonHovered ? "translate-y-1" : ""
-                          )}
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

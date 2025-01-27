@@ -26,76 +26,64 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
   switch (style) {
     case 'modern':
       return {
-        background: `linear-gradient(135deg, ${color}ee 0%, ${darkerColor}dd 100%)`,
+        background: `linear-gradient(135deg, ${color}88 0%, ${darkerColor}99 100%)`,
         backdropFilter: 'blur(8px)',
-        position: 'relative',
       };
     case 'neon':
       return {
-        background: `linear-gradient(45deg, ${darkerColor}ee 0%, transparent 100%)`,
-        boxShadow: `inset 0 0 100px ${color}66`,
+        background: `linear-gradient(45deg, ${darkerColor}88 0%, transparent 100%)`,
+        boxShadow: `inset 0 0 100px ${color}44`,
         backdropFilter: 'blur(4px)',
-        position: 'relative',
       };
     case 'elegant':
       return {
-        background: `linear-gradient(to bottom, transparent 0%, ${darkerColor}dd 50%, ${darkerColor}ee 100%)`,
+        background: `linear-gradient(to bottom, transparent 0%, ${darkerColor}88 50%, ${darkerColor}aa 100%)`,
         backdropFilter: 'blur(6px)',
-        position: 'relative',
       };
     case 'dynamic':
       return {
-        background: `linear-gradient(135deg, ${darkerColor}ee 0%, ${color}88 50%, transparent 100%)`,
-        position: 'relative',
+        background: `linear-gradient(135deg, ${darkerColor}88 0%, ${color}66 50%, transparent 100%)`,
         backdropFilter: 'blur(4px)',
       };
     case 'spotlight':
       return {
-        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}dd 80%)`,
-        position: 'relative',
+        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}99 80%)`,
         backdropFilter: 'blur(8px)',
       };
     case 'wave':
       return {
-        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}cc 70%, ${darkerColor}ee 100%)`,
-        position: 'relative',
+        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}88 70%, ${darkerColor}aa 100%)`,
         backdropFilter: 'blur(6px)',
       };
     case 'cinematic':
       return {
-        background: `linear-gradient(0deg, ${darkerColor}ee 0%, transparent 50%, ${darkerColor}aa 100%)`,
-        position: 'relative',
+        background: `linear-gradient(0deg, ${darkerColor}aa 0%, transparent 50%, ${darkerColor}88 100%)`,
         backdropFilter: 'blur(4px)',
       };
     case 'sunset':
       return {
-        background: `linear-gradient(180deg, ${lighterColor}88 0%, ${color}aa 50%, ${darkerColor}ee 100%)`,
-        position: 'relative',
+        background: `linear-gradient(180deg, ${lighterColor}66 0%, ${color}77 50%, ${darkerColor}aa 100%)`,
         backdropFilter: 'blur(5px)',
       };
     case 'minimal-fade':
       return {
-        background: `linear-gradient(to top, ${darkerColor}ee 0%, transparent 100%)`,
-        position: 'relative',
+        background: `linear-gradient(to top, ${darkerColor}aa 0%, transparent 100%)`,
         backdropFilter: 'blur(3px)',
       };
     case 'duotone':
       return {
-        background: `linear-gradient(45deg, ${darkerColor}cc, ${lighterColor}cc)`,
+        background: `linear-gradient(45deg, ${darkerColor}88, ${lighterColor}88)`,
         mixBlendMode: 'color',
-        position: 'relative',
       };
     case 'vignette':
       return {
-        background: `radial-gradient(circle at center, transparent 0%, ${darkerColor}ee 120%)`,
-        position: 'relative',
+        background: `radial-gradient(circle at center, transparent 0%, ${darkerColor}aa 120%)`,
         backdropFilter: 'blur(4px)',
       };
     default:
       return {
         background: 'rgba(255,255,255,0.95)',
         backdropFilter: 'blur(8px)',
-        position: 'relative',
       };
   }
 }
