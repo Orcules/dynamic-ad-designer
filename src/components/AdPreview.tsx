@@ -153,35 +153,37 @@ export function AdPreview({
               )}
             </div>
             {allImages.length > 1 && (
-              <>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white z-10"
-                  onClick={handlePrevImage}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white z-10"
-                  onClick={handleNextImage}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-                  {allImages.map((_, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        "w-2 h-2 rounded-full transition-colors",
-                        currentImageIndex === index ? "bg-white" : "bg-white/50"
-                      )}
-                    />
-                  ))}
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="relative w-full h-full">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white z-50 pointer-events-auto"
+                    onClick={handlePrevImage}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white z-50 pointer-events-auto"
+                    onClick={handleNextImage}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-50 pointer-events-auto">
+                    {allImages.map((_, index) => (
+                      <div
+                        key={index}
+                        className={cn(
+                          "w-2 h-2 rounded-full transition-colors",
+                          currentImageIndex === index ? "bg-white" : "bg-white/50"
+                        )}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
