@@ -9,16 +9,16 @@ interface AdTextProps {
 export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: 'bold',
-    fontSize: 'clamp(0.5rem, min(3vw, 3vh), 2.5rem)', // Reduced minimum size
+    fontSize: 'clamp(0.8rem, min(2.5vw, 2.5vh), 2rem)',
     lineHeight: '1.2',
-    maxWidth: '90%',
+    maxWidth: '100%',
     margin: '0 auto',
-    padding: '1rem',
+    padding: '0.5rem',
     fontFamily: fontFamily || 'inherit',
     textAlign: 'center',
     display: 'block',
     transition: 'all 0.3s ease',
-    wordWrap: 'break-word', // Ensure long words break
+    wordWrap: 'break-word',
     overflowWrap: 'break-word',
     hyphens: 'auto',
   };
@@ -69,15 +69,15 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+        fontSize: 'clamp(1.2rem, 3vw, 2rem)',
         fontWeight: '600',
         letterSpacing: '0.5px',
         lineHeight: '1.3',
         textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
-        width: '90%',
+        width: '100%',
         margin: '0 auto',
-        padding: '0.5rem',
-        marginBottom: '0.5rem',
+        padding: '0.25rem',
+        marginBottom: '0.25rem',
       };
     default:
       return {

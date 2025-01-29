@@ -65,8 +65,14 @@ export function AdPreview({
     ...(templateStyle === 'luxury' && {
       background: 'rgba(30, 174, 219, 0.3)',
       borderRadius: '12px',
-      gap: '1rem',
-      marginTop: '2rem',
+      gap: '0.5rem',
+      marginTop: '1rem',
+      maxWidth: '80%',
+      maxHeight: '80%',
+      position: 'absolute',
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -45%)',
     })
   };
 
@@ -102,10 +108,10 @@ export function AdPreview({
               {headline && (
                 <div className="flex-1 flex items-center justify-center px-4 w-full">
                   <div style={containerStyle}>
-                    <div className="w-full flex flex-col items-center justify-center">
+                    <div className="w-full flex flex-col items-center justify-center gap-2">
                       <h2 
                         className={cn(
-                          "text-center leading-tight break-words",
+                          "text-center leading-tight break-words max-w-[90%]",
                           templateStyle === 'minimal' ? 'text-black' : 'text-white'
                         )}
                         style={textStyle}
@@ -113,7 +119,7 @@ export function AdPreview({
                         {headline}
                       </h2>
                       {ctaText && (
-                        <div className="w-full flex justify-center items-center mt-4">
+                        <div className="w-full flex justify-center items-center mt-2">
                           <div 
                             className="relative transform flex items-center justify-center gap-2 mx-auto"
                             style={buttonStyle}
