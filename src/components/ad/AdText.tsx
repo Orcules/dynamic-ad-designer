@@ -70,6 +70,10 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         letterSpacing: '2px',
         textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
         fontWeight: '600',
+        background: 'rgba(0, 0, 0, 0.1)',
+        backdropFilter: 'blur(8px)',
+        padding: '2rem',
+        borderRadius: '8px',
       };
     default:
       return {

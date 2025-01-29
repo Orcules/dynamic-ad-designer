@@ -82,8 +82,19 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
       };
     case 'luxury':
       return {
-        background: `linear-gradient(to bottom, rgba(25, 45, 85, 0.6) 0%, rgba(25, 45, 85, 0.8) 100%)`,
-        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: '2rem',
+        '& > *': {
+          background: 'rgba(0, 0, 0, 0.1)',
+          backdropFilter: 'blur(8px)',
+          padding: '2rem',
+          borderRadius: '8px',
+          maxWidth: '80%',
+          margin: '0 auto',
+        }
       };
     default:
       return {
