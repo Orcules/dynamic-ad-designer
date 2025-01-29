@@ -23,62 +23,63 @@ function adjustColor(hex: string, percent: number) {
 export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradientProps): CSSProperties {
   const darkerColor = adjustColor(color, -20);
   const lighterColor = adjustColor(color, 20);
+  const alphaValue = Math.round(opacity * 255).toString(16).padStart(2, '0');
 
   switch (style) {
     case 'modern':
       return {
-        background: `linear-gradient(135deg, ${color}88 0%, ${darkerColor}99 100%)`,
+        background: `linear-gradient(135deg, ${color}${alphaValue} 0%, ${darkerColor}${alphaValue} 100%)`,
         backdropFilter: 'blur(8px)',
       };
     case 'neon':
       return {
-        background: `linear-gradient(45deg, ${darkerColor}88 0%, transparent 100%)`,
-        boxShadow: `inset 0 0 100px ${color}44`,
+        background: `linear-gradient(45deg, ${darkerColor}${alphaValue} 0%, transparent 100%)`,
+        boxShadow: `inset 0 0 100px ${color}${alphaValue}`,
         backdropFilter: 'blur(4px)',
       };
     case 'elegant':
       return {
-        background: `linear-gradient(to bottom, transparent 0%, ${darkerColor}88 50%, ${darkerColor}aa 100%)`,
+        background: `linear-gradient(to bottom, transparent 0%, ${darkerColor}${alphaValue} 50%, ${darkerColor}${alphaValue} 100%)`,
         backdropFilter: 'blur(6px)',
       };
     case 'dynamic':
       return {
-        background: `linear-gradient(135deg, ${darkerColor}88 0%, ${color}66 50%, transparent 100%)`,
+        background: `linear-gradient(135deg, ${darkerColor}${alphaValue} 0%, ${color}${alphaValue} 50%, transparent 100%)`,
         backdropFilter: 'blur(4px)',
       };
     case 'spotlight':
       return {
-        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}99 80%)`,
+        background: `radial-gradient(circle at 30% 30%, transparent 0%, ${darkerColor}${alphaValue} 80%)`,
         backdropFilter: 'blur(8px)',
       };
     case 'wave':
       return {
-        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}88 70%, ${darkerColor}aa 100%)`,
+        background: `linear-gradient(180deg, transparent 0%, ${darkerColor}${alphaValue} 70%, ${darkerColor}${alphaValue} 100%)`,
         backdropFilter: 'blur(6px)',
       };
     case 'cinematic':
       return {
-        background: `linear-gradient(0deg, ${darkerColor}aa 0%, transparent 50%, ${darkerColor}88 100%)`,
+        background: `linear-gradient(0deg, ${darkerColor}${alphaValue} 0%, transparent 50%, ${darkerColor}${alphaValue} 100%)`,
         backdropFilter: 'blur(4px)',
       };
     case 'sunset':
       return {
-        background: `linear-gradient(180deg, ${lighterColor}66 0%, ${color}77 50%, ${darkerColor}aa 100%)`,
+        background: `linear-gradient(180deg, ${lighterColor}${alphaValue} 0%, ${color}${alphaValue} 50%, ${darkerColor}${alphaValue} 100%)`,
         backdropFilter: 'blur(5px)',
       };
     case 'minimal-fade':
       return {
-        background: `linear-gradient(to top, ${darkerColor}aa 0%, transparent 100%)`,
+        background: `linear-gradient(to top, ${darkerColor}${alphaValue} 0%, transparent 100%)`,
         backdropFilter: 'blur(3px)',
       };
     case 'duotone':
       return {
-        background: `linear-gradient(45deg, ${darkerColor}88, ${lighterColor}88)`,
+        background: `linear-gradient(45deg, ${darkerColor}${alphaValue}, ${lighterColor}${alphaValue})`,
         mixBlendMode: 'color',
       };
     case 'vignette':
       return {
-        background: `radial-gradient(circle at center, transparent 0%, ${darkerColor}aa 120%)`,
+        background: `radial-gradient(circle at center, transparent 0%, ${darkerColor}${alphaValue} 120%)`,
         backdropFilter: 'blur(4px)',
       };
     case 'luxury':
@@ -93,7 +94,7 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
       };
     default:
       return {
-        background: 'rgba(255,255,255,0.95)',
+        background: `rgba(255,255,255,${opacity})`,
         backdropFilter: 'blur(8px)',
       };
   }

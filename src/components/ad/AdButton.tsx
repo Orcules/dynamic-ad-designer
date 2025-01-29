@@ -131,15 +131,15 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     case 'luxury':
       return {
         ...baseStyle,
-        background: '#ffc107',
+        background: accentColor,
         color: '#000000',
         fontWeight: '600',
         fontSize: 'clamp(1rem, 2vw, 1.25rem)',
         borderRadius: '50px',
         padding: '0.8em 2.5em',
         boxShadow: isHovered 
-          ? '0 8px 16px rgba(255, 193, 7, 0.4)'
-          : '0 4px 8px rgba(255, 193, 7, 0.3)',
+          ? `0 8px 16px ${accentColor}40`
+          : `0 4px 8px ${accentColor}30`,
       };
     default:
       return {
