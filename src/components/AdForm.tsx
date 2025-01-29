@@ -10,6 +10,17 @@ import { Alert, AlertDescription } from "./ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Slider } from "./ui/slider";
 
+interface ImageUrlState {
+  url: string;
+  isValid: boolean;
+  isChecking: boolean;
+}
+
+interface ImagePreview {
+  file: File;
+  preview: string;
+}
+
 interface AdFormProps {
   adData: {
     name: string;

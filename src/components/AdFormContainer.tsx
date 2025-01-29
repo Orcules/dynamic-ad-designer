@@ -11,6 +11,8 @@ interface AdFormContainerProps {
     platform: string;
     template_style: string;
     accent_color: string;
+    cta_color: string;
+    overlay_color: string;
   };
   isGenerating: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -18,6 +20,8 @@ interface AdFormContainerProps {
   onPlatformChange: (value: string) => void;
   onStyleChange: (value: string) => void;
   onColorChange: (value: string) => void;
+  onCtaColorChange: (value: string) => void;
+  onOverlayColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -33,6 +37,8 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
   onPlatformChange,
   onStyleChange,
   onColorChange,
+  onCtaColorChange,
+  onOverlayColorChange,
   onImageChange,
   onImageUrlsChange,
   onSubmit,
@@ -48,6 +54,8 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         onPlatformChange={onPlatformChange}
         onStyleChange={onStyleChange}
         onColorChange={onColorChange}
+        onCtaColorChange={onCtaColorChange}
+        onOverlayColorChange={onOverlayColorChange}
         onImageChange={onImageChange}
         onImageUrlsChange={onImageUrlsChange}
         overlayOpacity={overlayOpacity}
