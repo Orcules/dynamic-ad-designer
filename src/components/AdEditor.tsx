@@ -24,7 +24,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     headline: "",
     cta_text: "",
     font_url: "",
-    platform: "",
+    platform: "facebook", // Set default platform to ensure it's always valid
     template_style: "",
     accent_color: "#4A90E2",
   });
@@ -94,6 +94,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate platform before submission
+    if (!adData.platform) {
+      toast.error('Please select a platform');
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
