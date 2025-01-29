@@ -26,6 +26,8 @@ interface AdFormProps {
   onColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
+  overlayOpacity: number;
+  onOpacityChange: (value: number) => void;
 }
 
 interface ImageUrlState {
@@ -48,6 +50,8 @@ export function AdForm({
   onColorChange,
   onImageChange,
   onImageUrlsChange,
+  overlayOpacity,
+  onOpacityChange,
 }: AdFormProps) {
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [imageUrls, setImageUrls] = useState<ImageUrlState[]>([{ url: "", isValid: true, isChecking: false }]);
