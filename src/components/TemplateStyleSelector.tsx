@@ -141,6 +141,19 @@ export function TemplateStyleSelector({
               <span>Vignette</span>
             </Label>
           </div>
+          <div>
+            <RadioGroupItem
+              value="luxury"
+              id="luxury"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="luxury"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Luxury</span>
+            </Label>
+          </div>
         </RadioGroup>
       </div>
       <div className="space-y-2">

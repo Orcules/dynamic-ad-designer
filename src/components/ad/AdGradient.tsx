@@ -80,6 +80,11 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
         background: `radial-gradient(circle at center, transparent 0%, ${darkerColor}aa 120%)`,
         backdropFilter: 'blur(4px)',
       };
+    case 'luxury':
+      return {
+        background: `linear-gradient(to bottom, rgba(25, 45, 85, 0.6) 0%, rgba(25, 45, 85, 0.8) 100%)`,
+        backdropFilter: 'blur(4px)',
+      };
     default:
       return {
         background: 'rgba(255,255,255,0.95)',

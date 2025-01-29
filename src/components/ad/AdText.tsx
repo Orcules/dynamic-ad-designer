@@ -62,6 +62,15 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         color: '#FFFFFF',
         textShadow: '1px 1px 4px rgba(0,0,0,0.2)',
       };
+    case 'luxury':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textTransform: 'uppercase',
+        letterSpacing: '2px',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+        fontWeight: '600',
+      };
     default:
       return {
         ...baseStyle,
