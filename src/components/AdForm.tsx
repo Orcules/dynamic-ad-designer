@@ -54,24 +54,33 @@ export function AdForm({
   const checkImageUrl = async (url: string): Promise<boolean> => {
     if (!url) return false;
     
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(true);
-      img.onerror = async () => {
-        try {
-          const response = await fetch(url, { method: 'HEAD' });
-          resolve(response.ok);
-        } catch (error) {
-          try {
-            const response = await fetch(url);
-            resolve(response.ok);
-          } catch (error) {
-            resolve(false);
-          }
-        }
-      };
-      img.src = url;
-    });
+    try {
+      // First try with direct fetch
+      const response = await fetch(url, { method: 'HEAD' });
+      if (response.ok) return true;
+
+      // If direct fetch fails, try with proxy
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const proxyResponse = await fetch(proxyUrl);
+      if (proxyResponse.ok) return true;
+
+      // If both fail, try loading the image directly
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    } catch (error) {
+      console.error('Error checking image URL:', error);
+      // Try one last time with image loading
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+      });
+    }
   };
 
   const handleUrlChange = async (index: number, newUrl: string) => {
@@ -83,16 +92,18 @@ export function AdForm({
       const isValid = await checkImageUrl(newUrl);
       newImageUrls[index] = { url: newUrl, isValid, isChecking: false };
       setImageUrls(newImageUrls);
+
+      // Only update parent component with valid URLs
+      const validUrls = newImageUrls
+        .filter(item => item.url && item.isValid)
+        .map(item => item.url);
+      onImageUrlsChange(validUrls);
     }
 
+    // Add new empty field if this is the last one and it has content
     if (index === imageUrls.length - 1 && newUrl) {
       setImageUrls([...newImageUrls, { url: "", isValid: true, isChecking: false }]);
     }
-
-    const validUrls = newImageUrls
-      .filter(item => item.url && item.isValid)
-      .map(item => item.url);
-    onImageUrlsChange(validUrls);
   };
 
   return (
@@ -154,6 +165,7 @@ export function AdForm({
                       src={imageUrl.url}
                       alt="Preview"
                       className="w-full h-full object-cover"
+                      crossOrigin="anonymous"
                     />
                   </div>
                 )}
