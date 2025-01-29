@@ -4,6 +4,8 @@ export const getDimensions = (platform: string) => {
       return { width: 1200, height: 628 };
     case "instagram":
       return { width: 1080, height: 1080 };
+    case "instagram-story":
+      return { width: 1080, height: 1350 };
     case "linkedin":
       return { width: 1200, height: 627 };
     case "twitter":

@@ -1,26 +1,9 @@
 import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getLanguageFonts } from './LanguageSelector';
 
-const fontsByLanguage = {
-  he: [
-    { name: "Heebo", url: "https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" },
-    { name: "Assistant", url: "https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap" },
-    { name: "Rubik", url: "https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" },
-    { name: "Open Sans Hebrew", url: "https://fonts.googleapis.com/css2?family=Open+Sans+Hebrew:wght@400;700&display=swap" },
-    { name: "Varela Round", url: "https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" },
-  ],
-  en: [
-    { name: "Inter", url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" },
-    { name: "Roboto", url: "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" },
-    { name: "Poppins", url: "https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" },
-    { name: "Montserrat", url: "https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" },
-  ],
-  ar: [
-    { name: "Cairo", url: "https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" },
-    { name: "Tajawal", url: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" },
-    { name: "Almarai", url: "https://fonts.googleapis.com/css2?family=Almarai:wght@400;700&display=swap" },
-    { name: "Amiri", url: "https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" },
-  ],
+const getFontUrl = (fontName: string) => {
+  return `https://fonts.googleapis.com/css2?family=${fontName.replace(/\s+/g, '+')}:wght@400;700&display=swap`;
 };
 
 interface FontSelectorProps {
@@ -30,7 +13,10 @@ interface FontSelectorProps {
 }
 
 export function FontSelector({ value, onChange, language }: FontSelectorProps) {
-  const fonts = fontsByLanguage[language as keyof typeof fontsByLanguage] || fontsByLanguage.he;
+  const fonts = getLanguageFonts(language).map(fontName => ({
+    name: fontName,
+    url: getFontUrl(fontName)
+  }));
 
   useEffect(() => {
     if (!value || !fonts.some(font => font.url === value)) {
@@ -40,14 +26,18 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">גופן</label>
+      <label className="text-sm font-medium">Font</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder="בחר גופן" />
+        <SelectTrigger className="bg-card">
+          <SelectValue placeholder="Select font" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="bg-card border-border">
           {fonts.map((font) => (
-            <SelectItem key={font.name} value={font.url}>
+            <SelectItem 
+              key={font.name} 
+              value={font.url}
+              className="hover:bg-muted focus:bg-muted"
+            >
               {font.name}
             </SelectItem>
           ))}
