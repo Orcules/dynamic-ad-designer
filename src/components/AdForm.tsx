@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertCircle } from "lucide-react";
+import { Slider } from "./ui/slider";
 
 interface AdFormProps {
   adData: {
@@ -241,6 +242,23 @@ export function AdForm({
         accentColor={adData.accent_color}
         onColorChange={onColorChange}
       />
+
+      <div className="space-y-2">
+        <Label>Overlay Opacity</Label>
+        <div className="flex gap-4 items-center">
+          <Slider
+            value={[overlayOpacity * 100]}
+            onValueChange={(values) => onOpacityChange(values[0] / 100)}
+            min={0}
+            max={100}
+            step={1}
+            className="flex-1"
+          />
+          <span className="text-sm text-muted-foreground w-12 text-right">
+            {Math.round(overlayOpacity * 100)}%
+          </span>
+        </div>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="headline">Headline</Label>
