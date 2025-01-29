@@ -53,16 +53,22 @@ export function AdPreview({
   const textStyle = getTextStyle({ style: templateStyle, accentColor, fontFamily });
   const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
 
-  const containerStyle: React.CSSProperties = templateStyle === 'luxury' ? {
-    background: 'rgba(30, 174, 219, 0.3)',
-    padding: '2rem',
-    borderRadius: '12px',
+  const containerStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '1rem',
-    marginTop: '2rem',
-  } : {};
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%',
+    padding: '1rem',
+    boxSizing: 'border-box',
+    ...(templateStyle === 'luxury' && {
+      background: 'rgba(30, 174, 219, 0.3)',
+      borderRadius: '12px',
+      gap: '1rem',
+      marginTop: '2rem',
+    })
+  };
 
   const aspectRatio = `${width} / ${height}`;
   const showArrow = ['dynamic', 'spotlight', 'wave', 'modern', 'neon', 'elegant', 'cinematic', 'sunset', 'minimal-fade', 'duotone', 'vignette'].includes(templateStyle || '');
@@ -96,37 +102,39 @@ export function AdPreview({
               {headline && (
                 <div className="flex-1 flex items-center justify-center px-4 w-full">
                   <div style={containerStyle}>
-                    <h2 
-                      className={cn(
-                        "text-center max-w-[90%] leading-tight",
-                        templateStyle === 'minimal' ? 'text-black' : 'text-white'
-                      )}
-                      style={textStyle}
-                    >
-                      {headline}
-                    </h2>
-                    {ctaText && (
-                      <div className="w-full flex justify-center items-center">
-                        <div 
-                          className="relative transform flex items-center justify-center gap-2 mx-auto"
-                          style={buttonStyle}
-                          onMouseEnter={() => setIsButtonHovered(true)}
-                          onMouseLeave={() => setIsButtonHovered(false)}
-                        >
-                          <span className="block">
-                            {ctaText}
-                          </span>
-                          {showArrow && (
-                            <ArrowBigDown 
-                              className={cn(
-                                "w-4 h-4 transition-transform duration-300",
-                                isButtonHovered ? "translate-y-1" : ""
-                              )}
-                            />
-                          )}
+                    <div className="w-full flex flex-col items-center justify-center">
+                      <h2 
+                        className={cn(
+                          "text-center leading-tight break-words",
+                          templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                        )}
+                        style={textStyle}
+                      >
+                        {headline}
+                      </h2>
+                      {ctaText && (
+                        <div className="w-full flex justify-center items-center mt-4">
+                          <div 
+                            className="relative transform flex items-center justify-center gap-2 mx-auto"
+                            style={buttonStyle}
+                            onMouseEnter={() => setIsButtonHovered(true)}
+                            onMouseLeave={() => setIsButtonHovered(false)}
+                          >
+                            <span className="block">
+                              {ctaText}
+                            </span>
+                            {showArrow && (
+                              <ArrowBigDown 
+                                className={cn(
+                                  "w-4 h-4 transition-transform duration-300",
+                                  isButtonHovered ? "translate-y-1" : ""
+                                )}
+                              />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

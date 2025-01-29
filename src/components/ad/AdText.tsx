@@ -9,15 +9,18 @@ interface AdTextProps {
 export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: 'bold',
-    fontSize: 'clamp(1rem, min(4vw, 4vh), 2.5rem)',
+    fontSize: 'clamp(0.5rem, min(3vw, 3vh), 2.5rem)', // Reduced minimum size
     lineHeight: '1.2',
-    maxWidth: '100%',
+    maxWidth: '90%',
     margin: '0 auto',
     padding: '1rem',
     fontFamily: fontFamily || 'inherit',
     textAlign: 'center',
     display: 'block',
     transition: 'all 0.3s ease',
+    wordWrap: 'break-word', // Ensure long words break
+    overflowWrap: 'break-word',
+    hyphens: 'auto',
   };
 
   switch (style) {
