@@ -139,18 +139,10 @@ export function AdForm({
   }, []);
 
   const getCollageStyle = (index: number, total: number) => {
-    if (total === 1) {
-      return "col-span-2 row-span-2";
-    }
-    if (total === 2) {
-      return "col-span-1 row-span-2";
-    }
-    if (total === 3 && index === 0) {
-      return "col-span-2 row-span-1";
-    }
-    if (total === 4) {
-      return "col-span-1 row-span-1";
-    }
+    if (total === 1) return "col-span-2 row-span-2";
+    if (total === 2) return "col-span-1 row-span-2";
+    if (total === 3 && index === 0) return "col-span-2 row-span-1";
+    if (total === 4) return "col-span-1 row-span-1";
     return "";
   };
 
@@ -247,6 +239,30 @@ export function AdForm({
         </TabsContent>
       </Tabs>
 
+      <div className="space-y-2">
+        <Label htmlFor="headline">Headline</Label>
+        <Input
+          id="headline"
+          name="headline"
+          value={adData.headline}
+          onChange={onInputChange}
+          placeholder="Enter ad headline"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cta_text">CTA Text</Label>
+        <Input
+          id="cta_text"
+          name="cta_text"
+          value={adData.cta_text}
+          onChange={onInputChange}
+          placeholder="Enter button text"
+          required
+        />
+      </div>
+
       <LanguageSelector 
         value={selectedLanguage}
         onChange={setSelectedLanguage}
@@ -279,30 +295,6 @@ export function AdForm({
             {Math.round(overlayOpacity * 100)}%
           </span>
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="headline">Headline</Label>
-        <Input
-          id="headline"
-          name="headline"
-          value={adData.headline}
-          onChange={onInputChange}
-          placeholder="Enter ad headline"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="cta_text">CTA Text</Label>
-        <Input
-          id="cta_text"
-          name="cta_text"
-          value={adData.cta_text}
-          onChange={onInputChange}
-          placeholder="Enter button text"
-          required
-        />
       </div>
 
       <FontSelector 
