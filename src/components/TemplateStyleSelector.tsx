@@ -10,6 +10,10 @@ interface TemplateStyleSelectorProps {
   onColorChange: (value: string) => void;
   overlayOpacity?: number;
   onOpacityChange?: (value: number) => void;
+  ctaColor: string;
+  onCtaColorChange: (value: string) => void;
+  overlayColor: string;
+  onOverlayColorChange: (value: string) => void;
 }
 
 export function TemplateStyleSelector({ 
@@ -18,7 +22,11 @@ export function TemplateStyleSelector({
   accentColor,
   onColorChange,
   overlayOpacity = 0.4,
-  onOpacityChange
+  onOpacityChange,
+  ctaColor,
+  onCtaColorChange,
+  overlayColor,
+  onOverlayColorChange
 }: TemplateStyleSelectorProps) {
   return (
     <div className="space-y-4">
@@ -161,44 +169,65 @@ export function TemplateStyleSelector({
           </div>
         </RadioGroup>
       </div>
+
       <div className="space-y-2">
-        <Label htmlFor="accent_color">Accent Color</Label>
+        <Label htmlFor="overlay_color">Overlay Color</Label>
         <div className="flex gap-4">
           <Input
             type="color"
-            id="accent_color"
-            name="accent_color"
-            value={accentColor}
-            onChange={(e) => onColorChange(e.target.value)}
+            id="overlay_color"
+            name="overlay_color"
+            value={overlayColor}
+            onChange={(e) => onOverlayColorChange(e.target.value)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
-            value={accentColor}
-            onChange={(e) => onColorChange(e.target.value)}
+            value={overlayColor}
+            onChange={(e) => onOverlayColorChange(e.target.value)}
             placeholder="#000000"
             className="flex-1"
           />
         </div>
       </div>
-      {value === 'luxury' && onOpacityChange && (
-        <div className="space-y-2">
-          <Label>Overlay Opacity</Label>
-          <div className="flex gap-4 items-center">
-            <Slider
-              value={[overlayOpacity * 100]}
-              onValueChange={(values) => onOpacityChange(values[0] / 100)}
-              min={0}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-sm text-muted-foreground w-12 text-right">
-              {Math.round(overlayOpacity * 100)}%
-            </span>
-          </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cta_color">CTA Button Color</Label>
+        <div className="flex gap-4">
+          <Input
+            type="color"
+            id="cta_color"
+            name="cta_color"
+            value={ctaColor}
+            onChange={(e) => onCtaColorChange(e.target.value)}
+            className="w-16 h-10 p-1"
+          />
+          <Input
+            type="text"
+            value={ctaColor}
+            onChange={(e) => onCtaColorChange(e.target.value)}
+            placeholder="#000000"
+            className="flex-1"
+          />
         </div>
-      )}
+      </div>
+
+      <div className="space-y-2">
+        <Label>Overlay Opacity</Label>
+        <div className="flex gap-4 items-center">
+          <Slider
+            value={[overlayOpacity * 100]}
+            onValueChange={(values) => onOpacityChange?.(values[0] / 100)}
+            min={0}
+            max={100}
+            step={1}
+            className="flex-1"
+          />
+          <span className="text-sm text-muted-foreground w-12 text-right">
+            {Math.round(overlayOpacity * 100)}%
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

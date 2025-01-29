@@ -15,6 +15,8 @@ interface AdPreviewProps {
   ctaText?: string;
   templateStyle?: string;
   accentColor?: string;
+  ctaColor?: string;
+  overlayColor?: string;
   fontUrl?: string;
   overlayOpacity?: number;
   imageUrls?: string[];
@@ -28,6 +30,8 @@ export function AdPreview({
   ctaText, 
   templateStyle,
   accentColor = "#4A90E2",
+  ctaColor = "#4A90E2",
+  overlayColor = "#000000",
   fontUrl,
   overlayOpacity = 0.4,
   imageUrls = [],
@@ -36,9 +40,8 @@ export function AdPreview({
   const [fontFamily, setFontFamily] = useState<string>('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const allImages = imageUrl ? [imageUrl, ...(imageUrls || [])] : imageUrls || [];
-  const currentImage = allImages[currentImageIndex];
-
+  const allImages = [...(imageUrl ? [imageUrl] : []), ...imageUrls].filter(Boolean);
+  
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
   };
@@ -66,34 +69,24 @@ export function AdPreview({
     }
   }, [fontUrl]);
 
-  const gradientStyle = AdGradient({ style: templateStyle, color: accentColor, opacity: overlayOpacity });
-  const textStyle = getTextStyle({ style: templateStyle, accentColor, fontFamily });
-  const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
-
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '100%',
-    padding: '1rem',
-    boxSizing: 'border-box',
-    ...(templateStyle === 'luxury' && {
-      background: `rgba(0, 0, 0, ${overlayOpacity})`,
-      borderRadius: '8px',
-      gap: '0.5rem',
-      maxWidth: '70%',
-      maxHeight: '70%',
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-    })
-  };
-
-  const aspectRatio = `${width} / ${height}`;
-  const showArrow = ['dynamic', 'spotlight', 'wave', 'modern', 'neon', 'elegant', 'cinematic', 'sunset', 'minimal-fade', 'duotone', 'vignette'].includes(templateStyle || '');
+  const gradientStyle = AdGradient({ 
+    style: templateStyle, 
+    color: overlayColor, 
+    opacity: overlayOpacity 
+  });
+  
+  const textStyle = getTextStyle({ 
+    style: templateStyle, 
+    accentColor: overlayColor, 
+    fontFamily 
+  });
+  
+  const buttonStyle = getButtonStyle({ 
+    style: templateStyle, 
+    accentColor: ctaColor, 
+    isHovered: isButtonHovered, 
+    fontFamily 
+  });
 
   return (
     <Card className="h-fit w-full">
@@ -105,13 +98,13 @@ export function AdPreview({
           <div
             className="ad-content relative overflow-hidden rounded-lg shadow-2xl"
             style={{
-              aspectRatio,
+              aspectRatio: `${width} / ${height}`,
               width: '100%',
             }}
           >
-            {currentImage && (
+            {allImages[currentImageIndex] && (
               <img
-                src={currentImage}
+                src={allImages[currentImageIndex]}
                 alt="Ad preview"
                 className="absolute inset-0 h-full w-full object-cover"
                 crossOrigin="anonymous"
@@ -123,7 +116,7 @@ export function AdPreview({
             >
               {headline && (
                 <div className="flex-1 flex items-center justify-center px-4 w-full">
-                  <div style={containerStyle}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', padding: '1rem', boxSizing: 'border-box' }}>
                     <div className="w-full flex flex-col items-center justify-center gap-2">
                       <h2 
                         className={cn(
@@ -145,14 +138,12 @@ export function AdPreview({
                             <span className="block">
                               {ctaText}
                             </span>
-                            {showArrow && (
-                              <ArrowBigDown 
-                                className={cn(
-                                  "w-4 h-4 transition-transform duration-300",
-                                  isButtonHovered ? "translate-y-1" : ""
-                                )}
-                              />
-                            )}
+                            <ArrowBigDown 
+                              className={cn(
+                                "w-4 h-4 transition-transform duration-300",
+                                isButtonHovered ? "translate-y-1" : ""
+                              )}
+                            />
                           </div>
                         </div>
                       )}

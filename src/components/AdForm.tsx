@@ -19,27 +19,20 @@ interface AdFormProps {
     platform: string;
     template_style: string;
     accent_color: string;
+    cta_color: string;
+    overlay_color: string;
   };
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFontChange: (value: string) => void;
   onPlatformChange: (value: string) => void;
   onStyleChange: (value: string) => void;
   onColorChange: (value: string) => void;
+  onCtaColorChange: (value: string) => void;
+  onOverlayColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
   overlayOpacity: number;
   onOpacityChange: (value: number) => void;
-}
-
-interface ImageUrlState {
-  url: string;
-  isValid: boolean;
-  isChecking: boolean;
-}
-
-interface ImagePreview {
-  file: File;
-  preview: string;
 }
 
 export function AdForm({
@@ -49,6 +42,8 @@ export function AdForm({
   onPlatformChange,
   onStyleChange,
   onColorChange,
+  onCtaColorChange,
+  onOverlayColorChange,
   onImageChange,
   onImageUrlsChange,
   overlayOpacity,
@@ -57,10 +52,6 @@ export function AdForm({
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [imageUrls, setImageUrls] = useState<ImageUrlState[]>([{ url: "", isValid: true, isChecking: false }]);
   const [uploadedImages, setUploadedImages] = useState<ImagePreview[]>([]);
-
-  if (!adData.template_style) {
-    onStyleChange('minimal');
-  }
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     if (!url) return false;
@@ -160,6 +151,40 @@ export function AdForm({
         />
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="headline">Headline</Label>
+        <Input
+          id="headline"
+          name="headline"
+          value={adData.headline}
+          onChange={onInputChange}
+          placeholder="Enter ad headline"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="cta_text">CTA Text</Label>
+        <Input
+          id="cta_text"
+          name="cta_text"
+          value={adData.cta_text}
+          onChange={onInputChange}
+          placeholder="Enter button text"
+          required
+        />
+      </div>
+
+      <LanguageSelector 
+        value={selectedLanguage}
+        onChange={setSelectedLanguage}
+      />
+
+      <PlatformSelector
+        value={adData.platform}
+        onChange={onPlatformChange}
+      />
+
       <Tabs defaultValue="upload" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upload">Upload Images</TabsTrigger>
@@ -239,63 +264,18 @@ export function AdForm({
         </TabsContent>
       </Tabs>
 
-      <div className="space-y-2">
-        <Label htmlFor="headline">Headline</Label>
-        <Input
-          id="headline"
-          name="headline"
-          value={adData.headline}
-          onChange={onInputChange}
-          placeholder="Enter ad headline"
-          required
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="cta_text">CTA Text</Label>
-        <Input
-          id="cta_text"
-          name="cta_text"
-          value={adData.cta_text}
-          onChange={onInputChange}
-          placeholder="Enter button text"
-          required
-        />
-      </div>
-
-      <LanguageSelector 
-        value={selectedLanguage}
-        onChange={setSelectedLanguage}
-      />
-
-      <PlatformSelector
-        value={adData.platform}
-        onChange={onPlatformChange}
-      />
-
       <TemplateStyleSelector
         value={adData.template_style}
         onChange={onStyleChange}
         accentColor={adData.accent_color}
         onColorChange={onColorChange}
+        ctaColor={adData.cta_color}
+        onCtaColorChange={onCtaColorChange}
+        overlayColor={adData.overlay_color}
+        onOverlayColorChange={onOverlayColorChange}
+        overlayOpacity={overlayOpacity}
+        onOpacityChange={onOpacityChange}
       />
-
-      <div className="space-y-2">
-        <Label>Overlay Opacity</Label>
-        <div className="flex gap-4 items-center">
-          <Slider
-            value={[overlayOpacity * 100]}
-            onValueChange={(values) => onOpacityChange(values[0] / 100)}
-            min={0}
-            max={100}
-            step={1}
-            className="flex-1"
-          />
-          <span className="text-sm text-muted-foreground w-12 text-right">
-            {Math.round(overlayOpacity * 100)}%
-          </span>
-        </div>
-      </div>
 
       <FontSelector 
         value={adData.font_url} 
