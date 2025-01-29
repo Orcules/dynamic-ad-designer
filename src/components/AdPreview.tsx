@@ -61,6 +61,7 @@ export function AdPreview({
     flexDirection: 'column',
     alignItems: 'center',
     gap: '1rem',
+    marginTop: '2rem',
   } : {};
 
   const aspectRatio = `${width} / ${height}`;

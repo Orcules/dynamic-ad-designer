@@ -66,7 +66,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        fontSize: 'clamp(2rem, min(6vw, 6vh), 4rem)',
+        fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
         fontWeight: '600',
         letterSpacing: '0.5px',
         lineHeight: '1.3',
