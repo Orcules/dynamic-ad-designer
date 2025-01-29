@@ -158,18 +158,18 @@ export function AdPreview({
                   <Button
                     variant="outline"
                     size="icon"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white z-50 pointer-events-auto"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
                     onClick={handlePrevImage}
                   >
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-8 w-8" />
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white z-50 pointer-events-auto"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
                     onClick={handleNextImage}
                   >
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-8 w-8" />
                   </Button>
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-50 pointer-events-auto">
                     {allImages.map((_, index) => (
