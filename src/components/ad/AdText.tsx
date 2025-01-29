@@ -73,7 +73,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
         width: '90%',
         margin: '0 auto',
-        padding: '1rem',
+        padding: '0.5rem',
+        marginBottom: '0.5rem',
       };
     default:
       return {

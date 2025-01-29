@@ -89,6 +89,15 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
         alignItems: 'center',
         height: '100%',
         padding: '2rem',
+        '& > div': {
+          background: 'rgba(30, 174, 219, 0.3)',
+          padding: '2rem',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '1rem',
+        },
       };
     default:
       return {
