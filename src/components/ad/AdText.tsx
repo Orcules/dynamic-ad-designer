@@ -70,10 +70,12 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         letterSpacing: '2px',
         textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
         fontWeight: '600',
-        background: 'rgba(0, 0, 0, 0.1)',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
         backdropFilter: 'blur(8px)',
         padding: '2rem',
         borderRadius: '8px',
+        width: '80%',
+        margin: '0 auto',
       };
     default:
       return {

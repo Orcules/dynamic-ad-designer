@@ -86,15 +86,7 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        padding: '2rem',
-        '& > *': {
-          background: 'rgba(0, 0, 0, 0.1)',
-          backdropFilter: 'blur(8px)',
-          padding: '2rem',
-          borderRadius: '8px',
-          maxWidth: '80%',
-          margin: '0 auto',
-        }
+        height: '100%',
       };
     default:
       return {
