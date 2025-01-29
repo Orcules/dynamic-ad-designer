@@ -27,6 +27,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     platform: "facebook",
     template_style: "",
     accent_color: "#4A90E2",
+    cta_color: "#4A90E2",    // Added default CTA color
+    overlay_color: "#000000" // Added default overlay color
   });
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -98,10 +100,23 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
+  const handleCtaColorChange = (value: string) => {
+    setAdData((prev) => ({
+      ...prev,
+      cta_color: value,
+    }));
+  };
+
+  const handleOverlayColorChange = (value: string) => {
+    setAdData((prev) => ({
+      ...prev,
+      overlay_color: value,
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate platform before submission
     if (!adData.platform) {
       toast.error('Please select a platform');
       return;
@@ -183,6 +198,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         onPlatformChange={handlePlatformChange}
         onStyleChange={handleStyleChange}
         onColorChange={handleColorChange}
+        onCtaColorChange={handleCtaColorChange}
+        onOverlayColorChange={handleOverlayColorChange}
         onImageChange={handleImageChange}
         onImageUrlsChange={handleImageUrlsChange}
         onSubmit={handleSubmit}
@@ -200,6 +217,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           ctaText={adData.cta_text}
           templateStyle={adData.template_style}
           accentColor={adData.accent_color}
+          ctaColor={adData.cta_color}
+          overlayColor={adData.overlay_color}
           fontUrl={adData.font_url}
           overlayOpacity={overlayOpacity}
         />
