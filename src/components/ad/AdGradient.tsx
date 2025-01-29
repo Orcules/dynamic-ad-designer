@@ -89,15 +89,8 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
         alignItems: 'center',
         height: '100%',
         padding: '2rem',
-        '& > div': {
-          background: 'rgba(30, 174, 219, 0.3)',
-          padding: '2rem',
-          borderRadius: '12px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '1rem',
-        },
+        // We'll handle the nested div styling in the component itself
+        // by applying these styles directly to the container div
       };
     default:
       return {
