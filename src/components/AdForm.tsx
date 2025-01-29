@@ -138,6 +138,22 @@ export function AdForm({
     };
   }, []);
 
+  const getCollageStyle = (index: number, total: number) => {
+    if (total === 1) {
+      return "col-span-2 row-span-2";
+    }
+    if (total === 2) {
+      return "col-span-1 row-span-2";
+    }
+    if (total === 3 && index === 0) {
+      return "col-span-2 row-span-1";
+    }
+    if (total === 4) {
+      return "col-span-1 row-span-1";
+    }
+    return "";
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -170,20 +186,25 @@ export function AdForm({
               required
             />
             {uploadedImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+              <div className="grid grid-cols-2 grid-rows-2 gap-2 h-64">
                 {uploadedImages.map((img, index) => (
-                  <div key={index} className="relative group">
+                  <div 
+                    key={index} 
+                    className={`relative group overflow-hidden rounded-lg ${getCollageStyle(index, uploadedImages.length)}`}
+                  >
                     <img
                       src={img.preview}
                       alt={`Preview ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-full object-cover"
                     />
-                    <button
-                      onClick={() => removeUploadedImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      ×
-                    </button>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <button
+                        onClick={() => removeUploadedImage(index)}
+                        className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
