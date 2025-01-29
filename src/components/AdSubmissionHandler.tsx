@@ -47,7 +47,6 @@ async function fetchWithRetry(url: string): Promise<Response> {
 }
 
 function sanitizeFileName(fileName: string): string {
-  // Remove non-ASCII characters and replace spaces with dashes
   return fileName
     .replace(/[^\x00-\x7F]/g, '')
     .replace(/\s+/g, '-')
@@ -55,18 +54,22 @@ function sanitizeFileName(fileName: string): string {
 }
 
 function generateAdName(adData: any) {
-  const today = format(new Date(), 'ddMMyy');
-  const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
+  // Format: date-Ad Name-platform name-Language-Template Style-Accent Color-font
+  const date = format(new Date(), 'ddMMyy');
+  const name = adData.name.toLowerCase().replace(/\s+/g, '-');
   const platform = adData.platform || 'unknown';
   const language = adData.language || 'en';
-  const template = adData.template_style || 'modern';
-  const color = adData.accent_color.replace('#', '');
+  const templateStyle = adData.template_style || 'modern';
+  const accentColor = adData.accent_color.replace('#', '');
   const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
   
-  return `${today}-${baseName}-${platform}-${language}-${template}-${color}-${font}`
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+  const adName = `${date}-${name}-${platform}-${language}-${templateStyle}-${accentColor}-${font}`;
+  
+  // Clean up the final string to ensure it's URL-safe
+  return adName
+    .replace(/[^a-z0-9-]/g, '-') // Replace any non-alphanumeric characters with hyphens
+    .replace(/-+/g, '-')         // Replace multiple consecutive hyphens with a single one
+    .replace(/^-|-$/g, '');      // Remove leading and trailing hyphens
 }
 
 export const handleAdSubmission = async ({
