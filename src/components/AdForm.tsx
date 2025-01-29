@@ -34,6 +34,11 @@ interface ImageUrlState {
   isChecking: boolean;
 }
 
+interface ImagePreview {
+  file: File;
+  preview: string;
+}
+
 export function AdForm({
   adData,
   onInputChange,
@@ -46,6 +51,7 @@ export function AdForm({
 }: AdFormProps) {
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [imageUrls, setImageUrls] = useState<ImageUrlState[]>([{ url: "", isValid: true, isChecking: false }]);
+  const [uploadedImages, setUploadedImages] = useState<ImagePreview[]>([]);
 
   if (!adData.template_style) {
     onStyleChange('minimal');
@@ -55,16 +61,13 @@ export function AdForm({
     if (!url) return false;
     
     try {
-      // First try with direct fetch
       const response = await fetch(url, { method: 'HEAD' });
       if (response.ok) return true;
 
-      // If direct fetch fails, try with proxy
       const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
       const proxyResponse = await fetch(proxyUrl);
       if (proxyResponse.ok) return true;
 
-      // If both fail, try loading the image directly
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => resolve(true);
@@ -73,7 +76,6 @@ export function AdForm({
       });
     } catch (error) {
       console.error('Error checking image URL:', error);
-      // Try one last time with image loading
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => resolve(true);
@@ -93,18 +95,43 @@ export function AdForm({
       newImageUrls[index] = { url: newUrl, isValid, isChecking: false };
       setImageUrls(newImageUrls);
 
-      // Only update parent component with valid URLs
       const validUrls = newImageUrls
         .filter(item => item.url && item.isValid)
         .map(item => item.url);
       onImageUrlsChange(validUrls);
     }
 
-    // Add new empty field if this is the last one and it has content
     if (index === imageUrls.length - 1 && newUrl) {
       setImageUrls([...newImageUrls, { url: "", isValid: true, isChecking: false }]);
     }
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const newPreviews = files.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setUploadedImages(prev => [...prev, ...newPreviews]);
+      onImageChange(e);
+    }
+  };
+
+  const removeUploadedImage = (index: number) => {
+    setUploadedImages(prev => {
+      const newPreviews = [...prev];
+      URL.revokeObjectURL(newPreviews[index].preview);
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      uploadedImages.forEach(img => URL.revokeObjectURL(img.preview));
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -126,17 +153,36 @@ export function AdForm({
           <TabsTrigger value="urls">Image URLs</TabsTrigger>
         </TabsList>
         <TabsContent value="upload">
-          <div className="space-y-2">
+          <div className="space-y-4">
             <Label htmlFor="image">Images</Label>
             <Input
               id="image"
               name="image"
               type="file"
               accept="image/*"
-              onChange={onImageChange}
+              onChange={handleFileChange}
               multiple
               required
             />
+            {uploadedImages.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+                {uploadedImages.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={img.preview}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => removeUploadedImage(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </TabsContent>
         <TabsContent value="urls">
