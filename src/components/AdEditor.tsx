@@ -47,8 +47,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setSelectedImages(files);
-      if (files.length > 0) {
-        setPreviewUrl(URL.createObjectURL(files[0]));
+      const urls = files.map(file => URL.createObjectURL(file));
+      if (urls.length > 0) {
+        setPreviewUrl(urls[0]);
       }
     }
   };
@@ -163,6 +164,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const { width, height } = getDimensions(adData.platform);
 
+  const getAllPreviewUrls = () => {
+    const urls = [];
+    if (previewUrl) {
+      urls.push(previewUrl);
+    }
+    urls.push(...imageUrls);
+    return urls;
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <AdFormContainer
@@ -183,6 +193,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       <div className="sticky top-8" ref={previewRef}>
         <AdPreview
           imageUrl={previewUrl || undefined}
+          imageUrls={imageUrls}
           width={width}
           height={height}
           headline={adData.headline}

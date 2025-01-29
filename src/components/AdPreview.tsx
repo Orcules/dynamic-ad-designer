@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
-import { ArrowBigDown } from "lucide-react";
+import { ArrowBigDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface AdPreviewProps {
   imageUrl?: string;
@@ -16,6 +17,7 @@ interface AdPreviewProps {
   accentColor?: string;
   fontUrl?: string;
   overlayOpacity?: number;
+  imageUrls?: string[];
 }
 
 export function AdPreview({ 
@@ -27,10 +29,23 @@ export function AdPreview({
   templateStyle,
   accentColor = "#4A90E2",
   fontUrl,
-  overlayOpacity = 0.4
+  overlayOpacity = 0.4,
+  imageUrls = [],
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const allImages = imageUrl ? [imageUrl, ...(imageUrls || [])] : imageUrls || [];
+  const currentImage = allImages[currentImageIndex];
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
+  };
 
   useEffect(() => {
     if (fontUrl) {
@@ -94,9 +109,9 @@ export function AdPreview({
               width: '100%',
             }}
           >
-            {imageUrl && (
+            {currentImage && (
               <img
-                src={imageUrl}
+                src={currentImage}
                 alt="Ad preview"
                 className="absolute inset-0 h-full w-full object-cover"
                 crossOrigin="anonymous"
@@ -147,6 +162,37 @@ export function AdPreview({
               )}
             </div>
           </div>
+          {allImages.length > 1 && (
+            <>
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white"
+                onClick={handlePrevImage}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/80 hover:bg-white"
+                onClick={handleNextImage}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {allImages.map((_, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      "w-2 h-2 rounded-full transition-colors",
+                      currentImageIndex === index ? "bg-white" : "bg-white/50"
+                    )}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </CardContent>
     </Card>
