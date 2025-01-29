@@ -3,6 +3,7 @@ import { CSSProperties } from "react";
 interface AdGradientProps {
   style?: string;
   color: string;
+  opacity?: number;
 }
 
 function adjustColor(hex: string, percent: number) {
@@ -19,7 +20,7 @@ function adjustColor(hex: string, percent: number) {
   ).toString(16).slice(1)}`;
 }
 
-export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSProperties {
+export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradientProps): CSSProperties {
   const darkerColor = adjustColor(color, -20);
   const lighterColor = adjustColor(color, 20);
 
@@ -82,15 +83,13 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
       };
     case 'luxury':
       return {
-        background: 'rgba(0, 0, 0, 0.4)',
+        background: `rgba(0, 0, 0, ${opacity})`,
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100%',
         padding: '2rem',
-        // We'll handle the nested div styling in the component itself
-        // by applying these styles directly to the container div
       };
     default:
       return {

@@ -15,6 +15,7 @@ interface AdPreviewProps {
   templateStyle?: string;
   accentColor?: string;
   fontUrl?: string;
+  overlayOpacity?: number;
 }
 
 export function AdPreview({ 
@@ -25,7 +26,8 @@ export function AdPreview({
   ctaText, 
   templateStyle,
   accentColor = "#4A90E2",
-  fontUrl
+  fontUrl,
+  overlayOpacity = 0.4
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -49,7 +51,7 @@ export function AdPreview({
     }
   }, [fontUrl]);
 
-  const gradientStyle = AdGradient({ style: templateStyle, color: accentColor });
+  const gradientStyle = AdGradient({ style: templateStyle, color: accentColor, opacity: overlayOpacity });
   const textStyle = getTextStyle({ style: templateStyle, accentColor, fontFamily });
   const buttonStyle = getButtonStyle({ style: templateStyle, accentColor, isHovered: isButtonHovered, fontFamily });
 
@@ -63,16 +65,15 @@ export function AdPreview({
     padding: '1rem',
     boxSizing: 'border-box',
     ...(templateStyle === 'luxury' && {
-      background: 'rgba(30, 174, 219, 0.3)',
-      borderRadius: '12px',
+      background: `rgba(0, 0, 0, ${overlayOpacity})`,
+      borderRadius: '8px',
       gap: '0.5rem',
-      marginTop: '1rem',
-      maxWidth: '80%',
-      maxHeight: '80%',
+      maxWidth: '70%',
+      maxHeight: '70%',
       position: 'absolute',
       top: '50%',
       left: '50%',
-      transform: 'translate(-50%, -45%)',
+      transform: 'translate(-50%, -50%)',
     })
   };
 

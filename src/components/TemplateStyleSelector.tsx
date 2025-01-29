@@ -1,19 +1,24 @@
 import { Label } from "./ui/label";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Input } from "./ui/input";
+import { Slider } from "./ui/slider";
 
 interface TemplateStyleSelectorProps {
   value: string;
   onChange: (value: string) => void;
   accentColor: string;
   onColorChange: (value: string) => void;
+  overlayOpacity?: number;
+  onOpacityChange?: (value: number) => void;
 }
 
 export function TemplateStyleSelector({ 
   value, 
   onChange,
   accentColor,
-  onColorChange
+  onColorChange,
+  overlayOpacity = 0.4,
+  onOpacityChange
 }: TemplateStyleSelectorProps) {
   return (
     <div className="space-y-4">
@@ -176,6 +181,24 @@ export function TemplateStyleSelector({
           />
         </div>
       </div>
+      {value === 'luxury' && onOpacityChange && (
+        <div className="space-y-2">
+          <Label>Overlay Opacity</Label>
+          <div className="flex gap-4 items-center">
+            <Slider
+              value={[overlayOpacity * 100]}
+              onValueChange={(values) => onOpacityChange(values[0] / 100)}
+              min={0}
+              max={100}
+              step={1}
+              className="flex-1"
+            />
+            <span className="text-sm text-muted-foreground w-12 text-right">
+              {Math.round(overlayOpacity * 100)}%
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

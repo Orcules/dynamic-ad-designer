@@ -24,10 +24,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     headline: "",
     cta_text: "",
     font_url: "",
-    platform: "facebook", // Set default platform to ensure it's always valid
+    platform: "facebook",
     template_style: "",
     accent_color: "#4A90E2",
   });
+  const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -58,6 +59,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     if (secureUrls.length > 0) {
       setPreviewUrl(secureUrls[0]);
     }
+  };
+
+  const handleOpacityChange = (value: number) => {
+    setOverlayOpacity(value);
   };
 
   const ensureHttps = (url: string) => {
@@ -171,6 +176,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         onImageChange={handleImageChange}
         onImageUrlsChange={handleImageUrlsChange}
         onSubmit={handleSubmit}
+        overlayOpacity={overlayOpacity}
+        onOpacityChange={handleOpacityChange}
       />
 
       <div className="sticky top-8" ref={previewRef}>
@@ -183,6 +190,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           templateStyle={adData.template_style}
           accentColor={adData.accent_color}
           fontUrl={adData.font_url}
+          overlayOpacity={overlayOpacity}
         />
       </div>
     </div>
