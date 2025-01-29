@@ -50,15 +50,13 @@ async function fetchWithRetry(url: string): Promise<Response> {
 function generateAdName(adData: any) {
   const today = format(new Date(), 'ddMMyy');
   const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
-  const lang = 'EN';
-  const contentLang = 'he';
-  const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
-  const fontWeight = adData.font_url.includes('wght@700') ? '-bold' : '';
-  const dimensions = `${adData.width}x${adData.height}`;
+  const platform = adData.platform || 'unknown';
+  const language = 'he'; // Default to Hebrew
   const template = adData.template_style || 'modern';
   const color = adData.accent_color.replace('#', '');
+  const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
   
-  return `${today}-${lang}-${baseName}-${contentLang}-${font}${fontWeight}-${dimensions}-${template}-${color}`
+  return `${today}-${baseName}-${platform}-${language}-${template}-${color}-${font}`
     .replace(/[^a-z0-9-]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '');
