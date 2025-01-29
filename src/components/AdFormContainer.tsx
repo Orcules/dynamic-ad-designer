@@ -21,6 +21,8 @@ interface AdFormContainerProps {
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
   onSubmit: (e: React.FormEvent) => void;
+  overlayOpacity: number;
+  onOpacityChange: (value: number) => void;
 }
 
 export const AdFormContainer: React.FC<AdFormContainerProps> = ({
@@ -34,6 +36,8 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
   onImageChange,
   onImageUrlsChange,
   onSubmit,
+  overlayOpacity,
+  onOpacityChange,
 }) => {
   return (
     <div className="bg-card p-6 rounded-lg">
@@ -46,6 +50,8 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         onColorChange={onColorChange}
         onImageChange={onImageChange}
         onImageUrlsChange={onImageUrlsChange}
+        overlayOpacity={overlayOpacity}
+        onOpacityChange={onOpacityChange}
       />
       <Button 
         type="submit" 
