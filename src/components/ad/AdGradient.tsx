@@ -82,11 +82,13 @@ export function AdGradient({ style = 'minimal', color }: AdGradientProps): CSSPr
       };
     case 'luxury':
       return {
+        background: 'rgba(0, 0, 0, 0.4)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
         height: '100%',
+        padding: '2rem',
       };
     default:
       return {

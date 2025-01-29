@@ -66,13 +66,14 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        fontSize: 'clamp(1.5rem, min(5vw, 5vh), 3rem)',
-        letterSpacing: '1px',
+        fontSize: 'clamp(2rem, min(6vw, 6vh), 4rem)',
+        fontWeight: '600',
+        letterSpacing: '0.5px',
+        lineHeight: '1.3',
         textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
-        fontWeight: '500',
-        padding: '2rem',
         width: '90%',
         margin: '0 auto',
+        padding: '1rem',
       };
     default:
       return {
