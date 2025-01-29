@@ -134,17 +134,14 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     case 'luxury':
       return {
         ...baseStyle,
-        background: '#F97316',
-        color: '#000000',
-        fontWeight: '700',
+        background: '#888888',
+        color: '#FFFFFF',
+        fontWeight: '500',
         borderRadius: '4px',
         letterSpacing: '1px',
-        textTransform: 'uppercase',
         boxShadow: isHovered 
-          ? '0 12px 24px rgba(249, 115, 22, 0.4)'
-          : '0 6px 16px rgba(249, 115, 22, 0.3)',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(8px)',
+          ? '0 8px 16px rgba(136, 136, 136, 0.4)'
+          : '0 4px 8px rgba(136, 136, 136, 0.3)',
         padding: '1em 3em',
       };
     default:

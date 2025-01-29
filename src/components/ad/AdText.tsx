@@ -66,15 +66,12 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textTransform: 'uppercase',
-        letterSpacing: '2px',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-        fontWeight: '600',
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        backdropFilter: 'blur(8px)',
+        fontSize: 'clamp(1.5rem, min(5vw, 5vh), 3rem)',
+        letterSpacing: '1px',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        fontWeight: '500',
         padding: '2rem',
-        borderRadius: '8px',
-        width: '80%',
+        width: '90%',
         margin: '0 auto',
       };
     default:
