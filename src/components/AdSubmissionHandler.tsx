@@ -35,11 +35,10 @@ async function fetchWithRetry(url: string): Promise<Response> {
     }
   }
 
+  // Try direct fetch as last resort
   try {
-    const response = await fetch(url);
-    if (response.ok) {
-      return response;
-    }
+    const response = await fetch(url, { mode: 'no-cors' });
+    return response;
   } catch (error) {
     lastError = error;
   }
@@ -47,11 +46,19 @@ async function fetchWithRetry(url: string): Promise<Response> {
   throw lastError || new Error('Failed to fetch image after all attempts');
 }
 
+function sanitizeFileName(fileName: string): string {
+  // Remove non-ASCII characters and replace spaces with dashes
+  return fileName
+    .replace(/[^\x00-\x7F]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+}
+
 function generateAdName(adData: any) {
   const today = format(new Date(), 'ddMMyy');
   const baseName = adData.name.toLowerCase().replace(/\s+/g, '-');
   const platform = adData.platform || 'unknown';
-  const language = 'he'; // Default to Hebrew
+  const language = adData.language || 'en';
   const template = adData.template_style || 'modern';
   const color = adData.accent_color.replace('#', '');
   const font = adData.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, '-').toLowerCase() || 'default';
@@ -70,7 +77,7 @@ export const handleAdSubmission = async ({
   setIsGenerating,
 }: AdSubmissionHandlerProps) => {
   if (!selectedImage) {
-    toast.error('נא לבחור תמונה');
+    toast.error('Please select an image');
     return;
   }
   
@@ -91,7 +98,11 @@ export const handleAdSubmission = async ({
       imageBlob = await response.blob();
     }
     
-    const originalImagePath = `original/${timestamp}_${selectedImage instanceof File ? selectedImage.name : 'image.jpg'}`;
+    // Sanitize the file name before upload
+    const originalFileName = selectedImage instanceof File ? selectedImage.name : 'image.jpg';
+    const sanitizedFileName = sanitizeFileName(originalFileName);
+    const originalImagePath = `original/${timestamp}_${sanitizedFileName}`;
+    
     const { error: originalUploadError, data: originalUploadData } = await supabase.storage
       .from('ad-images')
       .upload(originalImagePath, imageBlob, {
@@ -136,7 +147,6 @@ export const handleAdSubmission = async ({
 
     console.log('Got public URL for preview:', previewUrl);
 
-    // Ensure template_style is one of the allowed values
     const validTemplateStyles = ['modern', 'elegant', 'dynamic', 'spotlight', 'wave', 'cinematic', 'minimal-fade', 'duotone', 'vignette'];
     const templateStyle = validTemplateStyles.includes(adData.template_style) ? adData.template_style : 'modern';
     
@@ -166,9 +176,9 @@ export const handleAdSubmission = async ({
 
     console.log('Ad record created successfully:', newAd);
     
-    toast.success('המודעה נוצרה בהצלחה!', {
+    toast.success('Ad created successfully!', {
       action: {
-        label: 'צפה במודעה',
+        label: 'View Ad',
         onClick: () => window.open(previewUrl, '_blank')
       },
     });
@@ -177,7 +187,7 @@ export const handleAdSubmission = async ({
     
   } catch (error: any) {
     console.error('Error in handleAdSubmission:', error);
-    toast.error(error.message || 'אירעה שגיאה ביצירת המודעה');
+    toast.error(error.message || 'Error creating ad');
   } finally {
     setIsGenerating(false);
   }
