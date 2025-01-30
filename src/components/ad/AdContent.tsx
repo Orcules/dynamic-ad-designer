@@ -31,11 +31,11 @@ export function AdContent({
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
-          "relative w-full flex flex-col",
-          isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent pt-32 pb-8"
+          "relative w-full flex flex-col min-h-[300px]",
+          isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent"
         )}>
           {headline && (
-            <div className="px-6 mb-auto">
+            <div className="px-6 mt-12">
               <h2 
                 className={cn(
                   "text-center leading-tight break-words",
@@ -50,7 +50,7 @@ export function AdContent({
           )}
           
           {ctaText && (
-            <div className="w-full flex justify-center items-center mt-auto px-6 pt-4">
+            <div className="w-full flex justify-center items-center mt-auto px-6 pb-8">
               <div 
                 className="relative transform flex items-center justify-center gap-2 mx-auto"
                 style={buttonStyle}
