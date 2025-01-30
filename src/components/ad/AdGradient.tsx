@@ -23,7 +23,7 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
     case 'dynamic':
       return {
         background: `linear-gradient(45deg, ${color}${alphaValue} 0%, transparent 30%, ${color}${alphaValue} 70%, transparent 100%)`,
-        mixBlendMode: 'color-burn',
+        mixBlendMode: 'hard-light',
       };
     case 'spotlight':
       return {
