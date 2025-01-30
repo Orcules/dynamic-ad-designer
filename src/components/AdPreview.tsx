@@ -84,7 +84,6 @@ export function AdPreview({
     const newX = e.clientX - dragStart.x;
     const newY = e.clientY - dragStart.y;
     
-    // Add bounds to prevent dragging too far
     const bounds = imageRef.current.getBoundingClientRect();
     const container = imageRef.current.parentElement?.getBoundingClientRect();
     

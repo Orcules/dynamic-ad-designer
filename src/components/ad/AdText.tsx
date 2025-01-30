@@ -25,18 +25,15 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
   };
 
   switch (style) {
-    // Previous Styles
     case 'modern':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `2px 2px 4px ${accentColor}`,
       };
 
     case 'elegant':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `0 0 10px ${accentColor}, 0 0 20px ${accentColor}`,
         letterSpacing: '0.05em',
       };
@@ -44,7 +41,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'dynamic':
       return {
         ...baseStyle,
-        color: accentColor,
         textShadow: '2px 2px 0 #FFFFFF',
         transform: 'skew(-5deg)',
       };
@@ -52,7 +48,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'spotlight':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `0 0 15px ${accentColor}`,
         letterSpacing: '0.02em',
       };
@@ -60,7 +55,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'wave':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `2px 2px 0 ${accentColor}, -2px -2px 0 ${accentColor}`,
         transform: 'rotate(-2deg)',
       };
@@ -68,7 +62,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'cinematic':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `0 0 20px ${accentColor}`,
         letterSpacing: '0.1em',
       };
@@ -76,37 +69,31 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'minimal-fade':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         opacity: 0.9,
       };
 
     case 'duotone':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `3px 3px 0 ${accentColor}`,
       };
 
     case 'vignette':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         textShadow: `0 0 30px ${accentColor}`,
       };
 
     case 'luxury':
       return {
         ...baseStyle,
-        color: accentColor,
         textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
         letterSpacing: '0.1em',
       };
 
-    // New Bottom Overlay Styles
     case 'overlay-bottom-clean':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         backgroundColor: `${accentColor}CC`,
         padding: '2rem',
         width: '100%',
@@ -121,7 +108,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'overlay-bottom-gradient':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         background: `linear-gradient(to top, ${accentColor} 0%, ${accentColor}99 60%, transparent 100%)`,
         padding: '4rem 2rem 2rem',
         width: '100%',
@@ -135,7 +121,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'overlay-bottom-glass':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         backgroundColor: `${accentColor}88`,
         backdropFilter: 'blur(12px)',
         borderTop: '1px solid rgba(255,255,255,0.2)',
@@ -151,7 +136,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'overlay-bottom-neon':
       return {
         ...baseStyle,
-        color: '#d9fdff',
         textShadow: `0 0 10px ${accentColor}, 0 0 20px ${accentColor}`,
         backgroundColor: 'rgba(0,0,0,0.8)',
         padding: '2rem',
@@ -166,7 +150,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     case 'overlay-bottom-minimal':
       return {
         ...baseStyle,
-        color: '#FFFFFF',
         backgroundColor: '#00000099',
         padding: '2rem',
         width: '100%',
@@ -178,10 +161,6 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
       };
 
     default:
-      return {
-        ...baseStyle,
-        color: '#000000',
-        textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-      };
+      return baseStyle;
   }
 }
