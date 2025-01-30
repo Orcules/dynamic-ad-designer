@@ -26,11 +26,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     headline: "",
     cta_text: "",
     font_url: "",
-    platform: "facebook",
+    platform: "instagram-story", // Set default to Instagram Story
     template_style: "",
     accent_color: "#4A90E2",
     cta_color: "#4A90E2",
-    overlay_color: "#000000"
+    overlay_color: "#000000",
+    text_color: "#FFFFFF" // Add text color control
   });
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
@@ -75,6 +76,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleOverlayColorChange = (value: string) => {
     setAdData(prev => ({ ...prev, overlay_color: value }));
+  };
+
+  const handleTextColorChange = (value: string) => {
+    setAdData(prev => ({ ...prev, text_color: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,6 +153,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         onColorChange={handleColorChange}
         onCtaColorChange={handleCtaColorChange}
         onOverlayColorChange={handleOverlayColorChange}
+        onTextColorChange={handleTextColorChange}
         onImageChange={handleImageChange}
         onImageUrlsChange={handleImageUrlsChange}
         onSubmit={handleSubmit}
@@ -167,6 +173,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           accentColor={adData.accent_color}
           ctaColor={adData.cta_color}
           overlayColor={adData.overlay_color}
+          textColor={adData.text_color}
           fontUrl={adData.font_url}
           overlayOpacity={overlayOpacity}
           currentIndex={currentPreviewIndex}

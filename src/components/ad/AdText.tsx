@@ -3,10 +3,11 @@ import { CSSProperties } from "react";
 interface AdTextProps {
   style?: string;
   accentColor: string;
+  textColor: string;
   fontFamily: string;
 }
 
-export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdTextProps): CSSProperties {
+export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: 'bold',
     fontSize: 'clamp(2rem, 4vw, 3.5rem)',
@@ -20,6 +21,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     wordWrap: 'break-word',
     overflowWrap: 'break-word',
     hyphens: 'auto',
+    color: textColor,
   };
 
   switch (style) {

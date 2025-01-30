@@ -14,6 +14,8 @@ interface TemplateStyleSelectorProps {
   onCtaColorChange: (value: string) => void;
   overlayColor: string;
   onOverlayColorChange: (value: string) => void;
+  textColor: string;
+  onTextColorChange: (value: string) => void;
 }
 
 export function TemplateStyleSelector({ 
@@ -26,7 +28,9 @@ export function TemplateStyleSelector({
   ctaColor,
   onCtaColorChange,
   overlayColor,
-  onOverlayColorChange
+  onOverlayColorChange,
+  textColor,
+  onTextColorChange
 }: TemplateStyleSelectorProps) {
   return (
     <div className="space-y-4">
@@ -64,6 +68,27 @@ export function TemplateStyleSelector({
           <StyleOption id="stacked" label="Stacked" />
           <StyleOption id="minimal" label="Minimal" />
         </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="text_color">Text Color</Label>
+        <div className="flex gap-4">
+          <Input
+            type="color"
+            id="text_color"
+            name="text_color"
+            value={textColor}
+            onChange={(e) => onTextColorChange(e.target.value)}
+            className="w-16 h-10 p-1"
+          />
+          <Input
+            type="text"
+            value={textColor}
+            onChange={(e) => onTextColorChange(e.target.value)}
+            placeholder="#FFFFFF"
+            className="flex-1"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

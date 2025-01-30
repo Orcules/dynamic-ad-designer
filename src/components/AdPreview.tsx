@@ -16,6 +16,7 @@ interface AdPreviewProps {
   accentColor?: string;
   ctaColor?: string;
   overlayColor?: string;
+  textColor?: string;
   fontUrl?: string;
   overlayOpacity?: number;
   imageUrls?: string[];
@@ -34,6 +35,7 @@ export function AdPreview({
   accentColor = "#4A90E2",
   ctaColor = "#4A90E2",
   overlayColor = "#000000",
+  textColor = "#FFFFFF",
   fontUrl,
   overlayOpacity = 0.4,
   imageUrls = [],
@@ -112,6 +114,7 @@ export function AdPreview({
   const textStyle = getTextStyle({ 
     style: templateStyle, 
     accentColor: overlayColor, 
+    textColor: textColor,
     fontFamily 
   });
   
