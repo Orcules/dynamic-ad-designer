@@ -24,6 +24,54 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
   };
 
   switch (style) {
+    case 'overlay-left':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        padding: '2rem',
+        position: 'absolute',
+        left: '0',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: '45%',
+        backgroundColor: `${accentColor}dd`,
+        borderTopRightRadius: '1rem',
+        borderBottomRightRadius: '1rem',
+        boxShadow: '4px 0 20px rgba(0,0,0,0.2)',
+      };
+    case 'overlay-right':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        padding: '2rem',
+        position: 'absolute',
+        right: '0',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        width: '45%',
+        backgroundColor: `${accentColor}dd`,
+        borderTopLeftRadius: '1rem',
+        borderBottomLeftRadius: '1rem',
+        boxShadow: '-4px 0 20px rgba(0,0,0,0.2)',
+      };
+    case 'overlay-bottom':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        padding: '2rem',
+        position: 'absolute',
+        bottom: '0',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '80%',
+        backgroundColor: `${accentColor}dd`,
+        borderTopLeftRadius: '1rem',
+        borderTopRightRadius: '1rem',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.2)',
+      };
     case 'modern':
       return {
         ...baseStyle,
