@@ -36,10 +36,9 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         ...baseStyle,
         background: accentColor,
         borderRadius: '8px',
-        backdropFilter: 'blur(4px)',
         boxShadow: isHovered 
-          ? `0 12px 24px ${accentColor}66` 
-          : `0 6px 16px ${accentColor}40`,
+          ? `0 8px 16px ${accentColor}40` 
+          : `0 4px 12px ${accentColor}30`,
       };
     case 'elegant':
       return {
@@ -47,75 +46,18 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '50px',
         padding: '1em 2.5em',
-        letterSpacing: '0.5px',
-        boxShadow: isHovered 
-          ? `0 12px 28px ${accentColor}40` 
-          : `0 6px 20px ${accentColor}30`,
       };
     case 'dynamic':
       return {
         ...baseStyle,
         background: accentColor,
-        transform: `skew(-12deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
-        borderRadius: '0',
-        clipPath: 'polygon(0 0, 100% 0, 95% 100%, 5% 100%)',
-        padding: '1em 3em',
-      };
-    case 'spotlight':
-      return {
-        ...baseStyle,
-        background: `linear-gradient(135deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
         borderRadius: '4px',
-        border: `1px solid ${adjustColor(accentColor, 30)}`,
-        boxShadow: isHovered 
-          ? `0 0 20px ${accentColor}99` 
-          : `0 0 15px ${accentColor}66`,
-      };
-    case 'wave':
-      return {
-        ...baseStyle,
-        background: accentColor,
-        borderRadius: '20px',
-        clipPath: 'polygon(8% 0, 92% 0, 100% 50%, 92% 100%, 8% 100%, 0 50%)',
-        padding: '1em 3em',
-      };
-    case 'cinematic':
-      return {
-        ...baseStyle,
-        background: `linear-gradient(90deg, ${adjustColor(accentColor, -20)}, ${accentColor})`,
-        clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0 100%)',
-        transform: `skew(-15deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
-        padding: '1em 3em',
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '0',
-        border: `1px solid ${adjustColor(accentColor, 20)}`,
-      };
-    case 'duotone':
-      return {
-        ...baseStyle,
-        background: accentColor,
-        clipPath: 'polygon(0 15%, 100% 0, 100% 85%, 0 100%)',
-        padding: '1.2em 3em',
-      };
-    case 'vignette':
-      return {
-        ...baseStyle,
-        background: `linear-gradient(90deg, ${adjustColor(accentColor, -10)}, ${accentColor})`,
-        borderRadius: '0 20px 20px 0',
-        clipPath: 'polygon(5% 0, 100% 0, 95% 100%, 0 100%)',
-        padding: '1em 3em',
-      };
-    case 'luxury':
-      return {
-        ...baseStyle,
-        background: accentColor,
-        clipPath: 'polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)',
-        padding: '1.2em 3em 1.8em',
-        borderRadius: '4px',
+        borderRadius: '8px',
       };
     default:
       return {
@@ -124,18 +66,4 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         borderRadius: '8px',
       };
   }
-}
-
-function adjustColor(hex: string, percent: number) {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = (num >> 16) + amt;
-  const G = (num >> 8 & 0x00FF) + amt;
-  const B = (num & 0x0000FF) + amt;
-  return `#${(
-    0x1000000 +
-    (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
-    (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
-    (B < 255 ? (B < 1 ? 0 : B) : 255)
-  ).toString(16).slice(1)}`;
 }
