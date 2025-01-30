@@ -30,6 +30,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     cta_color: "#4A90E2",
     overlay_color: "#000000"
   });
+  const [isGenerating, setIsGenerating] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
