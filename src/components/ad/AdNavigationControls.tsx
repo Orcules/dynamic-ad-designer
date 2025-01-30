@@ -17,11 +17,11 @@ export function AdNavigationControls({
 }: AdNavigationControlsProps) {
   return (
     <div className="absolute inset-0 pointer-events-none">
-      <div className="relative w-full h-full flex items-center justify-between">
+      <div className="relative w-full h-full flex items-center justify-between px-4">
         <Button
           variant="outline"
           size="icon"
-          className="absolute -left-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground z-50 pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
+          className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground z-50 pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
           onClick={onPrevious}
           disabled={totalImages <= 1}
         >
@@ -30,7 +30,7 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="absolute -right-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground z-50 pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
+          className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground z-50 pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
           onClick={onNext}
           disabled={totalImages <= 1}
         >
