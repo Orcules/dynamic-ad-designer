@@ -2,9 +2,14 @@ import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+type RenderProps = {
+  isGenerating: boolean;
+  handleSubmission: (adData: any, imageFile: File, previewFile: File, onSuccess: (newAd: any) => void) => Promise<void>;
+};
+
 interface AdSubmissionHandlerProps {
   onSubmit: (adData: any) => void;
-  children: React.ReactNode;
+  children: React.ReactNode | ((props: RenderProps) => React.ReactNode);
 }
 
 const sanitizeFileName = (fileName: string): string => {
@@ -81,10 +86,15 @@ export const AdSubmissionHandler: React.FC<AdSubmissionHandlerProps> = ({
 }) => {
   const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
 
+  const renderProps: RenderProps = {
+    isGenerating,
+    handleSubmission
+  };
+
   return (
     <div className="space-y-4">
       {typeof children === 'function' 
-        ? children({ isGenerating, handleSubmission }) 
+        ? (children as (props: RenderProps) => React.ReactNode)(renderProps)
         : children}
     </div>
   );
