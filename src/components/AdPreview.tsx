@@ -122,7 +122,7 @@ export function AdPreview({
               onPrevious={onPrevious!}
               onNext={onNext!}
               currentIndex={currentIndex}
-              totalImages={imageUrls.length}
+              totalImages={imageUrls.length || 1}
             />
           </div>
         </div>

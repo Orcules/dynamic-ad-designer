@@ -34,12 +34,14 @@ export function useAdImageHandler({
   };
 
   const handlePrevPreview = () => {
+    if (imageUrls.length <= 1) return;
     const newIndex = currentPreviewIndex > 0 ? currentPreviewIndex - 1 : imageUrls.length - 1;
     setCurrentPreviewIndex(newIndex);
     onCurrentIndexChange(newIndex);
   };
 
   const handleNextPreview = () => {
+    if (imageUrls.length <= 1) return;
     const newIndex = currentPreviewIndex < imageUrls.length - 1 ? currentPreviewIndex + 1 : 0;
     setCurrentPreviewIndex(newIndex);
     onCurrentIndexChange(newIndex);
