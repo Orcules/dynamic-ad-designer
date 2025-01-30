@@ -13,6 +13,7 @@ export type Database = {
         Row: {
           accent_color: string | null
           created_at: string | null
+          cta_color: string | null
           cta_text: string | null
           font_url: string | null
           headline: string | null
@@ -20,6 +21,7 @@ export type Database = {
           id: string
           image_url: string | null
           name: string
+          overlay_color: string | null
           platform: string | null
           status: string | null
           template_style: string | null
@@ -28,6 +30,7 @@ export type Database = {
         Insert: {
           accent_color?: string | null
           created_at?: string | null
+          cta_color?: string | null
           cta_text?: string | null
           font_url?: string | null
           headline?: string | null
@@ -35,6 +38,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name: string
+          overlay_color?: string | null
           platform?: string | null
           status?: string | null
           template_style?: string | null
@@ -43,6 +47,7 @@ export type Database = {
         Update: {
           accent_color?: string | null
           created_at?: string | null
+          cta_color?: string | null
           cta_text?: string | null
           font_url?: string | null
           headline?: string | null
@@ -50,6 +55,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           name?: string
+          overlay_color?: string | null
           platform?: string | null
           status?: string | null
           template_style?: string | null

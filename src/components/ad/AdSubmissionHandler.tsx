@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { getDimensions } from "@/utils/adDimensions";
 
 interface AdSubmissionHandlerProps {
   onSubmit: (adData: any) => void;
@@ -55,7 +54,9 @@ export const useAdSubmission = () => {
         .insert([{
           ...adData,
           image_url: previewUrl,
-          status: 'completed'
+          status: 'completed',
+          cta_color: adData.cta_color || '#4A90E2',
+          overlay_color: adData.overlay_color || '#000000'
         }])
         .select()
         .single();
