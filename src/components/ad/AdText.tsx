@@ -14,7 +14,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     maxWidth: '90%',
     margin: '0 auto',
     padding: '1rem',
-    fontFamily: fontFamily || 'system-ui',
+    fontFamily: fontFamily || 'Montserrat, system-ui',
     textAlign: 'center',
     display: 'block',
     transition: 'all 0.3s ease',
@@ -24,78 +24,31 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
   };
 
   switch (style) {
-    case 'modern':
+    case 'glitch':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-        letterSpacing: '-0.02em',
+        textShadow: `
+          2px 2px 0 ${accentColor},
+          -2px -2px 0 ${accentColor},
+          0.1em 0.01em 0.1em rgba(0,0,0,0.5)
+        `,
+        position: 'relative',
+        animation: 'text-shift 4s infinite alternate',
+        transform: 'skew(-2deg, -1deg)',
       };
-    case 'elegant':
+    case 'retro-wave':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-        letterSpacing: '0.02em',
-        fontWeight: '600',
-      };
-    case 'dynamic':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '3px 3px 6px rgba(0,0,0,0.4)',
-        transform: 'skew(-3deg)',
-      };
-    case 'spotlight':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '2px 4px 8px rgba(0,0,0,0.5)',
-        letterSpacing: '-0.03em',
-      };
-    case 'wave':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '2px 2px 0px rgba(0,0,0,0.3)',
-        transform: 'rotate(-2deg)',
-      };
-    case 'cinematic':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '3px 3px 6px rgba(0,0,0,0.5)',
-        letterSpacing: '0.05em',
-        textTransform: 'uppercase',
-      };
-    case 'minimal-fade':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '1px 1px 2px rgba(0,0,0,0.3)',
-        fontWeight: '500',
-      };
-    case 'duotone':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.4)',
-        letterSpacing: '0.01em',
-      };
-    case 'vignette':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '2px 2px 6px rgba(0,0,0,0.4)',
-        fontWeight: '600',
-      };
-    case 'luxury':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
-        letterSpacing: '0.04em',
-        fontWeight: '500',
+        textShadow: `
+          0 0 5px ${accentColor},
+          0 0 10px ${accentColor},
+          0 0 20px ${accentColor},
+          0 0 40px ${accentColor}
+        `,
+        letterSpacing: '0.15em',
+        fontWeight: '800',
       };
     default:
       return {

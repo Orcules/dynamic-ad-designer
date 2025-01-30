@@ -39,28 +39,28 @@ export function TemplateStyleSelector({
         >
           <div>
             <RadioGroupItem
-              value="modern"
-              id="modern"
+              value="glitch"
+              id="glitch"
               className="peer sr-only"
             />
             <Label
-              htmlFor="modern"
+              htmlFor="glitch"
               className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
             >
-              <span>Modern</span>
+              <span>Glitch</span>
             </Label>
           </div>
           <div>
             <RadioGroupItem
-              value="elegant"
-              id="elegant"
+              value="retro-wave"
+              id="retro-wave"
               className="peer sr-only"
             />
             <Label
-              htmlFor="elegant"
+              htmlFor="retro-wave"
               className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
             >
-              <span>Elegant</span>
+              <span>Retro Wave</span>
             </Label>
           </div>
           <div>

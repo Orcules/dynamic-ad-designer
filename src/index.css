@@ -75,6 +75,18 @@
   }
 }
 
+@keyframes text-shift {
+  0%, 100% {
+    transform: skew(-2deg, -1deg) translateX(0);
+  }
+  25% {
+    transform: skew(2deg, 1deg) translateX(-5px);
+  }
+  75% {
+    transform: skew(-1deg, -2deg) translateX(5px);
+  }
+}
+
 .preview-container {
   position: relative;
   z-index: 1;
