@@ -22,25 +22,15 @@ export function AdContent({
 }: AdContentProps) {
   if (!headline && !ctaText) return null;
 
-  const isOverlayStyle = templateStyle?.startsWith('overlay-');
-  const containerClasses = cn(
-    "flex-1 flex items-stretch px-4 w-full",
-    isOverlayStyle ? "pointer-events-auto" : ""
-  );
-
   return (
-    <div className={containerClasses}>
+    <div className="flex-1 flex items-stretch px-4 w-full">
       <div className="flex flex-col w-full h-full p-4 box-border justify-center">
-        <div className={cn(
-          "w-full flex flex-col items-center gap-2",
-          isOverlayStyle ? "relative" : ""
-        )}>
+        <div className="w-full flex flex-col items-center gap-2">
           {headline && (
             <h2 
               className={cn(
-                "text-center leading-tight break-words",
-                templateStyle === 'minimal' ? 'text-black' : 'text-white',
-                isOverlayStyle ? 'w-full' : 'max-w-[90%]'
+                "text-center leading-tight break-words max-w-[90%]",
+                templateStyle === 'minimal' ? 'text-black' : 'text-white'
               )}
               style={textStyle}
             >
@@ -48,10 +38,7 @@ export function AdContent({
             </h2>
           )}
           {ctaText && (
-            <div className={cn(
-              "w-full flex justify-center items-center mt-2",
-              isOverlayStyle ? "absolute -bottom-16" : ""
-            )}>
+            <div className="w-full flex justify-center items-center mt-2">
               <div 
                 className="relative transform flex items-center justify-center gap-2 mx-auto"
                 style={buttonStyle}

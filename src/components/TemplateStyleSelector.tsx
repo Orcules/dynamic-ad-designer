@@ -1,11 +1,5 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "./ui/label";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 
@@ -14,89 +8,225 @@ interface TemplateStyleSelectorProps {
   onChange: (value: string) => void;
   accentColor: string;
   onColorChange: (value: string) => void;
+  overlayOpacity?: number;
+  onOpacityChange?: (value: number) => void;
   ctaColor: string;
   onCtaColorChange: (value: string) => void;
   overlayColor: string;
   onOverlayColorChange: (value: string) => void;
-  overlayOpacity: number;
-  onOpacityChange: (value: number) => void;
 }
 
-export function TemplateStyleSelector({
-  value,
+export function TemplateStyleSelector({ 
+  value, 
   onChange,
   accentColor,
   onColorChange,
+  overlayOpacity = 0.4,
+  onOpacityChange,
   ctaColor,
   onCtaColorChange,
   overlayColor,
-  onOverlayColorChange,
-  overlayOpacity,
-  onOpacityChange,
+  onOverlayColorChange
 }: TemplateStyleSelectorProps) {
   return (
     <div className="space-y-4">
-      <div>
+      <div className="space-y-2">
         <Label>Template Style</Label>
-        <Select value={value} onValueChange={onChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select style" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="minimal">Minimal</SelectItem>
-            <SelectItem value="modern">Modern</SelectItem>
-            <SelectItem value="elegant">Elegant</SelectItem>
-            <SelectItem value="dynamic">Dynamic</SelectItem>
-            <SelectItem value="spotlight">Spotlight</SelectItem>
-            <SelectItem value="wave">Wave</SelectItem>
-            <SelectItem value="cinematic">Cinematic</SelectItem>
-            <SelectItem value="minimal-fade">Minimal Fade</SelectItem>
-            <SelectItem value="duotone">Duotone</SelectItem>
-            <SelectItem value="vignette">Vignette</SelectItem>
-            <SelectItem value="luxury">Luxury</SelectItem>
-            <SelectItem value="overlay-left">Overlay Left</SelectItem>
-            <SelectItem value="overlay-right">Overlay Right</SelectItem>
-            <SelectItem value="overlay-bottom">Overlay Bottom</SelectItem>
-          </SelectContent>
-        </Select>
+        <RadioGroup
+          value={value}
+          onValueChange={onChange}
+          className="grid grid-cols-2 gap-4"
+        >
+          <div>
+            <RadioGroupItem
+              value="modern"
+              id="modern"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="modern"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Modern</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="elegant"
+              id="elegant"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="elegant"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Elegant</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="dynamic"
+              id="dynamic"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="dynamic"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Dynamic</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="spotlight"
+              id="spotlight"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="spotlight"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Spotlight</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="wave"
+              id="wave"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="wave"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Wave</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="cinematic"
+              id="cinematic"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="cinematic"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Cinematic</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="minimal-fade"
+              id="minimal-fade"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="minimal-fade"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Minimal Fade</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="duotone"
+              id="duotone"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="duotone"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Duotone</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="vignette"
+              id="vignette"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="vignette"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Vignette</span>
+            </Label>
+          </div>
+          <div>
+            <RadioGroupItem
+              value="luxury"
+              id="luxury"
+              className="peer sr-only"
+            />
+            <Label
+              htmlFor="luxury"
+              className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
+            >
+              <span>Luxury</span>
+            </Label>
+          </div>
+        </RadioGroup>
       </div>
 
       <div className="space-y-2">
-        <Label>Accent Color</Label>
-        <Input
-          type="color"
-          value={accentColor}
-          onChange={(e) => onColorChange(e.target.value)}
-        />
+        <Label htmlFor="overlay_color">Overlay Color</Label>
+        <div className="flex gap-4">
+          <Input
+            type="color"
+            id="overlay_color"
+            name="overlay_color"
+            value={overlayColor}
+            onChange={(e) => onOverlayColorChange(e.target.value)}
+            className="w-16 h-10 p-1"
+          />
+          <Input
+            type="text"
+            value={overlayColor}
+            onChange={(e) => onOverlayColorChange(e.target.value)}
+            placeholder="#000000"
+            className="flex-1"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
-        <Label>CTA Button Color</Label>
-        <Input
-          type="color"
-          value={ctaColor}
-          onChange={(e) => onCtaColorChange(e.target.value)}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>Overlay Color</Label>
-        <Input
-          type="color"
-          value={overlayColor}
-          onChange={(e) => onOverlayColorChange(e.target.value)}
-        />
+        <Label htmlFor="cta_color">CTA Button Color</Label>
+        <div className="flex gap-4">
+          <Input
+            type="color"
+            id="cta_color"
+            name="cta_color"
+            value={ctaColor}
+            onChange={(e) => onCtaColorChange(e.target.value)}
+            className="w-16 h-10 p-1"
+          />
+          <Input
+            type="text"
+            value={ctaColor}
+            onChange={(e) => onCtaColorChange(e.target.value)}
+            placeholder="#000000"
+            className="flex-1"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">
         <Label>Overlay Opacity</Label>
-        <Slider
-          value={[overlayOpacity]}
-          onValueChange={(values) => onOpacityChange(values[0])}
-          min={0}
-          max={1}
-          step={0.1}
-        />
+        <div className="flex gap-4 items-center">
+          <Slider
+            value={[overlayOpacity * 100]}
+            onValueChange={(values) => onOpacityChange?.(values[0] / 100)}
+            min={0}
+            max={100}
+            step={1}
+            className="flex-1"
+          />
+          <span className="text-sm text-muted-foreground w-12 text-right">
+            {Math.round(overlayOpacity * 100)}%
+          </span>
+        </div>
       </div>
     </div>
   );
