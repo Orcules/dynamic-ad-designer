@@ -25,32 +25,32 @@ export function AdContent({
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
 
   return (
-    <div className="flex-1 flex items-stretch px-4 w-full">
+    <div className="absolute inset-0 flex flex-col">
       <div className={cn(
-        "flex flex-col w-full h-full p-4 box-border",
+        "flex-1 flex flex-col",
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
-          "w-full flex flex-col items-center relative",
-          isBottomOverlay && "mt-[-240px]" // Increased negative margin to move content up more
+          "relative w-full flex flex-col",
+          isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent pt-32 pb-8"
         )}>
           {headline && (
-            <h2 
-              className={cn(
-                "text-center leading-tight break-words mb-16", // Increased margin bottom to create more space
-                isBottomOverlay ? "max-w-full" : "max-w-[90%]",
-                templateStyle === 'minimal' ? 'text-black' : 'text-white'
-              )}
-              style={textStyle}
-            >
-              {headline}
-            </h2>
+            <div className="px-6 mb-auto">
+              <h2 
+                className={cn(
+                  "text-center leading-tight break-words",
+                  isBottomOverlay ? "max-w-full" : "max-w-[90%]",
+                  templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                )}
+                style={textStyle}
+              >
+                {headline}
+              </h2>
+            </div>
           )}
+          
           {ctaText && (
-            <div className={cn(
-              "w-full flex justify-center items-center",
-              isBottomOverlay ? "mb-12" : "mt-2" // Increased bottom margin
-            )}>
+            <div className="w-full flex justify-center items-center mt-auto px-6 pt-4">
               <div 
                 className="relative transform flex items-center justify-center gap-2 mx-auto"
                 style={buttonStyle}
