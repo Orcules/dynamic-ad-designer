@@ -16,7 +16,7 @@ export function AdNavigationControls({
   totalImages,
 }: AdNavigationControlsProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-between px-8 z-[100]">
+    <div className="absolute inset-0 flex items-center justify-between -mx-16">
       <Button
         variant="outline"
         size="icon"
