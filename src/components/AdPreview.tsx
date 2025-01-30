@@ -20,6 +20,9 @@ interface AdPreviewProps {
   fontUrl?: string;
   overlayOpacity?: number;
   imageUrls?: string[];
+  currentIndex?: number;
+  onPrevious?: () => void;
+  onNext?: () => void;
 }
 
 export function AdPreview({ 
@@ -35,20 +38,12 @@ export function AdPreview({
   fontUrl,
   overlayOpacity = 0.4,
   imageUrls = [],
+  currentIndex = 0,
+  onPrevious,
+  onNext,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const allImages = [...(imageUrl ? [imageUrl] : []), ...imageUrls].filter(Boolean);
-  
-  const handlePrevImage = () => {
-    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : allImages.length - 1));
-  };
-
-  const handleNextImage = () => {
-    setCurrentImageIndex((prev) => (prev < allImages.length - 1 ? prev + 1 : 0));
-  };
 
   useEffect(() => {
     if (fontUrl) {
@@ -88,6 +83,8 @@ export function AdPreview({
     fontFamily 
   });
 
+  const showNavigation = imageUrls.length > 1;
+
   return (
     <Card className="h-fit w-full">
       <CardHeader>
@@ -102,9 +99,9 @@ export function AdPreview({
               width: '100%',
             }}
           >
-            {allImages[currentImageIndex] && (
+            {imageUrl && (
               <img
-                src={allImages[currentImageIndex]}
+                src={imageUrl}
                 alt="Ad preview"
                 className="absolute inset-0 h-full w-full object-cover"
                 crossOrigin="anonymous"
@@ -152,14 +149,14 @@ export function AdPreview({
                 </div>
               )}
             </div>
-            {allImages.length > 1 && (
+            {showNavigation && (
               <div className="absolute inset-0 pointer-events-none">
                 <div className="relative w-full h-full">
                   <Button
                     variant="outline"
                     size="icon"
                     className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
-                    onClick={handlePrevImage}
+                    onClick={onPrevious}
                   >
                     <ChevronLeft className="h-8 w-8" />
                   </Button>
@@ -167,17 +164,17 @@ export function AdPreview({
                     variant="outline"
                     size="icon"
                     className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
-                    onClick={handleNextImage}
+                    onClick={onNext}
                   >
                     <ChevronRight className="h-8 w-8" />
                   </Button>
                   <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-50 pointer-events-auto">
-                    {allImages.map((_, index) => (
+                    {imageUrls.map((_, index) => (
                       <div
                         key={index}
                         className={cn(
                           "w-2 h-2 rounded-full transition-colors",
-                          currentImageIndex === index ? "bg-white" : "bg-white/50"
+                          currentIndex === index ? "bg-white" : "bg-white/50"
                         )}
                       />
                     ))}

@@ -27,14 +27,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     platform: "facebook",
     template_style: "",
     accent_color: "#4A90E2",
-    cta_color: "#4A90E2",    // Added default CTA color
-    overlay_color: "#000000" // Added default overlay color
+    cta_color: "#4A90E2",
+    overlay_color: "#000000"
   });
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const previewRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,18 +49,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       const files = Array.from(e.target.files);
       setSelectedImages(files);
       const urls = files.map(file => URL.createObjectURL(file));
-      if (urls.length > 0) {
-        setPreviewUrl(urls[0]);
-      }
+      setImageUrls(urls);
+      setCurrentPreviewIndex(0);
     }
   };
 
   const handleImageUrlsChange = (urls: string[]) => {
     const secureUrls = urls.map(ensureHttps);
     setImageUrls(secureUrls);
-    if (secureUrls.length > 0) {
-      setPreviewUrl(secureUrls[0]);
-    }
+    setCurrentPreviewIndex(0);
   };
 
   const handleOpacityChange = (value: number) => {
@@ -179,13 +175,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const { width, height } = getDimensions(adData.platform);
 
-  const getAllPreviewUrls = () => {
-    const urls = [];
-    if (previewUrl) {
-      urls.push(previewUrl);
-    }
-    urls.push(...imageUrls);
-    return urls;
+  const handlePrevPreview = () => {
+    setCurrentPreviewIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1));
+  };
+
+  const handleNextPreview = () => {
+    setCurrentPreviewIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0));
   };
 
   return (
@@ -209,7 +204,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
       <div ref={previewRef}>
         <AdPreview
-          imageUrl={previewUrl || undefined}
+          imageUrl={imageUrls[currentPreviewIndex]}
           imageUrls={imageUrls}
           width={width}
           height={height}
@@ -221,6 +216,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           overlayColor={adData.overlay_color}
           fontUrl={adData.font_url}
           overlayOpacity={overlayOpacity}
+          currentIndex={currentPreviewIndex}
+          onPrevious={handlePrevPreview}
+          onNext={handleNextPreview}
         />
       </div>
     </div>
