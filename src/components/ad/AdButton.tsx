@@ -41,15 +41,6 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
           ? `0 12px 24px ${accentColor}66` 
           : `0 6px 16px ${accentColor}40`,
       };
-    case 'neon':
-      return {
-        ...baseStyle,
-        background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
-        borderRadius: '12px',
-        boxShadow: isHovered 
-          ? `0 0 20px ${accentColor}99, 0 0 40px ${accentColor}66` 
-          : `0 0 15px ${accentColor}66, 0 0 30px ${accentColor}40`,
-      };
     case 'elegant':
       return {
         ...baseStyle,
@@ -65,18 +56,20 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
       return {
         ...baseStyle,
         background: accentColor,
-        transform: `skew(-5deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
-        borderRadius: '0 12px 12px 0',
-        clipPath: 'polygon(0 0, 100% 0, 95% 100%, 0% 100%)',
-        padding: '1em 2.5em',
+        transform: `skew(-12deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
+        borderRadius: '0',
+        clipPath: 'polygon(0 0, 100% 0, 95% 100%, 5% 100%)',
+        padding: '1em 3em',
       };
     case 'spotlight':
       return {
         ...baseStyle,
-        background: accentColor,
-        borderRadius: '50px',
-        padding: '1em 2.5em',
-        backdropFilter: 'blur(4px)',
+        background: `linear-gradient(135deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
+        borderRadius: '4px',
+        border: `1px solid ${adjustColor(accentColor, 30)}`,
+        boxShadow: isHovered 
+          ? `0 0 20px ${accentColor}99` 
+          : `0 0 15px ${accentColor}66`,
       };
     case 'wave':
       return {
@@ -90,56 +83,39 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
       return {
         ...baseStyle,
         background: `linear-gradient(90deg, ${adjustColor(accentColor, -20)}, ${accentColor})`,
-        borderRadius: '4px',
-        letterSpacing: '1px',
-        boxShadow: isHovered 
-          ? `0 12px 24px ${accentColor}40` 
-          : `0 6px 16px ${accentColor}30`,
-      };
-    case 'sunset':
-      return {
-        ...baseStyle,
-        background: `linear-gradient(45deg, ${accentColor}, ${adjustColor(accentColor, 20)})`,
-        borderRadius: '8px',
-        boxShadow: isHovered 
-          ? `0 12px 24px ${accentColor}66` 
-          : `0 6px 16px ${accentColor}40`,
+        clipPath: 'polygon(10% 0, 100% 0, 90% 100%, 0 100%)',
+        transform: `skew(-15deg) ${isHovered ? 'translateY(-2px)' : 'none'}`,
+        padding: '1em 3em',
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
+        borderRadius: '0',
         border: `1px solid ${adjustColor(accentColor, 20)}`,
       };
     case 'duotone':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '8px',
-        boxShadow: isHovered 
-          ? `0 8px 20px ${accentColor}40` 
-          : `0 4px 12px ${accentColor}30`,
+        clipPath: 'polygon(0 15%, 100% 0, 100% 85%, 0 100%)',
+        padding: '1.2em 3em',
       };
     case 'vignette':
       return {
         ...baseStyle,
         background: `linear-gradient(90deg, ${adjustColor(accentColor, -10)}, ${accentColor})`,
-        borderRadius: '50px',
+        borderRadius: '0 20px 20px 0',
+        clipPath: 'polygon(5% 0, 100% 0, 95% 100%, 0 100%)',
         padding: '1em 3em',
       };
     case 'luxury':
       return {
         ...baseStyle,
         background: accentColor,
-        color: '#000000',
-        fontWeight: '600',
-        fontSize: 'clamp(1rem, 2vw, 1.25rem)',
-        borderRadius: '50px',
-        padding: '0.8em 2.5em',
-        boxShadow: isHovered 
-          ? `0 8px 16px ${accentColor}40`
-          : `0 4px 8px ${accentColor}30`,
+        clipPath: 'polygon(0 0, 100% 0, 100% 70%, 50% 100%, 0 70%)',
+        padding: '1.2em 3em 1.8em',
+        borderRadius: '4px',
       };
     default:
       return {
