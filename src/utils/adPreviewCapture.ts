@@ -27,21 +27,37 @@ export async function capturePreview(
     await document.fonts.ready;
     console.log('Fonts loaded successfully');
 
-    // Wait for images to load
-    const images = adElement.getElementsByTagName('img');
-    await Promise.all(
-      Array.from(images).map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
-        });
-      })
-    );
+    // Wait for images to load with a more robust approach
+    const images = Array.from(adElement.getElementsByTagName('img'));
+    if (images.length > 0) {
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete && img.naturalHeight !== 0) {
+            return Promise.resolve();
+          }
+          return new Promise<void>((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error(`Image load timeout: ${img.src}`));
+            }, 10000); // 10 second timeout
+
+            img.onload = () => {
+              clearTimeout(timeout);
+              // Force a small delay after image loads to ensure rendering
+              setTimeout(resolve, 100);
+            };
+            img.onerror = () => {
+              clearTimeout(timeout);
+              reject(new Error(`Failed to load image: ${img.src}`));
+            };
+          });
+        })
+      );
+    }
     console.log('All images loaded successfully');
 
-    // Force layout recalculation
+    // Force layout recalculation and wait a moment
     adElement.getBoundingClientRect();
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Get exact dimensions after layout is stable
     const rect = adElement.getBoundingClientRect();
