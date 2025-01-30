@@ -97,7 +97,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       const dimensions = getDimensions(adData.platform);
       const enrichedAdData = { ...adData, ...dimensions };
       
-      // Process only selected images if they exist, otherwise process image URLs
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       
       for (let i = 0; i < imagesToProcess.length; i++) {

@@ -8,6 +8,13 @@ interface AdSubmissionHandlerProps {
   children: React.ReactNode;
 }
 
+const sanitizeFileName = (fileName: string): string => {
+  return fileName
+    .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .toLowerCase();               // Convert to lowercase
+};
+
 export const useAdSubmission = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -19,7 +26,8 @@ export const useAdSubmission = () => {
   ) => {
     try {
       const timestamp = Date.now();
-      const originalPath = `original/${timestamp}_${imageFile.name}`;
+      const sanitizedFileName = sanitizeFileName(imageFile.name);
+      const originalPath = `original/${timestamp}_${sanitizedFileName}`;
       const previewPath = `generated/${timestamp}_preview.jpg`;
 
       // Upload original image
