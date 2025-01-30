@@ -37,6 +37,19 @@ export function TemplateStyleSelector({
           onValueChange={onChange}
           className="grid grid-cols-2 gap-4"
         >
+          {/* Previous Templates */}
+          <StyleOption id="modern" label="Modern" />
+          <StyleOption id="elegant" label="Elegant" />
+          <StyleOption id="dynamic" label="Dynamic" />
+          <StyleOption id="spotlight" label="Spotlight" />
+          <StyleOption id="wave" label="Wave" />
+          <StyleOption id="cinematic" label="Cinematic" />
+          <StyleOption id="minimal-fade" label="Minimal Fade" />
+          <StyleOption id="duotone" label="Duotone" />
+          <StyleOption id="vignette" label="Vignette" />
+          <StyleOption id="luxury" label="Luxury" />
+          
+          {/* New Templates */}
           <StyleOption id="neon" label="Neon" />
           <StyleOption id="split" label="Split" />
           <StyleOption id="gradient" label="Gradient" />

@@ -23,6 +23,84 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
   };
 
   switch (style) {
+    // Previous Styles
+    case 'modern':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `2px 2px 4px ${accentColor}`,
+      };
+
+    case 'elegant':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `0 0 10px ${accentColor}, 0 0 20px ${accentColor}`,
+        letterSpacing: '0.05em',
+      };
+
+    case 'dynamic':
+      return {
+        ...baseStyle,
+        color: accentColor,
+        textShadow: '2px 2px 0 #FFFFFF',
+        transform: 'skew(-5deg)',
+      };
+
+    case 'spotlight':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `0 0 15px ${accentColor}`,
+        letterSpacing: '0.02em',
+      };
+
+    case 'wave':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `2px 2px 0 ${accentColor}, -2px -2px 0 ${accentColor}`,
+        transform: 'rotate(-2deg)',
+      };
+
+    case 'cinematic':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `0 0 20px ${accentColor}`,
+        letterSpacing: '0.1em',
+      };
+
+    case 'minimal-fade':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        opacity: 0.9,
+      };
+
+    case 'duotone':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `3px 3px 0 ${accentColor}`,
+      };
+
+    case 'vignette':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: `0 0 30px ${accentColor}`,
+      };
+
+    case 'luxury':
+      return {
+        ...baseStyle,
+        color: accentColor,
+        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+        letterSpacing: '0.1em',
+      };
+
+    // New Styles
     case 'neon':
       return {
         ...baseStyle,
@@ -76,7 +154,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     default:
       return {
         ...baseStyle,
-        color: '#FFFFFF',
+        color: '#000000',
         textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
       };
   }
