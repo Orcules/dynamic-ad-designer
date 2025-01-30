@@ -31,14 +31,14 @@ export function AdContent({
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
-          "w-full flex flex-col items-center gap-2",
-          isBottomOverlay && "z-10"
+          "w-full flex flex-col items-center gap-4",
+          isBottomOverlay && "relative z-10"
         )}>
           {headline && (
             <h2 
               className={cn(
                 "text-center leading-tight break-words",
-                isBottomOverlay ? "max-w-full mb-4" : "max-w-[90%]",
+                isBottomOverlay ? "max-w-full" : "max-w-[90%]",
                 templateStyle === 'minimal' ? 'text-black' : 'text-white'
               )}
               style={textStyle}
@@ -49,7 +49,7 @@ export function AdContent({
           {ctaText && (
             <div className={cn(
               "w-full flex justify-center items-center",
-              isBottomOverlay ? "mb-2" : "mt-2"
+              isBottomOverlay ? "mt-2 mb-2" : "mt-2"
             )}>
               <div 
                 className="relative transform flex items-center justify-center gap-2 mx-auto"
