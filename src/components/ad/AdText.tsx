@@ -28,7 +28,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
         letterSpacing: '0.5px',
       };
     case 'elegant':
@@ -36,7 +36,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         ...baseStyle,
         color: '#FFFFFF',
         fontWeight: '600',
-        letterSpacing: '1px',
+        letterSpacing: '2px',
         textTransform: 'uppercase',
       };
     case 'dynamic':
@@ -44,7 +44,29 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         ...baseStyle,
         color: '#FFFFFF',
         textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
-        transform: 'skew(-5deg)',
+        transform: 'skew(-3deg)',
+      };
+    case 'spotlight':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '0 0 15px rgba(255,255,255,0.5)',
+        letterSpacing: '1px',
+      };
+    case 'wave':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        transform: 'perspective(500px) rotateX(5deg)',
+      };
+    case 'cinematic':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textTransform: 'uppercase',
+        letterSpacing: '3px',
+        textShadow: '3px 3px 6px rgba(0,0,0,0.3)',
       };
     case 'minimal-fade':
       return {
@@ -52,6 +74,27 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         color: '#FFFFFF',
         opacity: '0.95',
         fontWeight: '500',
+      };
+    case 'duotone':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '1px 1px 3px rgba(0,0,0,0.2)',
+        letterSpacing: '1px',
+      };
+    case 'vignette':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        textShadow: '0 0 10px rgba(255,255,255,0.3)',
+      };
+    case 'luxury':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        letterSpacing: '2px',
+        textTransform: 'uppercase',
+        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
       };
     default:
       return {
