@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
-import { ArrowBigDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "./ui/button";
+import { AdNavigationControls } from "./ad/AdNavigationControls";
+import { AdContent } from "./ad/AdContent";
 
 interface AdPreviewProps {
   imageUrl?: string;
@@ -83,8 +82,6 @@ export function AdPreview({
     fontFamily 
   });
 
-  const showNavigation = imageUrls.length > 1;
-
   return (
     <Card className="h-fit w-full">
       <CardHeader>
@@ -111,77 +108,22 @@ export function AdPreview({
               className="absolute inset-0 flex flex-col justify-between"
               style={gradientStyle}
             >
-              {headline && (
-                <div className="flex-1 flex items-center justify-center px-4 w-full">
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', padding: '1rem', boxSizing: 'border-box' }}>
-                    <div className="w-full flex flex-col items-center justify-center gap-2">
-                      <h2 
-                        className={cn(
-                          "text-center leading-tight break-words max-w-[90%]",
-                          templateStyle === 'minimal' ? 'text-black' : 'text-white'
-                        )}
-                        style={textStyle}
-                      >
-                        {headline}
-                      </h2>
-                      {ctaText && (
-                        <div className="w-full flex justify-center items-center mt-2">
-                          <div 
-                            className="relative transform flex items-center justify-center gap-2 mx-auto"
-                            style={buttonStyle}
-                            onMouseEnter={() => setIsButtonHovered(true)}
-                            onMouseLeave={() => setIsButtonHovered(false)}
-                          >
-                            <span className="block">
-                              {ctaText}
-                            </span>
-                            <ArrowBigDown 
-                              className={cn(
-                                "w-4 h-4 transition-transform duration-300",
-                                isButtonHovered ? "translate-y-1" : ""
-                              )}
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <AdContent
+                headline={headline}
+                ctaText={ctaText}
+                textStyle={textStyle}
+                buttonStyle={buttonStyle}
+                templateStyle={templateStyle}
+                isButtonHovered={isButtonHovered}
+                onButtonHover={setIsButtonHovered}
+              />
             </div>
-            {showNavigation && (
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="relative w-full h-full">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
-                    onClick={onPrevious}
-                  >
-                    <ChevronLeft className="h-8 w-8" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
-                    onClick={onNext}
-                  >
-                    <ChevronRight className="h-8 w-8" />
-                  </Button>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
-                    {imageUrls.map((_, index) => (
-                      <div
-                        key={index}
-                        className={cn(
-                          "w-2 h-2 rounded-full transition-colors",
-                          currentIndex === index ? "bg-white" : "bg-white/50"
-                        )}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
+            <AdNavigationControls
+              onPrevious={onPrevious!}
+              onNext={onNext!}
+              currentIndex={currentIndex}
+              totalImages={imageUrls.length}
+            />
           </div>
         </div>
       </CardContent>
