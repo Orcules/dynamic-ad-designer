@@ -13,56 +13,47 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
   switch (style) {
     case 'modern':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, rgba(0,0,0,0.8) 50%, ${baseGradient} 100%)`,
-        mixBlendMode: 'multiply',
+        background: `linear-gradient(to bottom, transparent 0%, ${baseGradient} 100%)`,
       };
     case 'elegant':
       return {
-        background: `linear-gradient(180deg, ${baseGradient} 0%, rgba(0,0,0,0.7) 35%, ${baseGradient} 100%)`,
-        mixBlendMode: 'overlay',
+        background: `linear-gradient(180deg, transparent 0%, ${baseGradient} 100%)`,
       };
     case 'dynamic':
       return {
-        background: `linear-gradient(45deg, ${baseGradient} 0%, rgba(0,0,0,0.8) 30%, ${baseGradient} 70%, rgba(0,0,0,0.8) 100%)`,
-        mixBlendMode: 'hard-light',
+        background: `linear-gradient(45deg, ${baseGradient} 0%, transparent 100%)`,
       };
     case 'spotlight':
       return {
-        background: `radial-gradient(circle at 30% 30%, transparent 0%, rgba(0,0,0,0.8) 60%, ${baseGradient} 100%)`,
-        mixBlendMode: 'multiply',
+        background: `radial-gradient(circle at center, transparent 0%, ${baseGradient} 100%)`,
       };
     case 'wave':
       return {
-        background: `linear-gradient(45deg, ${baseGradient} 0%, rgba(0,0,0,0.8) 25%, ${baseGradient} 50%, rgba(0,0,0,0.8) 75%, ${baseGradient} 100%)`,
-        mixBlendMode: 'soft-light',
+        background: `linear-gradient(45deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
       };
     case 'cinematic':
       return {
-        background: `linear-gradient(to bottom, ${baseGradient} 0%, rgba(0,0,0,0.8) 40%, rgba(0,0,0,0.8) 60%, ${baseGradient} 100%)`,
-        mixBlendMode: 'overlay',
+        background: `linear-gradient(to bottom, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
       };
     case 'minimal-fade':
       return {
-        background: `linear-gradient(to top, ${baseGradient} 0%, rgba(0,0,0,0.8) 100%)`,
+        background: `linear-gradient(to top, ${baseGradient} 0%, transparent 100%)`,
       };
     case 'duotone':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, rgba(0,0,0,0.8) 50%, ${baseGradient} 100%)`,
-        mixBlendMode: 'color',
+        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 100%)`,
       };
     case 'vignette':
       return {
-        background: `radial-gradient(circle at 50% 50%, transparent 10%, rgba(0,0,0,0.8) 70%, ${baseGradient} 120%)`,
-        mixBlendMode: 'multiply',
+        background: `radial-gradient(circle at center, transparent 0%, ${baseGradient} 120%)`,
       };
     case 'luxury':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, rgba(0,0,0,0.8) 35%, ${baseGradient} 100%)`,
-        mixBlendMode: 'overlay',
+        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 100%)`,
       };
     default:
       return {
-        background: `${color}${alphaValue}`,
+        background: baseGradient,
       };
   }
 }
