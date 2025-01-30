@@ -34,6 +34,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [overlayOpacity, setOverlayOpacity] = React.useState(0.4);
   const previewRef = useRef<HTMLDivElement>(null);
+  const processedImages = useRef(new Set<string>());
 
   const {
     selectedImages,
@@ -130,11 +131,19 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       // Process uploaded files
       if (selectedImages.length > 0) {
         for (let i = 0; i < selectedImages.length; i++) {
+          const imageFile = selectedImages[i];
+          const imageId = `${imageFile.name}-${imageFile.size}`;
+          
+          // Skip if this image has already been processed
+          if (processedImages.current.has(imageId)) {
+            continue;
+          }
+
           try {
             // Create a unique preview for each image
             if (previewRef.current) {
               const previewImage = document.createElement('img');
-              previewImage.src = URL.createObjectURL(selectedImages[i]);
+              previewImage.src = URL.createObjectURL(imageFile);
               await new Promise((resolve) => {
                 previewImage.onload = resolve;
               });
@@ -143,6 +152,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               if (existingImage) {
                 existingImage.src = previewImage.src;
               }
+
+              // Wait for styles to be applied
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
 
             await handleAdSubmission({
@@ -150,11 +162,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
                 ...enrichedAdData,
                 name: `${adData.name}-${i + 1}`
               },
-              selectedImage: selectedImages[i],
+              selectedImage: imageFile,
               previewRef,
               onSuccess: onAdGenerated,
               setIsGenerating,
             });
+            
+            processedImages.current.add(imageId);
             successCount++;
           } catch (error) {
             console.error(`Error processing image ${i + 1}:`, error);
@@ -166,22 +180,32 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       // Process image URLs
       if (imageUrls.length > 0) {
         for (let i = 0; i < imageUrls.length; i++) {
+          const imageUrl = imageUrls[i];
+          
+          // Skip if this URL has already been processed
+          if (processedImages.current.has(imageUrl)) {
+            continue;
+          }
+
           try {
             // Create a unique preview for each URL
             if (previewRef.current) {
               const previewImage = document.createElement('img');
-              previewImage.src = imageUrls[i];
+              previewImage.src = imageUrl;
               await new Promise((resolve) => {
                 previewImage.onload = resolve;
               });
               
               const existingImage = previewRef.current.querySelector('img');
               if (existingImage) {
-                existingImage.src = imageUrls[i];
+                existingImage.src = imageUrl;
               }
+
+              // Wait for styles to be applied
+              await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            const response = await fetch(imageUrls[i]);
+            const response = await fetch(imageUrl);
             if (!response.ok) {
               throw new Error(`Failed to fetch image ${i + 1}`);
             }
@@ -198,6 +222,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               onSuccess: onAdGenerated,
               setIsGenerating,
             });
+            
+            processedImages.current.add(imageUrl);
             successCount++;
           } catch (error) {
             console.error(`Error processing URL ${i + 1}:`, error);
@@ -209,6 +235,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       toast.dismiss(toastId);
       if (successCount > 0) {
         toast.success(`Successfully generated ${successCount} ad${successCount > 1 ? 's' : ''}`);
+        // Clear the processed images set after successful generation
+        processedImages.current.clear();
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
@@ -240,7 +268,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         onOpacityChange={handleOpacityChange}
       />
 
-      <div ref={previewRef}>
+      <div ref={previewRef} className="preview-container">
         <AdPreview
           imageUrl={imageUrls[currentPreviewIndex]}
           imageUrls={imageUrls}
