@@ -29,10 +29,11 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         ...baseStyle,
         color: '#FFFFFF',
         textShadow: '2px 2px 15px rgba(0,0,0,0.4)',
-        background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%)',
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(0,0,0,0.15) 100%)',
         padding: '2rem',
         borderRadius: '12px',
         backdropFilter: 'blur(8px)',
+        border: '1px solid rgba(255,255,255,0.2)',
       };
     case 'elegant':
       return {
@@ -42,7 +43,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         letterSpacing: '0.05em',
         background: 'linear-gradient(to right, rgba(0,0,0,0.4), rgba(0,0,0,0.2))',
         padding: '2.5rem',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: '2px solid rgba(255,255,255,0.15)',
+        borderRadius: '4px',
       };
     case 'dynamic':
       return {
@@ -52,7 +54,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         transform: 'skew(-5deg)',
         background: 'linear-gradient(45deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%)',
         padding: '2rem',
-        border: '2px solid rgba(255,255,255,0.15)',
+        border: '3px solid rgba(255,255,255,0.2)',
+        borderRadius: '8px',
       };
     case 'spotlight':
       return {
@@ -62,6 +65,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.7) 100%)',
         padding: '3rem',
         backdropFilter: 'blur(4px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '16px',
       };
     case 'wave':
       return {
@@ -70,7 +75,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         textShadow: '2px 2px 12px rgba(0,0,0,0.4)',
         background: 'linear-gradient(45deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
         padding: '2.5rem',
-        borderLeft: '4px solid rgba(255,255,255,0.2)',
+        borderLeft: '6px solid rgba(255,255,255,0.3)',
+        borderRadius: '0 8px 8px 0',
       };
     case 'cinematic':
       return {
@@ -82,6 +88,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         padding: '2.5rem',
         border: '4px double rgba(255,255,255,0.2)',
         backdropFilter: 'blur(6px)',
+        borderRadius: '2px',
       };
     case 'minimal-fade':
       return {
@@ -91,6 +98,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)',
         padding: '2.5rem',
         backdropFilter: 'blur(3px)',
+        borderBottom: '2px solid rgba(255,255,255,0.2)',
       };
     case 'duotone':
       return {
@@ -101,6 +109,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         padding: '2.5rem',
         border: '3px solid rgba(255,255,255,0.15)',
         backdropFilter: 'blur(5px)',
+        borderRadius: '20px',
       };
     case 'vignette':
       return {
@@ -110,6 +119,8 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 120%)',
         padding: '2.5rem',
         backdropFilter: 'blur(4px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '12px',
       };
     case 'luxury':
       return {
@@ -121,6 +132,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         padding: '2.5rem',
         border: '2px solid rgba(255,255,255,0.2)',
         backdropFilter: 'blur(6px)',
+        borderRadius: '6px',
       };
     default:
       return {
