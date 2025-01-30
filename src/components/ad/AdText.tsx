@@ -29,6 +29,7 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         ...baseStyle,
         color: '#FFFFFF',
         textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        letterSpacing: '0.5px',
       };
     case 'elegant':
       return {
@@ -36,18 +37,21 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         color: '#FFFFFF',
         fontWeight: '600',
         letterSpacing: '1px',
+        textTransform: 'uppercase',
       };
     case 'dynamic':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.2)',
+        textShadow: '1px 1px 3px rgba(0,0,0,0.3)',
+        transform: 'skew(-5deg)',
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        opacity: '0.9',
+        opacity: '0.95',
+        fontWeight: '500',
       };
     default:
       return {

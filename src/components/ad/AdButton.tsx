@@ -28,6 +28,7 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
     marginBottom: '1rem',
     zIndex: 10,
+    color: '#FFFFFF',
   };
 
   switch (style) {
@@ -46,18 +47,22 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: accentColor,
         borderRadius: '50px',
         padding: '1em 2.5em',
+        letterSpacing: '1px',
+        textTransform: 'uppercase',
       };
     case 'dynamic':
       return {
         ...baseStyle,
         background: accentColor,
         borderRadius: '4px',
+        transform: isHovered ? 'translateY(-2px) skew(-5deg)' : 'skew(-5deg)',
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         background: accentColor,
         borderRadius: '8px',
+        opacity: '0.95',
       };
     default:
       return {
