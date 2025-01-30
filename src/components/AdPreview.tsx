@@ -118,13 +118,15 @@ export function AdPreview({
                 onButtonHover={setIsButtonHovered}
               />
             </div>
+          </div>
+          {imageUrls.length > 1 && (
             <AdNavigationControls
               onPrevious={onPrevious!}
               onNext={onNext!}
               currentIndex={currentIndex}
-              totalImages={imageUrls.length || 1}
+              totalImages={imageUrls.length}
             />
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>
