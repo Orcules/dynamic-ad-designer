@@ -28,97 +28,108 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-        background: 'rgba(0,0,0,0.5)',
+        textShadow: '2px 2px 15px rgba(0,0,0,0.4)',
+        background: 'linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.6) 100%)',
         padding: '2rem',
-        borderRadius: '8px',
+        borderRadius: '12px',
+        backdropFilter: 'blur(8px)',
       };
     case 'elegant':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+        textShadow: '2px 2px 8px rgba(0,0,0,0.3)',
         letterSpacing: '0.05em',
-        background: 'rgba(0,0,0,0.4)',
-        padding: '2rem',
+        background: 'linear-gradient(to right, rgba(0,0,0,0.4), rgba(0,0,0,0.2))',
+        padding: '2.5rem',
+        border: '1px solid rgba(255,255,255,0.1)',
       };
     case 'dynamic':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '3px 3px 6px rgba(0,0,0,0.6)',
+        textShadow: '3px 3px 10px rgba(0,0,0,0.5)',
         transform: 'skew(-5deg)',
-        background: 'rgba(0,0,0,0.6)',
+        background: 'linear-gradient(45deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%)',
         padding: '2rem',
+        border: '2px solid rgba(255,255,255,0.15)',
       };
     case 'spotlight':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
-        background: 'radial-gradient(circle at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.8) 100%)',
+        textShadow: '2px 2px 20px rgba(0,0,0,0.6)',
+        background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.7) 100%)',
         padding: '3rem',
+        backdropFilter: 'blur(4px)',
       };
     case 'wave':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
-        background: 'linear-gradient(45deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 100%)',
-        padding: '2rem',
+        textShadow: '2px 2px 12px rgba(0,0,0,0.4)',
+        background: 'linear-gradient(45deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 100%)',
+        padding: '2.5rem',
+        borderLeft: '4px solid rgba(255,255,255,0.2)',
       };
     case 'cinematic':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
+        textShadow: '3px 3px 15px rgba(0,0,0,0.6)',
         letterSpacing: '0.1em',
-        background: 'rgba(0,0,0,0.7)',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7), rgba(0,0,0,0.4))',
         padding: '2.5rem',
-        border: '4px double rgba(255,255,255,0.3)',
+        border: '4px double rgba(255,255,255,0.2)',
+        backdropFilter: 'blur(6px)',
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
-        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)',
-        padding: '2rem',
+        textShadow: '1px 1px 8px rgba(0,0,0,0.3)',
+        background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)',
+        padding: '2.5rem',
+        backdropFilter: 'blur(3px)',
       };
     case 'duotone':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.7)',
-        background: 'linear-gradient(45deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)',
-        padding: '2rem',
-        border: '3px solid rgba(255,255,255,0.2)',
+        textShadow: '2px 2px 12px rgba(0,0,0,0.5)',
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 100%)',
+        padding: '2.5rem',
+        border: '3px solid rgba(255,255,255,0.15)',
+        backdropFilter: 'blur(5px)',
       };
     case 'vignette':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 6px rgba(0,0,0,0.7)',
-        background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.7) 100%)',
+        textShadow: '2px 2px 15px rgba(0,0,0,0.5)',
+        background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.6) 120%)',
         padding: '2.5rem',
+        backdropFilter: 'blur(4px)',
       };
     case 'luxury':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+        textShadow: '2px 2px 10px rgba(0,0,0,0.4)',
         letterSpacing: '0.08em',
-        background: 'linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 100%)',
-        padding: '2rem',
-        border: '2px solid rgba(255,255,255,0.3)',
+        background: 'linear-gradient(135deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 100%)',
+        padding: '2.5rem',
+        border: '2px solid rgba(255,255,255,0.2)',
+        backdropFilter: 'blur(6px)',
       };
     default:
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
-        background: 'rgba(0,0,0,0.5)',
+        textShadow: '1px 1px 8px rgba(0,0,0,0.3)',
+        background: 'rgba(0,0,0,0.4)',
         padding: '2rem',
+        backdropFilter: 'blur(4px)',
       };
   }
 }
