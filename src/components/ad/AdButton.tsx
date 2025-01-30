@@ -35,13 +35,9 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     case 'modern':
       return {
         ...baseStyle,
-        background: `linear-gradient(135deg, ${accentColor}, ${accentColor}dd)`,
-        borderRadius: '8px',
-        boxShadow: isHovered 
-          ? `0 15px 25px rgba(0,0,0,0.2), 0 0 15px ${accentColor}66` 
-          : `0 8px 15px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        border: '1px solid rgba(255,255,255,0.1)',
-        clipPath: 'polygon(5% 0, 95% 0, 100% 100%, 0% 100%)',
+        background: accentColor,
+        borderRadius: '4px',
+        boxShadow: isHovered ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 8px rgba(0,0,0,0.1)',
       };
     case 'elegant':
       return {
@@ -49,90 +45,62 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         background: 'transparent',
         border: `2px solid ${accentColor}`,
         borderRadius: '50px',
-        boxShadow: isHovered 
-          ? `0 10px 20px rgba(0,0,0,0.2), 0 0 20px ${accentColor}33` 
-          : `0 5px 10px rgba(0,0,0,0.1), 0 0 10px ${accentColor}22`,
-        transform: isHovered ? 'translateY(-2px) scale(1.02)' : 'none',
+        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 3px 6px rgba(0,0,0,0.1)',
       };
     case 'dynamic':
       return {
         ...baseStyle,
-        background: `linear-gradient(45deg, ${accentColor}, ${accentColor}dd)`,
+        background: accentColor,
         transform: isHovered ? 'translateY(-2px) skew(-10deg)' : 'skew(-10deg)',
-        boxShadow: isHovered 
-          ? `0 15px 30px rgba(0,0,0,0.2), 0 0 20px ${accentColor}44` 
-          : `0 8px 15px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        border: '1px solid rgba(255,255,255,0.15)',
-        clipPath: 'polygon(0 10%, 100% 0, 100% 90%, 0% 100%)',
+        boxShadow: isHovered ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 8px rgba(0,0,0,0.1)',
       };
     case 'spotlight':
       return {
         ...baseStyle,
-        background: `radial-gradient(circle at center, ${accentColor}, ${accentColor}dd)`,
-        borderRadius: '12px',
-        boxShadow: isHovered 
-          ? `0 0 30px ${accentColor}66, 0 15px 30px rgba(0,0,0,0.2)` 
-          : `0 0 20px ${accentColor}44, 0 8px 15px rgba(0,0,0,0.1)`,
-        border: '1px solid rgba(255,255,255,0.2)',
-        transform: isHovered ? 'translateY(-2px) scale(1.05)' : 'none',
+        background: accentColor,
+        borderRadius: '8px',
+        boxShadow: isHovered ? '0 0 20px rgba(255,255,255,0.3)' : '0 0 10px rgba(255,255,255,0.1)',
       };
     case 'wave':
       return {
         ...baseStyle,
-        background: `linear-gradient(-45deg, ${accentColor}, ${accentColor}dd)`,
-        borderRadius: '8px',
+        background: accentColor,
+        borderRadius: '4px',
         transform: isHovered ? 'translateY(-2px) rotate(-2deg)' : 'rotate(-2deg)',
-        boxShadow: isHovered 
-          ? `0 15px 30px rgba(0,0,0,0.2), 0 0 20px ${accentColor}44` 
-          : `0 8px 15px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        border: '2px solid rgba(255,255,255,0.1)',
-        clipPath: 'polygon(0 15%, 100% 0, 100% 85%, 0% 100%)',
+        boxShadow: isHovered ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 8px rgba(0,0,0,0.1)',
       };
     case 'cinematic':
       return {
         ...baseStyle,
-        background: `linear-gradient(to right, ${accentColor}, ${accentColor}dd)`,
-        border: '2px solid rgba(255,255,255,0.2)',
+        background: accentColor,
+        border: '2px solid #FFFFFF',
         letterSpacing: '2px',
         textTransform: 'uppercase',
-        boxShadow: isHovered 
-          ? `0 20px 40px rgba(0,0,0,0.3), 0 0 20px ${accentColor}44` 
-          : `0 10px 20px rgba(0,0,0,0.2), 0 0 10px ${accentColor}33`,
-        transform: isHovered ? 'translateY(-2px) scale(1.03)' : 'none',
+        boxShadow: isHovered ? '0 8px 16px rgba(0,0,0,0.3)' : '0 4px 8px rgba(0,0,0,0.2)',
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '6px',
+        borderRadius: '4px',
         opacity: isHovered ? '1' : '0.9',
-        boxShadow: isHovered 
-          ? `0 12px 24px rgba(0,0,0,0.2), 0 0 15px ${accentColor}44` 
-          : `0 6px 12px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        border: '1px solid rgba(255,255,255,0.1)',
-        clipPath: 'polygon(5% 0, 95% 0, 100% 100%, 0% 100%)',
+        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 3px 6px rgba(0,0,0,0.1)',
       };
     case 'duotone':
       return {
         ...baseStyle,
-        background: `linear-gradient(135deg, ${accentColor}, ${accentColor}dd)`,
-        borderRadius: '10px',
-        border: '2px solid rgba(255,255,255,0.15)',
-        boxShadow: isHovered 
-          ? `0 15px 30px rgba(0,0,0,0.2), 0 0 20px ${accentColor}44` 
-          : `0 8px 15px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        transform: isHovered ? 'translateY(-2px) scale(1.04)' : 'none',
+        background: accentColor,
+        borderRadius: '8px',
+        border: '2px solid #FFFFFF',
+        boxShadow: isHovered ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 8px rgba(0,0,0,0.1)',
       };
     case 'vignette':
       return {
         ...baseStyle,
-        background: `radial-gradient(circle at center, ${accentColor}, ${accentColor}dd)`,
-        borderRadius: '8px',
-        boxShadow: isHovered 
-          ? `0 15px 30px rgba(0,0,0,0.3), 0 0 25px ${accentColor}44` 
-          : `0 8px 15px rgba(0,0,0,0.2), 0 0 15px ${accentColor}33`,
-        border: '1px solid rgba(255,255,255,0.15)',
-        transform: isHovered ? 'translateY(-2px) scale(1.02)' : 'none',
+        background: accentColor,
+        borderRadius: '4px',
+        boxShadow: isHovered ? '0 8px 16px rgba(0,0,0,0.3)' : '0 4px 8px rgba(0,0,0,0.2)',
+        border: '1px solid rgba(255,255,255,0.2)',
       };
     case 'luxury':
       return {
@@ -141,20 +109,14 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         border: `1px solid ${accentColor}`,
         letterSpacing: '2px',
         textTransform: 'uppercase',
-        boxShadow: isHovered 
-          ? `0 12px 24px rgba(0,0,0,0.2), 0 0 20px ${accentColor}44` 
-          : `0 6px 12px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        transform: isHovered ? 'translateY(-2px) scale(1.03)' : 'none',
+        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 3px 6px rgba(0,0,0,0.1)',
       };
     default:
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '6px',
-        boxShadow: isHovered 
-          ? `0 8px 16px rgba(0,0,0,0.2), 0 0 15px ${accentColor}44` 
-          : `0 4px 8px rgba(0,0,0,0.1), 0 0 10px ${accentColor}33`,
-        border: '1px solid rgba(255,255,255,0.1)',
+        borderRadius: '4px',
+        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 3px 6px rgba(0,0,0,0.1)',
       };
   }
 }
