@@ -32,12 +32,12 @@ export function AdContent({
       )}>
         <div className={cn(
           "w-full flex flex-col items-center",
-          isBottomOverlay && "relative mt-[-60px]"
+          isBottomOverlay && "relative mt-[-120px]" // Increased negative margin to move headline up more
         )}>
           {headline && (
             <h2 
               className={cn(
-                "text-center leading-tight break-words mb-6",
+                "text-center leading-tight break-words mb-8", // Increased bottom margin
                 isBottomOverlay ? "max-w-full" : "max-w-[90%]",
                 templateStyle === 'minimal' ? 'text-black' : 'text-white'
               )}
@@ -49,7 +49,7 @@ export function AdContent({
           {ctaText && (
             <div className={cn(
               "w-full flex justify-center items-center",
-              isBottomOverlay ? "mb-4" : "mt-2"
+              isBottomOverlay ? "mb-4 mt-auto" : "mt-2"
             )}>
               <div 
                 className="relative transform flex items-center justify-center gap-2 mx-auto"
