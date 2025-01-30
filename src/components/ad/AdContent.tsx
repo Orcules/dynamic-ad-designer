@@ -32,12 +32,12 @@ export function AdContent({
       )}>
         <div className={cn(
           "w-full flex flex-col items-center",
-          isBottomOverlay && "relative"
+          isBottomOverlay && "relative mt-[-60px]"
         )}>
           {headline && (
             <h2 
               className={cn(
-                "text-center leading-tight break-words mb-4",
+                "text-center leading-tight break-words mb-6",
                 isBottomOverlay ? "max-w-full" : "max-w-[90%]",
                 templateStyle === 'minimal' ? 'text-black' : 'text-white'
               )}
