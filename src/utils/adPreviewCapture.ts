@@ -9,8 +9,10 @@ export async function capturePreview(
     return null;
   }
 
+  let adElement: Element | null = null;
+  
   try {
-    const adElement = previewRef.current.querySelector('.ad-content');
+    adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
       console.error('Ad content element not found');
       return null;
@@ -60,7 +62,7 @@ export async function capturePreview(
         if (clonedElement) {
           clonedElement.classList.add('capturing');
           // Copy all computed styles
-          const styles = window.getComputedStyle(adElement);
+          const styles = window.getComputedStyle(adElement as HTMLElement);
           Array.from(styles).forEach(key => {
             (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
           });
@@ -69,9 +71,6 @@ export async function capturePreview(
     });
 
     console.log('Canvas captured successfully');
-
-    // Remove capturing class
-    adElement.classList.remove('capturing');
 
     // Convert to high quality JPEG
     const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
@@ -88,7 +87,11 @@ export async function capturePreview(
 
   } catch (error) {
     console.error("Error capturing preview:", error);
-    adElement?.classList.remove('capturing');
     return null;
+  } finally {
+    // Remove capturing class in finally block to ensure it's always removed
+    if (adElement) {
+      adElement.classList.remove('capturing');
+    }
   }
 }
