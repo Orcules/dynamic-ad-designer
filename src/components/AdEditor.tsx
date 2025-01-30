@@ -34,7 +34,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);
   const [overlayOpacity, setOverlayOpacity] = React.useState(0.4);
   const previewRef = useRef<HTMLDivElement>(null);
-  const processedImages = useRef(new Set<string>());
 
   const {
     selectedImages,
@@ -115,35 +114,33 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       return;
     }
 
-    if (imageUrls.length === 0 && selectedImages.length === 0) {
+    // Check if we have any images to process
+    const hasImages = selectedImages.length > 0 || imageUrls.length > 0;
+    if (!hasImages) {
       toast.error('Please select at least one image');
       return;
     }
 
     setIsGenerating(true);
-    const toastId = toast.loading(`Generating ${imageUrls.length || selectedImages.length} ads...`);
+    const toastId = toast.loading(`Generating ads...`);
 
     try {
       const dimensions = getDimensions(adData.platform);
       const enrichedAdData = { ...adData, ...dimensions };
       let successCount = 0;
 
-      // Process uploaded files
-      if (selectedImages.length > 0) {
-        for (let i = 0; i < selectedImages.length; i++) {
-          const imageFile = selectedImages[i];
-          const imageId = `${imageFile.name}-${imageFile.size}`;
-          
-          // Skip if this image has already been processed
-          if (processedImages.current.has(imageId)) {
-            continue;
-          }
-
-          try {
-            // Create a unique preview for each image
-            if (previewRef.current) {
+      // Process only selected images if they exist, otherwise process image URLs
+      const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
+      
+      for (let i = 0; i < imagesToProcess.length; i++) {
+        const currentImage = imagesToProcess[i];
+        
+        try {
+          // Create a unique preview for each image
+          if (previewRef.current) {
+            if (currentImage instanceof File) {
               const previewImage = document.createElement('img');
-              previewImage.src = URL.createObjectURL(imageFile);
+              previewImage.src = URL.createObjectURL(currentImage);
               await new Promise((resolve) => {
                 previewImage.onload = resolve;
               });
@@ -152,91 +149,50 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               if (existingImage) {
                 existingImage.src = previewImage.src;
               }
-
-              // Wait for styles to be applied
-              await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
-            await handleAdSubmission({
-              adData: {
-                ...enrichedAdData,
-                name: `${adData.name}-${i + 1}`
-              },
-              selectedImage: imageFile,
-              previewRef,
-              onSuccess: onAdGenerated,
-              setIsGenerating,
-            });
-            
-            processedImages.current.add(imageId);
-            successCount++;
-          } catch (error) {
-            console.error(`Error processing image ${i + 1}:`, error);
-            toast.error(`Error processing image ${i + 1}`);
-          }
-        }
-      }
-
-      // Process image URLs
-      if (imageUrls.length > 0) {
-        for (let i = 0; i < imageUrls.length; i++) {
-          const imageUrl = imageUrls[i];
-          
-          // Skip if this URL has already been processed
-          if (processedImages.current.has(imageUrl)) {
-            continue;
-          }
-
-          try {
-            // Create a unique preview for each URL
-            if (previewRef.current) {
-              const previewImage = document.createElement('img');
-              previewImage.src = imageUrl;
-              await new Promise((resolve) => {
-                previewImage.onload = resolve;
-              });
-              
+            } else {
               const existingImage = previewRef.current.querySelector('img');
               if (existingImage) {
-                existingImage.src = imageUrl;
+                existingImage.src = currentImage;
               }
-
-              // Wait for styles to be applied
-              await new Promise(resolve => setTimeout(resolve, 100));
             }
 
-            const response = await fetch(imageUrl);
+            // Wait for styles to be applied
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+
+          let imageFile: File;
+          if (currentImage instanceof File) {
+            imageFile = currentImage;
+          } else {
+            const response = await fetch(currentImage);
             if (!response.ok) {
               throw new Error(`Failed to fetch image ${i + 1}`);
             }
             const blob = await response.blob();
-            const file = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
-            
-            await handleAdSubmission({
-              adData: {
-                ...enrichedAdData,
-                name: `${adData.name}-${i + 1}`
-              },
-              selectedImage: file,
-              previewRef,
-              onSuccess: onAdGenerated,
-              setIsGenerating,
-            });
-            
-            processedImages.current.add(imageUrl);
-            successCount++;
-          } catch (error) {
-            console.error(`Error processing URL ${i + 1}:`, error);
-            toast.error(`Error processing URL ${i + 1}`);
+            imageFile = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
           }
+
+          await handleAdSubmission({
+            adData: {
+              ...enrichedAdData,
+              name: `${adData.name}-${i + 1}`
+            },
+            selectedImage: imageFile,
+            previewRef,
+            onSuccess: onAdGenerated,
+            setIsGenerating,
+          });
+          
+          successCount++;
+        } catch (error) {
+          console.error(`Error processing image ${i + 1}:`, error);
+          toast.error(`Error processing image ${i + 1}`);
         }
       }
 
       toast.dismiss(toastId);
       if (successCount > 0) {
         toast.success(`Successfully generated ${successCount} ad${successCount > 1 ? 's' : ''}`);
-        // Clear the processed images set after successful generation
-        processedImages.current.clear();
       }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
