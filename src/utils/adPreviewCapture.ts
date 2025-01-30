@@ -10,7 +10,6 @@ export async function capturePreview(
   }
 
   try {
-    // מצא את האלמנט של המודעה
     const adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
       console.error('Ad content element not found');
@@ -19,11 +18,14 @@ export async function capturePreview(
 
     console.log('Starting preview capture process...');
 
-    // חכה שכל הפונטים יטענו
+    // Add capturing class
+    adElement.classList.add('capturing');
+
+    // Wait for fonts to load
     await document.fonts.ready;
     console.log('Fonts loaded successfully');
 
-    // חכה שכל התמונות יטענו
+    // Wait for images to load
     const images = adElement.getElementsByTagName('img');
     await Promise.all(
       Array.from(images).map((img) => {
@@ -36,19 +38,22 @@ export async function capturePreview(
     );
     console.log('All images loaded successfully');
 
-    // צור העתק של האלמנט
+    // Get exact dimensions
     const rect = adElement.getBoundingClientRect();
+    
+    // Create canvas with exact dimensions
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
-      scale: 2, // איכות גבוהה יותר
+      scale: 2,
       width: rect.width,
       height: rect.height,
       backgroundColor: null,
       logging: true,
+      allowTaint: true,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
-          // העתק את כל הסטיילים
+          clonedElement.classList.add('capturing');
           const styles = window.getComputedStyle(adElement);
           Array.from(styles).forEach(key => {
             (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
@@ -59,7 +64,10 @@ export async function capturePreview(
 
     console.log('Canvas captured successfully');
 
-    // המר ל-JPEG באיכות גבוהה
+    // Remove capturing class
+    adElement.classList.remove('capturing');
+
+    // Convert to high quality JPEG
     const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
     const response = await fetch(dataUrl);
     const blob = await response.blob();

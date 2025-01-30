@@ -75,6 +75,11 @@
   }
 }
 
+.ad-content {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
 .ad-content.capturing {
   transform: none !important;
   transition: none !important;
@@ -85,6 +90,9 @@
   width: 100% !important;
   height: 100% !important;
   overflow: hidden !important;
+  transform-style: flat !important;
+  backface-visibility: visible !important;
+  perspective: none !important;
 }
 
 .ad-content.capturing img {
@@ -104,6 +112,9 @@
   transform: none !important;
   transition: none !important;
   position: static !important;
+  transform-style: flat !important;
+  backface-visibility: visible !important;
+  perspective: none !important;
 }
 
 .ad-content.capturing h2,
@@ -111,4 +122,21 @@
 .ad-content.capturing button {
   position: relative !important;
   z-index: 10 !important;
+  transform: none !important;
+  text-align: center !important;
+  width: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+}
+
+.ad-content.capturing .content {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  width: 100% !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
 }
