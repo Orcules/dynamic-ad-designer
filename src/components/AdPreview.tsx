@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
@@ -43,6 +43,10 @@ export function AdPreview({
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const imageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
     if (fontUrl) {
@@ -62,6 +66,42 @@ export function AdPreview({
       }
     }
   }, [fontUrl]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!imageRef.current) return;
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - imagePosition.x,
+      y: e.clientY - imagePosition.y
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !imageRef.current) return;
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    // Add bounds to prevent dragging too far
+    const bounds = imageRef.current.getBoundingClientRect();
+    const container = imageRef.current.parentElement?.getBoundingClientRect();
+    
+    if (!container) return;
+    
+    const maxX = 0;
+    const minX = container.width - bounds.width;
+    const maxY = 0;
+    const minY = container.height - bounds.height;
+    
+    setImagePosition({
+      x: Math.min(maxX, Math.max(minX, newX)),
+      y: Math.min(maxY, Math.max(minY, newY))
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const gradientStyle = AdGradient({ 
     style: templateStyle, 
@@ -95,17 +135,26 @@ export function AdPreview({
               aspectRatio: `${width} / ${height}`,
               width: '100%',
             }}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
           >
             {imageUrl && (
               <img
+                ref={imageRef}
                 src={imageUrl}
                 alt="Ad preview"
-                className="absolute inset-0 h-full w-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover cursor-move"
+                style={{
+                  transform: `translate(${imagePosition.x}px, ${imagePosition.y}px)`,
+                  transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                }}
+                onMouseDown={handleMouseDown}
                 crossOrigin="anonymous"
               />
             )}
             <div
-              className="absolute inset-0 flex flex-col justify-between"
+              className="absolute inset-0 flex flex-col justify-between pointer-events-none"
               style={gradientStyle}
             >
               <AdContent
