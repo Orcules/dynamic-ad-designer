@@ -21,7 +21,7 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="absolute -left-16 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
+          className="absolute -left-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground z-50 pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
           onClick={onPrevious}
           disabled={totalImages <= 1}
         >
@@ -30,7 +30,7 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="absolute -right-16 rounded-full bg-white/90 hover:bg-white z-50 pointer-events-auto h-12 w-12 border-2"
+          className="absolute -right-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground z-50 pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
           onClick={onNext}
           disabled={totalImages <= 1}
         >
