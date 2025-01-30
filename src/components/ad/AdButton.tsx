@@ -33,6 +33,18 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
     letterSpacing: '0.05em',
   };
 
+  // Check if it's a bottom overlay style
+  if (style?.startsWith('overlay-bottom-')) {
+    return {
+      ...baseStyle,
+      background: accentColor,
+      borderRadius: '4px',
+      boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+      marginBottom: '0.5rem', // Reduced margin for bottom overlay
+      fontSize: 'clamp(0.75rem, 1.25vw, 1rem)', // Slightly smaller font for overlay
+    };
+  }
+
   switch (style) {
     case 'modern':
       return {
