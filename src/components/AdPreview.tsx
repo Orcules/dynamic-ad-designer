@@ -168,7 +168,7 @@ export function AdPreview({
                   >
                     <ChevronRight className="h-8 w-8" />
                   </Button>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-50 pointer-events-auto">
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-50">
                     {imageUrls.map((_, index) => (
                       <div
                         key={index}

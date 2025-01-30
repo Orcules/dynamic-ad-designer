@@ -111,6 +111,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }));
   };
 
+  const handlePrevPreview = () => {
+    setCurrentPreviewIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1));
+  };
+
+  const handleNextPreview = () => {
+    setCurrentPreviewIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -175,14 +183,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   };
 
   const { width, height } = getDimensions(adData.platform);
-
-  const handlePrevPreview = () => {
-    setCurrentPreviewIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1));
-  };
-
-  const handleNextPreview = () => {
-    setCurrentPreviewIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0));
-  };
 
   return (
     <div className="flex flex-col gap-8">
