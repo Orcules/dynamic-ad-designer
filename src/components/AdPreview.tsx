@@ -120,14 +120,12 @@ export function AdPreview({
             </div>
           </div>
           {imageUrls.length > 1 && (
-            <div className="absolute inset-0 w-full h-full">
-              <AdNavigationControls
-                onPrevious={onPrevious!}
-                onNext={onNext!}
-                currentIndex={currentIndex}
-                totalImages={imageUrls.length}
-              />
-            </div>
+            <AdNavigationControls
+              onPrevious={onPrevious!}
+              onNext={onNext!}
+              currentIndex={currentIndex}
+              totalImages={imageUrls.length}
+            />
           )}
         </div>
       </CardContent>
