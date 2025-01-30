@@ -114,28 +114,43 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       return;
     }
 
+    if (imageUrls.length === 0 && selectedImages.length === 0) {
+      toast.error('Please select at least one image');
+      return;
+    }
+
     setIsGenerating(true);
+    const toastId = toast.loading(`Generating ${imageUrls.length || selectedImages.length} ads...`);
 
     try {
       const dimensions = getDimensions(adData.platform);
       const enrichedAdData = { ...adData, ...dimensions };
+      let successCount = 0;
 
+      // Process uploaded files
       if (selectedImages.length > 0) {
         for (let i = 0; i < selectedImages.length; i++) {
           try {
             await handleAdSubmission({
-              adData: enrichedAdData,
+              adData: {
+                ...enrichedAdData,
+                name: `${adData.name}-${i + 1}`
+              },
               selectedImage: selectedImages[i],
               previewRef,
               onSuccess: onAdGenerated,
               setIsGenerating,
             });
+            successCount++;
           } catch (error) {
             console.error(`Error processing image ${i + 1}:`, error);
             toast.error(`Error processing image ${i + 1}`);
           }
         }
-      } else if (imageUrls.length > 0) {
+      }
+
+      // Process image URLs
+      if (imageUrls.length > 0) {
         for (let i = 0; i < imageUrls.length; i++) {
           try {
             const response = await fetch(imageUrls[i]);
@@ -146,23 +161,33 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             const file = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
             
             await handleAdSubmission({
-              adData: enrichedAdData,
+              adData: {
+                ...enrichedAdData,
+                name: `${adData.name}-${i + 1}`
+              },
               selectedImage: file,
               previewRef,
               onSuccess: onAdGenerated,
               setIsGenerating,
             });
+            successCount++;
           } catch (error) {
             console.error(`Error processing URL ${i + 1}:`, error);
             toast.error(`Error processing URL ${i + 1}`);
           }
         }
       }
+
+      toast.dismiss(toastId);
+      if (successCount > 0) {
+        toast.success(`Successfully generated ${successCount} ad${successCount > 1 ? 's' : ''}`);
+      }
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast.error('Error generating ad');
+      toast.error('Error generating ads');
     } finally {
       setIsGenerating(false);
+      toast.dismiss(toastId);
     }
   };
 
