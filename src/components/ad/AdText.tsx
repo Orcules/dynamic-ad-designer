@@ -100,55 +100,79 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
         letterSpacing: '0.1em',
       };
 
-    // New Styles
-    case 'neon':
+    // New Bottom Overlay Styles
+    case 'overlay-bottom-clean':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        backgroundColor: `${accentColor}CC`,
+        padding: '2rem',
+        width: '100%',
+        maxWidth: '100%',
+        margin: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        backdropFilter: 'blur(8px)',
+      };
+
+    case 'overlay-bottom-gradient':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        background: `linear-gradient(to top, ${accentColor} 0%, ${accentColor}99 60%, transparent 100%)`,
+        padding: '4rem 2rem 2rem',
+        width: '100%',
+        maxWidth: '100%',
+        margin: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+      };
+
+    case 'overlay-bottom-glass':
+      return {
+        ...baseStyle,
+        color: '#FFFFFF',
+        backgroundColor: `${accentColor}88`,
+        backdropFilter: 'blur(12px)',
+        borderTop: '1px solid rgba(255,255,255,0.2)',
+        padding: '2rem',
+        width: '100%',
+        maxWidth: '100%',
+        margin: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+      };
+
+    case 'overlay-bottom-neon':
       return {
         ...baseStyle,
         color: '#d9fdff',
-        textShadow: `0 0 2rem ${accentColor}, 0 0 1rem ${accentColor}`,
-        letterSpacing: '0.05em',
+        textShadow: `0 0 10px ${accentColor}, 0 0 20px ${accentColor}`,
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        padding: '2rem',
+        width: '100%',
+        maxWidth: '100%',
+        margin: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
       };
 
-    case 'split':
+    case 'overlay-bottom-minimal':
       return {
         ...baseStyle,
         color: '#FFFFFF',
-        textShadow: `
-          2px 2px 0 ${accentColor},
-          -2px -2px 0 ${accentColor}
-        `,
-        letterSpacing: '-0.02em',
-      };
-
-    case 'gradient':
-      return {
-        ...baseStyle,
-        background: `linear-gradient(135deg, ${accentColor} 0%, #ffffff 50%, ${accentColor} 100%)`,
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        textShadow: 'none',
-      };
-
-    case 'outline':
-      return {
-        ...baseStyle,
-        color: 'transparent',
-        WebkitTextStroke: `2px ${accentColor}`,
-        textShadow: `3px 3px 0 ${accentColor}`,
-        letterSpacing: '0.02em',
-      };
-
-    case 'stacked':
-      return {
-        ...baseStyle,
-        color: '#FFFFFF',
-        textShadow: `
-          0 1px 0 ${accentColor},
-          0 2px 0 ${accentColor},
-          0 3px 0 ${accentColor},
-          0 4px 0 ${accentColor},
-          0 5px 0 ${accentColor}
-        `,
+        backgroundColor: '#00000099',
+        padding: '2rem',
+        width: '100%',
+        maxWidth: '100%',
+        margin: 0,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
       };
 
     default:

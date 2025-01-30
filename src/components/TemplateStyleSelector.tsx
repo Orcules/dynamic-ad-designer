@@ -49,6 +49,13 @@ export function TemplateStyleSelector({
           <StyleOption id="vignette" label="Vignette" />
           <StyleOption id="luxury" label="Luxury" />
           
+          {/* Bottom Overlay Templates */}
+          <StyleOption id="overlay-bottom-clean" label="Bottom Clean" />
+          <StyleOption id="overlay-bottom-gradient" label="Bottom Gradient" />
+          <StyleOption id="overlay-bottom-glass" label="Bottom Glass" />
+          <StyleOption id="overlay-bottom-neon" label="Bottom Neon" />
+          <StyleOption id="overlay-bottom-minimal" label="Bottom Minimal" />
+          
           {/* New Templates */}
           <StyleOption id="neon" label="Neon" />
           <StyleOption id="split" label="Split" />
