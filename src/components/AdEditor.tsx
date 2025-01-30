@@ -7,6 +7,19 @@ import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
 
+interface Template {
+  id: string;
+  title: string;
+  dimensions: string;
+  imageUrl: string;
+  description: string;
+}
+
+interface AdEditorProps {
+  template: Template;
+  onAdGenerated: (adData: any) => void;
+}
+
 const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [adData, setAdData] = useState({
     name: "",
