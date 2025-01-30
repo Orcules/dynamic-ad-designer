@@ -16,12 +16,10 @@ export function useAdImageHandler({
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      setSelectedImages(files);
+      setSelectedImages(prev => [...prev, ...files]);
       const urls = files.map(file => URL.createObjectURL(file));
-      setImageUrls(urls);
-      setCurrentPreviewIndex(0);
+      setImageUrls(prev => [...prev, ...urls]);
       onImageChange(urls);
-      onCurrentIndexChange(0);
     }
   };
 
@@ -34,14 +32,12 @@ export function useAdImageHandler({
   };
 
   const handlePrevPreview = () => {
-    if (imageUrls.length <= 1) return;
     const newIndex = currentPreviewIndex > 0 ? currentPreviewIndex - 1 : imageUrls.length - 1;
     setCurrentPreviewIndex(newIndex);
     onCurrentIndexChange(newIndex);
   };
 
   const handleNextPreview = () => {
-    if (imageUrls.length <= 1) return;
     const newIndex = currentPreviewIndex < imageUrls.length - 1 ? currentPreviewIndex + 1 : 0;
     setCurrentPreviewIndex(newIndex);
     onCurrentIndexChange(newIndex);
