@@ -7,31 +7,18 @@ import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
 
-interface Template {
-  id: string;
-  title: string;
-  dimensions: string;
-  imageUrl: string;
-  description: string;
-}
-
-interface AdEditorProps {
-  template: Template;
-  onAdGenerated: (adData: any) => void;
-}
-
 const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [adData, setAdData] = useState({
     name: "",
     headline: "",
     cta_text: "",
     font_url: "",
-    platform: "instagram-story", // Set default to Instagram Story
+    platform: "instagram-story",
     template_style: "",
     accent_color: "#4A90E2",
     cta_color: "#4A90E2",
     overlay_color: "#000000",
-    text_color: "#FFFFFF" // Add text color control
+    text_color: "#FFFFFF"
   });
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();

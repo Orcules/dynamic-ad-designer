@@ -32,6 +32,7 @@ interface AdFormProps {
     accent_color: string;
     cta_color: string;
     overlay_color: string;
+    text_color: string;
   };
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFontChange: (value: string) => void;
@@ -40,6 +41,7 @@ interface AdFormProps {
   onColorChange: (value: string) => void;
   onCtaColorChange: (value: string) => void;
   onOverlayColorChange: (value: string) => void;
+  onTextColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
   overlayOpacity: number;
@@ -55,6 +57,7 @@ export function AdForm({
   onColorChange,
   onCtaColorChange,
   onOverlayColorChange,
+  onTextColorChange,
   onImageChange,
   onImageUrlsChange,
   overlayOpacity,
@@ -284,6 +287,8 @@ export function AdForm({
         onCtaColorChange={onCtaColorChange}
         overlayColor={adData.overlay_color}
         onOverlayColorChange={onOverlayColorChange}
+        textColor={adData.text_color}
+        onTextColorChange={onTextColorChange}
         overlayOpacity={overlayOpacity}
         onOpacityChange={onOpacityChange}
       />
