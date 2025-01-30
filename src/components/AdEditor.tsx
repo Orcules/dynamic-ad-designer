@@ -131,6 +131,20 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       if (selectedImages.length > 0) {
         for (let i = 0; i < selectedImages.length; i++) {
           try {
+            // Create a unique preview for each image
+            if (previewRef.current) {
+              const previewImage = document.createElement('img');
+              previewImage.src = URL.createObjectURL(selectedImages[i]);
+              await new Promise((resolve) => {
+                previewImage.onload = resolve;
+              });
+              
+              const existingImage = previewRef.current.querySelector('img');
+              if (existingImage) {
+                existingImage.src = previewImage.src;
+              }
+            }
+
             await handleAdSubmission({
               adData: {
                 ...enrichedAdData,
@@ -153,6 +167,20 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       if (imageUrls.length > 0) {
         for (let i = 0; i < imageUrls.length; i++) {
           try {
+            // Create a unique preview for each URL
+            if (previewRef.current) {
+              const previewImage = document.createElement('img');
+              previewImage.src = imageUrls[i];
+              await new Promise((resolve) => {
+                previewImage.onload = resolve;
+              });
+              
+              const existingImage = previewRef.current.querySelector('img');
+              if (existingImage) {
+                existingImage.src = imageUrls[i];
+              }
+            }
+
             const response = await fetch(imageUrls[i]);
             if (!response.ok) {
               throw new Error(`Failed to fetch image ${i + 1}`);
