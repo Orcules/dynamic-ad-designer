@@ -13,15 +13,15 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
   switch (style) {
     case 'modern':
       return {
-        background: `linear-gradient(to bottom, transparent 0%, ${baseGradient} 100%)`,
+        background: `linear-gradient(180deg, transparent 0%, ${baseGradient} 100%)`,
       };
     case 'elegant':
       return {
-        background: `linear-gradient(180deg, transparent 0%, ${baseGradient} 100%)`,
+        background: `linear-gradient(180deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
       };
     case 'dynamic':
       return {
-        background: `linear-gradient(45deg, ${baseGradient} 0%, transparent 100%)`,
+        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 100%)`,
       };
     case 'spotlight':
       return {
@@ -41,7 +41,7 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
       };
     case 'duotone':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 100%)`,
+        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
       };
     case 'vignette':
       return {
@@ -49,7 +49,7 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
       };
     case 'luxury':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 100%)`,
+        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
       };
     default:
       return {
