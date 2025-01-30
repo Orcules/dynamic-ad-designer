@@ -19,7 +19,7 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
   }));
 
   useEffect(() => {
-    if (!value || !fonts.some(font => font.url === value)) {
+    if (typeof onChange === 'function' && (!value || !fonts.some(font => font.url === value))) {
       onChange(fonts[0].url);
     }
   }, [language, value, onChange, fonts]);

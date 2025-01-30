@@ -53,6 +53,30 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setAdData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFontChange = (value: string) => {
+    setAdData(prev => ({ ...prev, font_url: value }));
+  };
+
+  const handlePlatformChange = (value: string) => {
+    setAdData(prev => ({ ...prev, platform: value }));
+  };
+
+  const handleStyleChange = (value: string) => {
+    setAdData(prev => ({ ...prev, template_style: value }));
+  };
+
+  const handleColorChange = (value: string) => {
+    setAdData(prev => ({ ...prev, accent_color: value }));
+  };
+
+  const handleCtaColorChange = (value: string) => {
+    setAdData(prev => ({ ...prev, cta_color: value }));
+  };
+
+  const handleOverlayColorChange = (value: string) => {
+    setAdData(prev => ({ ...prev, overlay_color: value }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -95,7 +119,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               name: `${adData.name}-${i + 1}`
             },
             imageFile,
-            imageFile, // This will be replaced by the captured preview
+            imageFile,
             onAdGenerated
           );
         } catch (error) {
@@ -119,6 +143,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         adData={adData}
         isGenerating={isGenerating}
         onInputChange={handleInputChange}
+        onFontChange={handleFontChange}
+        onPlatformChange={handlePlatformChange}
+        onStyleChange={handleStyleChange}
+        onColorChange={handleColorChange}
+        onCtaColorChange={handleCtaColorChange}
+        onOverlayColorChange={handleOverlayColorChange}
         onImageChange={handleImageChange}
         onImageUrlsChange={handleImageUrlsChange}
         onSubmit={handleSubmit}
