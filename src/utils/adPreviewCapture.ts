@@ -18,7 +18,7 @@ export async function capturePreview(
 
     console.log('Starting preview capture process...');
 
-    // Add capturing class
+    // Add capturing class before any operations
     adElement.classList.add('capturing');
 
     // Wait for fonts to load
@@ -38,7 +38,10 @@ export async function capturePreview(
     );
     console.log('All images loaded successfully');
 
-    // Get exact dimensions
+    // Force layout recalculation
+    adElement.getBoundingClientRect();
+
+    // Get exact dimensions after layout is stable
     const rect = adElement.getBoundingClientRect();
     
     // Create canvas with exact dimensions
@@ -50,10 +53,13 @@ export async function capturePreview(
       backgroundColor: null,
       logging: true,
       allowTaint: true,
+      foreignObjectRendering: true,
+      removeContainer: false,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
           clonedElement.classList.add('capturing');
+          // Copy all computed styles
           const styles = window.getComputedStyle(adElement);
           Array.from(styles).forEach(key => {
             (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
@@ -68,7 +74,7 @@ export async function capturePreview(
     adElement.classList.remove('capturing');
 
     // Convert to high quality JPEG
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
     const response = await fetch(dataUrl);
     const blob = await response.blob();
     
@@ -82,6 +88,7 @@ export async function capturePreview(
 
   } catch (error) {
     console.error("Error capturing preview:", error);
+    adElement?.classList.remove('capturing');
     return null;
   }
 }
