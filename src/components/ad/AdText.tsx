@@ -17,39 +17,62 @@ export function getTextStyle({ style = 'minimal', accentColor, fontFamily }: AdT
     fontFamily: fontFamily || 'Montserrat, system-ui',
     textAlign: 'center',
     display: 'block',
-    transition: 'all 0.3s ease',
     wordWrap: 'break-word',
     overflowWrap: 'break-word',
     hyphens: 'auto',
   };
 
   switch (style) {
-    case 'glitch':
+    case 'neon':
+      return {
+        ...baseStyle,
+        color: '#d9fdff',
+        textShadow: `0 0 2rem ${accentColor}, 0 0 1rem ${accentColor}`,
+        letterSpacing: '0.05em',
+      };
+
+    case 'split':
       return {
         ...baseStyle,
         color: '#FFFFFF',
         textShadow: `
           2px 2px 0 ${accentColor},
-          -2px -2px 0 ${accentColor},
-          0.1em 0.01em 0.1em rgba(0,0,0,0.5)
+          -2px -2px 0 ${accentColor}
         `,
-        position: 'relative',
-        animation: 'text-shift 4s infinite alternate',
-        transform: 'skew(-2deg, -1deg)',
+        letterSpacing: '-0.02em',
       };
-    case 'retro-wave':
+
+    case 'gradient':
+      return {
+        ...baseStyle,
+        background: `linear-gradient(135deg, ${accentColor} 0%, #ffffff 50%, ${accentColor} 100%)`,
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        textShadow: 'none',
+      };
+
+    case 'outline':
+      return {
+        ...baseStyle,
+        color: 'transparent',
+        WebkitTextStroke: `2px ${accentColor}`,
+        textShadow: `3px 3px 0 ${accentColor}`,
+        letterSpacing: '0.02em',
+      };
+
+    case 'stacked':
       return {
         ...baseStyle,
         color: '#FFFFFF',
         textShadow: `
-          0 0 5px ${accentColor},
-          0 0 10px ${accentColor},
-          0 0 20px ${accentColor},
-          0 0 40px ${accentColor}
+          0 1px 0 ${accentColor},
+          0 2px 0 ${accentColor},
+          0 3px 0 ${accentColor},
+          0 4px 0 ${accentColor},
+          0 5px 0 ${accentColor}
         `,
-        letterSpacing: '0.15em',
-        fontWeight: '800',
       };
+
     default:
       return {
         ...baseStyle,
