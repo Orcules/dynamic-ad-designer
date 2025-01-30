@@ -38,84 +38,92 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.1)',
+        border: '3px solid #FFFFFF',
+        boxShadow: isHovered ? '6px 6px 0px rgba(0,0,0,0.3)' : '4px 4px 0px rgba(0,0,0,0.3)',
+        transform: isHovered ? 'translate(-2px, -2px)' : 'none',
       };
     case 'elegant':
       return {
         ...baseStyle,
         background: 'transparent',
         border: `2px solid ${accentColor}`,
-        borderRadius: '50px',
-        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: isHovered ? 
+          `4px 4px 0px ${accentColor}, -4px -4px 0px ${accentColor}` : 
+          `2px 2px 0px ${accentColor}, -2px -2px 0px ${accentColor}`,
       };
     case 'dynamic':
       return {
         ...baseStyle,
         background: accentColor,
+        border: '2px solid #FFFFFF',
         transform: isHovered ? 'translateY(-2px) skew(-5deg)' : 'skew(-5deg)',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.1)',
+        boxShadow: isHovered ? '6px 6px 0px rgba(0,0,0,0.4)' : '4px 4px 0px rgba(0,0,0,0.3)',
       };
     case 'spotlight':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '6px',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.25)' : '0 4px 8px rgba(0,0,0,0.15)',
+        border: '4px double #FFFFFF',
+        boxShadow: isHovered ? 
+          '0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.3)' : 
+          '0 0 5px rgba(255,255,255,0.3)',
       };
     case 'wave':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
+        border: '2px solid #FFFFFF',
         transform: isHovered ? 'translateY(-2px) rotate(-1deg)' : 'rotate(-1deg)',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.1)',
+        boxShadow: isHovered ? '4px 4px 0px #FFFFFF' : '2px 2px 0px #FFFFFF',
       };
     case 'cinematic':
       return {
         ...baseStyle,
-        background: accentColor,
-        border: '1px solid rgba(255,255,255,0.2)',
-        letterSpacing: '0.1em',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.25)' : '0 4px 8px rgba(0,0,0,0.15)',
+        background: 'transparent',
+        border: '2px solid #FFFFFF',
+        boxShadow: isHovered ? 
+          `inset 0 0 0 2px ${accentColor}, 0 0 10px rgba(255,255,255,0.3)` : 
+          `inset 0 0 0 0 ${accentColor}`,
       };
     case 'minimal-fade':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
+        border: '1px solid rgba(255,255,255,0.3)',
         opacity: isHovered ? '1' : '0.9',
-        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.2)' : 'none',
       };
     case 'duotone':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '6px',
-        border: '1px solid rgba(255,255,255,0.2)',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.2)' : '0 4px 6px rgba(0,0,0,0.1)',
+        border: '2px solid #FFFFFF',
+        boxShadow: isHovered ? '6px 6px 0px #FFFFFF' : '4px 4px 0px #FFFFFF',
+        transform: isHovered ? 'translate(-2px, -2px)' : 'none',
       };
     case 'vignette':
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
-        boxShadow: isHovered ? '0 6px 12px rgba(0,0,0,0.25)' : '0 4px 8px rgba(0,0,0,0.15)',
+        border: '3px solid rgba(255,255,255,0.5)',
+        boxShadow: isHovered ? 
+          'inset 0 0 20px rgba(255,255,255,0.3), 0 0 10px rgba(0,0,0,0.3)' : 
+          'inset 0 0 10px rgba(255,255,255,0.2)',
       };
     case 'luxury':
       return {
         ...baseStyle,
         background: 'transparent',
-        border: `1px solid ${accentColor}`,
-        letterSpacing: '0.1em',
-        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.1)',
+        border: `2px solid ${accentColor}`,
+        boxShadow: isHovered ? 
+          `4px 4px 0px ${accentColor}, -4px -4px 0px ${accentColor}` : 
+          `2px 2px 0px ${accentColor}, -2px -2px 0px ${accentColor}`,
       };
     default:
       return {
         ...baseStyle,
         background: accentColor,
-        borderRadius: '4px',
-        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.15)' : '0 2px 4px rgba(0,0,0,0.1)',
+        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
       };
   }
 }
