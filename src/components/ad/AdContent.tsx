@@ -37,6 +37,7 @@ export function AdContent({
   const elementStartPos = useRef<Position>({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent, type: 'headline' | 'cta') => {
+    e.preventDefault(); // Prevent text selection
     const setIsDragging = type === 'headline' ? setIsDraggingHeadline : setIsDraggingCta;
     const currentPos = type === 'headline' ? headlinePos : ctaPos;
     
@@ -48,6 +49,7 @@ export function AdContent({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDraggingHeadline && !isDraggingCta) return;
 
+    e.preventDefault(); // Prevent unwanted behaviors
     const dx = e.clientX - dragStartPos.current.x;
     const dy = e.clientY - dragStartPos.current.y;
 
@@ -94,7 +96,11 @@ export function AdContent({
               )}
               style={{
                 transform: `translate(${headlinePos.x}px, ${headlinePos.y}px)`,
-                transition: isDraggingHeadline ? 'none' : 'transform 0.1s ease-out'
+                transition: isDraggingHeadline ? 'none' : 'transform 0.1s ease-out',
+                userSelect: 'none',
+                touchAction: 'none',
+                position: 'relative',
+                zIndex: isDraggingHeadline ? 50 : 1
               }}
               onMouseDown={(e) => handleMouseDown(e, 'headline')}
             >
@@ -119,7 +125,11 @@ export function AdContent({
               )}
               style={{
                 transform: `translate(${ctaPos.x}px, ${ctaPos.y}px)`,
-                transition: isDraggingCta ? 'none' : 'transform 0.1s ease-out'
+                transition: isDraggingCta ? 'none' : 'transform 0.1s ease-out',
+                userSelect: 'none',
+                touchAction: 'none',
+                position: 'relative',
+                zIndex: isDraggingCta ? 50 : 1
               }}
               onMouseDown={(e) => handleMouseDown(e, 'cta')}
             >
