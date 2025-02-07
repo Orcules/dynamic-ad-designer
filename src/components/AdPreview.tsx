@@ -33,6 +33,7 @@ interface AdPreviewProps {
   headlinePosition: Position;
   descriptionPosition: Position;
   ctaPosition: Position;
+  showArrows?: boolean;
 }
 
 export function AdPreview({ 
@@ -57,6 +58,7 @@ export function AdPreview({
   headlinePosition,
   descriptionPosition,
   ctaPosition,
+  showArrows = true,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -198,7 +200,7 @@ export function AdPreview({
               />
             </div>
           </div>
-          {imageUrls.length > 1 && (
+          {showArrows && imageUrls.length > 1 && (
             <AdNavigationControls
               onPrevious={onPrevious!}
               onNext={onNext!}

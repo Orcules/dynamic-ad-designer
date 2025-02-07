@@ -8,6 +8,7 @@ import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
 import { AdPositionControls } from "./ad/AdPositionControls";
 import { Button } from "./ui/button";
+import { Checkbox } from "./ui/checkbox";
 
 interface Template {
   id: string;
@@ -43,6 +44,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [headlinePosition, setHeadlinePosition] = useState({ x: 0, y: 0 });
   const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
   const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
+  const [showArrows, setShowArrows] = useState(true);
 
   const {
     selectedImages,
@@ -199,8 +201,23 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             headlinePosition={headlinePosition}
             descriptionPosition={descriptionPosition}
             ctaPosition={ctaPosition}
+            showArrows={showArrows}
           />
         </AdPreviewCapture>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="show-arrows"
+            checked={showArrows}
+            onCheckedChange={(checked) => setShowArrows(checked as boolean)}
+          />
+          <label
+            htmlFor="show-arrows"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Show Navigation Arrows
+          </label>
+        </div>
 
         <AdPositionControls
           headlinePosition={headlinePosition}
