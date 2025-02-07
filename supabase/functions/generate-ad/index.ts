@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { BrowserManager } from "./browserManager.ts";
-import { generateAdHtml } from "./htmlGenerator.ts";
+import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { StorageManager } from "./storageManager.ts";
 
 const corsHeaders = {
@@ -16,7 +15,6 @@ serve(async (req) => {
   const uploadId = crypto.randomUUID();
   console.log(`[${uploadId}] Starting ad generation process`);
 
-  const browserManager = new BrowserManager();
   const storageManager = new StorageManager();
 
   try {
@@ -34,28 +32,60 @@ serve(async (req) => {
     const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, image);
     console.log(`[${uploadId}] Original image URL:`, originalImageUrl);
 
-    console.log(`[${uploadId}] Launching browser`);
-    await browserManager.launch();
+    // Create canvas with the specified dimensions
+    const canvas = createCanvas(data.width, data.height);
+    const ctx = canvas.getContext('2d');
 
-    const page = await browserManager.createPage(data.width, data.height);
-    
+    // Load and draw the background image
     const imageArrayBuffer = await (image as Blob).arrayBuffer();
-    const imageBase64 = btoa(String.fromCharCode(...new Uint8Array(imageArrayBuffer)));
+    const backgroundImage = await loadImage(imageArrayBuffer);
+    ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
 
-    const html = generateAdHtml(data, imageBase64);
-    await page.setContent(html);
-    console.log(`[${uploadId}] Page content set`);
+    // Add overlay
+    ctx.fillStyle = data.overlay_color;
+    ctx.globalAlpha = data.overlayOpacity;
+    ctx.fillRect(0, 0, data.width, data.height);
+    ctx.globalAlpha = 1;
 
-    const screenshotBuffer = await page.screenshot({
-      type: 'jpeg',
-      quality: 90
-    });
+    // Configure text settings
+    ctx.fillStyle = data.text_color;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-    console.log(`[${uploadId}] Screenshot taken`);
-    await browserManager.close();
-    console.log(`[${uploadId}] Browser closed`);
+    // Draw headline
+    const fontSize = Math.floor(data.width * 0.06);
+    ctx.font = `bold ${fontSize}px ${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ') || 'Arial'}`;
+    ctx.fillText(data.headline, data.width / 2, data.height * 0.4, data.width * 0.8);
 
-    const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, screenshotBuffer);
+    // Draw description
+    if (data.description) {
+      const descFontSize = Math.floor(fontSize * 0.7);
+      ctx.font = `${descFontSize}px ${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ') || 'Arial'}`;
+      ctx.fillStyle = data.description_color;
+      ctx.fillText(data.description, data.width / 2, data.height * 0.5, data.width * 0.8);
+    }
+
+    // Draw CTA button
+    if (data.cta_text) {
+      const buttonWidth = Math.min(data.width * 0.4, 200);
+      const buttonHeight = Math.floor(fontSize * 1.5);
+      const buttonX = (data.width - buttonWidth) / 2;
+      const buttonY = data.height * 0.7;
+
+      ctx.fillStyle = data.cta_color;
+      ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, buttonHeight / 2);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = `bold ${Math.floor(fontSize * 0.6)}px ${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ') || 'Arial'}`;
+      ctx.fillText(data.cta_text, data.width / 2, buttonY + buttonHeight / 2, buttonWidth * 0.9);
+    }
+
+    // Convert canvas to buffer
+    const imageBuffer = canvas.toBuffer();
+
+    // Upload generated image
+    const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer);
     console.log(`[${uploadId}] Generated image URL:`, generatedImageUrl);
 
     return new Response(
@@ -71,8 +101,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error(`[${uploadId}] Error:`, error);
-    await browserManager.close();
-    console.log(`[${uploadId}] Browser closed after error`);
     
     return new Response(
       JSON.stringify({
