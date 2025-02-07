@@ -8,7 +8,7 @@ import { capturePreview } from "@/utils/adPreviewCapture";
 
 type RenderProps = {
   isGenerating: boolean;
-  handleSubmission: (adData: any, imageFile: File, previewFile: File, onSuccess: (newAd: any) => void) => Promise<void>;
+  handleSubmission: (adData: any, imageFile: File, previewRef: React.RefObject<HTMLDivElement>, onSuccess: (newAd: any) => void) => Promise<void>;
 };
 
 interface AdSubmissionHandlerProps {
@@ -105,7 +105,7 @@ export const AdSubmissionHandler: React.FC<AdSubmissionHandlerProps> = ({
   onSubmit, 
   children 
 }) => {
-  const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
+  const { isGenerating, handleSubmission } = useAdSubmission();
 
   const renderProps: RenderProps = {
     isGenerating,

@@ -94,13 +94,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imageFile = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
           }
 
+          const previewRef = React.createRef<HTMLDivElement>();
+          
           await handleSubmission(
             {
               ...enrichedAdData,
               name: `${adData.name}-${i + 1}`
             },
             imageFile,
-            imageFile,
+            previewRef,
             onAdGenerated
           );
         } catch (error) {
