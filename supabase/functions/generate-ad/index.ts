@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,22 +17,29 @@ serve(async (req) => {
 
   try {
     const formData = await req.formData();
-    const image = formData.get('image');
+    const imageData = formData.get('image');
     const dataString = formData.get('data');
     
-    if (!image || !dataString) {
+    if (!imageData || !dataString) {
       throw new Error('Missing required fields');
     }
 
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
+    // Convert FormData image to ArrayBuffer
+    let imageArrayBuffer: ArrayBuffer;
+    if (imageData instanceof File || imageData instanceof Blob) {
+      imageArrayBuffer = await imageData.arrayBuffer();
+    } else {
+      throw new Error('Invalid image data');
+    }
+
     // Create canvas with the specified dimensions
     const canvas = createCanvas(data.width, data.height);
     const ctx = canvas.getContext('2d');
 
     // Load and draw the background image
-    const imageArrayBuffer = await (image as Blob).arrayBuffer();
     const backgroundImage = await loadImage(imageArrayBuffer);
     ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
 
