@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
 import { getDimensions } from "@/utils/adDimensions";
@@ -45,6 +46,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [showCtaArrow, setShowCtaArrow] = useState(true);
+  const previewRef = useRef<HTMLDivElement>(null);
 
   const {
     selectedImages,
@@ -73,6 +75,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       return;
     }
 
+    if (!previewRef.current) {
+      toast.error('Preview element not found');
+      return;
+    }
+
     setIsGenerating(true);
 
     try {
@@ -93,8 +100,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             const blob = await response.blob();
             imageFile = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
           }
-
-          const previewRef = React.createRef<HTMLDivElement>();
           
           await handleSubmission(
             {
@@ -142,7 +147,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         />
       </div>
       
-      <div className="w-full lg:w-1/2 space-y-6">
+      <div className="w-full lg:w-1/2 space-y-6" ref={previewRef}>
         <AdPreviewCapture onCapture={(file) => console.log('Preview captured:', file)}>
           <AdPreview
             imageUrl={imageUrls[currentPreviewIndex]}
@@ -194,6 +199,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       </div>
     </div>
   );
-}
+};
 
 export default AdEditor;
+

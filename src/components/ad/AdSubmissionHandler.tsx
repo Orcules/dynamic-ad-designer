@@ -30,6 +30,11 @@ export const useAdSubmission = () => {
       return;
     }
 
+    if (!previewRef.current) {
+      toast.error('Preview element not found');
+      return;
+    }
+
     const uploadId = crypto.randomUUID();
     const uploadedFiles: string[] = [];
     
@@ -58,6 +63,7 @@ export const useAdSubmission = () => {
       uploadedFiles.push(originalPath);
       
       // יצירת ושמירת תצוגה מקדימה
+      console.log(`Capturing preview [${uploadId}]`);
       const previewFile = await capturePreview(previewRef, adData.platform);
       if (!previewFile) {
         throw new Error('Failed to capture preview');
@@ -120,3 +126,4 @@ export const AdSubmissionHandler: React.FC<AdSubmissionHandlerProps> = ({
     </div>
   );
 };
+

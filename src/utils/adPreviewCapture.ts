@@ -1,3 +1,4 @@
+
 import html2canvas from "html2canvas";
 
 export async function capturePreview(
@@ -12,6 +13,7 @@ export async function capturePreview(
   let adElement: Element | null = null;
   
   try {
+    // Find the ad-content element within the preview container
     adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
       console.error('Ad content element not found');
@@ -61,6 +63,7 @@ export async function capturePreview(
 
     // Get exact dimensions after layout is stable
     const rect = adElement.getBoundingClientRect();
+    console.log('Captured element dimensions:', { width: rect.width, height: rect.height });
     
     // Create canvas with exact dimensions
     const canvas = await html2canvas(adElement as HTMLElement, {
