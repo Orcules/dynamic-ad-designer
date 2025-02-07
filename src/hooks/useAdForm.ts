@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 export const useAdForm = () => {
@@ -8,7 +9,7 @@ export const useAdForm = () => {
     cta_text: "",
     font_url: "",
     platform: "instagram-story",
-    template_style: "",
+    template_style: "modern", // Set default value here
     accent_color: "#4A90E2",
     cta_color: "#4A90E2",
     overlay_color: "#000000",
@@ -30,7 +31,11 @@ export const useAdForm = () => {
   };
 
   const handleStyleChange = (value: string) => {
-    setAdData(prev => ({ ...prev, template_style: value }));
+    // Ensure template_style is never empty
+    setAdData(prev => ({ 
+      ...prev, 
+      template_style: value || "modern"
+    }));
   };
 
   const handleColorChange = (value: string) => {
