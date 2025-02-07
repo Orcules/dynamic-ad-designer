@@ -167,6 +167,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onCtaColorChange={handleCtaColorChange}
           onOverlayColorChange={handleOverlayColorChange}
           onTextColorChange={handleTextColorChange}
+          onDescriptionColorChange={handleDescriptionColorChange}
           onImageChange={handleImageChange}
           onImageUrlsChange={handleImageUrlsChange}
           overlayOpacity={overlayOpacity}
