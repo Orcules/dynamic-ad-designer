@@ -209,8 +209,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onHeadlinePositionChange={setHeadlinePosition}
           onDescriptionPositionChange={setDescriptionPosition}
           onCtaPositionChange={setCtaPosition}
-          descriptionColor={adData.description_color}
-          onDescriptionColorChange={handleDescriptionColorChange}
         />
 
         <Button 
