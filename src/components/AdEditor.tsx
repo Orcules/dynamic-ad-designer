@@ -45,6 +45,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
   const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
   const [showArrows, setShowArrows] = useState(true);
+  const [showCtaArrow, setShowCtaArrow] = useState(true);
 
   const {
     selectedImages,
@@ -202,6 +203,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             descriptionPosition={descriptionPosition}
             ctaPosition={ctaPosition}
             showArrows={showArrows}
+            showCtaArrow={showCtaArrow}
           />
         </AdPreviewCapture>
 
@@ -216,6 +218,20 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             Show Navigation Arrows
+          </label>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="show-cta-arrow"
+            checked={showCtaArrow}
+            onCheckedChange={(checked) => setShowCtaArrow(checked as boolean)}
+          />
+          <label
+            htmlFor="show-cta-arrow"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Show CTA Arrow
           </label>
         </div>
 

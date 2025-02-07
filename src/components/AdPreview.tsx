@@ -34,6 +34,7 @@ interface AdPreviewProps {
   descriptionPosition: Position;
   ctaPosition: Position;
   showArrows?: boolean;
+  showCtaArrow?: boolean;
 }
 
 export function AdPreview({ 
@@ -59,6 +60,7 @@ export function AdPreview({
   descriptionPosition,
   ctaPosition,
   showArrows = true,
+  showCtaArrow = true,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -197,6 +199,7 @@ export function AdPreview({
                 headlinePosition={headlinePosition}
                 descriptionPosition={descriptionPosition}
                 ctaPosition={ctaPosition}
+                showCtaArrow={showCtaArrow}
               />
             </div>
           </div>

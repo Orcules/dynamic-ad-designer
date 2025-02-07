@@ -22,6 +22,7 @@ interface AdContentProps {
   headlinePosition: Position;
   descriptionPosition: Position;
   ctaPosition: Position;
+  showCtaArrow?: boolean;
 }
 
 export function AdContent({
@@ -37,6 +38,7 @@ export function AdContent({
   headlinePosition,
   descriptionPosition,
   ctaPosition,
+  showCtaArrow = true,
 }: AdContentProps) {
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
 
@@ -70,6 +72,7 @@ export function AdContent({
             position={ctaPosition}
             isButtonHovered={isButtonHovered}
             onButtonHover={onButtonHover}
+            showArrow={showCtaArrow}
           />
         </div>
       </div>

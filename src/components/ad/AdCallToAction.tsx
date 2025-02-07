@@ -1,4 +1,6 @@
 import React from 'react';
+import { ArrowBigDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Position {
   x: number;
@@ -11,6 +13,7 @@ interface AdCallToActionProps {
   position: Position;
   isButtonHovered: boolean;
   onButtonHover: (isHovered: boolean) => void;
+  showArrow?: boolean;
 }
 
 export const AdCallToAction: React.FC<AdCallToActionProps> = ({
@@ -18,7 +21,8 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
   buttonStyle,
   position,
   isButtonHovered,
-  onButtonHover
+  onButtonHover,
+  showArrow = true
 }) => {
   if (!ctaText) return null;
 
@@ -52,6 +56,14 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         <span className="block whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
           {ctaText}
         </span>
+        {showArrow && (
+          <ArrowBigDown 
+            className={cn(
+              "w-4 h-4 transition-transform duration-300",
+              isButtonHovered ? "translate-y-1" : ""
+            )}
+          />
+        )}
       </div>
     </div>
   );
