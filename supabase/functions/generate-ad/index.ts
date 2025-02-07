@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
-import { StorageManager } from "./storageManager.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,8 +14,6 @@ serve(async (req) => {
   const uploadId = crypto.randomUUID();
   console.log(`[${uploadId}] Starting ad generation process`);
 
-  const storageManager = new StorageManager();
-
   try {
     const formData = await req.formData();
     const image = formData.get('image');
@@ -28,9 +25,6 @@ serve(async (req) => {
 
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
-
-    const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, image);
-    console.log(`[${uploadId}] Original image URL:`, originalImageUrl);
 
     // Create canvas with the specified dimensions
     const canvas = createCanvas(data.width, data.height);
@@ -72,27 +66,57 @@ serve(async (req) => {
       const buttonX = (data.width - buttonWidth) / 2;
       const buttonY = data.height * 0.7;
 
+      // Draw button background
       ctx.fillStyle = data.cta_color;
       ctx.beginPath();
-      ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, buttonHeight / 2);
+      // Create rounded rectangle manually since roundRect isn't universally supported
+      const radius = buttonHeight / 2;
+      ctx.moveTo(buttonX + radius, buttonY);
+      ctx.lineTo(buttonX + buttonWidth - radius, buttonY);
+      ctx.arc(buttonX + buttonWidth - radius, buttonY + radius, radius, -Math.PI/2, Math.PI/2);
+      ctx.lineTo(buttonX + radius, buttonY + buttonHeight);
+      ctx.arc(buttonX + radius, buttonY + radius, radius, Math.PI/2, -Math.PI/2);
+      ctx.closePath();
       ctx.fill();
 
+      // Draw button text
       ctx.fillStyle = '#FFFFFF';
       ctx.font = `bold ${Math.floor(fontSize * 0.6)}px Arial`;
       ctx.fillText(data.cta_text, data.width / 2, buttonY + buttonHeight / 2, buttonWidth * 0.9);
     }
 
-    // Convert canvas to buffer
+    // Convert canvas to buffer and upload
     const imageBuffer = canvas.toBuffer();
+    const timestamp = Date.now();
+    const filePath = `generated/${uploadId}_${timestamp}_preview.png`;
 
-    // Upload generated image
-    const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer);
+    // Upload to Supabase Storage
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { error: uploadError } = await supabase.storage
+      .from('ad-images')
+      .upload(filePath, imageBuffer, {
+        contentType: 'image/png',
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      throw new Error(`Failed to upload generated image: ${uploadError.message}`);
+    }
+
+    const { data: { publicUrl: generatedImageUrl } } = supabase.storage
+      .from('ad-images')
+      .getPublicUrl(filePath);
+
     console.log(`[${uploadId}] Generated image URL:`, generatedImageUrl);
 
     return new Response(
       JSON.stringify({
         imageUrl: generatedImageUrl,
-        originalImageUrl,
         success: true
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -106,7 +130,7 @@ serve(async (req) => {
         error: error.message,
         success: false
       }),
-      {
+      { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
