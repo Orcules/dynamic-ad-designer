@@ -3,12 +3,38 @@ import { useState, useEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import { Sparkles, ExternalLink } from "lucide-react";
+
+interface GeneratedAd {
+  id: string;
+  name: string;
+  image_url: string;
+}
 
 const Index = () => {
+  const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([]);
+
   useEffect(() => {
     document.documentElement.classList.add('dark');
+    fetchGeneratedAds();
   }, []);
+
+  const fetchGeneratedAds = async () => {
+    const { data, error } = await supabase
+      .from('generated_ads')
+      .select('id, name, image_url')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error("Error fetching ads:", error);
+      toast.error("Error loading ads");
+      return;
+    }
+
+    if (data) {
+      setGeneratedAds(data);
+    }
+  };
 
   const handleAdGenerated = async (adData: any) => {
     try {
@@ -38,6 +64,7 @@ const Index = () => {
       if (error) throw error;
       
       toast.success("Ad created successfully");
+      fetchGeneratedAds(); // Refresh the list after creation
     } catch (error) {
       console.error("Error generating ad:", error);
       toast.error("Error creating ad");
@@ -71,6 +98,30 @@ const Index = () => {
             onAdGenerated={handleAdGenerated} 
           />
         </div>
+
+        {generatedAds.length > 0 && (
+          <div className="space-y-4 backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
+            <h2 className="text-xl font-semibold mb-4">Generated Ads</h2>
+            <div className="space-y-2">
+              {generatedAds.map((ad) => (
+                <div 
+                  key={ad.id} 
+                  className="flex items-center justify-between p-3 bg-card rounded-lg hover:bg-accent/5 transition-colors"
+                >
+                  <span className="text-sm font-medium">{ad.name}</span>
+                  <a
+                    href={ad.image_url || '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+                  >
+                    View Ad <ExternalLink className="h-4 w-4" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
