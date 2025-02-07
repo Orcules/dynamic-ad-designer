@@ -1,6 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,32 +28,6 @@ serve(async (req: Request) => {
 
     const imageArrayBuffer = await (image as Blob).arrayBuffer();
     const imageBase64 = btoa(String.fromCharCode(...new Uint8Array(imageArrayBuffer)));
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const originalFileName = `original/${uploadId}_${Date.now()}.jpg`;
-    console.log(`[${uploadId}] Uploading original image:`, originalFileName);
-
-    const { error: uploadError } = await supabase.storage
-      .from('ad-images')
-      .upload(originalFileName, image as Blob, {
-        contentType: 'image/jpeg',
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.error(`[${uploadId}] Upload error:`, uploadError);
-      throw new Error('Failed to upload original image');
-    }
-
-    const { data: { publicUrl: originalImageUrl } } = supabase.storage
-      .from('ad-images')
-      .getPublicUrl(originalFileName);
-
-    console.log(`[${uploadId}] Original image URL:`, originalImageUrl);
 
     let browser = null;
     try {
@@ -166,32 +139,16 @@ serve(async (req: Request) => {
       browser = null;
       console.log(`[${uploadId}] Browser closed`);
 
-      const generatedFileName = `generated/${uploadId}_${Date.now()}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
+      const timestamp = Date.now();
+      const fileName = `${uploadId}_${timestamp}.jpg`;
+      const generatedFileName = `generated/${fileName}`;
       
-      console.log(`[${uploadId}] Uploading generated image:`, generatedFileName);
-      const { error: saveError } = await supabase.storage
-        .from('ad-images')
-        .upload(generatedFileName, screenshotBuffer, {
-          contentType: 'image/jpeg',
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (saveError) {
-        console.error(`[${uploadId}] Save error:`, saveError);
-        throw new Error('Failed to save generated image');
-      }
-
-      const { data: { publicUrl: generatedImageUrl } } = supabase.storage
-        .from('ad-images')
-        .getPublicUrl(generatedFileName);
-
-      console.log(`[${uploadId}] Generated image URL:`, generatedImageUrl);
+      console.log(`[${uploadId}] Generated file name:`, generatedFileName);
 
       return new Response(
         JSON.stringify({
-          imageUrl: generatedImageUrl,
-          originalImageUrl,
+          imageBuffer: Array.from(new Uint8Array(screenshotBuffer)),
+          fileName: generatedFileName,
           success: true
         }),
         {
