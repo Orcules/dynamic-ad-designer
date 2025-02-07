@@ -13,13 +13,24 @@ const Index = () => {
   const handleAdGenerated = async (adData: any) => {
     try {
       const { data, error } = await supabase
-        .from('ads')
+        .from('generated_ads')
         .insert([
           {
-            title: adData.title,
-            image_url: adData.imageUrl,
+            name: adData.headline || 'Untitled Ad',
+            headline: adData.headline,
+            description: adData.description,
+            cta_text: adData.cta_text,
+            font_url: adData.font_url,
             platform: adData.platform,
-            created_at: new Date().toISOString()
+            template_style: adData.template_style,
+            accent_color: adData.accent_color,
+            cta_color: adData.cta_color,
+            overlay_color: adData.overlay_color,
+            text_color: adData.text_color,
+            description_color: adData.description_color,
+            image_url: adData.imageUrl,
+            width: adData.width || 1080,
+            height: adData.height || 1920
           }
         ])
         .select();

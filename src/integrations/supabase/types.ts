@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ads: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string | null
+          platform: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          platform?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          platform?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
       generated_ads: {
         Row: {
           accent_color: string | null
