@@ -72,6 +72,15 @@ function generateAdName(adData: any) {
     .replace(/^-|-$/g, '');      // Remove leading and trailing hyphens
 }
 
+const validTemplateStyles = [
+  'modern', 'elegant', 'dynamic', 'spotlight', 'wave', 
+  'cinematic', 'minimal-fade', 'duotone', 'vignette', 'luxury',
+  'overlay-bottom-clean', 'overlay-bottom-gradient', 'overlay-bottom-glass',
+  'overlay-bottom-neon', 'overlay-bottom-minimal', 'neon', 'split',
+  'gradient', 'outline', 'stacked', 'minimal', 'retro', 'glassmorphism',
+  '3d', 'vintage', 'tech', 'nature', 'urban', 'artistic'
+];
+
 export const handleAdSubmission = async ({
   adData,
   selectedImage,
@@ -150,8 +159,10 @@ export const handleAdSubmission = async ({
 
     console.log('Got public URL for preview:', previewUrl);
 
-    const validTemplateStyles = ['modern', 'elegant', 'dynamic', 'spotlight', 'wave', 'cinematic', 'minimal-fade', 'duotone', 'vignette'];
-    const templateStyle = validTemplateStyles.includes(adData.template_style) ? adData.template_style : 'modern';
+    // Ensure template style is valid
+    const templateStyle = validTemplateStyles.includes(adData.template_style) 
+      ? adData.template_style 
+      : 'modern';
     
     const adName = generateAdName(adData);
     const { data: newAd, error: createError } = await supabase
@@ -159,11 +170,16 @@ export const handleAdSubmission = async ({
       .insert([{
         name: adName,
         headline: adData.headline,
+        description: adData.description,
         cta_text: adData.cta_text,
         font_url: adData.font_url,
         platform: adData.platform,
         template_style: templateStyle,
         accent_color: adData.accent_color,
+        cta_color: adData.cta_color,
+        overlay_color: adData.overlay_color,
+        text_color: adData.text_color,
+        description_color: adData.description_color,
         width,
         height,
         image_url: previewUrl,
