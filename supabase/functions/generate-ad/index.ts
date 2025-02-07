@@ -77,7 +77,6 @@ serve(async (req) => {
       // Draw button background
       ctx.fillStyle = data.cta_color;
       ctx.beginPath();
-      // Create rounded rectangle manually since roundRect isn't universally supported
       const radius = buttonHeight / 2;
       ctx.moveTo(buttonX + radius, buttonY);
       ctx.lineTo(buttonX + buttonWidth - radius, buttonY);

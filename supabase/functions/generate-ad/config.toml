@@ -1,1 +1,10 @@
-project_id = "mmzlufnvxzqdkreatybs"
+[build]
+cmd = "deno task build"
+
+[deploy]
+cmd = "deno task start"
+
+[[headers]]
+for = "/*"
+[headers.values]
+Access-Control-Allow-Origin = "*"
