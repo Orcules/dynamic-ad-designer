@@ -25,6 +25,7 @@ interface AdFormProps {
   adData: {
     name: string;
     headline: string;
+    description: string;
     cta_text: string;
     font_url: string;
     platform: string;
@@ -174,6 +175,17 @@ export function AdForm({
           onChange={onInputChange}
           placeholder="Enter ad headline"
           required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Input
+          id="description"
+          name="description"
+          value={adData.description}
+          onChange={onInputChange}
+          placeholder="Enter ad description"
         />
       </div>
 

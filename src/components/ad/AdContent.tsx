@@ -4,6 +4,8 @@ import { useState, useRef } from "react";
 
 interface AdContentProps {
   headline?: string;
+  description?: string;
+  descriptionStyle?: any;
   ctaText?: string;
   textStyle: any;
   buttonStyle: any;
@@ -19,6 +21,8 @@ interface Position {
 
 export function AdContent({
   headline,
+  description,
+  descriptionStyle,
   ctaText,
   textStyle,
   buttonStyle,
@@ -26,20 +30,30 @@ export function AdContent({
   isButtonHovered,
   onButtonHover,
 }: AdContentProps) {
-  if (!headline && !ctaText) return null;
+  if (!headline && !description && !ctaText) return null;
 
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
   const [headlinePos, setHeadlinePos] = useState<Position>({ x: 0, y: 0 });
+  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 0 });
   const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 0 });
   const [isDraggingHeadline, setIsDraggingHeadline] = useState(false);
+  const [isDraggingDescription, setIsDraggingDescription] = useState(false);
   const [isDraggingCta, setIsDraggingCta] = useState(false);
   const dragStartPos = useRef<Position>({ x: 0, y: 0 });
   const elementStartPos = useRef<Position>({ x: 0, y: 0 });
 
-  const handleMouseDown = (e: React.MouseEvent, type: 'headline' | 'cta') => {
-    e.preventDefault(); // Prevent text selection
-    const setIsDragging = type === 'headline' ? setIsDraggingHeadline : setIsDraggingCta;
-    const currentPos = type === 'headline' ? headlinePos : ctaPos;
+  const handleMouseDown = (e: React.MouseEvent, type: 'headline' | 'description' | 'cta') => {
+    e.preventDefault();
+    const setIsDragging = type === 'headline' 
+      ? setIsDraggingHeadline 
+      : type === 'description'
+      ? setIsDraggingDescription
+      : setIsDraggingCta;
+    const currentPos = type === 'headline' 
+      ? headlinePos 
+      : type === 'description'
+      ? descriptionPos
+      : ctaPos;
     
     setIsDragging(true);
     dragStartPos.current = { x: e.clientX, y: e.clientY };
@@ -47,14 +61,21 @@ export function AdContent({
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingHeadline && !isDraggingCta) return;
+    if (!isDraggingHeadline && !isDraggingDescription && !isDraggingCta) return;
 
-    e.preventDefault(); // Prevent unwanted behaviors
+    e.preventDefault();
     const dx = e.clientX - dragStartPos.current.x;
     const dy = e.clientY - dragStartPos.current.y;
 
     if (isDraggingHeadline) {
       setHeadlinePos({
+        x: elementStartPos.current.x + dx,
+        y: elementStartPos.current.y + dy,
+      });
+    }
+
+    if (isDraggingDescription) {
+      setDescriptionPos({
         x: elementStartPos.current.x + dx,
         y: elementStartPos.current.y + dy,
       });
@@ -70,6 +91,7 @@ export function AdContent({
 
   const handleMouseUp = () => {
     setIsDraggingHeadline(false);
+    setIsDraggingDescription(false);
     setIsDraggingCta(false);
   };
 
@@ -107,13 +129,40 @@ export function AdContent({
               <h2 
                 className={cn(
                   "text-center leading-tight break-words",
-                  isBottomOverlay ? "max-w-full" : "max-w-[90%]",
-                  templateStyle === 'minimal' ? 'text-black' : 'text-white'
+                  isBottomOverlay ? "max-w-full" : "max-w-[90%]"
                 )}
                 style={textStyle}
               >
                 {headline}
               </h2>
+            </div>
+          )}
+
+          {description && (
+            <div 
+              className={cn(
+                "px-6 mt-4 cursor-move",
+                isDraggingDescription && "select-none"
+              )}
+              style={{
+                transform: `translate(${descriptionPos.x}px, ${descriptionPos.y}px)`,
+                transition: isDraggingDescription ? 'none' : 'transform 0.1s ease-out',
+                userSelect: 'none',
+                touchAction: 'none',
+                position: 'relative',
+                zIndex: isDraggingDescription ? 50 : 1
+              }}
+              onMouseDown={(e) => handleMouseDown(e, 'description')}
+            >
+              <p 
+                className={cn(
+                  "text-center leading-tight break-words text-sm",
+                  isBottomOverlay ? "max-w-full" : "max-w-[90%]"
+                )}
+                style={descriptionStyle}
+              >
+                {description}
+              </p>
             </div>
           )}
           

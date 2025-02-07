@@ -24,6 +24,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [adData, setAdData] = useState({
     name: "",
     headline: "",
+    description: "", // Added new field
     cta_text: "",
     font_url: "",
     platform: "instagram-story",
@@ -31,8 +32,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     accent_color: "#4A90E2",
     cta_color: "#4A90E2",
     overlay_color: "#000000",
-    text_color: "#FFFFFF"
+    text_color: "#FFFFFF",
+    description_color: "#333333" // Added new field for description color
   });
+
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
 
@@ -168,6 +171,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           width={width}
           height={height}
           headline={adData.headline}
+          description={adData.description}
+          descriptionColor={adData.description_color}
           ctaText={adData.cta_text}
           templateStyle={adData.template_style}
           accentColor={adData.accent_color}

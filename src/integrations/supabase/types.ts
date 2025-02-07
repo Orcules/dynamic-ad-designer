@@ -25,6 +25,7 @@ export type Database = {
           platform: string | null
           status: string | null
           template_style: string | null
+          text_color: string | null
           width: number
         }
         Insert: {
@@ -42,6 +43,7 @@ export type Database = {
           platform?: string | null
           status?: string | null
           template_style?: string | null
+          text_color?: string | null
           width: number
         }
         Update: {
@@ -59,6 +61,7 @@ export type Database = {
           platform?: string | null
           status?: string | null
           template_style?: string | null
+          text_color?: string | null
           width?: number
         }
         Relationships: []

@@ -11,6 +11,8 @@ interface AdPreviewProps {
   width: number;
   height: number;
   headline?: string;
+  description?: string;
+  descriptionColor?: string;
   ctaText?: string;
   templateStyle?: string;
   accentColor?: string;
@@ -29,7 +31,9 @@ export function AdPreview({
   imageUrl, 
   width, 
   height, 
-  headline, 
+  headline,
+  description,
+  descriptionColor = "#333333",
   ctaText, 
   templateStyle,
   accentColor = "#4A90E2",
@@ -116,6 +120,14 @@ export function AdPreview({
     textColor: textColor,
     fontFamily 
   });
+
+  const descriptionStyle = getTextStyle({
+    style: templateStyle,
+    accentColor: overlayColor,
+    textColor: descriptionColor,
+    fontFamily,
+    fontSize: 'smaller'
+  });
   
   const buttonStyle = getButtonStyle({ 
     style: templateStyle, 
@@ -161,6 +173,8 @@ export function AdPreview({
             >
               <AdContent
                 headline={headline}
+                description={description}
+                descriptionStyle={descriptionStyle}
                 ctaText={ctaText}
                 textStyle={textStyle}
                 buttonStyle={buttonStyle}
