@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { Browser } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   let uploadId: string | null = null;
-  let browser: Browser | null = null;
+  let browser = null;
 
   try {
     const formData = await req.formData();
@@ -159,8 +159,10 @@ serve(async (req) => {
       </html>
     `;
 
-    console.log(`[${uploadId}] Creating browser`);
-    browser = await Deno.createBrowser();
+    console.log(`[${uploadId}] Launching browser`);
+    browser = await puppeteer.launch({
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
     const page = await browser.newPage();
     
     await page.setViewport({
