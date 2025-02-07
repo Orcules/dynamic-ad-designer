@@ -20,7 +20,7 @@ const Index = () => {
   }, []);
 
   const fetchGeneratedAds = async () => {
-    console.log("Fetching generated ads...");
+    console.log("Starting to fetch generated ads...");
     const { data, error } = await supabase
       .from('generated_ads')
       .select('id, name, image_url')
@@ -33,8 +33,11 @@ const Index = () => {
     }
 
     if (data) {
-      console.log("Successfully fetched ads:", data);
+      console.log("Successfully fetched ads. Count:", data.length);
+      console.log("Fetched ads data:", data);
       setGeneratedAds(data);
+    } else {
+      console.log("No ads data returned");
     }
   };
 
@@ -43,11 +46,13 @@ const Index = () => {
     
     try {
       if (!adData.headline) {
+        console.log("Validation failed: Missing headline");
         toast.error("Please enter a headline");
         return;
       }
 
       if (!adData.imageUrl) {
+        console.log("Validation failed: Missing image");
         toast.error("Please provide an image");
         return;
       }
@@ -67,25 +72,27 @@ const Index = () => {
         description_color: adData.description_color || '#333333',
         image_url: adData.imageUrl,
         width: adData.width || 1080,
-        height: adData.height || 1920
+        height: adData.height || 1920,
+        status: 'completed'
       };
 
-      console.log("Inserting ad with data:", adToInsert);
+      console.log("Attempting to insert ad with data:", adToInsert);
 
-      const { data, error } = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from('generated_ads')
         .insert([adToInsert])
-        .select();
+        .select()
+        .single();
 
-      if (error) {
-        console.error("Error inserting ad:", error);
-        throw error;
+      if (insertError) {
+        console.error("Error inserting ad:", insertError);
+        throw insertError;
       }
       
-      console.log("Ad created successfully:", data);
+      console.log("Ad created successfully:", insertedData);
       toast.success("Ad created successfully");
       
-      // Immediately update the ads list
+      console.log("Refreshing ads list...");
       await fetchGeneratedAds();
       
     } catch (error: any) {
