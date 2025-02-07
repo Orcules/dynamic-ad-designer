@@ -73,12 +73,16 @@ export function TemplateStyleSelector({
       <div className="space-y-2">
         <Label>Template Style</Label>
         <Select value={value} onValueChange={onChange}>
-          <SelectTrigger>
+          <SelectTrigger className="bg-card">
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-card border-border">
             {templates.map((template) => (
-              <SelectItem key={template.id} value={template.id}>
+              <SelectItem 
+                key={template.id} 
+                value={template.id}
+                className="hover:bg-muted focus:bg-muted"
+              >
                 {template.label}
               </SelectItem>
             ))}
