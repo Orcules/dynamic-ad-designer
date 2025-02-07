@@ -43,7 +43,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [headlinePosition, setHeadlinePosition] = useState({ x: 0, y: 0 });
   const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
   const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
-  const [showArrows, setShowArrows] = useState(true);
   const [showCtaArrow, setShowCtaArrow] = useState(true);
 
   const {
@@ -164,15 +163,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             headlinePosition={headlinePosition}
             descriptionPosition={descriptionPosition}
             ctaPosition={ctaPosition}
-            showArrows={showArrows}
             showCtaArrow={showCtaArrow}
           />
         </AdPreviewCapture>
 
         <AdPreviewControls
-          showArrows={showArrows}
           showCtaArrow={showCtaArrow}
-          onShowArrowsChange={setShowArrows}
           onShowCtaArrowChange={setShowCtaArrow}
         />
 
