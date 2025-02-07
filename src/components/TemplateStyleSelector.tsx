@@ -33,8 +33,6 @@ export function TemplateStyleSelector({
   onOverlayColorChange,
   textColor,
   onTextColorChange,
-  descriptionColor,
-  onDescriptionColorChange
 }: TemplateStyleSelectorProps) {
   const templates = [
     { id: "modern", label: "Modern" },
@@ -102,27 +100,6 @@ export function TemplateStyleSelector({
             value={textColor}
             onChange={(e) => onTextColorChange(e.target.value)}
             placeholder="#FFFFFF"
-            className="flex-1"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description_color">Description Color</Label>
-        <div className="flex gap-4">
-          <Input
-            type="color"
-            id="description_color"
-            name="description_color"
-            value={descriptionColor}
-            onChange={(e) => onDescriptionColorChange(e.target.value)}
-            className="w-16 h-10 p-1"
-          />
-          <Input
-            type="text"
-            value={descriptionColor}
-            onChange={(e) => onDescriptionColorChange(e.target.value)}
-            placeholder="#333333"
             className="flex-1"
           />
         </div>

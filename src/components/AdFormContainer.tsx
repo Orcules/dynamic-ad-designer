@@ -25,6 +25,7 @@ interface AdFormContainerProps {
   onCtaColorChange: (value: string) => void;
   onOverlayColorChange: (value: string) => void;
   onTextColorChange: (value: string) => void;
+  onDescriptionColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
   overlayOpacity: number;
@@ -42,6 +43,7 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
   onCtaColorChange,
   onOverlayColorChange,
   onTextColorChange,
+  onDescriptionColorChange,
   onImageChange,
   onImageUrlsChange,
   overlayOpacity,
@@ -59,6 +61,7 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         onCtaColorChange={onCtaColorChange}
         onOverlayColorChange={onOverlayColorChange}
         onTextColorChange={onTextColorChange}
+        onDescriptionColorChange={onDescriptionColorChange}
         onImageChange={onImageChange}
         onImageUrlsChange={onImageUrlsChange}
         overlayOpacity={overlayOpacity}
