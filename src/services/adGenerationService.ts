@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { generateAdName, validTemplateStyles } from "@/utils/adSubmissionUtils";
 import { getDimensions } from "@/utils/adDimensions";
