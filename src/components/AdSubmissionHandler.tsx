@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { capturePreview } from "@/utils/adPreviewCapture";
@@ -54,7 +55,6 @@ function sanitizeFileName(fileName: string): string {
 }
 
 function generateAdName(adData: any) {
-  // Format: date-Ad Name-platform name-Language-Template Style-Accent Color-font
   const date = format(new Date(), 'ddMMyy');
   const name = adData.name.toLowerCase().replace(/\s+/g, '-');
   const platform = adData.platform || 'unknown';
@@ -65,11 +65,10 @@ function generateAdName(adData: any) {
   
   const adName = `${date}-${name}-${platform}-${language}-${templateStyle}-${accentColor}-${font}`;
   
-  // Clean up the final string to ensure it's URL-safe
   return adName
-    .replace(/[^a-z0-9-]/g, '-') // Replace any non-alphanumeric characters with hyphens
-    .replace(/-+/g, '-')         // Replace multiple consecutive hyphens with a single one
-    .replace(/^-|-$/g, '');      // Remove leading and trailing hyphens
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 const validTemplateStyles = [
@@ -110,7 +109,6 @@ export const handleAdSubmission = async ({
       imageBlob = await response.blob();
     }
     
-    // Sanitize the file name before upload
     const originalFileName = selectedImage instanceof File ? selectedImage.name : 'image.jpg';
     const sanitizedFileName = sanitizeFileName(originalFileName);
     const originalImagePath = `original/${timestamp}_${sanitizedFileName}`;
@@ -159,6 +157,29 @@ export const handleAdSubmission = async ({
 
     console.log('Got public URL for preview:', previewUrl);
 
+    // Create form data for the edge function
+    const formData = new FormData();
+    formData.append('image', imageBlob);
+    formData.append('data', JSON.stringify({
+      ...adData,
+      width,
+      height,
+      overlayOpacity: 0.4 // Default value if not provided
+    }));
+
+    console.log('Calling generate-ad edge function...');
+    const { data: generatedAd, error: generateError } = await supabase.functions
+      .invoke('generate-ad', {
+        body: formData
+      });
+
+    if (generateError) {
+      console.error('Generate ad error:', generateError);
+      throw new Error('Failed to generate ad');
+    }
+
+    console.log('Ad generated successfully:', generatedAd);
+
     // Ensure template style is valid
     const templateStyle = validTemplateStyles.includes(adData.template_style) 
       ? adData.template_style 
@@ -182,7 +203,7 @@ export const handleAdSubmission = async ({
         description_color: adData.description_color,
         width,
         height,
-        image_url: previewUrl,
+        image_url: generatedAd.imageUrl,
         status: 'completed'
       }])
       .select()
@@ -198,7 +219,7 @@ export const handleAdSubmission = async ({
     toast.success('Ad created successfully!', {
       action: {
         label: 'View Ad',
-        onClick: () => window.open(previewUrl, '_blank')
+        onClick: () => window.open(generatedAd.imageUrl, '_blank')
       },
     });
     
