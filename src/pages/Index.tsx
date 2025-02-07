@@ -20,6 +20,7 @@ const Index = () => {
   }, []);
 
   const fetchGeneratedAds = async () => {
+    console.log("Fetching generated ads...");
     const { data, error } = await supabase
       .from('generated_ads')
       .select('id, name, image_url')
@@ -32,7 +33,7 @@ const Index = () => {
     }
 
     if (data) {
-      console.log("Fetched ads:", data);
+      console.log("Successfully fetched ads:", data);
       setGeneratedAds(data);
     }
   };
@@ -41,13 +42,16 @@ const Index = () => {
     console.log("Starting ad generation with data:", adData);
     
     try {
-      // First validate that we have the required data
       if (!adData.headline) {
         toast.error("Please enter a headline");
         return;
       }
 
-      // Prepare the data for insertion
+      if (!adData.imageUrl) {
+        toast.error("Please provide an image");
+        return;
+      }
+
       const adToInsert = {
         name: adData.headline || 'Untitled Ad',
         headline: adData.headline,
@@ -80,7 +84,9 @@ const Index = () => {
       
       console.log("Ad created successfully:", data);
       toast.success("Ad created successfully");
-      fetchGeneratedAds(); // Refresh the list after creation
+      
+      // Immediately update the ads list
+      await fetchGeneratedAds();
       
     } catch (error: any) {
       console.error("Error generating ad:", error);
@@ -147,3 +153,4 @@ const Index = () => {
 };
 
 export default Index;
+
