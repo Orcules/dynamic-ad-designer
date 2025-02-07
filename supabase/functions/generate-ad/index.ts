@@ -1,55 +1,93 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req: Request) => {
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const uploadId = crypto.randomUUID();
-    console.log(`[${uploadId}] Starting ad generation process`);
+  const uploadId = crypto.randomUUID();
+  console.log(`[${uploadId}] Starting ad generation process`);
 
+  try {
     const formData = await req.formData();
     const image = formData.get('image');
-    const jsonData = formData.get('data');
-
-    if (!image || !jsonData) {
+    const dataString = formData.get('data');
+    
+    if (!image || !dataString) {
       throw new Error('Missing required fields');
     }
 
-    const data = JSON.parse(jsonData.toString());
+    const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
     const imageArrayBuffer = await (image as Blob).arrayBuffer();
     const imageBase64 = btoa(String.fromCharCode(...new Uint8Array(imageArrayBuffer)));
 
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') as string;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const timestamp = Date.now();
+    const originalFileName = `original/${uploadId}_${timestamp}.jpg`;
+    console.log(`[${uploadId}] Uploading original image:`, originalFileName);
+
+    const { error: uploadError } = await supabase.storage
+      .from('ad-images')
+      .upload(originalFileName, image as Blob, {
+        contentType: 'image/jpeg',
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error(`[${uploadId}] Upload error:`, uploadError);
+      throw new Error('Failed to upload original image');
+    }
+
+    const { data: { publicUrl: originalImageUrl } } = supabase.storage
+      .from('ad-images')
+      .getPublicUrl(originalFileName);
+
+    console.log(`[${uploadId}] Original image URL:`, originalImageUrl);
+
     let browser = null;
     try {
+      console.log(`[${uploadId}] Launching browser`);
       browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
+
       const page = await browser.newPage();
-      
+      await page.setViewport({
+        width: data.width,
+        height: data.height
+      });
+
       const html = `
         <!DOCTYPE html>
         <html>
           <head>
-            <meta charset="utf-8">
             <style>
-              body { margin: 0; }
-              .ad-container {
+              @import url('${data.font_url}');
+              body {
+                margin: 0;
+                padding: 0;
                 width: ${data.width}px;
                 height: ${data.height}px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
                 position: relative;
                 overflow: hidden;
               }
-              .image-container {
+              .container {
                 width: 100%;
                 height: 100%;
                 position: relative;
@@ -65,7 +103,7 @@ serve(async (req: Request) => {
                 left: 0;
                 width: 100%;
                 height: 100%;
-                background-color: ${data.overlay_color};
+                background: ${data.overlay_color};
                 opacity: ${data.overlayOpacity};
               }
               .content {
@@ -80,41 +118,40 @@ serve(async (req: Request) => {
                 align-items: center;
                 padding: 20px;
                 box-sizing: border-box;
-                color: ${data.text_color};
                 text-align: center;
+                color: ${data.text_color};
+                font-family: '${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ')}', sans-serif;
               }
               .headline {
-                font-size: 24px;
+                font-size: 32px;
                 font-weight: bold;
-                margin-bottom: 10px;
-                color: ${data.text_color};
+                margin-bottom: 16px;
               }
               .description {
-                font-size: 16px;
-                margin-bottom: 15px;
+                font-size: 18px;
+                margin-bottom: 24px;
                 color: ${data.description_color};
               }
               .cta {
-                padding: 10px 20px;
-                background-color: ${data.cta_color};
+                padding: 12px 24px;
+                background: ${data.cta_color};
                 color: white;
                 border: none;
-                border-radius: 5px;
-                cursor: pointer;
+                border-radius: 4px;
                 font-size: 16px;
+                cursor: pointer;
+                transition: opacity 0.2s;
               }
             </style>
           </head>
           <body>
-            <div class="ad-container">
-              <div class="image-container">
-                <img class="image" src="data:image/jpeg;base64,${imageBase64}" />
-                <div class="overlay"></div>
-              </div>
+            <div class="container">
+              <img src="data:image/jpeg;base64,${imageBase64}" class="image" />
+              <div class="overlay"></div>
               <div class="content">
                 <div class="headline">${data.headline}</div>
                 ${data.description ? `<div class="description">${data.description}</div>` : ''}
-                ${data.cta_text ? `<button class="cta">${data.cta_text}</button>` : ''}
+                <button class="cta">${data.cta_text}</button>
               </div>
             </div>
           </body>
@@ -122,70 +159,62 @@ serve(async (req: Request) => {
       `;
 
       await page.setContent(html);
-      await page.setViewport({ width: data.width, height: data.height });
+      console.log(`[${uploadId}] Page content set`);
 
       const screenshotBuffer = await page.screenshot({
         type: 'jpeg',
-        quality: 90,
-        clip: {
-          x: 0,
-          y: 0,
-          width: data.width,
-          height: data.height
-        }
+        quality: 90
       });
+
+      console.log(`[${uploadId}] Screenshot taken`);
 
       await browser.close();
       browser = null;
       console.log(`[${uploadId}] Browser closed`);
 
-      const timestamp = Date.now();
-      const fileName = `${uploadId}_${timestamp}.jpg`;
-      const generatedFileName = `generated/${fileName}`;
-      
-      console.log(`[${uploadId}] Generated file name:`, generatedFileName);
+      const generatedFileName = `generated/${uploadId}_${timestamp}.jpg`;
+      console.log(`[${uploadId}] Uploading generated image:`, generatedFileName);
+
+      const { error: saveError } = await supabase.storage
+        .from('ad-images')
+        .upload(generatedFileName, screenshotBuffer, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (saveError) {
+        console.error(`[${uploadId}] Save error:`, saveError);
+        throw new Error('Failed to save generated image');
+      }
+
+      const { data: { publicUrl: generatedImageUrl } } = supabase.storage
+        .from('ad-images')
+        .getPublicUrl(generatedFileName);
+
+      console.log(`[${uploadId}] Generated image URL:`, generatedImageUrl);
 
       return new Response(
         JSON.stringify({
-          imageBuffer: Array.from(new Uint8Array(screenshotBuffer)),
-          fileName: generatedFileName,
+          imageUrl: generatedImageUrl,
+          originalImageUrl,
           success: true
         }),
         {
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-        },
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       );
 
     } catch (error) {
       console.error(`[${uploadId}] Error:`, error);
-      return new Response(
-        JSON.stringify({
-          error: error.message,
-          success: false
-        }),
-        {
-          status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-    } finally {
       if (browser) {
-        try {
-          await browser.close();
-          console.log(`[${uploadId}] Browser closed in finally block`);
-        } catch (error) {
-          console.error(`[${uploadId}] Error closing browser:`, error);
-        }
+        await browser.close();
+        console.log(`[${uploadId}] Browser closed after error`);
       }
+      throw error;
     }
   } catch (error) {
-    console.error('Top level error:', error);
+    console.error(`[${uploadId}] Fatal error:`, error);
     return new Response(
       JSON.stringify({
         error: error.message,
@@ -193,11 +222,8 @@ serve(async (req: Request) => {
       }),
       {
         status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json',
-        },
-      },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });
