@@ -1,7 +1,7 @@
 import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
 interface Position {
   x: number;
@@ -15,8 +15,6 @@ interface AdPositionControlsProps {
   onHeadlinePositionChange: (position: Position) => void;
   onDescriptionPositionChange: (position: Position) => void;
   onCtaPositionChange: (position: Position) => void;
-  descriptionColor: string;
-  onDescriptionColorChange: (color: string) => void;
 }
 
 export function AdPositionControls({
@@ -26,8 +24,6 @@ export function AdPositionControls({
   onHeadlinePositionChange,
   onDescriptionPositionChange,
   onCtaPositionChange,
-  descriptionColor,
-  onDescriptionColorChange,
 }: AdPositionControlsProps) {
   return (
     <Card className="w-full">
@@ -91,25 +87,6 @@ export function AdPositionControls({
                     ...descriptionPosition, 
                     y: Number(e.target.value) 
                   })}
-                />
-              </div>
-            </div>
-            <div className="mt-2">
-              <Label htmlFor="description-color">Description Color</Label>
-              <div className="flex gap-4 mt-1">
-                <Input
-                  type="color"
-                  id="description_color"
-                  value={descriptionColor}
-                  onChange={(e) => onDescriptionColorChange(e.target.value)}
-                  className="w-16 h-10 p-1"
-                />
-                <Input
-                  type="text"
-                  value={descriptionColor}
-                  onChange={(e) => onDescriptionColorChange(e.target.value)}
-                  placeholder="#333333"
-                  className="flex-1"
                 />
               </div>
             </div>
