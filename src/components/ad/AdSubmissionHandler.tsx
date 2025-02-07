@@ -5,23 +5,7 @@ import { AdStorageService } from "@/services/adStorageService";
 import { AdGenerationService } from "@/services/adGenerationService";
 import { capturePreview } from "@/utils/adPreviewCapture";
 
-type RenderProps = {
-  isGenerating: boolean;
-  handleSubmission: (
-    adData: any,
-    imageFile: File | string,
-    previewRef: React.RefObject<HTMLDivElement>,
-    onSuccess: (newAd: any) => void,
-    setIsGenerating: (value: boolean) => void
-  ) => Promise<void>;
-};
-
-interface AdSubmissionHandlerProps {
-  onSubmit: (adData: any) => void;
-  children: React.ReactNode | ((props: RenderProps) => React.ReactNode);
-}
-
-export const useAdSubmission = () => {
+export function useAdSubmission() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleSubmission = async (
@@ -49,7 +33,6 @@ export const useAdSubmission = () => {
     try {
       console.log(`Starting ad generation process [${uploadId}]`, { adData });
       
-      // Prepare the image
       let imageBlob: Blob;
       if (imageFile instanceof File) {
         imageBlob = imageFile;
@@ -60,7 +43,6 @@ export const useAdSubmission = () => {
         imageBlob = await response.blob();
       }
       
-      // Upload original image
       const { path: originalPath } = await AdStorageService.uploadOriginalImage(
         imageBlob,
         imageFile instanceof File ? imageFile.name : 'image.jpg',
@@ -68,7 +50,6 @@ export const useAdSubmission = () => {
       );
       uploadedFiles.push(originalPath);
       
-      // Create and save preview
       console.log(`Capturing preview [${uploadId}]`);
       const previewFile = await capturePreview(previewRef, adData.platform);
       if (!previewFile) {
@@ -78,10 +59,8 @@ export const useAdSubmission = () => {
       const { path: previewPath } = await AdStorageService.uploadPreviewImage(previewFile, uploadId);
       uploadedFiles.push(previewPath);
       
-      // Generate ad
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
       
-      // Save ad to database
       const newAd = await AdGenerationService.saveAdToDatabase(adData, imageUrl);
       
       toast.success('Ad created successfully!', {
@@ -94,9 +73,8 @@ export const useAdSubmission = () => {
       onSuccess(newAd);
       
     } catch (error: any) {
-      console.error(`Error in handleAdSubmission [${uploadId}]:`, error);
+      console.error(`Error in handleSubmission [${uploadId}]:`, error);
       
-      // Clean up uploaded files in case of error
       if (uploadedFiles.length > 0) {
         console.log(`Cleaning up uploaded files [${uploadId}]...`);
         await Promise.all(
@@ -111,24 +89,4 @@ export const useAdSubmission = () => {
   };
 
   return { isGenerating, handleSubmission };
-};
-
-export const AdSubmissionHandler: React.FC<AdSubmissionHandlerProps> = ({ 
-  onSubmit, 
-  children 
-}) => {
-  const { isGenerating, handleSubmission } = useAdSubmission();
-
-  const renderProps: RenderProps = {
-    isGenerating,
-    handleSubmission
-  };
-
-  return (
-    <div className="space-y-4">
-      {typeof children === 'function' 
-        ? (children as (props: RenderProps) => React.ReactNode)(renderProps)
-        : children}
-    </div>
-  );
-};
+}

@@ -94,10 +94,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         
         try {
           await handleSubmission(
-            {
-              ...enrichedAdData,
-              name: `${adData.name}-${i + 1}`
-            },
+            enrichedAdData,
             currentImage,
             previewRef,
             onAdGenerated,
