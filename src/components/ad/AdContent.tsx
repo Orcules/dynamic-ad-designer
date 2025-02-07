@@ -34,8 +34,8 @@ export function AdContent({
 
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
   const [headlinePos, setHeadlinePos] = useState<Position>({ x: 0, y: 0 });
-  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 20 }); // Added initial Y offset
-  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 0 });
+  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 40 }); // Increased initial Y offset
+  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 80 }); // Added initial Y offset for CTA
   const [isDraggingHeadline, setIsDraggingHeadline] = useState(false);
   const [isDraggingDescription, setIsDraggingDescription] = useState(false);
   const [isDraggingCta, setIsDraggingCta] = useState(false);
@@ -103,7 +103,7 @@ export function AdContent({
       onMouseLeave={handleMouseUp}
     >
       <div className={cn(
-        "flex-1 flex flex-col gap-4",
+        "flex-1 flex flex-col gap-8 p-4", // Added padding and increased gap
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
@@ -113,7 +113,7 @@ export function AdContent({
           {headline && (
             <div 
               className={cn(
-                "px-6 mt-12 cursor-move",
+                "px-6 cursor-move relative",
                 isDraggingHeadline && "select-none"
               )}
               style={{
@@ -121,14 +121,17 @@ export function AdContent({
                 transition: isDraggingHeadline ? 'none' : 'transform 0.1s ease-out',
                 userSelect: 'none',
                 touchAction: 'none',
-                position: 'relative',
-                zIndex: isDraggingHeadline ? 50 : 2
+                position: 'absolute',
+                zIndex: isDraggingHeadline ? 50 : 3,
+                width: 'calc(100% - 3rem)', // Ensure proper width with padding
+                left: 0,
+                top: '10%'
               }}
               onMouseDown={(e) => handleMouseDown(e, 'headline')}
             >
               <h2 
                 className={cn(
-                  "text-center leading-tight break-words",
+                  "text-center leading-tight break-words mx-auto",
                   isBottomOverlay ? "max-w-full" : "max-w-[90%]"
                 )}
                 style={textStyle}
@@ -141,7 +144,7 @@ export function AdContent({
           {description && (
             <div 
               className={cn(
-                "px-6 mt-4 cursor-move",
+                "px-6 cursor-move relative",
                 isDraggingDescription && "select-none"
               )}
               style={{
@@ -149,15 +152,17 @@ export function AdContent({
                 transition: isDraggingDescription ? 'none' : 'transform 0.1s ease-out',
                 userSelect: 'none',
                 touchAction: 'none',
-                position: 'relative',
-                zIndex: isDraggingDescription ? 50 : 1,
-                marginTop: '2rem'
+                position: 'absolute',
+                zIndex: isDraggingDescription ? 50 : 2,
+                width: 'calc(100% - 3rem)',
+                left: 0,
+                top: '40%'
               }}
               onMouseDown={(e) => handleMouseDown(e, 'description')}
             >
               <p 
                 className={cn(
-                  "text-center leading-tight break-words text-sm",
+                  "text-center leading-tight break-words mx-auto",
                   isBottomOverlay ? "max-w-full" : "max-w-[90%]"
                 )}
                 style={descriptionStyle}
@@ -170,7 +175,7 @@ export function AdContent({
           {ctaText && (
             <div 
               className={cn(
-                "w-full flex justify-center items-center mt-auto px-6 pb-8 cursor-move",
+                "w-full flex justify-center items-center cursor-move relative",
                 isDraggingCta && "select-none"
               )}
               style={{
@@ -178,9 +183,10 @@ export function AdContent({
                 transition: isDraggingCta ? 'none' : 'transform 0.1s ease-out',
                 userSelect: 'none',
                 touchAction: 'none',
-                position: 'relative',
+                position: 'absolute',
                 zIndex: isDraggingCta ? 50 : 1,
-                marginTop: '2rem'
+                bottom: '10%',
+                left: 0
               }}
               onMouseDown={(e) => handleMouseDown(e, 'cta')}
             >

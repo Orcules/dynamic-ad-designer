@@ -11,11 +11,11 @@ interface AdTextProps {
 export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily, isDescription = false }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: isDescription ? 'normal' : 'bold',
-    fontSize: isDescription ? '1rem' : 'clamp(2rem, 4vw, 3.5rem)',
-    lineHeight: isDescription ? '1.5' : '1.2',
-    maxWidth: '90%',
+    fontSize: isDescription ? '1.125rem' : 'clamp(1.5rem, 3vw, 2.5rem)', // Adjusted font sizes
+    lineHeight: isDescription ? '1.6' : '1.3',
+    maxWidth: '100%',
     margin: '0 auto',
-    padding: isDescription ? '0.5rem 1rem' : '1rem',
+    padding: isDescription ? '0.75rem' : '1rem',
     fontFamily: fontFamily || 'Montserrat, system-ui',
     textAlign: 'center',
     display: 'block',
@@ -24,7 +24,7 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     hyphens: 'auto',
     color: textColor,
     position: 'relative',
-    zIndex: isDescription ? 1 : 2,
+    zIndex: isDescription ? 2 : 3,
   };
 
   switch (style) {
