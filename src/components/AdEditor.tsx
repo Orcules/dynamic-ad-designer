@@ -1,7 +1,6 @@
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
-import { getDimensions } from "@/utils/adDimensions";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
@@ -10,6 +9,8 @@ import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
 import { useAdForm } from "@/hooks/useAdForm";
+import { validateAdSubmission } from "@/utils/adValidation";
+import { processImages } from "@/utils/adImageProcessing";
 
 interface Template {
   id: string;
@@ -65,14 +66,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!adData.platform) {
-      toast.error('Please select a platform');
-      return;
-    }
-
     const hasImages = selectedImages.length > 0 || imageUrls.length > 0;
-    if (!hasImages) {
-      toast.error('Please select at least one image');
+    if (!validateAdSubmission(adData.platform, hasImages)) {
       return;
     }
 
@@ -84,27 +79,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setIsGenerating(true);
 
     try {
-      const dimensions = getDimensions(adData.platform);
-      const enrichedAdData = { ...adData, ...dimensions };
-      
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
-      
-      for (let i = 0; i < imagesToProcess.length; i++) {
-        const currentImage = imagesToProcess[i];
-        
-        try {
-          await handleSubmission(
-            enrichedAdData,
-            currentImage,
-            previewRef,
-            onAdGenerated,
-            setIsGenerating
-          );
-        } catch (error) {
-          console.error(`Error processing image ${i + 1}:`, error);
-          toast.error(`Error processing image ${i + 1}`);
-        }
-      }
+      await processImages(
+        adData,
+        imagesToProcess,
+        previewRef,
+        onAdGenerated,
+        handleSubmission,
+        setIsGenerating
+      );
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       toast.error('Error generating ads');

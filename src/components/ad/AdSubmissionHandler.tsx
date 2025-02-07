@@ -15,20 +15,8 @@ export function useAdSubmission() {
     onSuccess: (newAd: any) => void,
     setIsGenerating: (value: boolean) => void
   ) => {
-    if (!imageFile) {
-      toast.error('Please select an image');
-      return;
-    }
-
-    if (!previewRef.current) {
-      toast.error('Preview element not found');
-      return;
-    }
-
     const uploadId = crypto.randomUUID();
     const uploadedFiles: string[] = [];
-    
-    setIsGenerating(true);
     
     try {
       console.log(`Starting ad generation process [${uploadId}]`, { adData });
@@ -60,7 +48,6 @@ export function useAdSubmission() {
       uploadedFiles.push(previewPath);
       
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
-      
       const newAd = await AdGenerationService.saveAdToDatabase(adData, imageUrl);
       
       toast.success('Ad created successfully!', {
@@ -83,8 +70,6 @@ export function useAdSubmission() {
       }
       
       toast.error(error.message || 'Error creating ad');
-    } finally {
-      setIsGenerating(false);
     }
   };
 
