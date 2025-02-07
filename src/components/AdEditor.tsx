@@ -7,8 +7,9 @@ import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
 import { AdPositionControls } from "./ad/AdPositionControls";
-import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
+import { AdPreviewControls } from "./ad/AdPreviewControls";
+import { AdSubmitButton } from "./ad/AdSubmitButton";
+import { useAdForm } from "@/hooks/useAdForm";
 
 interface Template {
   id: string;
@@ -24,20 +25,18 @@ interface AdEditorProps {
 }
 
 const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
-  const [adData, setAdData] = useState({
-    name: "",
-    headline: "",
-    description: "",
-    cta_text: "",
-    font_url: "",
-    platform: "instagram-story",
-    template_style: "",
-    accent_color: "#4A90E2",
-    cta_color: "#4A90E2",
-    overlay_color: "#000000",
-    text_color: "#FFFFFF",
-    description_color: "#333333"
-  });
+  const {
+    adData,
+    handleInputChange,
+    handleFontChange,
+    handlePlatformChange,
+    handleStyleChange,
+    handleColorChange,
+    handleCtaColorChange,
+    handleOverlayColorChange,
+    handleTextColorChange,
+    handleDescriptionColorChange
+  } = useAdForm();
 
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
@@ -59,43 +58,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     onImageChange: (urls) => console.log("Images changed:", urls),
     onCurrentIndexChange: (index) => console.log("Current index changed:", index)
   });
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setAdData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFontChange = (value: string) => {
-    setAdData(prev => ({ ...prev, font_url: value }));
-  };
-
-  const handlePlatformChange = (value: string) => {
-    setAdData(prev => ({ ...prev, platform: value }));
-  };
-
-  const handleStyleChange = (value: string) => {
-    setAdData(prev => ({ ...prev, template_style: value }));
-  };
-
-  const handleColorChange = (value: string) => {
-    setAdData(prev => ({ ...prev, accent_color: value }));
-  };
-
-  const handleCtaColorChange = (value: string) => {
-    setAdData(prev => ({ ...prev, cta_color: value }));
-  };
-
-  const handleOverlayColorChange = (value: string) => {
-    setAdData(prev => ({ ...prev, overlay_color: value }));
-  };
-
-  const handleTextColorChange = (value: string) => {
-    setAdData(prev => ({ ...prev, text_color: value }));
-  };
-
-  const handleDescriptionColorChange = (value: string) => {
-    setAdData(prev => ({ ...prev, description_color: value }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,33 +169,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           />
         </AdPreviewCapture>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="show-arrows"
-            checked={showArrows}
-            onCheckedChange={(checked) => setShowArrows(checked as boolean)}
-          />
-          <label
-            htmlFor="show-arrows"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Show Navigation Arrows
-          </label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="show-cta-arrow"
-            checked={showCtaArrow}
-            onCheckedChange={(checked) => setShowCtaArrow(checked as boolean)}
-          />
-          <label
-            htmlFor="show-cta-arrow"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-          >
-            Show CTA Arrow
-          </label>
-        </div>
+        <AdPreviewControls
+          showArrows={showArrows}
+          showCtaArrow={showCtaArrow}
+          onShowArrowsChange={setShowArrows}
+          onShowCtaArrowChange={setShowCtaArrow}
+        />
 
         <AdPositionControls
           headlinePosition={headlinePosition}
@@ -244,14 +185,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onCtaPositionChange={setCtaPosition}
         />
 
-        <Button 
-          type="submit" 
-          className="w-full" 
-          disabled={isGenerating} 
+        <AdSubmitButton
+          isGenerating={isGenerating}
           onClick={handleSubmit}
-        >
-          {isGenerating ? 'Generating Ad...' : 'Generate Ad'}
-        </Button>
+        />
       </div>
     </div>
   );
