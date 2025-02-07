@@ -26,7 +26,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
   return (
     <div 
       className={cn(
-        "w-full flex justify-center items-center cursor-move relative",
+        "w-full max-w-[90%] mx-auto flex justify-center items-center cursor-move relative",
         isDragging && "select-none"
       )}
       style={{
@@ -37,17 +37,23 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         position: 'absolute',
         zIndex: isDragging ? 50 : 1,
         bottom: '10%',
-        left: 0
+        left: '50%',
+        marginLeft: '-45%'
       }}
       onMouseDown={onMouseDown}
     >
       <div 
         className="relative transform flex items-center justify-center gap-2 mx-auto"
-        style={buttonStyle}
+        style={{
+          ...buttonStyle,
+          fontSize: 'clamp(0.875rem, 2vw, 1.125rem)',
+          maxWidth: '100%',
+          padding: 'clamp(0.5rem, 2vw, 1rem) clamp(1rem, 4vw, 2rem)'
+        }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
       >
-        <span className="block">
+        <span className="block whitespace-nowrap overflow-hidden text-ellipsis">
           {ctaText}
         </span>
         <ArrowBigDown 

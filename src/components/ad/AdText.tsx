@@ -9,10 +9,17 @@ interface AdTextProps {
   isDescription?: boolean;
 }
 
-export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily, fontSize, isDescription = false }: AdTextProps): CSSProperties {
+export function getTextStyle({ 
+  style = 'minimal', 
+  accentColor, 
+  textColor, 
+  fontFamily, 
+  fontSize, 
+  isDescription = false 
+}: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: isDescription ? 'normal' : 'bold',
-    fontSize: fontSize || (isDescription ? '1.125rem' : 'clamp(1.5rem, 3vw, 2.5rem)'),
+    fontSize: fontSize || (isDescription ? 'clamp(0.875rem, 2.5vw, 1.25rem)' : 'clamp(1.25rem, 4vw, 2.5rem)'),
     lineHeight: isDescription ? '1.6' : '1.3',
     maxWidth: '100%',
     margin: '0 auto',

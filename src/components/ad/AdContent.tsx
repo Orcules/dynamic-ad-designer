@@ -33,8 +33,8 @@ export function AdContent({
   onButtonHover,
 }: AdContentProps) {
   const [headlinePos, setHeadlinePos] = useState<Position>({ x: 0, y: 0 });
-  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 40 });
-  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 80 });
+  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 0 });
+  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 0 });
   const [isDraggingHeadline, setIsDraggingHeadline] = useState(false);
   const [isDraggingDescription, setIsDraggingDescription] = useState(false);
   const [isDraggingCta, setIsDraggingCta] = useState(false);
@@ -104,11 +104,11 @@ export function AdContent({
       onMouseLeave={handleMouseUp}
     >
       <div className={cn(
-        "flex-1 flex flex-col gap-8 p-4",
+        "relative flex-1 flex flex-col items-center justify-center gap-4 p-4",
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
-          "relative w-full flex flex-col min-h-[300px]",
+          "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
           isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent"
         )}>
           <AdHeadline

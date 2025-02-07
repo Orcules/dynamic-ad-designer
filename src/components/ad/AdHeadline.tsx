@@ -21,7 +21,7 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
   return (
     <div 
       className={cn(
-        "px-6 cursor-move relative",
+        "w-full max-w-[90%] mx-auto px-4 cursor-move relative",
         isDragging && "select-none"
       )}
       style={{
@@ -31,15 +31,22 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
         touchAction: 'none',
         position: 'absolute',
         zIndex: isDragging ? 50 : 3,
-        width: 'calc(100% - 3rem)',
-        left: 0,
-        top: '10%'
+        top: '10%',
+        left: '50%',
+        marginLeft: '-45%'
       }}
       onMouseDown={onMouseDown}
     >
       <h2 
-        className="text-center leading-tight break-words mx-auto max-w-[90%]"
-        style={textStyle}
+        className="text-center leading-tight break-words"
+        style={{
+          ...textStyle,
+          fontSize: 'clamp(1.25rem, 4vw, 2.5rem)',
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordWrap: 'break-word',
+          hyphens: 'auto'
+        }}
       >
         {headline}
       </h2>

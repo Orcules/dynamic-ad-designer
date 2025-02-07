@@ -21,7 +21,7 @@ export const AdDescription: React.FC<AdDescriptionProps> = ({
   return (
     <div 
       className={cn(
-        "px-6 cursor-move relative",
+        "w-full max-w-[90%] mx-auto px-4 cursor-move relative",
         isDragging && "select-none"
       )}
       style={{
@@ -31,15 +31,22 @@ export const AdDescription: React.FC<AdDescriptionProps> = ({
         touchAction: 'none',
         position: 'absolute',
         zIndex: isDragging ? 50 : 2,
-        width: 'calc(100% - 3rem)',
-        left: 0,
-        top: '40%'
+        top: '40%',
+        left: '50%',
+        marginLeft: '-45%'
       }}
       onMouseDown={onMouseDown}
     >
       <p 
-        className="text-center leading-tight break-words mx-auto max-w-[90%]"
-        style={descriptionStyle}
+        className="text-center leading-tight break-words"
+        style={{
+          ...descriptionStyle,
+          fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)',
+          maxWidth: '100%',
+          overflowWrap: 'break-word',
+          wordWrap: 'break-word',
+          hyphens: 'auto'
+        }}
       >
         {description}
       </p>
