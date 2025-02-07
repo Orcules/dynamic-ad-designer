@@ -7,6 +7,7 @@ import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
 import { AdPositionControls } from "./ad/AdPositionControls";
+import { Button } from "./ui/button";
 
 interface Template {
   id: string;
@@ -168,7 +169,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onTextColorChange={handleTextColorChange}
           onImageChange={handleImageChange}
           onImageUrlsChange={handleImageUrlsChange}
-          onSubmit={handleSubmit}
           overlayOpacity={overlayOpacity}
           onOpacityChange={setOverlayOpacity}
         />
@@ -211,6 +211,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           descriptionColor={adData.description_color}
           onDescriptionColorChange={handleDescriptionColorChange}
         />
+
+        <Button 
+          type="submit" 
+          className="w-full" 
+          disabled={isGenerating} 
+          onClick={handleSubmit}
+        >
+          {isGenerating ? 'Generating Ad...' : 'Generate Ad'}
+        </Button>
       </div>
     </div>
   );

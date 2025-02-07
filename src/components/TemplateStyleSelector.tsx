@@ -1,7 +1,7 @@
 import { Label } from "./ui/label";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -16,6 +16,8 @@ interface TemplateStyleSelectorProps {
   onOverlayColorChange: (value: string) => void;
   textColor: string;
   onTextColorChange: (value: string) => void;
+  descriptionColor: string;
+  onDescriptionColorChange: (value: string) => void;
 }
 
 export function TemplateStyleSelector({ 
@@ -30,54 +32,58 @@ export function TemplateStyleSelector({
   overlayColor,
   onOverlayColorChange,
   textColor,
-  onTextColorChange
+  onTextColorChange,
+  descriptionColor,
+  onDescriptionColorChange
 }: TemplateStyleSelectorProps) {
+  const templates = [
+    { id: "modern", label: "Modern" },
+    { id: "elegant", label: "Elegant" },
+    { id: "dynamic", label: "Dynamic" },
+    { id: "spotlight", label: "Spotlight" },
+    { id: "wave", label: "Wave" },
+    { id: "cinematic", label: "Cinematic" },
+    { id: "minimal-fade", label: "Minimal Fade" },
+    { id: "duotone", label: "Duotone" },
+    { id: "vignette", label: "Vignette" },
+    { id: "luxury", label: "Luxury" },
+    { id: "overlay-bottom-clean", label: "Bottom Clean" },
+    { id: "overlay-bottom-gradient", label: "Bottom Gradient" },
+    { id: "overlay-bottom-glass", label: "Bottom Glass" },
+    { id: "overlay-bottom-neon", label: "Bottom Neon" },
+    { id: "overlay-bottom-minimal", label: "Bottom Minimal" },
+    { id: "neon", label: "Neon Glow" },
+    { id: "split", label: "Split Design" },
+    { id: "gradient", label: "Gradient Flow" },
+    { id: "outline", label: "Outline Text" },
+    { id: "stacked", label: "Stacked Layout" },
+    { id: "minimal", label: "Minimal Clean" },
+    { id: "retro", label: "Retro Style" },
+    { id: "glassmorphism", label: "Glass Effect" },
+    { id: "3d", label: "3D Text" },
+    { id: "vintage", label: "Vintage Look" },
+    { id: "tech", label: "Tech Theme" },
+    { id: "nature", label: "Nature Theme" },
+    { id: "urban", label: "Urban Style" },
+    { id: "artistic", label: "Artistic" }
+  ];
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
-        <RadioGroup
-          value={value}
-          onValueChange={onChange}
-          className="grid grid-cols-2 gap-4"
-        >
-          {/* Classic Templates */}
-          <StyleOption id="modern" label="Modern" />
-          <StyleOption id="elegant" label="Elegant" />
-          <StyleOption id="dynamic" label="Dynamic" />
-          <StyleOption id="spotlight" label="Spotlight" />
-          <StyleOption id="wave" label="Wave" />
-          <StyleOption id="cinematic" label="Cinematic" />
-          <StyleOption id="minimal-fade" label="Minimal Fade" />
-          <StyleOption id="duotone" label="Duotone" />
-          <StyleOption id="vignette" label="Vignette" />
-          <StyleOption id="luxury" label="Luxury" />
-          
-          {/* Bottom Overlay Templates */}
-          <StyleOption id="overlay-bottom-clean" label="Bottom Clean" />
-          <StyleOption id="overlay-bottom-gradient" label="Bottom Gradient" />
-          <StyleOption id="overlay-bottom-glass" label="Bottom Glass" />
-          <StyleOption id="overlay-bottom-neon" label="Bottom Neon" />
-          <StyleOption id="overlay-bottom-minimal" label="Bottom Minimal" />
-          
-          {/* Creative Templates */}
-          <StyleOption id="neon" label="Neon Glow" />
-          <StyleOption id="split" label="Split Design" />
-          <StyleOption id="gradient" label="Gradient Flow" />
-          <StyleOption id="outline" label="Outline Text" />
-          <StyleOption id="stacked" label="Stacked Layout" />
-          <StyleOption id="minimal" label="Minimal Clean" />
-          
-          {/* New Templates */}
-          <StyleOption id="retro" label="Retro Style" />
-          <StyleOption id="glassmorphism" label="Glass Effect" />
-          <StyleOption id="3d" label="3D Text" />
-          <StyleOption id="vintage" label="Vintage Look" />
-          <StyleOption id="tech" label="Tech Theme" />
-          <StyleOption id="nature" label="Nature Theme" />
-          <StyleOption id="urban" label="Urban Style" />
-          <StyleOption id="artistic" label="Artistic" />
-        </RadioGroup>
+        <Select value={value} onValueChange={onChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select a template style" />
+          </SelectTrigger>
+          <SelectContent>
+            {templates.map((template) => (
+              <SelectItem key={template.id} value={template.id}>
+                {template.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">
@@ -96,6 +102,27 @@ export function TemplateStyleSelector({
             value={textColor}
             onChange={(e) => onTextColorChange(e.target.value)}
             placeholder="#FFFFFF"
+            className="flex-1"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description_color">Description Color</Label>
+        <div className="flex gap-4">
+          <Input
+            type="color"
+            id="description_color"
+            name="description_color"
+            value={descriptionColor}
+            onChange={(e) => onDescriptionColorChange(e.target.value)}
+            className="w-16 h-10 p-1"
+          />
+          <Input
+            type="text"
+            value={descriptionColor}
+            onChange={(e) => onDescriptionColorChange(e.target.value)}
+            placeholder="#333333"
             className="flex-1"
           />
         </div>
@@ -159,24 +186,6 @@ export function TemplateStyleSelector({
           </span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function StyleOption({ id, label }: { id: string; label: string }) {
-  return (
-    <div>
-      <RadioGroupItem
-        value={id}
-        id={id}
-        className="peer sr-only"
-      />
-      <Label
-        htmlFor={id}
-        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-card p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-      >
-        <span>{label}</span>
-      </Label>
     </div>
   );
 }

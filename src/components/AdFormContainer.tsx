@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "./ui/button";
 import { AdForm } from "./AdForm";
 
 interface AdFormContainerProps {
@@ -28,7 +27,6 @@ interface AdFormContainerProps {
   onTextColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
-  onSubmit: (e: React.FormEvent) => void;
   overlayOpacity: number;
   onOpacityChange: (value: number) => void;
 }
@@ -46,7 +44,6 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
   onTextColorChange,
   onImageChange,
   onImageUrlsChange,
-  onSubmit,
   overlayOpacity,
   onOpacityChange,
 }) => {
@@ -67,14 +64,6 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         overlayOpacity={overlayOpacity}
         onOpacityChange={onOpacityChange}
       />
-      <Button 
-        type="submit" 
-        className="w-full mt-6" 
-        disabled={isGenerating} 
-        onClick={onSubmit}
-      >
-        {isGenerating ? 'Generating Ad...' : 'Generate Ad'}
-      </Button>
     </div>
   );
 };
