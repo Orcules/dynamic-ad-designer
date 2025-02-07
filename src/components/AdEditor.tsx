@@ -5,7 +5,7 @@ import { getDimensions } from "@/utils/adDimensions";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
-import { handleAdSubmission } from "./ad/AdSubmissionHandler";
+import { useAdSubmission } from "./ad/AdSubmissionHandler";
 import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
@@ -60,6 +60,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     onCurrentIndexChange: (index) => console.log("Current index changed:", index)
   });
 
+  const { handleSubmission } = useAdSubmission();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -91,16 +93,16 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         const currentImage = imagesToProcess[i];
         
         try {
-          await handleAdSubmission({
-            adData: {
+          await handleSubmission(
+            {
               ...enrichedAdData,
               name: `${adData.name}-${i + 1}`
             },
-            selectedImage: currentImage,
+            currentImage,
             previewRef,
-            onSuccess: onAdGenerated,
+            onAdGenerated,
             setIsGenerating
-          });
+          );
         } catch (error) {
           console.error(`Error processing image ${i + 1}:`, error);
           toast.error(`Error processing image ${i + 1}`);

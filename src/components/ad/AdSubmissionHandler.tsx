@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from "sonner";
 import { fetchWithRetry } from "@/utils/adSubmissionUtils";
@@ -8,7 +7,13 @@ import { capturePreview } from "@/utils/adPreviewCapture";
 
 type RenderProps = {
   isGenerating: boolean;
-  handleSubmission: (adData: any, imageFile: File, previewRef: React.RefObject<HTMLDivElement>, onSuccess: (newAd: any) => void) => Promise<void>;
+  handleSubmission: (
+    adData: any,
+    imageFile: File | string,
+    previewRef: React.RefObject<HTMLDivElement>,
+    onSuccess: (newAd: any) => void,
+    setIsGenerating: (value: boolean) => void
+  ) => Promise<void>;
 };
 
 interface AdSubmissionHandlerProps {
@@ -21,9 +26,10 @@ export const useAdSubmission = () => {
 
   const handleSubmission = async (
     adData: any,
-    imageFile: File,
+    imageFile: File | string,
     previewRef: React.RefObject<HTMLDivElement>,
-    onSuccess: (newAd: any) => void
+    onSuccess: (newAd: any) => void,
+    setIsGenerating: (value: boolean) => void
   ) => {
     if (!imageFile) {
       toast.error('Please select an image');
@@ -43,7 +49,7 @@ export const useAdSubmission = () => {
     try {
       console.log(`Starting ad generation process [${uploadId}]`, { adData });
       
-      // הכנת התמונה
+      // Prepare the image
       let imageBlob: Blob;
       if (imageFile instanceof File) {
         imageBlob = imageFile;
@@ -54,15 +60,15 @@ export const useAdSubmission = () => {
         imageBlob = await response.blob();
       }
       
-      // העלאת התמונה המקורית
-      const { path: originalPath, url: originalUrl } = await AdStorageService.uploadOriginalImage(
+      // Upload original image
+      const { path: originalPath } = await AdStorageService.uploadOriginalImage(
         imageBlob,
         imageFile instanceof File ? imageFile.name : 'image.jpg',
         uploadId
       );
       uploadedFiles.push(originalPath);
       
-      // יצירת ושמירת תצוגה מקדימה
+      // Create and save preview
       console.log(`Capturing preview [${uploadId}]`);
       const previewFile = await capturePreview(previewRef, adData.platform);
       if (!previewFile) {
@@ -72,10 +78,10 @@ export const useAdSubmission = () => {
       const { path: previewPath } = await AdStorageService.uploadPreviewImage(previewFile, uploadId);
       uploadedFiles.push(previewPath);
       
-      // יצירת המודעה
+      // Generate ad
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
       
-      // שמירת המודעה במסד הנתונים
+      // Save ad to database
       const newAd = await AdGenerationService.saveAdToDatabase(adData, imageUrl);
       
       toast.success('Ad created successfully!', {
@@ -90,7 +96,7 @@ export const useAdSubmission = () => {
     } catch (error: any) {
       console.error(`Error in handleAdSubmission [${uploadId}]:`, error);
       
-      // ניקוי קבצים שהועלו במקרה של שגיאה
+      // Clean up uploaded files in case of error
       if (uploadedFiles.length > 0) {
         console.log(`Cleaning up uploaded files [${uploadId}]...`);
         await Promise.all(
@@ -104,7 +110,7 @@ export const useAdSubmission = () => {
     }
   };
 
-  return { isGenerating, setIsGenerating, handleSubmission };
+  return { isGenerating, handleSubmission };
 };
 
 export const AdSubmissionHandler: React.FC<AdSubmissionHandlerProps> = ({ 
@@ -126,4 +132,3 @@ export const AdSubmissionHandler: React.FC<AdSubmissionHandlerProps> = ({
     </div>
   );
 };
-
