@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
@@ -185,7 +184,7 @@ serve(async (req) => {
     browser = null;
     console.log(`[${uploadId}] Browser closed`);
 
-    const generatedFileName = `generated/${uploadId}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
+    const generatedFileName = `generated/${uploadId}_${Date.now()}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
     
     console.log(`[${uploadId}] Uploading generated image:`, generatedFileName);
     const { error: saveError } = await supabase.storage
