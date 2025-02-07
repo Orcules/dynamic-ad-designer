@@ -34,7 +34,7 @@ export function AdContent({
 
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
   const [headlinePos, setHeadlinePos] = useState<Position>({ x: 0, y: 0 });
-  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 0 });
+  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 20 }); // Added initial Y offset
   const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 0 });
   const [isDraggingHeadline, setIsDraggingHeadline] = useState(false);
   const [isDraggingDescription, setIsDraggingDescription] = useState(false);
@@ -103,7 +103,7 @@ export function AdContent({
       onMouseLeave={handleMouseUp}
     >
       <div className={cn(
-        "flex-1 flex flex-col",
+        "flex-1 flex flex-col gap-4",
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
@@ -122,7 +122,7 @@ export function AdContent({
                 userSelect: 'none',
                 touchAction: 'none',
                 position: 'relative',
-                zIndex: isDraggingHeadline ? 50 : 1
+                zIndex: isDraggingHeadline ? 50 : 2
               }}
               onMouseDown={(e) => handleMouseDown(e, 'headline')}
             >
@@ -150,7 +150,8 @@ export function AdContent({
                 userSelect: 'none',
                 touchAction: 'none',
                 position: 'relative',
-                zIndex: isDraggingDescription ? 50 : 1
+                zIndex: isDraggingDescription ? 50 : 1,
+                marginTop: '2rem'
               }}
               onMouseDown={(e) => handleMouseDown(e, 'description')}
             >
@@ -178,7 +179,8 @@ export function AdContent({
                 userSelect: 'none',
                 touchAction: 'none',
                 position: 'relative',
-                zIndex: isDraggingCta ? 50 : 1
+                zIndex: isDraggingCta ? 50 : 1,
+                marginTop: '2rem'
               }}
               onMouseDown={(e) => handleMouseDown(e, 'cta')}
             >

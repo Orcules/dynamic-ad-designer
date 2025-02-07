@@ -5,16 +5,17 @@ interface AdTextProps {
   accentColor: string;
   textColor: string;
   fontFamily: string;
+  isDescription?: boolean;
 }
 
-export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily }: AdTextProps): CSSProperties {
+export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily, isDescription = false }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
-    fontWeight: 'bold',
-    fontSize: 'clamp(2rem, 4vw, 3.5rem)',
-    lineHeight: '1.2',
+    fontWeight: isDescription ? 'normal' : 'bold',
+    fontSize: isDescription ? '1rem' : 'clamp(2rem, 4vw, 3.5rem)',
+    lineHeight: isDescription ? '1.5' : '1.2',
     maxWidth: '90%',
     margin: '0 auto',
-    padding: '1rem',
+    padding: isDescription ? '0.5rem 1rem' : '1rem',
     fontFamily: fontFamily || 'Montserrat, system-ui',
     textAlign: 'center',
     display: 'block',
@@ -22,6 +23,8 @@ export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFa
     overflowWrap: 'break-word',
     hyphens: 'auto',
     color: textColor,
+    position: 'relative',
+    zIndex: isDescription ? 1 : 2,
   };
 
   switch (style) {

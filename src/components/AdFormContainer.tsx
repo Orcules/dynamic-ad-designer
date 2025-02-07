@@ -6,6 +6,7 @@ interface AdFormContainerProps {
   adData: {
     name: string;
     headline: string;
+    description: string;
     cta_text: string;
     font_url: string;
     platform: string;
@@ -14,6 +15,7 @@ interface AdFormContainerProps {
     cta_color: string;
     overlay_color: string;
     text_color: string;
+    description_color: string;
   };
   isGenerating: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
