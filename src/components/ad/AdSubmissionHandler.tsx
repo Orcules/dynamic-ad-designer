@@ -12,9 +12,9 @@ export function useAdSubmission() {
     adData: any,
     imageFile: File | string,
     previewRef: React.RefObject<HTMLDivElement>,
-    onSuccess: (newAd: any) => void,
-    setIsGenerating: (value: boolean) => void
+    onSuccess: (newAd: any) => void
   ) => {
+    setIsGenerating(true);
     const uploadId = crypto.randomUUID();
     const uploadedFiles: string[] = [];
     
@@ -70,6 +70,8 @@ export function useAdSubmission() {
       }
       
       toast.error(error.message || 'Error creating ad');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
