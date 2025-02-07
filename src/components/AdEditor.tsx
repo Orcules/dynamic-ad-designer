@@ -5,7 +5,7 @@ import { getDimensions } from "@/utils/adDimensions";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
-import { handleAdSubmission } from "./AdSubmissionHandler";
+import { handleAdSubmission } from "./ad/AdSubmissionHandler";
 import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
