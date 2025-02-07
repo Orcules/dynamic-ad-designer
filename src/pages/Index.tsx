@@ -109,14 +109,16 @@ const Index = () => {
                   className="flex items-center justify-between p-3 bg-card rounded-lg hover:bg-accent/5 transition-colors"
                 >
                   <span className="text-sm font-medium">{ad.name}</span>
-                  <a
-                    href={ad.image_url || '#'}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-                  >
-                    View Ad <ExternalLink className="h-4 w-4" />
-                  </a>
+                  {ad.image_url && (
+                    <a
+                      href={ad.image_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
+                    >
+                      View Ad <ExternalLink className="h-4 w-4" />
+                    </a>
+                  )}
                 </div>
               ))}
             </div>
