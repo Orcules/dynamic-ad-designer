@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -45,11 +46,13 @@ serve(async (req) => {
     ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
     console.log(`[${uploadId}] Background image loaded and drawn`);
 
-    // Add overlay
-    ctx.fillStyle = data.overlay_color || '#000000';
-    ctx.globalAlpha = data.overlayOpacity || 0.4;
+    // Add overlay with reduced opacity (default to 0.4 if not specified)
+    const overlayOpacity = data.overlayOpacity || 0.4;
+    console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
+    ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 0.4)';
+    ctx.globalAlpha = overlayOpacity;
     ctx.fillRect(0, 0, data.width, data.height);
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = 1; // Reset opacity
 
     // Configure text settings
     ctx.fillStyle = data.text_color || '#FFFFFF';
@@ -67,7 +70,7 @@ serve(async (req) => {
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
-      ctx.fillStyle = data.description_color || '#333333';
+      ctx.fillStyle = data.description_color || '#FFFFFF';
       ctx.fillText(data.description, data.width / 2, data.height * 0.5, data.width * 0.8);
     }
 
@@ -100,7 +103,7 @@ serve(async (req) => {
     console.log(`[${uploadId}] Converting canvas to buffer...`);
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
-    const filePath = `generated/${uploadId}_${timestamp}_ad.png`;
+    const filePath = `generated/${timestamp}_ad.png`;
 
     console.log(`[${uploadId}] Uploading to Supabase Storage...`);
     // Upload to Supabase Storage
