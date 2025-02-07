@@ -36,7 +36,6 @@ async function fetchWithRetry(url: string): Promise<Response> {
     }
   }
 
-  // Try direct fetch as last resort
   try {
     const response = await fetch(url, { mode: 'no-cors' });
     return response;
@@ -91,96 +90,102 @@ export const handleAdSubmission = async ({
     toast.error('Please select an image');
     return;
   }
+
+  // יצירת מזהה ייחודי לכל העלאה
+  const uploadId = crypto.randomUUID();
+  const timestamp = Date.now();
   
   setIsGenerating(true);
+  let uploadedFiles: string[] = [];
   
   try {
+    console.log(`Starting ad generation process [${uploadId}]`, { adData });
     const { width, height } = getDimensions(adData.platform);
-    const timestamp = Date.now() + Math.floor(Math.random() * 1000);
     
-    console.log('Starting ad generation process with data:', { adData, width, height });
-    
+    // הכנת התמונה
     let imageBlob: Blob;
     if (selectedImage instanceof File) {
       imageBlob = selectedImage;
+      console.log(`Using uploaded file [${uploadId}]`);
     } else {
-      console.log('Fetching image from URL:', selectedImage);
+      console.log(`Fetching image from URL [${uploadId}]:`, selectedImage);
       const response = await fetchWithRetry(selectedImage);
       imageBlob = await response.blob();
+      console.log(`Successfully fetched image [${uploadId}]`);
     }
     
+    // העלאת התמונה המקורית
     const originalFileName = selectedImage instanceof File ? selectedImage.name : 'image.jpg';
     const sanitizedFileName = sanitizeFileName(originalFileName);
-    const originalImagePath = `original/${timestamp}_${sanitizedFileName}`;
+    const originalImagePath = `original/${uploadId}_${timestamp}_${sanitizedFileName}`;
     
-    const { error: originalUploadError, data: originalUploadData } = await supabase.storage
+    console.log(`Uploading original image [${uploadId}] to ${originalImagePath}`);
+    const { error: originalUploadError } = await supabase.storage
       .from('ad-images')
       .upload(originalImagePath, imageBlob, {
         cacheControl: '3600',
-        upsert: true
+        upsert: false
       });
 
     if (originalUploadError) {
-      console.error('Original image upload error:', originalUploadError);
+      console.error(`Original image upload error [${uploadId}]:`, originalUploadError);
       throw new Error('Failed to upload original image');
     }
 
-    console.log('Original image uploaded successfully:', originalUploadData);
+    uploadedFiles.push(originalImagePath);
+    console.log(`Original image uploaded successfully [${uploadId}]`);
     
+    // יצירת תצוגה מקדימה
+    console.log(`Capturing preview [${uploadId}]`);
     const previewFile = await capturePreview(previewRef, adData.platform);
     if (!previewFile) {
-      console.error('Preview capture failed - no file returned');
       throw new Error('Failed to capture preview');
     }
 
-    console.log('Preview captured successfully, uploading to storage...');
-    const previewPath = `generated/${timestamp}_preview.png`;
+    const previewPath = `generated/${uploadId}_${timestamp}_preview.png`;
+    console.log(`Uploading preview [${uploadId}] to ${previewPath}`);
     
-    const { error: previewError, data: previewUploadData } = await supabase.storage
+    const { error: previewError } = await supabase.storage
       .from('ad-images')
       .upload(previewPath, previewFile, {
         contentType: 'image/png',
         cacheControl: '3600',
-        upsert: true
+        upsert: false
       });
 
     if (previewError) {
-      console.error('Preview upload error:', previewError);
+      console.error(`Preview upload error [${uploadId}]:`, previewError);
       throw new Error('Failed to upload preview');
     }
 
-    console.log('Preview uploaded successfully:', previewUploadData);
+    uploadedFiles.push(previewPath);
+    console.log(`Preview uploaded successfully [${uploadId}]`);
 
-    const { data: { publicUrl: previewUrl } } = supabase.storage
-      .from('ad-images')
-      .getPublicUrl(previewPath);
-
-    console.log('Got public URL for preview:', previewUrl);
-
-    // Create form data for the edge function
+    // קריאה לפונקציית Edge
     const formData = new FormData();
     formData.append('image', imageBlob);
+    formData.append('uploadId', uploadId);
     formData.append('data', JSON.stringify({
       ...adData,
       width,
       height,
-      overlayOpacity: 0.4 // Default value if not provided
+      overlayOpacity: 0.4
     }));
 
-    console.log('Calling generate-ad edge function...');
+    console.log(`Calling generate-ad edge function [${uploadId}]`);
     const { data: generatedAd, error: generateError } = await supabase.functions
       .invoke('generate-ad', {
         body: formData
       });
 
     if (generateError) {
-      console.error('Generate ad error:', generateError);
+      console.error(`Generate ad error [${uploadId}]:`, generateError);
       throw new Error('Failed to generate ad');
     }
 
-    console.log('Ad generated successfully:', generatedAd);
+    console.log(`Ad generated successfully [${uploadId}]:`, generatedAd);
 
-    // Ensure template style is valid
+    // שמירת המודעה במסד הנתונים
     const templateStyle = validTemplateStyles.includes(adData.template_style) 
       ? adData.template_style 
       : 'modern';
@@ -210,11 +215,11 @@ export const handleAdSubmission = async ({
       .single();
 
     if (createError) {
-      console.error('Create ad record error:', createError);
+      console.error(`Create ad record error [${uploadId}]:`, createError);
       throw new Error('Failed to create ad record');
     }
 
-    console.log('Ad record created successfully:', newAd);
+    console.log(`Ad record created successfully [${uploadId}]:`, newAd);
     
     toast.success('Ad created successfully!', {
       action: {
@@ -226,7 +231,23 @@ export const handleAdSubmission = async ({
     onSuccess(newAd);
     
   } catch (error: any) {
-    console.error('Error in handleAdSubmission:', error);
+    console.error(`Error in handleAdSubmission [${uploadId}]:`, error);
+    
+    // ניקוי קבצים שהועלו במקרה של שגיאה
+    if (uploadedFiles.length > 0) {
+      console.log(`Cleaning up uploaded files [${uploadId}]...`);
+      await Promise.all(
+        uploadedFiles.map(async (filePath) => {
+          const { error } = await supabase.storage
+            .from('ad-images')
+            .remove([filePath]);
+          if (error) {
+            console.error(`Failed to remove file ${filePath} [${uploadId}]:`, error);
+          }
+        })
+      );
+    }
+    
     toast.error(error.message || 'Error creating ad');
   } finally {
     setIsGenerating(false);

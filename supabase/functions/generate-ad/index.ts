@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
@@ -12,33 +13,40 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
+  let uploadId: string | null = null;
+
   try {
     const formData = await req.formData();
+    uploadId = formData.get('uploadId') as string;
     const data = JSON.parse(formData.get('data') as string);
     const imageFile = formData.get('image') as File;
     
-    console.log('Starting to generate ad with data:', data);
+    console.log(`[${uploadId}] Starting to generate ad with data:`, data);
 
-    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Upload original image if provided
     let imageUrl = data.image_url;
     if (imageFile) {
       const timestamp = Date.now();
-      const fileName = `original/${timestamp}_${imageFile.name}`.replace(/[^\x00-\x7F]/g, '');
+      const fileName = `generated/${uploadId}_${timestamp}_${imageFile.name}`.replace(/[^\x00-\x7F]/g, '');
       
+      console.log(`[${uploadId}] Uploading image to storage:`, fileName);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('ad-images')
         .upload(fileName, imageFile, {
           contentType: 'image/jpeg',
-          upsert: true
+          upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error(`[${uploadId}] Upload error:`, uploadError);
+        throw uploadError;
+      }
+
+      console.log(`[${uploadId}] Image uploaded successfully`);
 
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
@@ -47,17 +55,16 @@ serve(async (req) => {
       imageUrl = publicUrl;
     }
 
-    // Launch browser
+    console.log(`[${uploadId}] Launching browser`);
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     
-    // Set viewport to match ad dimensions
     await page.setViewport({
       width: data.width,
       height: data.height
     });
 
-    // Create HTML content
+    console.log(`[${uploadId}] Creating HTML content`);
     const html = `
       <html>
         <head>
@@ -160,11 +167,11 @@ serve(async (req) => {
       </html>
     `;
 
-    // Set content and wait for fonts to load
+    console.log(`[${uploadId}] Setting page content`);
     await page.setContent(html);
     await page.evaluateHandle('document.fonts.ready');
 
-    // Take screenshot
+    console.log(`[${uploadId}] Taking screenshot`);
     const screenshot = await page.screenshot({
       type: 'jpeg',
       quality: 90,
@@ -172,37 +179,29 @@ serve(async (req) => {
     });
 
     await browser.close();
+    console.log(`[${uploadId}] Browser closed`);
 
-    // Upload generated image
-    const timestamp = Date.now();
-    const generatedFileName = `generated/${timestamp}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
+    const generatedFileName = `generated/${uploadId}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
     
+    console.log(`[${uploadId}] Uploading generated image:`, generatedFileName);
     const { error: saveError } = await supabase.storage
       .from('ad-images')
       .upload(generatedFileName, screenshot, {
         contentType: 'image/jpeg',
-        upsert: true
+        upsert: false
       });
 
-    if (saveError) throw saveError;
+    if (saveError) {
+      console.error(`[${uploadId}] Save error:`, saveError);
+      throw saveError;
+    }
 
-    // Get public URL for the generated image
+    console.log(`[${uploadId}] Getting public URL`);
     const { data: { publicUrl: generatedUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(generatedFileName);
 
-    // Update the ad record with the generated image URL
-    const { error: updateError } = await supabase
-      .from('generated_ads')
-      .update({ 
-        image_url: generatedUrl,
-        status: 'completed'
-      })
-      .eq('name', data.name);
-
-    if (updateError) throw updateError;
-
-    console.log('Successfully generated ad image:', generatedUrl);
+    console.log(`[${uploadId}] Successfully generated ad image:`, generatedUrl);
 
     return new Response(
       JSON.stringify({ success: true, imageUrl: generatedUrl }),
@@ -215,7 +214,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error generating ad:', error);
+    console.error(`[${uploadId}] Error generating ad:`, error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
