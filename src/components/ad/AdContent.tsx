@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import { AdHeadline } from "./AdHeadline";
 import { AdDescription } from "./AdDescription";
@@ -19,6 +19,9 @@ interface AdContentProps {
   templateStyle?: string;
   isButtonHovered: boolean;
   onButtonHover: (isHovered: boolean) => void;
+  headlinePosition: Position;
+  descriptionPosition: Position;
+  ctaPosition: Position;
 }
 
 export function AdContent({
@@ -31,77 +34,15 @@ export function AdContent({
   templateStyle,
   isButtonHovered,
   onButtonHover,
+  headlinePosition,
+  descriptionPosition,
+  ctaPosition,
 }: AdContentProps) {
-  const [headlinePos, setHeadlinePos] = useState<Position>({ x: 0, y: 0 });
-  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 0 });
-  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 0 });
-  const [isDraggingHeadline, setIsDraggingHeadline] = useState(false);
-  const [isDraggingDescription, setIsDraggingDescription] = useState(false);
-  const [isDraggingCta, setIsDraggingCta] = useState(false);
-  const dragStartPos = useRef<Position>({ x: 0, y: 0 });
-  const elementStartPos = useRef<Position>({ x: 0, y: 0 });
-
-  const handleMouseDown = (e: React.MouseEvent, type: 'headline' | 'description' | 'cta') => {
-    e.preventDefault();
-    const setIsDragging = type === 'headline' 
-      ? setIsDraggingHeadline 
-      : type === 'description'
-      ? setIsDraggingDescription
-      : setIsDraggingCta;
-    const currentPos = type === 'headline' 
-      ? headlinePos 
-      : type === 'description'
-      ? descriptionPos
-      : ctaPos;
-    
-    setIsDragging(true);
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
-    elementStartPos.current = currentPos;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDraggingHeadline && !isDraggingDescription && !isDraggingCta) return;
-
-    e.preventDefault();
-    const dx = e.clientX - dragStartPos.current.x;
-    const dy = e.clientY - dragStartPos.current.y;
-
-    if (isDraggingHeadline) {
-      setHeadlinePos({
-        x: elementStartPos.current.x + dx,
-        y: elementStartPos.current.y + dy,
-      });
-    }
-
-    if (isDraggingDescription) {
-      setDescriptionPos({
-        x: elementStartPos.current.x + dx,
-        y: elementStartPos.current.y + dy,
-      });
-    }
-
-    if (isDraggingCta) {
-      setCtaPos({
-        x: elementStartPos.current.x + dx,
-        y: elementStartPos.current.y + dy,
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDraggingHeadline(false);
-    setIsDraggingDescription(false);
-    setIsDraggingCta(false);
-  };
-
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
 
   return (
     <div 
       className="absolute inset-0 flex flex-col"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
     >
       <div className={cn(
         "relative flex-1 flex flex-col items-center justify-center gap-4 p-4",
@@ -114,25 +55,19 @@ export function AdContent({
           <AdHeadline
             headline={headline}
             textStyle={textStyle}
-            isDragging={isDraggingHeadline}
-            position={headlinePos}
-            onMouseDown={(e) => handleMouseDown(e, 'headline')}
+            position={headlinePosition}
           />
           
           <AdDescription
             description={description}
             descriptionStyle={descriptionStyle}
-            isDragging={isDraggingDescription}
-            position={descriptionPos}
-            onMouseDown={(e) => handleMouseDown(e, 'description')}
+            position={descriptionPosition}
           />
           
           <AdCallToAction
             ctaText={ctaText}
             buttonStyle={buttonStyle}
-            isDragging={isDraggingCta}
-            position={ctaPos}
-            onMouseDown={(e) => handleMouseDown(e, 'cta')}
+            position={ctaPosition}
             isButtonHovered={isButtonHovered}
             onButtonHover={onButtonHover}
           />

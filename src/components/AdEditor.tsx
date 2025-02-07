@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
+import { AdPositionControls } from "./ad/AdPositionControls";
 
 interface Template {
   id: string;
@@ -24,7 +25,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [adData, setAdData] = useState({
     name: "",
     headline: "",
-    description: "", // Added new field
+    description: "",
     cta_text: "",
     font_url: "",
     platform: "instagram-story",
@@ -33,11 +34,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     cta_color: "#4A90E2",
     overlay_color: "#000000",
     text_color: "#FFFFFF",
-    description_color: "#333333" // Added new field for description color
+    description_color: "#333333"
   });
 
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
+  const [headlinePosition, setHeadlinePosition] = useState({ x: 0, y: 0 });
+  const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
+  const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
 
   const {
     selectedImages,
@@ -83,6 +87,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handleTextColorChange = (value: string) => {
     setAdData(prev => ({ ...prev, text_color: value }));
+  };
+
+  const handleDescriptionColorChange = (value: string) => {
+    setAdData(prev => ({ ...prev, description_color: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -145,49 +153,67 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const { width, height } = getDimensions(adData.platform);
 
   return (
-    <div className="flex flex-col gap-8">
-      <AdFormContainer
-        adData={adData}
-        isGenerating={isGenerating}
-        onInputChange={handleInputChange}
-        onFontChange={handleFontChange}
-        onPlatformChange={handlePlatformChange}
-        onStyleChange={handleStyleChange}
-        onColorChange={handleColorChange}
-        onCtaColorChange={handleCtaColorChange}
-        onOverlayColorChange={handleOverlayColorChange}
-        onTextColorChange={handleTextColorChange}
-        onImageChange={handleImageChange}
-        onImageUrlsChange={handleImageUrlsChange}
-        onSubmit={handleSubmit}
-        overlayOpacity={overlayOpacity}
-        onOpacityChange={setOverlayOpacity}
-      />
-
-      <AdPreviewCapture onCapture={(file) => console.log('Preview captured:', file)}>
-        <AdPreview
-          imageUrl={imageUrls[currentPreviewIndex]}
-          imageUrls={imageUrls}
-          width={width}
-          height={height}
-          headline={adData.headline}
-          description={adData.description}
-          descriptionColor={adData.description_color}
-          ctaText={adData.cta_text}
-          templateStyle={adData.template_style}
-          accentColor={adData.accent_color}
-          ctaColor={adData.cta_color}
-          overlayColor={adData.overlay_color}
-          textColor={adData.text_color}
-          fontUrl={adData.font_url}
+    <div className="flex flex-col lg:flex-row gap-8">
+      <div className="w-full lg:w-1/2">
+        <AdFormContainer
+          adData={adData}
+          isGenerating={isGenerating}
+          onInputChange={handleInputChange}
+          onFontChange={handleFontChange}
+          onPlatformChange={handlePlatformChange}
+          onStyleChange={handleStyleChange}
+          onColorChange={handleColorChange}
+          onCtaColorChange={handleCtaColorChange}
+          onOverlayColorChange={handleOverlayColorChange}
+          onTextColorChange={handleTextColorChange}
+          onImageChange={handleImageChange}
+          onImageUrlsChange={handleImageUrlsChange}
+          onSubmit={handleSubmit}
           overlayOpacity={overlayOpacity}
-          currentIndex={currentPreviewIndex}
-          onPrevious={handlePrevPreview}
-          onNext={handleNextPreview}
+          onOpacityChange={setOverlayOpacity}
         />
-      </AdPreviewCapture>
+      </div>
+      
+      <div className="w-full lg:w-1/2 space-y-6">
+        <AdPreviewCapture onCapture={(file) => console.log('Preview captured:', file)}>
+          <AdPreview
+            imageUrl={imageUrls[currentPreviewIndex]}
+            imageUrls={imageUrls}
+            width={width}
+            height={height}
+            headline={adData.headline}
+            description={adData.description}
+            descriptionColor={adData.description_color}
+            ctaText={adData.cta_text}
+            templateStyle={adData.template_style}
+            accentColor={adData.accent_color}
+            ctaColor={adData.cta_color}
+            overlayColor={adData.overlay_color}
+            textColor={adData.text_color}
+            fontUrl={adData.font_url}
+            overlayOpacity={overlayOpacity}
+            currentIndex={currentPreviewIndex}
+            onPrevious={handlePrevPreview}
+            onNext={handleNextPreview}
+            headlinePosition={headlinePosition}
+            descriptionPosition={descriptionPosition}
+            ctaPosition={ctaPosition}
+          />
+        </AdPreviewCapture>
+
+        <AdPositionControls
+          headlinePosition={headlinePosition}
+          descriptionPosition={descriptionPosition}
+          ctaPosition={ctaPosition}
+          onHeadlinePositionChange={setHeadlinePosition}
+          onDescriptionPositionChange={setDescriptionPosition}
+          onCtaPositionChange={setCtaPosition}
+          descriptionColor={adData.description_color}
+          onDescriptionColorChange={handleDescriptionColorChange}
+        />
+      </div>
     </div>
   );
-};
+}
 
 export default AdEditor;

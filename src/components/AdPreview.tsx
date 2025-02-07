@@ -6,6 +6,11 @@ import { getButtonStyle } from "./ad/AdButton";
 import { AdNavigationControls } from "./ad/AdNavigationControls";
 import { AdContent } from "./ad/AdContent";
 
+interface Position {
+  x: number;
+  y: number;
+}
+
 interface AdPreviewProps {
   imageUrl?: string;
   width: number;
@@ -25,6 +30,9 @@ interface AdPreviewProps {
   currentIndex?: number;
   onPrevious?: () => void;
   onNext?: () => void;
+  headlinePosition: Position;
+  descriptionPosition: Position;
+  ctaPosition: Position;
 }
 
 export function AdPreview({ 
@@ -46,6 +54,9 @@ export function AdPreview({
   currentIndex = 0,
   onPrevious,
   onNext,
+  headlinePosition,
+  descriptionPosition,
+  ctaPosition,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -181,6 +192,9 @@ export function AdPreview({
                 templateStyle={templateStyle}
                 isButtonHovered={isButtonHovered}
                 onButtonHover={setIsButtonHovered}
+                headlinePosition={headlinePosition}
+                descriptionPosition={descriptionPosition}
+                ctaPosition={ctaPosition}
               />
             </div>
           </div>

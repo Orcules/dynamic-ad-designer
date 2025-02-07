@@ -1,41 +1,36 @@
 import React from 'react';
 import { cn } from "@/lib/utils";
 
+interface Position {
+  x: number;
+  y: number;
+}
+
 interface AdHeadlineProps {
   headline?: string;
   textStyle: any;
-  isDragging: boolean;
-  position: { x: number; y: number };
-  onMouseDown: (e: React.MouseEvent) => void;
+  position: Position;
 }
 
 export const AdHeadline: React.FC<AdHeadlineProps> = ({
   headline,
   textStyle,
-  isDragging,
   position,
-  onMouseDown
 }) => {
   if (!headline) return null;
 
   return (
     <div 
-      className={cn(
-        "w-full max-w-[90%] mx-auto px-4 cursor-move relative",
-        isDragging && "select-none"
-      )}
+      className="w-full max-w-[90%] mx-auto px-4 relative"
       style={{
         transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: isDragging ? 'none' : 'transform 0.1s ease-out',
-        userSelect: 'none',
-        touchAction: 'none',
+        transition: 'transform 0.1s ease-out',
         position: 'absolute',
-        zIndex: isDragging ? 50 : 3,
+        zIndex: 3,
         top: '10%',
         left: '50%',
         marginLeft: '-45%'
       }}
-      onMouseDown={onMouseDown}
     >
       <h2 
         className="text-center leading-tight break-words"
