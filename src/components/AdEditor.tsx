@@ -5,7 +5,7 @@ import { getDimensions } from "@/utils/adDimensions";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
-import { AdSubmissionHandler, useAdSubmission } from "./ad/AdSubmissionHandler";
+import { handleAdSubmission } from "./AdSubmissionHandler";
 import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
@@ -38,8 +38,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handleDescriptionColorChange
   } = useAdForm();
 
+  const [isGenerating, setIsGenerating] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
-  const { isGenerating, setIsGenerating, handleSubmission } = useAdSubmission();
   const [headlinePosition, setHeadlinePosition] = useState({ x: 0, y: 0 });
   const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
   const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
@@ -91,24 +91,16 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         const currentImage = imagesToProcess[i];
         
         try {
-          let imageFile: File;
-          if (currentImage instanceof File) {
-            imageFile = currentImage;
-          } else {
-            const response = await fetch(currentImage);
-            const blob = await response.blob();
-            imageFile = new File([blob], `image_${i + 1}.jpg`, { type: 'image/jpeg' });
-          }
-          
-          await handleSubmission(
-            {
+          await handleAdSubmission({
+            adData: {
               ...enrichedAdData,
               name: `${adData.name}-${i + 1}`
             },
-            imageFile,
+            selectedImage: currentImage,
             previewRef,
-            onAdGenerated
-          );
+            onSuccess: onAdGenerated,
+            setIsGenerating
+          });
         } catch (error) {
           console.error(`Error processing image ${i + 1}:`, error);
           toast.error(`Error processing image ${i + 1}`);
