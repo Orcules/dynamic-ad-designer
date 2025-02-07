@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import { Browser } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
@@ -14,6 +14,7 @@ serve(async (req) => {
   }
 
   let uploadId: string | null = null;
+  let browser: Browser | null = null;
 
   try {
     const formData = await req.formData();
@@ -54,15 +55,6 @@ serve(async (req) => {
 
       imageUrl = publicUrl;
     }
-
-    console.log(`[${uploadId}] Launching browser`);
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    
-    await page.setViewport({
-      width: data.width,
-      height: data.height
-    });
 
     console.log(`[${uploadId}] Creating HTML content`);
     const html = `
@@ -167,6 +159,15 @@ serve(async (req) => {
       </html>
     `;
 
+    console.log(`[${uploadId}] Creating browser`);
+    browser = await Deno.createBrowser();
+    const page = await browser.newPage();
+    
+    await page.setViewport({
+      width: data.width,
+      height: data.height
+    });
+
     console.log(`[${uploadId}] Setting page content`);
     await page.setContent(html);
     await page.evaluateHandle('document.fonts.ready');
@@ -179,6 +180,7 @@ serve(async (req) => {
     });
 
     await browser.close();
+    browser = null;
     console.log(`[${uploadId}] Browser closed`);
 
     const generatedFileName = `generated/${uploadId}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
@@ -222,5 +224,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
+  } finally {
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (error) {
+        console.error(`[${uploadId}] Error closing browser:`, error);
+      }
+    }
   }
 });
