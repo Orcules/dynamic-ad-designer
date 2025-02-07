@@ -1,6 +1,13 @@
-import { ArrowBigDown } from "lucide-react";
+import React, { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { useState, useRef } from "react";
+import { AdHeadline } from "./AdHeadline";
+import { AdDescription } from "./AdDescription";
+import { AdCallToAction } from "./AdCallToAction";
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 interface AdContentProps {
   headline?: string;
@@ -14,11 +21,6 @@ interface AdContentProps {
   onButtonHover: (isHovered: boolean) => void;
 }
 
-interface Position {
-  x: number;
-  y: number;
-}
-
 export function AdContent({
   headline,
   description,
@@ -30,12 +32,9 @@ export function AdContent({
   isButtonHovered,
   onButtonHover,
 }: AdContentProps) {
-  if (!headline && !description && !ctaText) return null;
-
-  const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
   const [headlinePos, setHeadlinePos] = useState<Position>({ x: 0, y: 0 });
-  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 40 }); // Increased initial Y offset
-  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 80 }); // Added initial Y offset for CTA
+  const [descriptionPos, setDescriptionPos] = useState<Position>({ x: 0, y: 40 });
+  const [ctaPos, setCtaPos] = useState<Position>({ x: 0, y: 80 });
   const [isDraggingHeadline, setIsDraggingHeadline] = useState(false);
   const [isDraggingDescription, setIsDraggingDescription] = useState(false);
   const [isDraggingCta, setIsDraggingCta] = useState(false);
@@ -95,6 +94,8 @@ export function AdContent({
     setIsDraggingCta(false);
   };
 
+  const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
+
   return (
     <div 
       className="absolute inset-0 flex flex-col"
@@ -103,111 +104,38 @@ export function AdContent({
       onMouseLeave={handleMouseUp}
     >
       <div className={cn(
-        "flex-1 flex flex-col gap-8 p-4", // Added padding and increased gap
+        "flex-1 flex flex-col gap-8 p-4",
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
         <div className={cn(
           "relative w-full flex flex-col min-h-[300px]",
           isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent"
         )}>
-          {headline && (
-            <div 
-              className={cn(
-                "px-6 cursor-move relative",
-                isDraggingHeadline && "select-none"
-              )}
-              style={{
-                transform: `translate(${headlinePos.x}px, ${headlinePos.y}px)`,
-                transition: isDraggingHeadline ? 'none' : 'transform 0.1s ease-out',
-                userSelect: 'none',
-                touchAction: 'none',
-                position: 'absolute',
-                zIndex: isDraggingHeadline ? 50 : 3,
-                width: 'calc(100% - 3rem)', // Ensure proper width with padding
-                left: 0,
-                top: '10%'
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'headline')}
-            >
-              <h2 
-                className={cn(
-                  "text-center leading-tight break-words mx-auto",
-                  isBottomOverlay ? "max-w-full" : "max-w-[90%]"
-                )}
-                style={textStyle}
-              >
-                {headline}
-              </h2>
-            </div>
-          )}
-
-          {description && (
-            <div 
-              className={cn(
-                "px-6 cursor-move relative",
-                isDraggingDescription && "select-none"
-              )}
-              style={{
-                transform: `translate(${descriptionPos.x}px, ${descriptionPos.y}px)`,
-                transition: isDraggingDescription ? 'none' : 'transform 0.1s ease-out',
-                userSelect: 'none',
-                touchAction: 'none',
-                position: 'absolute',
-                zIndex: isDraggingDescription ? 50 : 2,
-                width: 'calc(100% - 3rem)',
-                left: 0,
-                top: '40%'
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'description')}
-            >
-              <p 
-                className={cn(
-                  "text-center leading-tight break-words mx-auto",
-                  isBottomOverlay ? "max-w-full" : "max-w-[90%]"
-                )}
-                style={descriptionStyle}
-              >
-                {description}
-              </p>
-            </div>
-          )}
+          <AdHeadline
+            headline={headline}
+            textStyle={textStyle}
+            isDragging={isDraggingHeadline}
+            position={headlinePos}
+            onMouseDown={(e) => handleMouseDown(e, 'headline')}
+          />
           
-          {ctaText && (
-            <div 
-              className={cn(
-                "w-full flex justify-center items-center cursor-move relative",
-                isDraggingCta && "select-none"
-              )}
-              style={{
-                transform: `translate(${ctaPos.x}px, ${ctaPos.y}px)`,
-                transition: isDraggingCta ? 'none' : 'transform 0.1s ease-out',
-                userSelect: 'none',
-                touchAction: 'none',
-                position: 'absolute',
-                zIndex: isDraggingCta ? 50 : 1,
-                bottom: '10%',
-                left: 0
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'cta')}
-            >
-              <div 
-                className="relative transform flex items-center justify-center gap-2 mx-auto"
-                style={buttonStyle}
-                onMouseEnter={() => onButtonHover(true)}
-                onMouseLeave={() => onButtonHover(false)}
-              >
-                <span className="block">
-                  {ctaText}
-                </span>
-                <ArrowBigDown 
-                  className={cn(
-                    "w-4 h-4 transition-transform duration-300",
-                    isButtonHovered ? "translate-y-1" : ""
-                  )}
-                />
-              </div>
-            </div>
-          )}
+          <AdDescription
+            description={description}
+            descriptionStyle={descriptionStyle}
+            isDragging={isDraggingDescription}
+            position={descriptionPos}
+            onMouseDown={(e) => handleMouseDown(e, 'description')}
+          />
+          
+          <AdCallToAction
+            ctaText={ctaText}
+            buttonStyle={buttonStyle}
+            isDragging={isDraggingCta}
+            position={ctaPos}
+            onMouseDown={(e) => handleMouseDown(e, 'cta')}
+            isButtonHovered={isButtonHovered}
+            onButtonHover={onButtonHover}
+          />
         </div>
       </div>
     </div>
