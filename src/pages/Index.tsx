@@ -32,42 +32,59 @@ const Index = () => {
     }
 
     if (data) {
+      console.log("Fetched ads:", data);
       setGeneratedAds(data);
     }
   };
 
   const handleAdGenerated = async (adData: any) => {
+    console.log("Starting ad generation with data:", adData);
+    
     try {
+      // First validate that we have the required data
+      if (!adData.headline) {
+        toast.error("Please enter a headline");
+        return;
+      }
+
+      // Prepare the data for insertion
+      const adToInsert = {
+        name: adData.headline || 'Untitled Ad',
+        headline: adData.headline,
+        description: adData.description,
+        cta_text: adData.cta_text,
+        font_url: adData.font_url,
+        platform: adData.platform,
+        template_style: adData.template_style || 'modern',
+        accent_color: adData.accent_color || '#4A90E2',
+        cta_color: adData.cta_color || '#4A90E2',
+        overlay_color: adData.overlay_color || '#000000',
+        text_color: adData.text_color || '#FFFFFF',
+        description_color: adData.description_color || '#333333',
+        image_url: adData.imageUrl,
+        width: adData.width || 1080,
+        height: adData.height || 1920
+      };
+
+      console.log("Inserting ad with data:", adToInsert);
+
       const { data, error } = await supabase
         .from('generated_ads')
-        .insert([
-          {
-            name: adData.headline || 'Untitled Ad',
-            headline: adData.headline,
-            description: adData.description,
-            cta_text: adData.cta_text,
-            font_url: adData.font_url,
-            platform: adData.platform,
-            template_style: adData.template_style,
-            accent_color: adData.accent_color,
-            cta_color: adData.cta_color,
-            overlay_color: adData.overlay_color,
-            text_color: adData.text_color,
-            description_color: adData.description_color,
-            image_url: adData.imageUrl,
-            width: adData.width || 1080,
-            height: adData.height || 1920
-          }
-        ])
+        .insert([adToInsert])
         .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error inserting ad:", error);
+        throw error;
+      }
       
+      console.log("Ad created successfully:", data);
       toast.success("Ad created successfully");
       fetchGeneratedAds(); // Refresh the list after creation
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error("Error generating ad:", error);
-      toast.error("Error creating ad");
+      toast.error(error.message || "Error creating ad");
     }
   };
 
