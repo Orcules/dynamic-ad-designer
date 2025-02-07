@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -98,6 +97,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
+  const handlePreviewCapture = (file: File) => {
+    console.log('Preview captured:', file);
+    // You can use this file later when submitting the ad
+  };
+
   const { width, height } = getDimensions(adData.platform);
 
   return (
@@ -123,7 +127,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       </div>
       
       <div className="w-full lg:w-1/2 space-y-6" ref={previewRef}>
-        <AdPreviewCapture onCapture={(file) => console.log('Preview captured:', file)}>
+        <AdPreviewCapture onCapture={handlePreviewCapture}>
           <AdPreview
             imageUrl={imageUrls[currentPreviewIndex]}
             imageUrls={imageUrls}
