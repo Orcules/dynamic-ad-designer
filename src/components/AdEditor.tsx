@@ -5,7 +5,7 @@ import { AdPreview } from "./AdPreview";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { AdPreviewCapture } from "./ad/AdPreviewCapture";
-import { useAdSubmission } from "./ad/AdSubmissionHandler"; // עדכון הנתיב
+import { useAdSubmission } from "@/hooks/useAdSubmission";
 import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
