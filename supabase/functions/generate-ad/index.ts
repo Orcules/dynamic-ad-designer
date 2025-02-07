@@ -54,13 +54,13 @@ serve(async (req) => {
 
     // Draw headline
     const fontSize = Math.floor(data.width * 0.06);
-    ctx.font = `bold ${fontSize}px ${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ') || 'Arial'}`;
+    ctx.font = `bold ${fontSize}px Arial`;
     ctx.fillText(data.headline, data.width / 2, data.height * 0.4, data.width * 0.8);
 
     // Draw description
     if (data.description) {
       const descFontSize = Math.floor(fontSize * 0.7);
-      ctx.font = `${descFontSize}px ${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ') || 'Arial'}`;
+      ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color;
       ctx.fillText(data.description, data.width / 2, data.height * 0.5, data.width * 0.8);
     }
@@ -73,11 +73,12 @@ serve(async (req) => {
       const buttonY = data.height * 0.7;
 
       ctx.fillStyle = data.cta_color;
+      ctx.beginPath();
       ctx.roundRect(buttonX, buttonY, buttonWidth, buttonHeight, buttonHeight / 2);
       ctx.fill();
 
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold ${Math.floor(fontSize * 0.6)}px ${data.font_url.split('family=')[1]?.split(':')[0]?.replace(/\+/g, ' ') || 'Arial'}`;
+      ctx.font = `bold ${Math.floor(fontSize * 0.6)}px Arial`;
       ctx.fillText(data.cta_text, data.width / 2, buttonY + buttonHeight / 2, buttonWidth * 0.9);
     }
 
@@ -94,13 +95,11 @@ serve(async (req) => {
         originalImageUrl,
         success: true
       }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error(`[${uploadId}] Error:`, error);
+    console.error(`[${uploadId}] Error generating ad:`, error);
     
     return new Response(
       JSON.stringify({
