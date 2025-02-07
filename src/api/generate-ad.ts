@@ -1,37 +1,37 @@
-import { initialize_gspread, initialize_storage, create_image } from '../python/adGenerator';
-
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    const data = JSON.parse(formData.get('data') as string);
-    const image = formData.get('image') as File;
+    
+    // Forward the request to the Supabase Edge Function
+    const response = await fetch(
+      'https://mmzlufnvxzqdkreatybs.supabase.co/functions/v1/generate-ad',
+      {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
 
-    if (image) {
-      // Convert File to image URL or handle file upload
-      data['Image Link'] = await uploadImage(image);
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to generate ad');
     }
 
-    // Fix the destructuring syntax
-    const [data_sheet, db_sheet] = await initialize_gspread();
-    const bucket = await initialize_storage();
-    
-    await create_image([data], db_sheet, bucket);
-
-    return new Response(JSON.stringify({ success: true }), {
+    const data = await response.json();
+    return new Response(JSON.stringify(data), {
       headers: { 'Content-Type': 'application/json' },
     });
     
   } catch (error) {
     console.error('Error in generate-ad API:', error);
-    return new Response(JSON.stringify({ error: 'Failed to generate ad' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ error: error.message || 'Failed to generate ad' }), 
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
   }
-}
-
-async function uploadImage(file: File): Promise<string> {
-  // Implement image upload logic here
-  // Return the URL of the uploaded image
-  return '';
 }

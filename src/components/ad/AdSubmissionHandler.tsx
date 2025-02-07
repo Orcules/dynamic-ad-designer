@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { getDimensions } from "@/utils/adDimensions";
 
 type RenderProps = {
   isGenerating: boolean;
@@ -14,9 +15,9 @@ interface AdSubmissionHandlerProps {
 
 const sanitizeFileName = (fileName: string): string => {
   return fileName
-    .replace(/[^\x00-\x7F]/g, '') // Remove non-ASCII characters
-    .replace(/\s+/g, '-')         // Replace spaces with hyphens
-    .toLowerCase();               // Convert to lowercase
+    .replace(/[^\x00-\x7F]/g, '')
+    .replace(/\s+/g, '-')
+    .toLowerCase();
 };
 
 export const useAdSubmission = () => {
@@ -29,47 +30,49 @@ export const useAdSubmission = () => {
     onSuccess: (newAd: any) => void
   ) => {
     try {
-      const timestamp = Date.now();
-      const sanitizedFileName = sanitizeFileName(imageFile.name);
-      const originalPath = `original/${timestamp}_${sanitizedFileName}`;
-      const previewPath = `generated/${timestamp}_preview.jpg`;
+      const dimensions = getDimensions(adData.platform);
+      const enrichedAdData = { 
+        ...adData,
+        ...dimensions,
+        status: 'pending'
+      };
 
-      // Upload original image
-      const { error: originalError } = await supabase.storage
-        .from('ad-images')
-        .upload(originalPath, imageFile);
-
-      if (originalError) throw originalError;
-
-      // Upload preview
-      const { error: previewError } = await supabase.storage
-        .from('ad-images')
-        .upload(previewPath, previewFile);
-
-      if (previewError) throw previewError;
-
-      // Get preview URL
-      const { data: { publicUrl: previewUrl } } = supabase.storage
-        .from('ad-images')
-        .getPublicUrl(previewPath);
-
-      // Create ad record
+      // Create the ad record first
       const { data: newAd, error: createError } = await supabase
         .from('generated_ads')
-        .insert([{
-          ...adData,
-          image_url: previewUrl,
-          status: 'completed',
-          cta_color: adData.cta_color || '#4A90E2',
-          overlay_color: adData.overlay_color || '#000000'
-        }])
+        .insert([enrichedAdData])
         .select()
         .single();
 
       if (createError) throw createError;
 
-      onSuccess(newAd);
-      toast.success('Ad created successfully!');
+      // Prepare form data for the generate-ad function
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(enrichedAdData));
+      formData.append('image', imageFile);
+
+      // Call the generate-ad function
+      const response = await fetch('/api/generate-ad', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate ad');
+      }
+
+      const { imageUrl } = await response.json();
+
+      toast.success('Ad created successfully!', {
+        action: {
+          label: 'View Ad',
+          onClick: () => window.open(imageUrl, '_blank')
+        },
+      });
+
+      onSuccess({ ...newAd, image_url: imageUrl });
+
     } catch (error: any) {
       console.error('Submission error:', error);
       toast.error(error.message || 'Error creating ad');

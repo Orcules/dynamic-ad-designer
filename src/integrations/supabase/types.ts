@@ -15,6 +15,8 @@ export type Database = {
           created_at: string | null
           cta_color: string | null
           cta_text: string | null
+          description: string | null
+          description_color: string | null
           font_url: string | null
           headline: string | null
           height: number
@@ -33,6 +35,8 @@ export type Database = {
           created_at?: string | null
           cta_color?: string | null
           cta_text?: string | null
+          description?: string | null
+          description_color?: string | null
           font_url?: string | null
           headline?: string | null
           height: number
@@ -51,6 +55,8 @@ export type Database = {
           created_at?: string | null
           cta_color?: string | null
           cta_text?: string | null
+          description?: string | null
+          description_color?: string | null
           font_url?: string | null
           headline?: string | null
           height?: number

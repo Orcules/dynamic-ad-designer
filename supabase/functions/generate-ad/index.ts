@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,8 +15,37 @@ serve(async (req) => {
   try {
     const formData = await req.formData();
     const data = JSON.parse(formData.get('data') as string);
+    const imageFile = formData.get('image') as File;
     
     console.log('Starting to generate ad with data:', data);
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Upload original image if provided
+    let imageUrl = data.image_url;
+    if (imageFile) {
+      const timestamp = Date.now();
+      const fileName = `original/${timestamp}_${imageFile.name}`.replace(/[^\x00-\x7F]/g, '');
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('ad-images')
+        .upload(fileName, imageFile, {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('ad-images')
+        .getPublicUrl(fileName);
+
+      imageUrl = publicUrl;
+    }
 
     // Launch browser
     const browser = await puppeteer.launch();
@@ -58,6 +88,7 @@ serve(async (req) => {
               width: 100%;
               height: 100%;
               object-fit: cover;
+              object-position: ${data.imagePosition?.x || 0}% ${data.imagePosition?.y || 0}%;
             }
             
             .overlay {
@@ -66,13 +97,11 @@ serve(async (req) => {
               left: 0;
               width: 100%;
               height: 100%;
-              background: linear-gradient(45deg, ${data.accent_color}88, ${data.accent_color}44);
+              background: ${data.overlay_color}${Math.round(data.overlayOpacity * 255).toString(16).padStart(2, '0')};
             }
             
             .content {
-              position: absolute;
-              top: 0;
-              left: 0;
+              position: relative;
               width: 100%;
               height: 100%;
               display: flex;
@@ -85,36 +114,45 @@ serve(async (req) => {
             }
             
             .headline {
-              color: white;
+              color: ${data.text_color};
               text-align: center;
               font-size: ${data.width * 0.05}px;
-              margin-bottom: 2rem;
+              position: absolute;
+              transform: translate(${data.headlinePosition?.x || 0}%, ${data.headlinePosition?.y || 0}%);
               max-width: 80%;
               font-weight: bold;
-              text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .description {
+              color: ${data.description_color};
+              text-align: center;
+              font-size: ${data.width * 0.03}px;
+              position: absolute;
+              transform: translate(${data.descriptionPosition?.x || 0}%, ${data.descriptionPosition?.y || 0}%);
+              max-width: 70%;
             }
             
             .cta-button {
-              background: ${data.accent_color};
+              background: ${data.cta_color};
               color: white;
               padding: 1rem 2rem;
               border-radius: 8px;
               font-size: ${data.width * 0.03}px;
               font-weight: bold;
+              position: absolute;
+              transform: translate(${data.ctaPosition?.x || 0}%, ${data.ctaPosition?.y || 0}%);
+              white-space: nowrap;
               border: none;
-              cursor: pointer;
-              text-align: center;
-              max-width: 80%;
-              box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             }
           </style>
         </head>
         <body>
           <div class="ad-container">
-            ${data.image_url ? `<img src="${data.image_url}" class="background-image" />` : ''}
+            ${imageUrl ? `<img src="${imageUrl}" class="background-image" />` : ''}
             <div class="overlay"></div>
             <div class="content">
               ${data.headline ? `<h1 class="headline">${data.headline}</h1>` : ''}
+              ${data.description ? `<p class="description">${data.description}</p>` : ''}
               ${data.cta_text ? `<button class="cta-button">${data.cta_text}</button>` : ''}
             </div>
           </div>
@@ -135,14 +173,46 @@ serve(async (req) => {
 
     await browser.close();
 
-    console.log('Successfully generated ad image');
+    // Upload generated image
+    const timestamp = Date.now();
+    const generatedFileName = `generated/${timestamp}_${data.name}.jpg`.replace(/[^\x00-\x7F]/g, '');
+    
+    const { error: saveError } = await supabase.storage
+      .from('ad-images')
+      .upload(generatedFileName, screenshot, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
 
-    return new Response(screenshot, { 
-      headers: { 
-        ...corsHeaders,
-        'Content-Type': 'image/jpeg'
-      } 
-    });
+    if (saveError) throw saveError;
+
+    // Get public URL for the generated image
+    const { data: { publicUrl: generatedUrl } } = supabase.storage
+      .from('ad-images')
+      .getPublicUrl(generatedFileName);
+
+    // Update the ad record with the generated image URL
+    const { error: updateError } = await supabase
+      .from('generated_ads')
+      .update({ 
+        image_url: generatedUrl,
+        status: 'completed'
+      })
+      .eq('name', data.name);
+
+    if (updateError) throw updateError;
+
+    console.log('Successfully generated ad image:', generatedUrl);
+
+    return new Response(
+      JSON.stringify({ success: true, imageUrl: generatedUrl }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
+      }
+    );
 
   } catch (error) {
     console.error('Error generating ad:', error);
