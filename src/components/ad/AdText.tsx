@@ -5,13 +5,14 @@ interface AdTextProps {
   accentColor: string;
   textColor: string;
   fontFamily: string;
+  fontSize?: string;
   isDescription?: boolean;
 }
 
-export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily, isDescription = false }: AdTextProps): CSSProperties {
+export function getTextStyle({ style = 'minimal', accentColor, textColor, fontFamily, fontSize, isDescription = false }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: isDescription ? 'normal' : 'bold',
-    fontSize: isDescription ? '1.125rem' : 'clamp(1.5rem, 3vw, 2.5rem)', // Adjusted font sizes
+    fontSize: fontSize || (isDescription ? '1.125rem' : 'clamp(1.5rem, 3vw, 2.5rem)'),
     lineHeight: isDescription ? '1.6' : '1.3',
     maxWidth: '100%',
     margin: '0 auto',

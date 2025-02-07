@@ -126,7 +126,7 @@ export function AdPreview({
     accentColor: overlayColor,
     textColor: descriptionColor,
     fontFamily,
-    fontSize: 'smaller'
+    isDescription: true
   });
   
   const buttonStyle = getButtonStyle({ 
