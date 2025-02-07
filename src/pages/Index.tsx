@@ -12,6 +12,20 @@ const Index = () => {
 
   const handleAdGenerated = async (adData: any) => {
     try {
+      const { data, error } = await supabase
+        .from('ads')
+        .insert([
+          {
+            title: adData.title,
+            image_url: adData.imageUrl,
+            platform: adData.platform,
+            created_at: new Date().toISOString()
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      
       toast.success("Ad created successfully");
     } catch (error) {
       console.error("Error generating ad:", error);
