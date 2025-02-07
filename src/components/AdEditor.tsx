@@ -11,6 +11,7 @@ import { AdSubmitButton } from "./ad/AdSubmitButton";
 import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
 import { processImages } from "@/utils/adImageProcessing";
+import { getDimensions } from "@/utils/adDimensions";
 
 interface Template {
   id: string;
