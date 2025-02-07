@@ -40,19 +40,29 @@ serve(async (req) => {
     const canvas = createCanvas(data.width, data.height);
     const ctx = canvas.getContext('2d');
 
-    // Load and draw the background image
-    console.log(`[${uploadId}] Loading background image...`);
-    const backgroundImage = await loadImage(imageArrayBuffer);
-    ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
-    console.log(`[${uploadId}] Background image loaded and drawn`);
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
 
-    // Add overlay with reduced opacity (default to 0.4 if not specified)
-    const overlayOpacity = data.overlayOpacity || 0.4;
+    // Load and draw the background image
+    console.log(`[${uploadId}] Loading background image... Size:`, imageArrayBuffer.byteLength);
+    const backgroundImage = await loadImage(imageArrayBuffer);
+    console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
+    
+    ctx.save(); // Save the current state
+    ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
+    console.log(`[${uploadId}] Background image drawn`);
+
+    // Add overlay with reduced opacity
+    const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
     console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
-    ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 0.4)';
+    
     ctx.globalAlpha = overlayOpacity;
+    ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
-    ctx.globalAlpha = 1; // Reset opacity
+    ctx.restore(); // Restore to previous state (resets globalAlpha)
+    
+    console.log(`[${uploadId}] Overlay added`);
 
     // Configure text settings
     ctx.fillStyle = data.text_color || '#FFFFFF';
@@ -63,6 +73,7 @@ serve(async (req) => {
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
+      console.log(`[${uploadId}] Drawing headline: "${data.headline}" with font size ${fontSize}`);
       ctx.fillText(data.headline, data.width / 2, data.height * 0.4, data.width * 0.8);
     }
 
@@ -71,6 +82,7 @@ serve(async (req) => {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
+      console.log(`[${uploadId}] Drawing description: "${data.description}" with font size ${descFontSize}`);
       ctx.fillText(data.description, data.width / 2, data.height * 0.5, data.width * 0.8);
     }
 
@@ -81,6 +93,8 @@ serve(async (req) => {
       const buttonX = (data.width - buttonWidth) / 2;
       const buttonY = data.height * 0.7;
 
+      console.log(`[${uploadId}] Drawing CTA button: "${data.cta_text}"`);
+      
       // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
@@ -125,6 +139,8 @@ serve(async (req) => {
       throw new Error(`Failed to upload generated image: ${uploadError.message}`);
     }
 
+    console.log(`[${uploadId}] Upload successful`);
+
     const { data: { publicUrl: generatedImageUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(filePath);
@@ -154,3 +170,4 @@ serve(async (req) => {
     );
   }
 });
+
