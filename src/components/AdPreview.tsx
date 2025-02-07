@@ -34,7 +34,7 @@ interface AdPreviewProps {
   headlinePosition: Position;
   descriptionPosition: Position;
   ctaPosition: Position;
-  showArrows?: boolean;
+  imagePosition: Position;
   showCtaArrow?: boolean;
 }
 
@@ -60,12 +60,11 @@ export function AdPreview({
   headlinePosition,
   descriptionPosition,
   ctaPosition,
-  showArrows = true,
+  imagePosition,
   showCtaArrow = true,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
-  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     if (fontUrl) {
@@ -130,7 +129,8 @@ export function AdPreview({
           >
             <AdPreviewImage
               imageUrl={imageUrl}
-              onPositionChange={setImagePosition}
+              position={imagePosition}
+              onPositionChange={() => {}}
             />
             <div
               className="absolute inset-0 flex flex-col justify-between pointer-events-none"
@@ -153,7 +153,7 @@ export function AdPreview({
               />
             </div>
           </div>
-          {showArrows && imageUrls.length > 1 && (
+          {imageUrls.length > 1 && (
             <AdNavigationControls
               onPrevious={onPrevious!}
               onNext={onNext!}

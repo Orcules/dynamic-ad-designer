@@ -12,18 +12,22 @@ interface AdPositionControlsProps {
   headlinePosition: Position;
   descriptionPosition: Position;
   ctaPosition: Position;
+  imagePosition: Position;
   onHeadlinePositionChange: (position: Position) => void;
   onDescriptionPositionChange: (position: Position) => void;
   onCtaPositionChange: (position: Position) => void;
+  onImagePositionChange: (position: Position) => void;
 }
 
 export function AdPositionControls({
   headlinePosition,
   descriptionPosition,
   ctaPosition,
+  imagePosition,
   onHeadlinePositionChange,
   onDescriptionPositionChange,
   onCtaPositionChange,
+  onImagePositionChange,
 }: AdPositionControlsProps) {
   return (
     <Card className="w-full">
@@ -32,6 +36,36 @@ export function AdPositionControls({
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
+          <div>
+            <Label>Background Image Position</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="image-x" className="text-xs">X</Label>
+                <Input
+                  id="image-x"
+                  type="number"
+                  value={imagePosition.x}
+                  onChange={(e) => onImagePositionChange({ 
+                    ...imagePosition, 
+                    x: Number(e.target.value) 
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="image-y" className="text-xs">Y</Label>
+                <Input
+                  id="image-y"
+                  type="number"
+                  value={imagePosition.y}
+                  onChange={(e) => onImagePositionChange({ 
+                    ...imagePosition, 
+                    y: Number(e.target.value) 
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
           <div>
             <Label>Headline Position</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">

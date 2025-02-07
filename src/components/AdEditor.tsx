@@ -43,6 +43,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [headlinePosition, setHeadlinePosition] = useState({ x: 0, y: 0 });
   const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
   const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [showCtaArrow, setShowCtaArrow] = useState(true);
 
   const {
@@ -163,6 +164,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             headlinePosition={headlinePosition}
             descriptionPosition={descriptionPosition}
             ctaPosition={ctaPosition}
+            imagePosition={imagePosition}
             showCtaArrow={showCtaArrow}
           />
         </AdPreviewCapture>
@@ -176,9 +178,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           headlinePosition={headlinePosition}
           descriptionPosition={descriptionPosition}
           ctaPosition={ctaPosition}
+          imagePosition={imagePosition}
           onHeadlinePositionChange={setHeadlinePosition}
           onDescriptionPositionChange={setDescriptionPosition}
           onCtaPositionChange={setCtaPosition}
+          onImagePositionChange={setImagePosition}
         />
 
         <AdSubmitButton
