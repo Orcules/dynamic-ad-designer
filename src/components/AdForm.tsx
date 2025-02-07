@@ -34,6 +34,7 @@ interface AdFormProps {
     cta_color: string;
     overlay_color: string;
     text_color: string;
+    description_color: string;
   };
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onFontChange: (value: string) => void;
@@ -43,6 +44,7 @@ interface AdFormProps {
   onCtaColorChange: (value: string) => void;
   onOverlayColorChange: (value: string) => void;
   onTextColorChange: (value: string) => void;
+  onDescriptionColorChange: (value: string) => void;
   onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onImageUrlsChange: (urls: string[]) => void;
   overlayOpacity: number;
@@ -59,6 +61,7 @@ export function AdForm({
   onCtaColorChange,
   onOverlayColorChange,
   onTextColorChange,
+  onDescriptionColorChange,
   onImageChange,
   onImageUrlsChange,
   overlayOpacity,
@@ -301,6 +304,8 @@ export function AdForm({
         onOverlayColorChange={onOverlayColorChange}
         textColor={adData.text_color}
         onTextColorChange={onTextColorChange}
+        descriptionColor={adData.description_color}
+        onDescriptionColorChange={onDescriptionColorChange}
         overlayOpacity={overlayOpacity}
         onOpacityChange={onOpacityChange}
       />
