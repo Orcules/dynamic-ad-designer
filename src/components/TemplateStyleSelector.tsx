@@ -41,7 +41,7 @@ export function TemplateStyleSelector({
           onValueChange={onChange}
           className="grid grid-cols-2 gap-4"
         >
-          {/* Previous Templates */}
+          {/* Classic Templates */}
           <StyleOption id="modern" label="Modern" />
           <StyleOption id="elegant" label="Elegant" />
           <StyleOption id="dynamic" label="Dynamic" />
@@ -60,13 +60,23 @@ export function TemplateStyleSelector({
           <StyleOption id="overlay-bottom-neon" label="Bottom Neon" />
           <StyleOption id="overlay-bottom-minimal" label="Bottom Minimal" />
           
+          {/* Creative Templates */}
+          <StyleOption id="neon" label="Neon Glow" />
+          <StyleOption id="split" label="Split Design" />
+          <StyleOption id="gradient" label="Gradient Flow" />
+          <StyleOption id="outline" label="Outline Text" />
+          <StyleOption id="stacked" label="Stacked Layout" />
+          <StyleOption id="minimal" label="Minimal Clean" />
+          
           {/* New Templates */}
-          <StyleOption id="neon" label="Neon" />
-          <StyleOption id="split" label="Split" />
-          <StyleOption id="gradient" label="Gradient" />
-          <StyleOption id="outline" label="Outline" />
-          <StyleOption id="stacked" label="Stacked" />
-          <StyleOption id="minimal" label="Minimal" />
+          <StyleOption id="retro" label="Retro Style" />
+          <StyleOption id="glassmorphism" label="Glass Effect" />
+          <StyleOption id="3d" label="3D Text" />
+          <StyleOption id="vintage" label="Vintage Look" />
+          <StyleOption id="tech" label="Tech Theme" />
+          <StyleOption id="nature" label="Nature Theme" />
+          <StyleOption id="urban" label="Urban Style" />
+          <StyleOption id="artistic" label="Artistic" />
         </RadioGroup>
       </div>
 

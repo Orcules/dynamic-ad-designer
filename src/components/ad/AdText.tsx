@@ -24,7 +24,7 @@ export function getTextStyle({
     maxWidth: '100%',
     margin: '0 auto',
     padding: isDescription ? '0.75rem' : '1rem',
-    fontFamily: fontFamily || 'Montserrat, system-ui',
+    fontFamily: fontFamily || 'system-ui',
     textAlign: 'center',
     display: 'block',
     wordWrap: 'break-word',
@@ -75,6 +75,7 @@ export function getTextStyle({
         ...baseStyle,
         textShadow: `0 0 20px ${accentColor}`,
         letterSpacing: '0.1em',
+        textTransform: 'uppercase',
       };
 
     case 'minimal-fade':
@@ -87,6 +88,7 @@ export function getTextStyle({
       return {
         ...baseStyle,
         textShadow: `3px 3px 0 ${accentColor}`,
+        letterSpacing: '0.05em',
       };
 
     case 'vignette':
@@ -100,75 +102,80 @@ export function getTextStyle({
         ...baseStyle,
         textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
         letterSpacing: '0.1em',
+        fontWeight: '300',
       };
 
-    case 'overlay-bottom-clean':
+    case 'retro':
       return {
         ...baseStyle,
-        backgroundColor: `${accentColor}CC`,
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '100%',
-        margin: 0,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
+        textShadow: `2px 2px 0 ${accentColor}, 4px 4px 0 rgba(0,0,0,0.2)`,
+        letterSpacing: '0.15em',
+        textTransform: 'uppercase',
+      };
+
+    case 'glassmorphism':
+      return {
+        ...baseStyle,
         backdropFilter: 'blur(8px)',
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        padding: '1.5rem',
+        borderRadius: '8px',
       };
 
-    case 'overlay-bottom-gradient':
+    case '3d':
       return {
         ...baseStyle,
-        background: `linear-gradient(to top, ${accentColor} 0%, ${accentColor}99 60%, transparent 100%)`,
-        padding: '4rem 2rem 2rem',
-        width: '100%',
-        maxWidth: '100%',
-        margin: 0,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
+        textShadow: `0 1px 0 #ccc,
+                     0 2px 0 #c9c9c9,
+                     0 3px 0 #bbb,
+                     0 4px 0 #b9b9b9,
+                     0 5px 0 #aaa,
+                     0 6px 1px rgba(0,0,0,.1),
+                     0 0 5px rgba(0,0,0,.1),
+                     0 1px 3px rgba(0,0,0,.3),
+                     0 3px 5px rgba(0,0,0,.2),
+                     0 5px 10px rgba(0,0,0,.25)`,
       };
 
-    case 'overlay-bottom-glass':
+    case 'vintage':
       return {
         ...baseStyle,
-        backgroundColor: `${accentColor}88`,
-        backdropFilter: 'blur(12px)',
-        borderTop: '1px solid rgba(255,255,255,0.2)',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '100%',
-        margin: 0,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
+        textShadow: `2px 2px 0 ${accentColor}`,
+        letterSpacing: '0.2em',
+        fontFamily: "'Georgia', serif",
       };
 
-    case 'overlay-bottom-neon':
+    case 'tech':
       return {
         ...baseStyle,
-        textShadow: `0 0 10px ${accentColor}, 0 0 20px ${accentColor}`,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '100%',
-        margin: 0,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
+        textShadow: `0 0 10px ${accentColor}, 0 0 20px ${accentColor}, 0 0 30px ${accentColor}`,
+        letterSpacing: '0.1em',
+        fontFamily: "'Courier New', monospace",
       };
 
-    case 'overlay-bottom-minimal':
+    case 'nature':
       return {
         ...baseStyle,
-        backgroundColor: '#00000099',
-        padding: '2rem',
-        width: '100%',
-        maxWidth: '100%',
-        margin: 0,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
+        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+        letterSpacing: '0.05em',
+        fontFamily: "'Verdana', sans-serif",
+      };
+
+    case 'urban':
+      return {
+        ...baseStyle,
+        textShadow: `1px 1px 0 ${accentColor}, -1px -1px 0 ${accentColor}`,
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+      };
+
+    case 'artistic':
+      return {
+        ...baseStyle,
+        textShadow: `2px 2px 0 ${accentColor}, 
+                     4px 4px 0 rgba(0,0,0,0.2)`,
+        fontStyle: 'italic',
+        letterSpacing: '0.05em',
       };
 
     default:
