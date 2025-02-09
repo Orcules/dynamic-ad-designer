@@ -14,15 +14,52 @@ export const processImages = async (
 ) => {
   try {
     console.log('Starting preview capture process...');
-    const previewFile = await capturePreview(previewRef, 'default');
+    const previewContainer = previewRef.current;
     
+    if (!previewContainer) {
+      throw new Error('Preview container not found');
+    }
+
+    // Create a new window
+    const previewWindow = window.open('', '_blank');
+    if (!previewWindow) {
+      throw new Error('Failed to open preview window');
+    }
+
+    // Write the HTML content with styles
+    previewWindow.document.write(`
+      <html>
+        <head>
+          <title>Generated Ads Preview</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 20px;
+              background: #f0f0f0;
+            }
+            .ad-container {
+              flex: 0 0 auto;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ad-container">
+            ${previewContainer.outerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+
+    // Store in Supabase for persistence
+    const previewFile = await capturePreview(previewRef, 'default');
     if (!previewFile) {
       throw new Error('Failed to capture preview');
     }
-    
-    console.log('Preview captured successfully, uploading...');
-    
-    // Upload to Supabase first
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('ad-images')
       .upload(`generated/${Date.now()}_ad.png`, previewFile, {
@@ -35,30 +72,20 @@ export const processImages = async (
       throw new Error(`Failed to upload preview: ${uploadError.message}`);
     }
 
-    // Get the public URL for the uploaded file
     const { data: { publicUrl: generatedImageUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(uploadData.path);
 
-    console.log('Preview uploaded successfully:', generatedImageUrl);
-
-    // Also create a local URL for immediate preview
-    const previewUrl = URL.createObjectURL(previewFile);
-    console.log('Local preview URL created:', previewUrl);
-
     // Create ad record with the Supabase URL
     const enrichedAdData = enrichAdData(adData, 0);
-    enrichedAdData.imageUrl = generatedImageUrl; // Use Supabase URL for storage
+    enrichedAdData.imageUrl = generatedImageUrl;
 
     onAdGenerated(enrichedAdData);
-    
-    // Open preview immediately using the local URL
-    window.open(previewUrl, '_blank');
     
     toast.success('Ad created successfully!', {
       action: {
         label: 'View Ad',
-        onClick: () => window.open(generatedImageUrl, '_blank')
+        onClick: () => previewWindow.focus()
       }
     });
     
@@ -69,4 +96,3 @@ export const processImages = async (
     setIsGenerating(false);
   }
 };
-
