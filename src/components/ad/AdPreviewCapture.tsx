@@ -15,70 +15,58 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
     
     if (!previewRef.current) {
       console.error('Preview reference is empty');
-      return null;
+      return;
     }
 
     const adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
       console.error('Ad content element not found');
-      return null;
+      return;
     }
 
     try {
-      console.log('Adding capture class...');
-      adElement.classList.add('capturing');
-      
-      console.log('Waiting for fonts...');
+      // Wait for fonts and images to load
       await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 500));
-
+      console.log('Fonts loaded successfully');
+      
       const images = Array.from(adElement.getElementsByTagName('img'));
       console.log(`Found ${images.length} images to load`);
       
       if (images.length > 0) {
         await Promise.all(
-          images.map((img, index) => 
+          images.map(img => 
             new Promise<void>((resolve, reject) => {
-              console.log(`Processing image ${index + 1}/${images.length}: ${img.src}`);
-              
-              if (img.complete && img.naturalHeight !== 0) {
-                console.log(`Image ${index + 1} already loaded`);
+              if (img.complete) {
+                console.log(`Image already loaded: ${img.src}`);
                 resolve();
               } else {
-                const timeout = setTimeout(() => {
-                  console.error(`Timeout loading image ${index + 1}`);
-                  reject(new Error('Image load timeout'));
-                }, 10000);
-
                 img.onload = () => {
-                  console.log(`Image ${index + 1} loaded successfully`);
-                  clearTimeout(timeout);
+                  console.log(`Image loaded: ${img.src}`);
                   resolve();
                 };
-
-                img.onerror = () => {
-                  console.error(`Failed to load image ${index + 1}: ${img.src}`);
-                  clearTimeout(timeout);
-                  reject(new Error(`Failed to load image: ${img.src}`));
-                };
+                img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
               }
             })
           )
         );
       }
 
-      console.log('Forcing layout calculation...');
-      adElement.getBoundingClientRect();
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force layout calculation
+      const rect = adElement.getBoundingClientRect();
+      console.log('Element dimensions:', {
+        width: rect.width,
+        height: rect.height
+      });
 
+      // Capture the element
       console.log('Starting html2canvas capture...');
       const canvas = await html2canvas(adElement as HTMLElement, {
         useCORS: true,
         scale: 2,
         logging: true,
-        allowTaint: true,
-        backgroundColor: null,
-        foreignObjectRendering: true,
+        backgroundColor: '#ffffff',
+        width: rect.width,
+        height: rect.height,
         onclone: (clonedDoc) => {
           console.log('Cloning document for capture...');
           const clonedElement = clonedDoc.querySelector('.ad-content');
@@ -89,20 +77,17 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
       });
 
       console.log('Converting canvas to blob...');
-      const blob = await new Promise<Blob>(resolve => {
-        canvas.toBlob(blob => resolve(blob!), 'image/jpeg', 1.0);
+      const blob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((b) => resolve(b!), 'image/png', 1.0);
       });
 
       console.log('Creating file from blob...');
-      const file = new File([blob], 'preview.jpg', { type: 'image/jpeg' });
+      const file = new File([blob], 'preview.png', { type: 'image/png' });
+      
       console.log('Calling onCapture with created file...');
       onCapture(file);
     } catch (error) {
       console.error('Preview capture error:', error);
-      throw error;
-    } finally {
-      console.log('Removing capture class...');
-      adElement.classList.remove('capturing');
     }
   };
 
@@ -110,14 +95,11 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
     const element = previewRef.current;
     if (element) {
       console.log('AdPreviewCapture mounted');
-      element.style.opacity = '1';
-      element.style.visibility = 'visible';
       
+      // Allow time for initial render
       setTimeout(() => {
         console.log('Attempting initial capture...');
-        capturePreview().catch(err => {
-          console.error('Initial capture failed:', err);
-        });
+        capturePreview();
       }, 1000);
     }
     
