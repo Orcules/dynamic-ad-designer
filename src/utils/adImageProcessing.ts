@@ -2,6 +2,7 @@
 import { toast } from "sonner";
 import { enrichAdData } from "./adEnrichment";
 import { capturePreview } from "./adPreviewCapture";
+import { supabase } from "@/integrations/supabase/client";
 
 export const processImages = async (
   adData: any,
