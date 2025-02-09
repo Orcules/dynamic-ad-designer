@@ -17,6 +17,9 @@ export async function capturePreview(
       return null;
     }
 
+    // Force a layout reflow
+    adElement.getBoundingClientRect();
+
     // Wait for fonts to load
     await document.fonts.ready;
     console.log('Fonts loaded successfully');
@@ -36,30 +39,27 @@ export async function capturePreview(
       );
     }
 
-    // Get element dimensions
-    const rect = adElement.getBoundingClientRect();
-    console.log('Element dimensions:', {
-      width: rect.width,
-      height: rect.height
-    });
-
-    // Create canvas
+    // Create canvas with specific settings
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
       scale: 2,
       backgroundColor: '#ffffff',
-      width: rect.width,
-      height: rect.height,
       logging: true,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
+          // Ensure the cloned element maintains its styles
           clonedElement.classList.add('capturing');
+          
+          // Force layout calculation on cloned element
+          clonedElement.getBoundingClientRect();
         }
-      }
+      },
+      allowTaint: true,
+      foreignObjectRendering: true
     });
 
-    // Convert to file
+    // Convert to file with high quality
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) {
