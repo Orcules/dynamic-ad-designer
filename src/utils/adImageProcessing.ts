@@ -79,51 +79,57 @@ export const processImages = async (
             .join('\n')}
         </head>
         <body>
-          <div class="ad-container">
-            ${previewContainer.outerHTML}
-          </div>
+          ${Array(images.length).fill(null).map(() => `
+            <div class="ad-container">
+              ${previewContainer.outerHTML}
+            </div>
+          `).join('')}
         </body>
       </html>
     `);
 
     // Store in Supabase for persistence
-    const previewFile = await capturePreview(previewRef, 'default');
-    if (!previewFile) {
-      throw new Error('Failed to capture preview');
-    }
+    const uploadPromises = images.map(async (_, index) => {
+      const previewFile = await capturePreview(previewRef, 'default');
+      if (!previewFile) {
+        throw new Error('Failed to capture preview');
+      }
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('ad-images')
-      .upload(`generated/${Date.now()}_ad.png`, previewFile, {
-        contentType: 'image/png',
-        cacheControl: '3600',
-        upsert: false
-      });
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('ad-images')
+        .upload(`generated/${Date.now()}_${index}_ad.png`, previewFile, {
+          contentType: 'image/png',
+          cacheControl: '3600',
+          upsert: false
+        });
 
-    if (uploadError) {
-      throw new Error(`Failed to upload preview: ${uploadError.message}`);
-    }
+      if (uploadError) {
+        throw new Error(`Failed to upload preview: ${uploadError.message}`);
+      }
 
-    const { data: { publicUrl: generatedImageUrl } } = supabase.storage
-      .from('ad-images')
-      .getPublicUrl(uploadData.path);
+      const { data: { publicUrl: generatedImageUrl } } = supabase.storage
+        .from('ad-images')
+        .getPublicUrl(uploadData.path);
 
-    // Create ad record with the Supabase URL
-    const enrichedAdData = enrichAdData(adData, 0);
-    enrichedAdData.imageUrl = generatedImageUrl;
+      // Create ad record with the Supabase URL
+      const enrichedAdData = enrichAdData(adData, index);
+      enrichedAdData.imageUrl = generatedImageUrl;
 
-    onAdGenerated(enrichedAdData);
+      onAdGenerated(enrichedAdData);
+    });
+
+    await Promise.all(uploadPromises);
     
-    toast.success('Ad created successfully!', {
+    toast.success('Ads created successfully!', {
       action: {
-        label: 'View Ad',
+        label: 'View Ads',
         onClick: () => previewWindow.focus()
       }
     });
     
   } catch (error) {
-    console.error('Error processing image:', error);
-    toast.error('Error creating ad');
+    console.error('Error processing images:', error);
+    toast.error('Error creating ads');
   } finally {
     setIsGenerating(false);
   }
