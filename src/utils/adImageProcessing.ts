@@ -79,17 +79,39 @@ export const processImages = async (
             .join('\n')}
         </head>
         <body>
-          ${Array(images.length).fill(null).map(() => `
-            <div class="ad-container">
-              ${previewContainer.outerHTML}
-            </div>
-          `).join('')}
+          ${images.map((image, index) => {
+            const adContainer = previewContainer.cloneNode(true) as HTMLElement;
+            // Update the image source in the cloned container
+            const imgElement = adContainer.querySelector('img');
+            if (imgElement && typeof image === 'string') {
+              imgElement.src = image;
+            }
+            return `
+              <div class="ad-container">
+                ${adContainer.outerHTML}
+              </div>
+            `;
+          }).join('')}
         </body>
       </html>
     `);
 
     // Store in Supabase for persistence
-    const uploadPromises = images.map(async (_, index) => {
+    const uploadPromises = images.map(async (image, index) => {
+      // Update preview ref with current image before capture
+      const imgElement = previewRef.current?.querySelector('img');
+      if (imgElement && typeof image === 'string') {
+        imgElement.src = image;
+      }
+
+      // Wait for the image to load
+      if (imgElement) {
+        await new Promise((resolve) => {
+          imgElement.onload = resolve;
+          imgElement.onerror = resolve; // Handle errors gracefully
+        });
+      }
+
       const previewFile = await capturePreview(previewRef, 'default');
       if (!previewFile) {
         throw new Error('Failed to capture preview');
