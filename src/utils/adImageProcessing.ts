@@ -26,7 +26,13 @@ export const processImages = async (
       throw new Error('Failed to open preview window');
     }
 
-    // Write the HTML content with styles
+    // Get the original styles from the preview
+    const computedStyle = window.getComputedStyle(previewContainer);
+    const width = previewContainer.getBoundingClientRect().width;
+    const height = previewContainer.getBoundingClientRect().height;
+    const aspectRatio = height / width;
+
+    // Write the HTML content with preserved styles
     previewWindow.document.write(`
       <html>
         <head>
@@ -39,12 +45,38 @@ export const processImages = async (
               flex-wrap: wrap;
               gap: 20px;
               background: #f0f0f0;
+              min-height: 100vh;
+              font-family: ${computedStyle.fontFamily};
             }
             .ad-container {
               flex: 0 0 auto;
               box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              width: ${width}px;
+              aspect-ratio: ${width} / ${height};
+              overflow: hidden;
             }
+            .ad-content {
+              width: 100%;
+              height: 100%;
+              position: relative;
+            }
+            ${Array.from(document.styleSheets)
+              .filter(sheet => !sheet.href || sheet.href.startsWith(window.location.origin))
+              .map(sheet => {
+                try {
+                  return Array.from(sheet.cssRules)
+                    .map(rule => rule.cssText)
+                    .join('\n');
+                } catch (e) {
+                  return '';
+                }
+              })
+              .join('\n')}
           </style>
+          ${Array.from(document.head.getElementsByTagName('link'))
+            .filter(link => link.rel === 'stylesheet' && link.href.includes('fonts.googleapis.com'))
+            .map(link => link.outerHTML)
+            .join('\n')}
         </head>
         <body>
           <div class="ad-container">
