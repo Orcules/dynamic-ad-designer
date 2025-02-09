@@ -20,8 +20,6 @@ export async function capturePreview(
       return null;
     }
 
-    console.log('מתחיל תהליך צילום תצוגה מקדימה...');
-
     // מוסיף מחלקה לפני כל הפעולות
     adElement.classList.add('capturing');
 
@@ -29,9 +27,10 @@ export async function capturePreview(
     await document.fonts.ready;
     console.log('הפונטים נטענו בהצלחה');
 
-    // מחכה שהתמונות יטענו בגישה יותר חזקה
+    // מחכה לטעינת התמונות
     const images = Array.from(adElement.getElementsByTagName('img'));
     if (images.length > 0) {
+      console.log(`מחכה לטעינת ${images.length} תמונות...`);
       await Promise.all(
         images.map((img) => {
           if (img.complete && img.naturalHeight !== 0) {
@@ -40,12 +39,11 @@ export async function capturePreview(
           return new Promise<void>((resolve, reject) => {
             const timeout = setTimeout(() => {
               reject(new Error(`פסק זמן בטעינת תמונה: ${img.src}`));
-            }, 10000); // 10 שניות לפסק זמן
+            }, 10000);
 
             img.onload = () => {
               clearTimeout(timeout);
-              // מאלץ השהיה קטנה אחרי טעינת התמונה כדי להבטיח רינדור
-              setTimeout(resolve, 100);
+              resolve();
             };
             img.onerror = () => {
               clearTimeout(timeout);
@@ -54,18 +52,17 @@ export async function capturePreview(
           });
         })
       );
+      console.log('כל התמונות נטענו בהצלחה');
     }
-    console.log('כל התמונות נטענו בהצלחה');
 
-    // מאלץ חישוב מחדש של הפריסה ומחכה רגע
-    adElement.getBoundingClientRect();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // השהייה קצרה כדי לוודא שהכל התרנדר
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    // מקבל מימדים מדויקים אחרי שהפריסה יציבה
+    // מאלץ חישוב מחדש של הפריסה
     const rect = adElement.getBoundingClientRect();
     console.log('מימדי האלמנט שנלכד:', { width: rect.width, height: rect.height });
-    
-    // יוצר קנבס עם מימדים מדויקים
+
+    // יוצר את הקנבס
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
       scale: 2,
@@ -75,40 +72,37 @@ export async function capturePreview(
       logging: true,
       allowTaint: true,
       foreignObjectRendering: true,
-      removeContainer: false,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
           clonedElement.classList.add('capturing');
-          // מעתיק את כל הסגנונות המחושבים
-          const styles = window.getComputedStyle(adElement as HTMLElement);
-          Array.from(styles).forEach(key => {
-            (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
-          });
         }
       }
     });
 
-    console.log('הקנבס נלכד בהצלחה');
-
-    // ממיר לJPEG באיכות גבוהה
-    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    
-    const file = new File([blob], "ad-preview.jpg", { 
-      type: "image/jpeg",
-      lastModified: Date.now()
+    // ממיר את הקנבס לתמונה
+    console.log('הקנבס נוצר, ממיר לתמונה...');
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          console.error('נכשל ביצירת blob מהקנבס');
+          resolve(null);
+          return;
+        }
+        
+        const file = new File([blob], "ad-preview.jpg", { 
+          type: "image/jpeg",
+          lastModified: Date.now()
+        });
+        console.log('קובץ התמונה נוצר בהצלחה');
+        resolve(file);
+      }, 'image/jpeg', 1.0);
     });
-
-    console.log('קובץ JPEG נוצר בהצלחה');
-    return file;
 
   } catch (error) {
     console.error("שגיאה בצילום תצוגה מקדימה:", error);
     return null;
   } finally {
-    // מסיר את המחלקה בבלוק finally כדי להבטיח שהיא תמיד תוסר
     if (adElement) {
       adElement.classList.remove('capturing');
     }
