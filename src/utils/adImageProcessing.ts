@@ -20,36 +20,25 @@ export const processImages = async (
       throw new Error('Failed to capture preview');
     }
     
-    console.log('Preview captured successfully, uploading...');
+    console.log('Preview captured successfully');
     
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('ad-images')
-      .upload(`generated/${Date.now()}_ad.png`, previewFile, {
-        contentType: 'image/png',
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (uploadError) {
-      throw new Error(`Failed to upload preview: ${uploadError.message}`);
-    }
-
-    const { data: { publicUrl: generatedImageUrl } } = supabase.storage
-      .from('ad-images')
-      .getPublicUrl(uploadData.path);
-
-    console.log('Preview uploaded successfully:', generatedImageUrl);
+    // Get the URL from the preview file
+    const previewUrl = URL.createObjectURL(previewFile);
+    console.log('Preview URL created:', previewUrl);
 
     // Create ad record with the preview URL
     const enrichedAdData = enrichAdData(adData, 0);
-    enrichedAdData.imageUrl = generatedImageUrl;
+    enrichedAdData.imageUrl = previewUrl;
 
     onAdGenerated(enrichedAdData);
+    
+    // Open preview in new window
+    window.open(previewUrl, '_blank');
     
     toast.success('Ad created successfully!', {
       action: {
         label: 'View Ad',
-        onClick: () => window.open(generatedImageUrl, '_blank')
+        onClick: () => window.open(previewUrl, '_blank')
       }
     });
     
