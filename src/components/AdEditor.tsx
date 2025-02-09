@@ -74,29 +74,32 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       return;
     }
 
-    if (!previewRef.current) {
-      toast.error('Preview element not found');
-      return;
-    }
-
     setIsGenerating(true);
-    toast.loading('Generating ad preview...');
+    toast.loading('מייצר תצוגה מקדימה...');
 
     try {
-      console.log('Starting ad generation process...');
+      console.log('מתחיל תהליך יצירת מודעה...');
       
-      // Capture the preview first
-      const previewFile = await capturePreview(previewRef, adData.platform);
-      if (!previewFile) {
-        throw new Error('Failed to capture preview');
+      if (!previewRef.current) {
+        throw new Error('אלמנט התצוגה המקדימה לא נמצא');
       }
-      console.log('Preview captured successfully');
 
-      // Upload the preview image
-      const previewUrl = await handleSubmission(previewFile);
-      console.log('Preview uploaded, URL:', previewUrl);
+      // מחכה שהדפדפן יסיים לרנדר את כל התוכן
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      console.log('מנסה לצלם את התצוגה המקדימה...');
+      const previewFile = await capturePreview(previewRef, adData.platform);
       
-      // Process the rest of the images
+      if (!previewFile) {
+        throw new Error('נכשל בצילום התצוגה המקדימה');
+      }
+      console.log('התצוגה המקדימה צולמה בהצלחה');
+
+      // מעלה את התמונה לשרת
+      const previewUrl = await handleSubmission(previewFile);
+      console.log('התצוגה המקדימה הועלתה, URL:', previewUrl);
+      
+      // מעבד את שאר התמונות
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
         adData,
@@ -107,26 +110,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         setIsGenerating
       );
 
-      toast.success('Ad generated successfully!');
+      toast.success('המודעה נוצרה בהצלחה!');
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
-      toast.error('Error generating ad');
+      console.error('שגיאה ביצירת המודעה:', error);
+      toast.error('שגיאה ביצירת המודעה');
     } finally {
       setIsGenerating(false);
+      toast.dismiss();
     }
   };
 
   const handlePreviewCapture = (file: File) => {
-    console.log('Preview captured:', file);
-    // Upload the captured preview
+    console.log('התצוגה המקדימה נלכדה:', file);
     handleSubmission(file)
       .then(url => {
-        console.log('Preview uploaded successfully:', url);
-        toast.success('Preview captured and uploaded');
+        console.log('התצוגה המקדימה הועלתה בהצלחה:', url);
+        toast.success('התצוגה המקדימה נלכדה והועלתה');
       })
       .catch(error => {
-        console.error('Error uploading preview:', error);
-        toast.error('Failed to upload preview');
+        console.error('שגיאה בהעלאת התצוגה המקדימה:', error);
+        toast.error('נכשל בהעלאת התצוגה המקדימה');
       });
   };
 
@@ -154,34 +157,36 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         />
       </div>
       
-      <div className="w-full lg:w-1/2 space-y-6" ref={previewRef}>
-        <AdPreviewCapture onCapture={handlePreviewCapture}>
-          <AdPreview
-            imageUrl={imageUrls[currentPreviewIndex]}
-            imageUrls={imageUrls}
-            width={width}
-            height={height}
-            headline={adData.headline}
-            description={adData.description}
-            descriptionColor={adData.description_color}
-            ctaText={adData.cta_text}
-            templateStyle={adData.template_style}
-            accentColor={adData.accent_color}
-            ctaColor={adData.cta_color}
-            overlayColor={adData.overlay_color}
-            textColor={adData.text_color}
-            fontUrl={adData.font_url}
-            overlayOpacity={overlayOpacity}
-            currentIndex={currentPreviewIndex}
-            onPrevious={handlePrevPreview}
-            onNext={handleNextPreview}
-            headlinePosition={headlinePosition}
-            descriptionPosition={descriptionPosition}
-            ctaPosition={ctaPosition}
-            imagePosition={imagePosition}
-            showCtaArrow={showCtaArrow}
-          />
-        </AdPreviewCapture>
+      <div className="w-full lg:w-1/2 space-y-6">
+        <div ref={previewRef} className="preview-container">
+          <AdPreviewCapture onCapture={handlePreviewCapture}>
+            <AdPreview
+              imageUrl={imageUrls[currentPreviewIndex]}
+              imageUrls={imageUrls}
+              width={width}
+              height={height}
+              headline={adData.headline}
+              description={adData.description}
+              descriptionColor={adData.description_color}
+              ctaText={adData.cta_text}
+              templateStyle={adData.template_style}
+              accentColor={adData.accent_color}
+              ctaColor={adData.cta_color}
+              overlayColor={adData.overlay_color}
+              textColor={adData.text_color}
+              fontUrl={adData.font_url}
+              overlayOpacity={overlayOpacity}
+              currentIndex={currentPreviewIndex}
+              onPrevious={handlePrevPreview}
+              onNext={handleNextPreview}
+              headlinePosition={headlinePosition}
+              descriptionPosition={descriptionPosition}
+              ctaPosition={ctaPosition}
+              imagePosition={imagePosition}
+              showCtaArrow={showCtaArrow}
+            />
+          </AdPreviewCapture>
+        </div>
 
         <AdPreviewControls
           showCtaArrow={showCtaArrow}

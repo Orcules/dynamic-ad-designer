@@ -11,57 +11,57 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
   const previewRef = useRef<HTMLDivElement>(null);
 
   const capturePreview = async () => {
-    console.log('Starting preview capture process...');
+    console.log('מתחיל תהליך צילום תצוגה מקדימה...');
     
     if (!previewRef.current) {
-      console.error('Preview ref is null');
+      console.error('הפניית התצוגה המקדימה ריקה');
       return null;
     }
 
     const adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
-      console.error('Ad content element not found');
+      console.error('אלמנט תוכן המודעה לא נמצא');
       return null;
     }
 
     try {
-      console.log('Adding capturing class...');
+      console.log('מוסיף מחלקת צילום...');
       adElement.classList.add('capturing');
       
-      // Wait for fonts and a small delay for rendering
-      console.log('Waiting for fonts to load...');
+      // מחכה לפונטים והשהיה קטנה לרינדור
+      console.log('מחכה לטעינת פונטים...');
       await document.fonts.ready;
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // Wait for all images
+      // מחכה לכל התמונות
       const images = Array.from(adElement.getElementsByTagName('img'));
-      console.log(`Found ${images.length} images to load`);
+      console.log(`נמצאו ${images.length} תמונות לטעינה`);
       
       if (images.length > 0) {
         await Promise.all(
           images.map((img, index) => 
             new Promise<void>((resolve, reject) => {
-              console.log(`Processing image ${index + 1}/${images.length}: ${img.src}`);
+              console.log(`מעבד תמונה ${index + 1}/${images.length}: ${img.src}`);
               
               if (img.complete && img.naturalHeight !== 0) {
-                console.log(`Image ${index + 1} already loaded`);
+                console.log(`תמונה ${index + 1} כבר טעונה`);
                 resolve();
               } else {
                 const timeout = setTimeout(() => {
-                  console.error(`Image ${index + 1} load timeout`);
-                  reject(new Error('Image load timeout'));
+                  console.error(`פסק זמן בטעינת תמונה ${index + 1}`);
+                  reject(new Error('פסק זמן בטעינת תמונה'));
                 }, 10000);
 
                 img.onload = () => {
-                  console.log(`Image ${index + 1} loaded successfully`);
+                  console.log(`תמונה ${index + 1} נטענה בהצלחה`);
                   clearTimeout(timeout);
                   resolve();
                 };
 
                 img.onerror = () => {
-                  console.error(`Failed to load image ${index + 1}: ${img.src}`);
+                  console.error(`נכשל בטעינת תמונה ${index + 1}: ${img.src}`);
                   clearTimeout(timeout);
-                  reject(new Error(`Failed to load image: ${img.src}`));
+                  reject(new Error(`נכשל בטעינת תמונה: ${img.src}`));
                 };
               }
             })
@@ -69,12 +69,12 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
         );
       }
 
-      console.log('Forcing layout calculation...');
-      // Force layout calculation and wait
+      console.log('מאלץ חישוב פריסה...');
+      // מאלץ חישוב פריסה ומחכה
       adElement.getBoundingClientRect();
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      console.log('Starting html2canvas capture...');
+      console.log('מתחיל צילום html2canvas...');
       const canvas = await html2canvas(adElement as HTMLElement, {
         useCORS: true,
         scale: 2,
@@ -83,7 +83,7 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
         backgroundColor: null,
         foreignObjectRendering: true,
         onclone: (clonedDoc) => {
-          console.log('Cloning document for capture...');
+          console.log('משכפל מסמך לצילום...');
           const clonedElement = clonedDoc.querySelector('.ad-content');
           if (clonedElement) {
             clonedElement.classList.add('capturing');
@@ -91,20 +91,20 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
         }
       });
 
-      console.log('Converting canvas to blob...');
+      console.log('ממיר קנבס לבלוב...');
       const blob = await new Promise<Blob>(resolve => {
         canvas.toBlob(blob => resolve(blob!), 'image/jpeg', 1.0);
       });
 
-      console.log('Creating file from blob...');
+      console.log('יוצר קובץ מבלוב...');
       const file = new File([blob], 'preview.jpg', { type: 'image/jpeg' });
-      console.log('Calling onCapture with generated file...');
+      console.log('קורא ל-onCapture עם הקובץ שנוצר...');
       onCapture(file);
     } catch (error) {
-      console.error('Preview capture error:', error);
+      console.error('שגיאת צילום תצוגה מקדימה:', error);
       throw error;
     } finally {
-      console.log('Removing capturing class...');
+      console.log('מסיר מחלקת צילום...');
       adElement.classList.remove('capturing');
     }
   };
@@ -112,21 +112,21 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
   useEffect(() => {
     const element = previewRef.current;
     if (element) {
-      console.log('AdPreviewCapture mounted');
+      console.log('AdPreviewCapture עלה');
       element.style.opacity = '1';
       element.style.visibility = 'visible';
       
-      // Try to capture after a short delay to ensure everything is rendered
+      // מנסה לצלם אחרי השהיה קצרה כדי להבטיח שהכל מרונדר
       setTimeout(() => {
-        console.log('Attempting initial capture...');
+        console.log('מנסה צילום ראשוני...');
         capturePreview().catch(err => {
-          console.error('Initial capture failed:', err);
+          console.error('הצילום הראשוני נכשל:', err);
         });
       }, 1000);
     }
     
     return () => {
-      console.log('AdPreviewCapture unmounting...');
+      console.log('AdPreviewCapture יורד...');
     };
   }, []);
 
