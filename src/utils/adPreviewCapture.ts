@@ -39,7 +39,7 @@ export async function capturePreview(
       );
     }
 
-    // Create canvas with specific settings
+    // Create canvas with specific settings for better quality
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
       scale: 2,
@@ -48,10 +48,7 @@ export async function capturePreview(
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
-          // Ensure the cloned element maintains its styles
           clonedElement.classList.add('capturing');
-          
-          // Force layout calculation on cloned element
           clonedElement.getBoundingClientRect();
         }
       },
