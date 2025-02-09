@@ -6,31 +6,27 @@ export async function capturePreview(
   platform: string
 ): Promise<File | null> {
   if (!previewRef.current) {
-    console.error("אלמנט התצוגה המקדימה לא נמצא");
+    console.error("Preview element not found");
     return null;
   }
 
   let adElement: Element | null = null;
   
   try {
-    // מחפש את אלמנט התוכן של המודעה בתוך מיכל התצוגה המקדימה
     adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
-      console.error('אלמנט תוכן המודעה לא נמצא');
+      console.error('Ad content element not found');
       return null;
     }
 
-    // מוסיף מחלקה לפני כל הפעולות
     adElement.classList.add('capturing');
 
-    // מחכה שהפונטים יטענו
     await document.fonts.ready;
-    console.log('הפונטים נטענו בהצלחה');
+    console.log('Fonts loaded successfully');
 
-    // מחכה לטעינת התמונות
     const images = Array.from(adElement.getElementsByTagName('img'));
     if (images.length > 0) {
-      console.log(`מחכה לטעינת ${images.length} תמונות...`);
+      console.log(`Waiting for ${images.length} images to load...`);
       await Promise.all(
         images.map((img) => {
           if (img.complete && img.naturalHeight !== 0) {
@@ -38,7 +34,7 @@ export async function capturePreview(
           }
           return new Promise<void>((resolve, reject) => {
             const timeout = setTimeout(() => {
-              reject(new Error(`פסק זמן בטעינת תמונה: ${img.src}`));
+              reject(new Error(`Image load timeout: ${img.src}`));
             }, 10000);
 
             img.onload = () => {
@@ -47,22 +43,19 @@ export async function capturePreview(
             };
             img.onerror = () => {
               clearTimeout(timeout);
-              reject(new Error(`נכשל בטעינת תמונה: ${img.src}`));
+              reject(new Error(`Failed to load image: ${img.src}`));
             };
           });
         })
       );
-      console.log('כל התמונות נטענו בהצלחה');
+      console.log('All images loaded successfully');
     }
 
-    // השהייה קצרה כדי לוודא שהכל התרנדר
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    // מאלץ חישוב מחדש של הפריסה
     const rect = adElement.getBoundingClientRect();
-    console.log('מימדי האלמנט שנלכד:', { width: rect.width, height: rect.height });
+    console.log('Element dimensions:', { width: rect.width, height: rect.height });
 
-    // יוצר את הקנבס
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
       scale: 2,
@@ -80,12 +73,11 @@ export async function capturePreview(
       }
     });
 
-    // ממיר את הקנבס לתמונה
-    console.log('הקנבס נוצר, ממיר לתמונה...');
+    console.log('Canvas created, converting to image...');
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (!blob) {
-          console.error('נכשל ביצירת blob מהקנבס');
+          console.error('Failed to create blob from canvas');
           resolve(null);
           return;
         }
@@ -94,13 +86,13 @@ export async function capturePreview(
           type: "image/jpeg",
           lastModified: Date.now()
         });
-        console.log('קובץ התמונה נוצר בהצלחה');
+        console.log('Image file created successfully');
         resolve(file);
       }, 'image/jpeg', 1.0);
     });
 
   } catch (error) {
-    console.error("שגיאה בצילום תצוגה מקדימה:", error);
+    console.error("Error capturing preview:", error);
     return null;
   } finally {
     if (adElement) {

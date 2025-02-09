@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -75,31 +74,28 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
 
     setIsGenerating(true);
-    toast.loading('מייצר תצוגה מקדימה...');
+    toast.loading('Generating preview...');
 
     try {
-      console.log('מתחיל תהליך יצירת מודעה...');
+      console.log('Starting ad generation process...');
       
       if (!previewRef.current) {
-        throw new Error('אלמנט התצוגה המקדימה לא נמצא');
+        throw new Error('Preview element not found');
       }
 
-      // מחכה שהדפדפן יסיים לרנדר את כל התוכן
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      console.log('מנסה לצלם את התצוגה המקדימה...');
+      console.log('Attempting to capture preview...');
       const previewFile = await capturePreview(previewRef, adData.platform);
       
       if (!previewFile) {
-        throw new Error('נכשל בצילום התצוגה המקדימה');
+        throw new Error('Failed to capture preview');
       }
-      console.log('התצוגה המקדימה צולמה בהצלחה');
+      console.log('Preview captured successfully');
 
-      // מעלה את התמונה לשרת
       const previewUrl = await handleSubmission(previewFile);
-      console.log('התצוגה המקדימה הועלתה, URL:', previewUrl);
+      console.log('Preview uploaded, URL:', previewUrl);
       
-      // מעבד את שאר התמונות
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
         adData,
@@ -110,10 +106,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         setIsGenerating
       );
 
-      toast.success('המודעה נוצרה בהצלחה!');
+      toast.success('Ad created successfully!');
     } catch (error) {
-      console.error('שגיאה ביצירת המודעה:', error);
-      toast.error('שגיאה ביצירת המודעה');
+      console.error('Error creating ad:', error);
+      toast.error('Error creating ad');
     } finally {
       setIsGenerating(false);
       toast.dismiss();
@@ -121,15 +117,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   };
 
   const handlePreviewCapture = (file: File) => {
-    console.log('התצוגה המקדימה נלכדה:', file);
+    console.log('Preview captured:', file);
     handleSubmission(file)
       .then(url => {
-        console.log('התצוגה המקדימה הועלתה בהצלחה:', url);
-        toast.success('התצוגה המקדימה נלכדה והועלתה');
+        console.log('Preview uploaded successfully:', url);
+        toast.success('Preview captured and uploaded');
       })
       .catch(error => {
-        console.error('שגיאה בהעלאת התצוגה המקדימה:', error);
-        toast.error('נכשל בהעלאת התצוגה המקדימה');
+        console.error('Error uploading preview:', error);
+        toast.error('Failed to upload preview');
       });
   };
 

@@ -23,17 +23,17 @@ export const processImages = async (
         setIsGenerating
       );
       
-      if (adUrl) {
-        toast.success('המודעה נוצרה בהצלחה!', {
+      if (adUrl && typeof adUrl === 'string') {
+        toast.success('Ad created successfully!', {
           action: {
-            label: 'צפה במודעה',
+            label: 'View Ad',
             onClick: () => window.open(adUrl, '_blank')
           }
         });
       }
     } catch (error) {
-      console.error(`שגיאה בעיבוד תמונה ${i + 1}:`, error);
-      toast.error(`שגיאה בעיבוד תמונה ${i + 1}`);
+      console.error(`Error processing image ${i + 1}:`, error);
+      toast.error(`Error processing image ${i + 1}`);
     }
   }
 };
