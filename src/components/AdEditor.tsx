@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -179,3 +180,4 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 };
 
 export default AdEditor;
+

@@ -1,4 +1,5 @@
 
+
 import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
@@ -153,3 +154,4 @@ export const processImages = async (
     toast.error('No ads were created. Please check the errors and try again.');
   }
 };
+

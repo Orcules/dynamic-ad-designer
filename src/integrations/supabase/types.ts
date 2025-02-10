@@ -49,6 +49,7 @@ export type Database = {
           name: string
           overlay_color: string | null
           platform: string | null
+          preview_url: string | null
           status: string | null
           template_style: string | null
           text_color: string | null
@@ -69,6 +70,7 @@ export type Database = {
           name: string
           overlay_color?: string | null
           platform?: string | null
+          preview_url?: string | null
           status?: string | null
           template_style?: string | null
           text_color?: string | null
@@ -89,6 +91,7 @@ export type Database = {
           name?: string
           overlay_color?: string | null
           platform?: string | null
+          preview_url?: string | null
           status?: string | null
           template_style?: string | null
           text_color?: string | null
