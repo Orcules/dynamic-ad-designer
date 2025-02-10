@@ -12,6 +12,8 @@ export const processImages = async (
   handleSubmission: any,
   setIsGenerating: (value: boolean) => void
 ) => {
+  let previewWindow: Window | null = null;
+
   try {
     console.log('Starting preview capture process...');
     const previewContainer = previewRef.current;
@@ -20,23 +22,44 @@ export const processImages = async (
       throw new Error('Preview container not found');
     }
 
-    // Create a new window and immediately write basic structure
-    const previewWindow = window.open('', '_blank');
+    // Create a new window
+    previewWindow = window.open('', '_blank');
     if (!previewWindow) {
       throw new Error('Failed to open preview window');
     }
 
-    // Get essential styles
-    const styles = getStyles(previewContainer);
-    
-    // Write initial HTML structure with DOCTYPE and UTF-8 encoding
-    previewWindow.document.write(`
+    // Get computed styles from the preview container
+    const computedStyle = window.getComputedStyle(previewContainer);
+    const width = previewContainer.getBoundingClientRect().width;
+    const height = previewContainer.getBoundingClientRect().height;
+
+    // Get fonts and styles
+    const externalStylesheets = Array.from(document.getElementsByTagName('link'))
+      .filter(link => link.rel === 'stylesheet' && link.href.includes('fonts.googleapis.com'))
+      .map(link => link.outerHTML)
+      .join('\n');
+
+    const internalStyles = Array.from(document.styleSheets)
+      .filter(sheet => !sheet.href || sheet.href.startsWith(window.location.origin))
+      .map(sheet => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n');
+        } catch (e) {
+          return '';
+        }
+      })
+      .join('\n');
+
+    // Write the full HTML structure to the new window
+    const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="UTF-8">
           <title>Generated Ads Preview</title>
-          ${styles.externalStylesheets}
+          ${externalStylesheets}
           <style>
             body {
               margin: 0;
@@ -46,53 +69,78 @@ export const processImages = async (
               gap: 20px;
               background: #f0f0f0;
               min-height: 100vh;
-              font-family: ${styles.fontFamily};
+              font-family: ${computedStyle.fontFamily};
             }
             .ad-container {
               flex: 0 0 auto;
               box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-              width: ${styles.width}px;
-              aspect-ratio: ${styles.width} / ${styles.height};
+              width: ${width}px;
+              height: ${height}px;
               overflow: hidden;
               background: white;
               border-radius: 8px;
+              position: relative;
             }
-            ${styles.internalStyles}
+            .ad-content {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+            }
+            ${internalStyles}
           </style>
         </head>
         <body></body>
       </html>
-    `);
+    `;
+
+    previewWindow.document.open();
+    previewWindow.document.write(htmlContent);
     previewWindow.document.close();
 
-    // Process images and upload to Supabase in parallel
-    const uploadPromises = images.map(async (image, index) => {
-      if (typeof image !== 'string') return;
+    // Wait for the preview window to load
+    await new Promise<void>((resolve) => {
+      if (previewWindow) {
+        previewWindow.onload = () => resolve();
+        setTimeout(resolve, 1000); // Fallback timeout
+      } else {
+        resolve();
+      }
+    });
+
+    // Process each image sequentially to ensure proper rendering
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      if (typeof image !== 'string') continue;
 
       try {
-        // Create ad container for this image
+        // Create container for this ad
         const adContainer = document.createElement('div');
         adContainer.className = 'ad-container';
         
         // Clone the preview content
         const adContent = previewContainer.cloneNode(true) as HTMLElement;
+        adContent.className = 'ad-content';
         
-        // Update image source
+        // Update image source and wait for it to load
         const imgElement = adContent.querySelector('img');
         if (imgElement) {
           imgElement.src = image;
-          // Wait for image to load
           await new Promise((resolve) => {
             imgElement.onload = resolve;
             imgElement.onerror = resolve;
           });
         }
-        
-        // Add the content to the container
+
+        // Add content to container
         adContainer.appendChild(adContent);
         
         // Add container to preview window
         previewWindow.document.body.appendChild(adContainer);
+
+        // Ensure styles are applied before capturing
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Capture preview
         const previewFile = await capturePreview(previewRef, 'default');
@@ -103,7 +151,7 @@ export const processImages = async (
         // Upload to Supabase
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('ad-images')
-          .upload(`generated/${Date.now()}_${index}_ad.png`, previewFile, {
+          .upload(`generated/${Date.now()}_${i}_ad.png`, previewFile, {
             contentType: 'image/png',
             cacheControl: '3600',
             upsert: false
@@ -115,75 +163,33 @@ export const processImages = async (
           .from('ad-images')
           .getPublicUrl(uploadData.path);
 
-        const enrichedAdData = enrichAdData(adData, index);
+        // Generate enriched ad data
+        const enrichedAdData = enrichAdData(adData, i);
         enrichedAdData.imageUrl = generatedImageUrl;
 
         onAdGenerated(enrichedAdData);
+
+        console.log(`Successfully processed ad ${i + 1} of ${images.length}`);
       } catch (error) {
-        console.error(`Error processing image ${index}:`, error);
+        console.error(`Error processing image ${i}:`, error);
         throw error;
       }
-    });
+    }
 
-    await Promise.all(uploadPromises);
-    
     toast.success('Ads created successfully!', {
       action: {
         label: 'View Ads',
-        onClick: () => previewWindow.focus()
+        onClick: () => previewWindow?.focus()
       }
     });
-    
+
   } catch (error) {
     console.error('Error processing images:', error);
     toast.error('Error creating ads');
+    if (previewWindow) {
+      previewWindow.close();
+    }
   } finally {
     setIsGenerating(false);
   }
 };
-
-function getStyles(previewContainer: HTMLDivElement) {
-  const computedStyle = window.getComputedStyle(previewContainer);
-  const width = previewContainer.getBoundingClientRect().width;
-  const height = previewContainer.getBoundingClientRect().height;
-
-  const externalStylesheets = Array.from(document.getElementsByTagName('link'))
-    .filter(link => link.rel === 'stylesheet' && link.href.includes('fonts.googleapis.com'))
-    .map(link => link.outerHTML)
-    .join('\n');
-
-  const internalStyles = Array.from(document.styleSheets)
-    .filter(sheet => !sheet.href || sheet.href.startsWith(window.location.origin))
-    .map(sheet => {
-      try {
-        return Array.from(sheet.cssRules)
-          .map(rule => rule.cssText)
-          .join('\n');
-      } catch (e) {
-        return '';
-      }
-    })
-    .join('\n');
-
-  return {
-    externalStylesheets,
-    internalStyles,
-    width,
-    height,
-    fontFamily: computedStyle.fontFamily
-  };
-}
-
-function createAdContainer(previewContainer: HTMLDivElement, imageUrl: string) {
-  const container = document.createElement('div');
-  container.className = 'ad-container';
-  
-  const adContent = previewContainer.cloneNode(true) as HTMLElement;
-  const imgElement = adContent.querySelector('img');
-  if (imgElement) {
-    imgElement.src = imageUrl;
-  }
-  
-  container.appendChild(adContent);
-  return container;
-}
