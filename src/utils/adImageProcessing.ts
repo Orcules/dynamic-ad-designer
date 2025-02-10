@@ -31,13 +31,12 @@ export const processImages = async (
     const width = previewContainer.getBoundingClientRect().width;
     const height = previewContainer.getBoundingClientRect().height;
 
-    // Convert the NodeList to an array for easier manipulation
+    // Prepare all HTML content first
     const externalStylesheets = Array.from(document.getElementsByTagName('link'))
       .filter(link => link.rel === 'stylesheet' && link.href.includes('fonts.googleapis.com'))
       .map(link => link.outerHTML)
       .join('\n');
 
-    // Get all styles from the current document's stylesheets
     const internalStyles = Array.from(document.styleSheets)
       .filter(sheet => !sheet.href || sheet.href.startsWith(window.location.origin))
       .map(sheet => {
@@ -51,8 +50,22 @@ export const processImages = async (
       })
       .join('\n');
 
-    // Initialize HTML content with styles
+    // Prepare all ad containers HTML
+    const adsHTML = images.map((image) => {
+      if (typeof image === 'string') {
+        const adContainer = previewContainer.cloneNode(true) as HTMLElement;
+        const imgElement = adContainer.querySelector('img');
+        if (imgElement) {
+          imgElement.src = image;
+        }
+        return `<div class="ad-container">${adContainer.outerHTML}</div>`;
+      }
+      return '';
+    }).join('\n');
+
+    // Write complete HTML at once
     previewWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
           <title>Generated Ads Preview</title>
@@ -84,43 +97,25 @@ export const processImages = async (
           </style>
         </head>
         <body>
+          ${adsHTML}
+        </body>
+      </html>
     `);
-
-    // Process each image and create an ad for it
-    for (let index = 0; index < images.length; index++) {
-      const image = images[index];
-      const adContainer = previewContainer.cloneNode(true) as HTMLElement;
-      const imgElement = adContainer.querySelector('img');
-      
-      if (imgElement && typeof image === 'string') {
-        imgElement.src = image;
-        
-        // Update the preview window with this ad
-        previewWindow.document.write(`
-          <div class="ad-container">
-            ${adContainer.outerHTML}
-          </div>
-        `);
-      }
-    }
-
-    // Close the HTML document
-    previewWindow.document.write('</body></html>');
     previewWindow.document.close();
 
-    // Store in Supabase for persistence
+    // Upload to Supabase in parallel
     const uploadPromises = images.map(async (image, index) => {
-      // Update preview ref with current image before capture
+      // Update preview ref with current image
       const imgElement = previewRef.current?.querySelector('img');
       if (imgElement && typeof image === 'string') {
         imgElement.src = image;
       }
 
-      // Wait for the image to load
+      // Wait for image to load
       if (imgElement) {
         await new Promise((resolve) => {
           imgElement.onload = resolve;
-          imgElement.onerror = resolve; // Handle errors gracefully
+          imgElement.onerror = resolve;
         });
       }
 
@@ -145,7 +140,6 @@ export const processImages = async (
         .from('ad-images')
         .getPublicUrl(uploadData.path);
 
-      // Create ad record with the Supabase URL
       const enrichedAdData = enrichAdData(adData, index);
       enrichedAdData.imageUrl = generatedImageUrl;
 
