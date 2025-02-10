@@ -30,7 +30,6 @@ export const processImages = async (
     const computedStyle = window.getComputedStyle(previewContainer);
     const width = previewContainer.getBoundingClientRect().width;
     const height = previewContainer.getBoundingClientRect().height;
-    const aspectRatio = height / width;
 
     // Convert the NodeList to an array for easier manipulation
     const externalStylesheets = Array.from(document.getElementsByTagName('link'))
@@ -52,7 +51,7 @@ export const processImages = async (
       })
       .join('\n');
 
-    // Write the HTML content with preserved styles
+    // Initialize HTML content with styles
     previewWindow.document.write(`
       <html>
         <head>
@@ -87,20 +86,25 @@ export const processImages = async (
         <body>
     `);
 
-    // Generate preview HTML for each image
-    images.forEach((image, index) => {
+    // Process each image and create an ad for it
+    for (let index = 0; index < images.length; index++) {
+      const image = images[index];
       const adContainer = previewContainer.cloneNode(true) as HTMLElement;
       const imgElement = adContainer.querySelector('img');
+      
       if (imgElement && typeof image === 'string') {
         imgElement.src = image;
+        
+        // Update the preview window with this ad
+        previewWindow.document.write(`
+          <div class="ad-container">
+            ${adContainer.outerHTML}
+          </div>
+        `);
       }
-      previewWindow.document.write(`
-        <div class="ad-container">
-          ${adContainer.outerHTML}
-        </div>
-      `);
-    });
+    }
 
+    // Close the HTML document
     previewWindow.document.write('</body></html>');
     previewWindow.document.close();
 
