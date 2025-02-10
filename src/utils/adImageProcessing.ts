@@ -29,8 +29,41 @@ export const processImages = async (
     // Get essential styles
     const styles = getStyles(previewContainer);
     
-    // Write initial HTML structure
-    writeInitialHTML(previewWindow, styles);
+    // Write initial HTML structure with DOCTYPE and UTF-8 encoding
+    previewWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Generated Ads Preview</title>
+          ${styles.externalStylesheets}
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 20px;
+              background: #f0f0f0;
+              min-height: 100vh;
+              font-family: ${styles.fontFamily};
+            }
+            .ad-container {
+              flex: 0 0 auto;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+              width: ${styles.width}px;
+              aspect-ratio: ${styles.width} / ${styles.height};
+              overflow: hidden;
+              background: white;
+              border-radius: 8px;
+            }
+            ${styles.internalStyles}
+          </style>
+        </head>
+        <body></body>
+      </html>
+    `);
+    previewWindow.document.close();
 
     // Process images and upload to Supabase in parallel
     const uploadPromises = images.map(async (image, index) => {
@@ -38,24 +71,30 @@ export const processImages = async (
 
       try {
         // Create ad container for this image
-        const adContainer = createAdContainer(previewContainer, image);
+        const adContainer = document.createElement('div');
+        adContainer.className = 'ad-container';
         
-        // Add the ad to the preview window
-        const previewBody = previewWindow.document.body;
-        if (previewBody) {
-          previewBody.appendChild(adContainer);
-        }
-
-        // Update preview ref and capture
-        const imgElement = previewRef.current?.querySelector('img');
+        // Clone the preview content
+        const adContent = previewContainer.cloneNode(true) as HTMLElement;
+        
+        // Update image source
+        const imgElement = adContent.querySelector('img');
         if (imgElement) {
           imgElement.src = image;
+          // Wait for image to load
           await new Promise((resolve) => {
             imgElement.onload = resolve;
             imgElement.onerror = resolve;
           });
         }
+        
+        // Add the content to the container
+        adContainer.appendChild(adContent);
+        
+        // Add container to preview window
+        previewWindow.document.body.appendChild(adContainer);
 
+        // Capture preview
         const previewFile = await capturePreview(previewRef, 'default');
         if (!previewFile) {
           throw new Error('Failed to capture preview');
@@ -133,41 +172,6 @@ function getStyles(previewContainer: HTMLDivElement) {
     height,
     fontFamily: computedStyle.fontFamily
   };
-}
-
-function writeInitialHTML(previewWindow: Window, styles: any) {
-  previewWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Generated Ads Preview</title>
-        ${styles.externalStylesheets}
-        <style>
-          body {
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            background: #f0f0f0;
-            min-height: 100vh;
-            font-family: ${styles.fontFamily};
-          }
-          .ad-container {
-            flex: 0 0 auto;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            width: ${styles.width}px;
-            aspect-ratio: ${styles.width} / ${styles.height};
-            overflow: hidden;
-            background: white;
-          }
-          ${styles.internalStyles}
-        </style>
-      </head>
-      <body></body>
-    </html>
-  `);
-  previewWindow.document.close();
 }
 
 function createAdContainer(previewContainer: HTMLDivElement, imageUrl: string) {
