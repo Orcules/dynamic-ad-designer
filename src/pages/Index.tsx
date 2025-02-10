@@ -41,63 +41,8 @@ const Index = () => {
   };
 
   const handleAdGenerated = async (adData: any) => {
-    console.log("Starting ad generation with data:", adData);
-    
-    try {
-      if (!adData.headline) {
-        console.log("Validation failed: Missing headline");
-        toast.error("Please enter a headline");
-        return;
-      }
-
-      if (!adData.imageUrl) {
-        console.log("Validation failed: Missing image");
-        toast.error("Please provide an image");
-        return;
-      }
-
-      const adToInsert = {
-        name: adData.headline || 'Untitled Ad',
-        headline: adData.headline,
-        description: adData.description,
-        cta_text: adData.cta_text,
-        font_url: adData.font_url,
-        platform: adData.platform,
-        template_style: adData.template_style || 'modern',
-        accent_color: adData.accent_color || '#4A90E2',
-        cta_color: adData.cta_color || '#4A90E2',
-        overlay_color: adData.overlay_color || '#000000',
-        text_color: adData.text_color || '#FFFFFF',
-        description_color: adData.description_color || '#333333',
-        image_url: adData.imageUrl,
-        width: adData.width || 1080,
-        height: adData.height || 1920,
-        status: 'completed'
-      };
-
-      console.log("Attempting to insert ad with data:", adToInsert);
-
-      const { data: insertedData, error: insertError } = await supabase
-        .from('generated_ads')
-        .insert([adToInsert])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Error inserting ad:", insertError);
-        throw insertError;
-      }
-      
-      console.log("Ad created successfully:", insertedData);
-      toast.success("Ad created successfully");
-      
-      console.log("Refreshing ads list...");
-      await fetchGeneratedAds();
-      
-    } catch (error: any) {
-      console.error("Error generating ad:", error);
-      toast.error(error.message || "Error creating ad");
-    }
+    console.log("Ad generated:", adData);
+    await fetchGeneratedAds(); // Refresh the list immediately after a new ad is generated
   };
 
   return (

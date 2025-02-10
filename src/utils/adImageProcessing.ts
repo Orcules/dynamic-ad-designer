@@ -12,6 +12,7 @@ export const processImages = async (
   setIsGenerating: (value: boolean) => void
 ) => {
   console.log("Starting to process images:", images.length);
+  let successCount = 0;
   
   for (let i = 0; i < images.length; i++) {
     const currentImage = images[i];
@@ -21,9 +22,18 @@ export const processImages = async (
       let imageUrl: string;
       
       if (typeof currentImage === 'string') {
+        // Validate URL is accessible
+        const response = await fetch(currentImage);
+        if (!response.ok) {
+          throw new Error(`Failed to access image URL: ${currentImage}`);
+        }
         imageUrl = currentImage;
       } else {
         imageUrl = await handleSubmission(currentImage);
+      }
+
+      if (!imageUrl) {
+        throw new Error('No image URL generated');
       }
 
       const { width, height } = getDimensions(adData.platform);
@@ -60,15 +70,20 @@ export const processImages = async (
       }
 
       if (insertedAd) {
+        successCount++;
         onAdGenerated(insertedAd);
+        console.log(`Successfully inserted ad ${i + 1}`);
       }
 
-      console.log(`Successfully processed image ${i + 1}`);
     } catch (error) {
       console.error(`Error processing image ${i + 1}:`, error);
-      toast.error(`Error processing image ${i + 1}`);
+      toast.error(`Failed to process image ${i + 1}: ${error.message}`);
     }
   }
   
-  toast.success(`Successfully created ${images.length} ads!`);
+  if (successCount > 0) {
+    toast.success(`Successfully created ${successCount} ads!`);
+  } else {
+    toast.error('No ads were created. Please check the errors and try again.');
+  }
 };
