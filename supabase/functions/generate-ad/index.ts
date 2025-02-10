@@ -32,6 +32,10 @@ serve(async (req) => {
     let imageArrayBuffer: ArrayBuffer;
     if (imageFile instanceof File || imageFile instanceof Blob) {
       imageArrayBuffer = await imageFile.arrayBuffer();
+    } else if (typeof imageFile === 'string') {
+      // If imageFile is a URL string, fetch it first
+      const response = await fetch(imageFile);
+      imageArrayBuffer = await response.arrayBuffer();
     } else {
       throw new Error('Invalid image data');
     }
@@ -170,4 +174,3 @@ serve(async (req) => {
     );
   }
 });
-
