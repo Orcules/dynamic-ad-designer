@@ -9,26 +9,44 @@ export const useAdSubmission = () => {
   const handleSubmission = async (file: File) => {
     try {
       setIsSubmitting(true);
+      
+      // Log file details for debugging
+      console.log('Starting file upload:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      console.log('Attempting upload with path:', filePath);
+
+      const { error: uploadError, data } = await supabase.storage
         .from('ad-images')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
-        throw uploadError;
+        throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      const { data } = supabase.storage
+      console.log('Upload successful:', data);
+
+      const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
         .getPublicUrl(filePath);
 
-      return data.publicUrl;
+      console.log('Generated public URL:', publicUrl);
+      return publicUrl;
+      
     } catch (error) {
       console.error('Error in handleSubmission:', error);
+      toast.error(`Upload failed: ${error.message}`);
       throw error;
     } finally {
       setIsSubmitting(false);
