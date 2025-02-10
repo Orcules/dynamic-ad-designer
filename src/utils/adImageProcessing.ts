@@ -32,11 +32,32 @@ export const processImages = async (
     const height = previewContainer.getBoundingClientRect().height;
     const aspectRatio = height / width;
 
+    // Convert the NodeList to an array for easier manipulation
+    const externalStylesheets = Array.from(document.getElementsByTagName('link'))
+      .filter(link => link.rel === 'stylesheet' && link.href.includes('fonts.googleapis.com'))
+      .map(link => link.outerHTML)
+      .join('\n');
+
+    // Get all styles from the current document's stylesheets
+    const internalStyles = Array.from(document.styleSheets)
+      .filter(sheet => !sheet.href || sheet.href.startsWith(window.location.origin))
+      .map(sheet => {
+        try {
+          return Array.from(sheet.cssRules)
+            .map(rule => rule.cssText)
+            .join('\n');
+        } catch (e) {
+          return '';
+        }
+      })
+      .join('\n');
+
     // Write the HTML content with preserved styles
     previewWindow.document.write(`
       <html>
         <head>
           <title>Generated Ads Preview</title>
+          ${externalStylesheets}
           <style>
             body {
               margin: 0;
@@ -60,41 +81,28 @@ export const processImages = async (
               height: 100%;
               position: relative;
             }
-            ${Array.from(document.styleSheets)
-              .filter(sheet => !sheet.href || sheet.href.startsWith(window.location.origin))
-              .map(sheet => {
-                try {
-                  return Array.from(sheet.cssRules)
-                    .map(rule => rule.cssText)
-                    .join('\n');
-                } catch (e) {
-                  return '';
-                }
-              })
-              .join('\n')}
+            ${internalStyles}
           </style>
-          ${Array.from(document.head.getElementsByTagName('link'))
-            .filter(link => link.rel === 'stylesheet' && link.href.includes('fonts.googleapis.com'))
-            .map(link => link.outerHTML)
-            .join('\n')}
         </head>
         <body>
-          ${images.map((image, index) => {
-            const adContainer = previewContainer.cloneNode(true) as HTMLElement;
-            // Update the image source in the cloned container
-            const imgElement = adContainer.querySelector('img');
-            if (imgElement && typeof image === 'string') {
-              imgElement.src = image;
-            }
-            return `
-              <div class="ad-container">
-                ${adContainer.outerHTML}
-              </div>
-            `;
-          }).join('')}
-        </body>
-      </html>
     `);
+
+    // Generate preview HTML for each image
+    images.forEach((image, index) => {
+      const adContainer = previewContainer.cloneNode(true) as HTMLElement;
+      const imgElement = adContainer.querySelector('img');
+      if (imgElement && typeof image === 'string') {
+        imgElement.src = image;
+      }
+      previewWindow.document.write(`
+        <div class="ad-container">
+          ${adContainer.outerHTML}
+        </div>
+      `);
+    });
+
+    previewWindow.document.write('</body></html>');
+    previewWindow.document.close();
 
     // Store in Supabase for persistence
     const uploadPromises = images.map(async (image, index) => {
@@ -156,3 +164,4 @@ export const processImages = async (
     setIsGenerating(false);
   }
 };
+
