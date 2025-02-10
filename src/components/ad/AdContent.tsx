@@ -1,3 +1,4 @@
+
 import React from "react";
 import { cn } from "@/lib/utils";
 import { AdHeadline } from "./AdHeadline";
@@ -23,6 +24,9 @@ interface AdContentProps {
   descriptionPosition: Position;
   ctaPosition: Position;
   showCtaArrow?: boolean;
+  onHeadlinePositionChange?: (position: Position) => void;
+  onDescriptionPositionChange?: (position: Position) => void;
+  onCtaPositionChange?: (position: Position) => void;
 }
 
 export function AdContent({
@@ -39,6 +43,9 @@ export function AdContent({
   descriptionPosition,
   ctaPosition,
   showCtaArrow = true,
+  onHeadlinePositionChange,
+  onDescriptionPositionChange,
+  onCtaPositionChange,
 }: AdContentProps) {
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
 
@@ -58,12 +65,14 @@ export function AdContent({
             headline={headline}
             textStyle={textStyle}
             position={headlinePosition}
+            onPositionChange={onHeadlinePositionChange}
           />
           
           <AdDescription
             description={description}
             descriptionStyle={descriptionStyle}
             position={descriptionPosition}
+            onPositionChange={onDescriptionPositionChange}
           />
           
           <AdCallToAction
@@ -73,6 +82,7 @@ export function AdContent({
             isButtonHovered={isButtonHovered}
             onButtonHover={onButtonHover}
             showArrow={showCtaArrow}
+            onPositionChange={onCtaPositionChange}
           />
         </div>
       </div>

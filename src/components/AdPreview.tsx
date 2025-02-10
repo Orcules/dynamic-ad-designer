@@ -36,6 +36,10 @@ interface AdPreviewProps {
   ctaPosition: Position;
   imagePosition: Position;
   showCtaArrow?: boolean;
+  onImagePositionChange?: (newPosition: Position) => void;
+  onHeadlinePositionChange?: (newPosition: Position) => void;
+  onDescriptionPositionChange?: (newPosition: Position) => void;
+  onCtaPositionChange?: (newPosition: Position) => void;
 }
 
 export function AdPreview({ 
@@ -62,6 +66,10 @@ export function AdPreview({
   ctaPosition,
   imagePosition,
   showCtaArrow = true,
+  onImagePositionChange,
+  onHeadlinePositionChange,
+  onDescriptionPositionChange,
+  onCtaPositionChange,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -130,7 +138,11 @@ export function AdPreview({
             <AdPreviewImage
               imageUrl={imageUrl}
               position={imagePosition}
-              onPositionChange={() => {}}
+              onPositionChange={(newPosition) => {
+                if (onImagePositionChange) {
+                  onImagePositionChange(newPosition);
+                }
+              }}
             />
             <div
               className="absolute inset-0 flex flex-col justify-between pointer-events-none"
@@ -150,6 +162,21 @@ export function AdPreview({
                 descriptionPosition={descriptionPosition}
                 ctaPosition={ctaPosition}
                 showCtaArrow={showCtaArrow}
+                onHeadlinePositionChange={(newPosition) => {
+                  if (onHeadlinePositionChange) {
+                    onHeadlinePositionChange(newPosition);
+                  }
+                }}
+                onDescriptionPositionChange={(newPosition) => {
+                  if (onDescriptionPositionChange) {
+                    onDescriptionPositionChange(newPosition);
+                  }
+                }}
+                onCtaPositionChange={(newPosition) => {
+                  if (onCtaPositionChange) {
+                    onCtaPositionChange(newPosition);
+                  }
+                }}
               />
             </div>
           </div>
