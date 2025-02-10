@@ -1,10 +1,8 @@
-
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
-import { AdPreviewCapture } from "./ad/AdPreviewCapture";
 import { useAdSubmission } from "@/hooks/useAdSubmission";
 import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
@@ -13,7 +11,6 @@ import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
 import { processImages } from "@/utils/adImageProcessing";
 import { getDimensions } from "@/utils/adDimensions";
-import { capturePreview } from "@/utils/adPreviewCapture";
 
 interface Template {
   id: string;
@@ -103,19 +100,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
-  const handlePreviewCapture = (file: File) => {
-    console.log('Preview captured:', file);
-    handleSubmission(file)
-      .then(url => {
-        console.log('Preview uploaded successfully:', url);
-        toast.success('Preview captured and uploaded');
-      })
-      .catch(error => {
-        console.error('Error uploading preview:', error);
-        toast.error('Failed to upload preview');
-      });
-  };
-
   const { width, height } = getDimensions(adData.platform);
 
   return (
@@ -141,7 +125,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       </div>
       
       <div className="w-full lg:w-1/2 space-y-6" ref={previewRef}>
-        <AdPreviewCapture onCapture={handlePreviewCapture}>
+        <div>
           <AdPreview
             imageUrl={imageUrls[currentPreviewIndex]}
             imageUrls={imageUrls}
@@ -167,7 +151,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imagePosition={imagePosition}
             showCtaArrow={showCtaArrow}
           />
-        </AdPreviewCapture>
+        </div>
 
         <AdPreviewControls
           showCtaArrow={showCtaArrow}

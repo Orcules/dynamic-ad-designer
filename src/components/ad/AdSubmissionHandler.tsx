@@ -1,9 +1,9 @@
+
 import { useState } from 'react';
 import { toast } from "sonner";
 import { fetchWithRetry } from "@/utils/adSubmissionUtils";
 import { AdStorageService } from "@/services/adStorageService";
 import { AdGenerationService } from "@/services/adGenerationService";
-import { capturePreview } from "@/utils/adPreviewCapture";
 
 export function useAdSubmission() {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -38,13 +38,22 @@ export function useAdSubmission() {
       );
       uploadedFiles.push(originalPath);
       
-      console.log(`Capturing preview [${uploadId}]`);
-      const previewFile = await capturePreview(previewRef, adData.platform);
-      if (!previewFile) {
-        throw new Error('Failed to capture preview');
-      }
+      // Instead of using capturePreview, we'll use html2canvas directly
+      const canvas = await import('html2canvas').then(html2canvas => 
+        html2canvas.default(previewRef.current!, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+        })
+      );
 
-      const { path: previewPath } = await AdStorageService.uploadPreviewImage(previewFile, uploadId);
+      const previewBlob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob!);
+        }, 'image/jpeg', 0.95);
+      });
+
+      const { path: previewPath } = await AdStorageService.uploadPreviewImage(previewBlob, uploadId);
       uploadedFiles.push(previewPath);
       
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
