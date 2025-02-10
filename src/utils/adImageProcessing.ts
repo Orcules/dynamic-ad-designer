@@ -2,7 +2,6 @@
 import { toast } from "sonner";
 import { enrichAdData } from "./adEnrichment";
 import { capturePreview } from "./adPreviewCapture";
-import { supabase } from "@/integrations/supabase/client";
 
 export const processImages = async (
   adData: any,
@@ -38,9 +37,17 @@ export const processImages = async (
         // Upload using the provided handleSubmission function
         const generatedImageUrl = await handleSubmission(previewFile);
 
-        // Generate enriched ad data
+        // Generate enriched ad data with positions
         const enrichedAdData = enrichAdData(adData, i);
         enrichedAdData.imageUrl = generatedImageUrl;
+        
+        // Include element positions in the enriched data
+        enrichedAdData.positions = {
+          headlinePosition: adData.headlinePosition,
+          descriptionPosition: adData.descriptionPosition,
+          ctaPosition: adData.ctaPosition,
+          imagePosition: adData.imagePosition
+        };
 
         onAdGenerated(enrichedAdData);
 

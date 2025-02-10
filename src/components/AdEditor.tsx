@@ -80,8 +80,16 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
     try {
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
+      const adDataWithPositions = {
+        ...adData,
+        headlinePosition,
+        descriptionPosition,
+        ctaPosition,
+        imagePosition
+      };
+
       await processImages(
-        adData,
+        adDataWithPositions,
         imagesToProcess,
         previewRef,
         onAdGenerated,
