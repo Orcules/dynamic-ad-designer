@@ -19,8 +19,8 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
     }
 
     try {
-      // Ensure the content is fully rendered
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Ensure the content is fully rendered and stable
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const file = await capturePreview(previewRef, 'default');
       
@@ -48,7 +48,17 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
   }, []);
 
   return (
-    <div ref={previewRef} className="preview-container relative">
+    <div 
+      ref={previewRef} 
+      className="preview-container relative"
+      style={{
+        width: '100%',
+        height: '100%',
+        transformOrigin: 'center center',
+        backfaceVisibility: 'hidden',
+        WebkitBackfaceVisibility: 'hidden'
+      }}
+    >
       {children}
     </div>
   );

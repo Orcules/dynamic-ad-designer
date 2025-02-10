@@ -43,17 +43,22 @@ export async function capturePreview(
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
       scale: 2,
-      backgroundColor: '#ffffff',
+      backgroundColor: null,
       logging: true,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
           clonedElement.classList.add('capturing');
+          // Force layout recalculation
           clonedElement.getBoundingClientRect();
         }
       },
       allowTaint: true,
-      foreignObjectRendering: true
+      foreignObjectRendering: true,
+      removeContainer: false,
+      imageTimeout: 0,
+      width: adElement.clientWidth,
+      height: adElement.clientHeight,
     });
 
     // Convert to file with high quality

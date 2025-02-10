@@ -93,6 +93,8 @@
   z-index: 1;
   opacity: 1 !important;
   visibility: visible !important;
+  transform: none !important;
+  transform-origin: center center !important;
 }
 
 .preview-container .ad-content {
@@ -103,6 +105,7 @@
   overflow: hidden;
   opacity: 1 !important;
   visibility: visible !important;
+  transform: none !important;
 }
 
 .preview-container .ad-content.capturing {
@@ -111,6 +114,11 @@
   z-index: 4 !important;
   opacity: 1 !important;
   visibility: visible !important;
+  transform-origin: center center !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+  -webkit-transform-style: preserve-3d !important;
+  transform-style: preserve-3d !important;
 }
 
 .preview-container .ad-content img {
@@ -122,4 +130,15 @@
   object-fit: cover;
   opacity: 1 !important;
   visibility: visible !important;
+  transform: none !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+}
+
+.preview-container .ad-content * {
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
 }
