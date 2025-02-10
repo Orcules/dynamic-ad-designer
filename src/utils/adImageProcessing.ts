@@ -20,15 +20,18 @@ export const processImages = async (
 
     try {
       let imageUrl: string;
+      let imageBlob: Blob;
       
       if (typeof currentImage === 'string') {
-        // Validate URL is accessible
+        // Fetch image from URL
         const response = await fetch(currentImage);
         if (!response.ok) {
           throw new Error(`Failed to access image URL: ${currentImage}`);
         }
+        imageBlob = await response.blob();
         imageUrl = currentImage;
       } else {
+        imageBlob = currentImage;
         imageUrl = await handleSubmission(currentImage);
       }
 
@@ -37,10 +40,6 @@ export const processImages = async (
       }
 
       const { width, height } = getDimensions(adData.platform);
-      
-      // Download the image and prepare form data for the generate-ad function
-      const imageResponse = await fetch(imageUrl);
-      const imageBlob = await imageResponse.blob();
       
       const formData = new FormData();
       formData.append('image', imageBlob);

@@ -49,7 +49,6 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    ctx.save(); // Save the current state
     ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
     console.log(`[${uploadId}] Background image drawn`);
 
@@ -57,6 +56,7 @@ serve(async (req) => {
     const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
     console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
     
+    ctx.save(); // Save the current state
     ctx.globalAlpha = overlayOpacity;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
