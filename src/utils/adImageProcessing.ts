@@ -1,9 +1,8 @@
-
-
 import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import html2canvas from 'html2canvas';
+import { applyImageEffect } from "./imageEffects";
 
 export const processImages = async (
   adData: any,
@@ -21,7 +20,6 @@ export const processImages = async (
     console.log(`Processing image ${i + 1}/${images.length}`);
 
     try {
-      // First, capture the preview as it currently appears
       if (!previewRef.current) {
         throw new Error('Preview element not found');
       }
@@ -30,18 +28,15 @@ export const processImages = async (
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        scale: 2, // Higher quality
+        scale: 2,
         logging: true,
       });
 
-      // Convert the canvas to a blob
-      const previewBlob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => {
-          resolve(blob!);
-        }, 'image/jpeg', 0.95);
-      });
+      const finalImageUrl = await applyImageEffect(canvas, adData.effect || 'none');
 
-      // Upload the preview image to Supabase storage
+      const response = await fetch(finalImageUrl);
+      const previewBlob = await response.blob();
+
       const previewPath = `previews/${crypto.randomUUID()}.jpg`;
       const { error: previewUploadError } = await supabase.storage
         .from('ad-images')
@@ -55,7 +50,6 @@ export const processImages = async (
         throw new Error(`Failed to upload preview: ${previewUploadError.message}`);
       }
 
-      // Get the public URL for the preview
       const { data: { publicUrl: previewUrl } } = supabase.storage
         .from('ad-images')
         .getPublicUrl(previewPath);
@@ -64,7 +58,6 @@ export const processImages = async (
       let imageBlob: Blob;
       
       if (typeof currentImage === 'string') {
-        // Fetch image from URL
         const response = await fetch(currentImage);
         if (!response.ok) {
           throw new Error(`Failed to access image URL: ${currentImage}`);
@@ -81,7 +74,7 @@ export const processImages = async (
       }
 
       const { width, height } = getDimensions(adData.platform);
-      
+
       const formData = new FormData();
       formData.append('image', imageBlob);
       formData.append('data', JSON.stringify({
@@ -90,7 +83,6 @@ export const processImages = async (
         height
       }));
 
-      // Call the generate-ad function
       const { data: generatedData, error: generateError } = await supabase.functions
         .invoke('generate-ad', {
           body: formData
@@ -104,7 +96,6 @@ export const processImages = async (
         throw new Error('No generated image URL received');
       }
 
-      // Create a unique name for each ad based on the original data
       const enrichedAdData = {
         name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
         headline: adData.headline,
@@ -118,14 +109,14 @@ export const processImages = async (
         overlay_color: adData.overlay_color || '#000000',
         text_color: adData.text_color || '#FFFFFF',
         description_color: adData.description_color || '#333333',
-        image_url: generatedData.imageUrl,
+        image_url: imageUrl,
         preview_url: previewUrl,
+        effect: adData.effect || 'none',
         width,
         height,
         status: 'completed'
       };
 
-      // Insert the ad into the database
       const { data: insertedAd, error: insertError } = await supabase
         .from('generated_ads')
         .insert([enrichedAdData])
@@ -154,4 +145,3 @@ export const processImages = async (
     toast.error('No ads were created. Please check the errors and try again.');
   }
 };
-
