@@ -34,7 +34,6 @@ const Index = () => {
 
     if (data) {
       console.log("Successfully fetched ads. Count:", data.length);
-      console.log("Fetched ads data:", data);
       setGeneratedAds(data);
     } else {
       console.log("No ads data returned");
@@ -132,22 +131,31 @@ const Index = () => {
         {generatedAds.length > 0 && (
           <div className="space-y-4 backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
             <h2 className="text-xl font-semibold mb-4">Generated Ads</h2>
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {generatedAds.map((ad) => (
                 <div 
                   key={ad.id} 
-                  className="flex items-center justify-between p-3 bg-card rounded-lg hover:bg-accent/5 transition-colors"
+                  className="flex flex-col p-4 bg-card rounded-lg hover:bg-accent/5 transition-colors"
                 >
-                  <span className="text-sm font-medium">{ad.name}</span>
+                  <span className="text-sm font-medium mb-2">{ad.name}</span>
                   {ad.image_url && (
-                    <a
-                      href={ad.image_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
-                    >
-                      View Ad <ExternalLink className="h-4 w-4" />
-                    </a>
+                    <>
+                      <div className="relative aspect-[9/16] mb-2 rounded-md overflow-hidden">
+                        <img 
+                          src={ad.image_url} 
+                          alt={ad.name}
+                          className="absolute inset-0 w-full h-full object-cover"
+                        />
+                      </div>
+                      <a
+                        href={ad.image_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm mt-auto"
+                      >
+                        View Ad <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </>
                   )}
                 </div>
               ))}
@@ -160,4 +168,3 @@ const Index = () => {
 };
 
 export default Index;
-
