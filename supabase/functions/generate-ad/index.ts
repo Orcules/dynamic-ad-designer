@@ -18,10 +18,10 @@ serve(async (req) => {
 
   try {
     const formData = await req.formData();
-    const imageData = formData.get('image');
+    const imageFile = formData.get('image');
     const dataString = formData.get('data');
     
-    if (!imageData || !dataString) {
+    if (!imageFile || !dataString) {
       throw new Error('Missing required fields');
     }
 
@@ -30,8 +30,8 @@ serve(async (req) => {
 
     // Convert FormData image to ArrayBuffer
     let imageArrayBuffer: ArrayBuffer;
-    if (imageData instanceof File || imageData instanceof Blob) {
-      imageArrayBuffer = await imageData.arrayBuffer();
+    if (imageFile instanceof File || imageFile instanceof Blob) {
+      imageArrayBuffer = await imageFile.arrayBuffer();
     } else {
       throw new Error('Invalid image data');
     }
@@ -170,3 +170,4 @@ serve(async (req) => {
     );
   }
 });
+
