@@ -38,7 +38,6 @@ export function useAdSubmission() {
       );
       uploadedFiles.push(originalPath);
       
-      // Instead of using capturePreview, we'll use html2canvas directly
       const canvas = await import('html2canvas').then(html2canvas => 
         html2canvas.default(previewRef.current!, {
           useCORS: true,
@@ -57,7 +56,6 @@ export function useAdSubmission() {
       uploadedFiles.push(previewPath);
       
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
-      const newAd = await AdGenerationService.saveAdToDatabase(adData, imageUrl);
       
       toast.success('Ad created successfully!', {
         action: {
@@ -66,7 +64,7 @@ export function useAdSubmission() {
         },
       });
       
-      onSuccess(newAd);
+      onSuccess({ ...adData, imageUrl });
       
     } catch (error: any) {
       console.error(`Error in handleSubmission [${uploadId}]:`, error);
