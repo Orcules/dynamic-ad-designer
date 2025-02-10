@@ -4,6 +4,7 @@ import { getDimensions } from "@/utils/adDimensions";
 
 export interface GeneratedAdResult {
   imageUrl: string;
+  previewUrl?: string;
   adData: any;
 }
 
@@ -27,6 +28,9 @@ export class AdGenerationService {
       throw new Error('Failed to generate ad');
     }
 
-    return generatedAd;
+    return {
+      ...generatedAd,
+      adData
+    };
   }
 }

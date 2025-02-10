@@ -37,24 +37,7 @@ export function useAdSubmission() {
         uploadId
       );
       uploadedFiles.push(originalPath);
-      
-      const canvas = await import('html2canvas').then(html2canvas => 
-        html2canvas.default(previewRef.current!, {
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: null,
-        })
-      );
 
-      const previewBlob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((blob) => {
-          resolve(blob!);
-        }, 'image/jpeg', 0.95);
-      });
-
-      const { path: previewPath } = await AdStorageService.uploadPreviewImage(previewBlob, uploadId);
-      uploadedFiles.push(previewPath);
-      
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
       
       toast.success('Ad created successfully!', {

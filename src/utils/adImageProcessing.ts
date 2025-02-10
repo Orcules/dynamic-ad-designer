@@ -2,6 +2,7 @@
 import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
+import html2canvas from 'html2canvas';
 
 export const processImages = async (
   adData: any,
@@ -19,6 +20,45 @@ export const processImages = async (
     console.log(`Processing image ${i + 1}/${images.length}`);
 
     try {
+      // First, capture the preview as it currently appears
+      if (!previewRef.current) {
+        throw new Error('Preview element not found');
+      }
+
+      const canvas = await html2canvas(previewRef.current, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        scale: 2, // Higher quality
+        logging: true,
+      });
+
+      // Convert the canvas to a blob
+      const previewBlob = await new Promise<Blob>((resolve) => {
+        canvas.toBlob((blob) => {
+          resolve(blob!);
+        }, 'image/jpeg', 0.95);
+      });
+
+      // Upload the preview image to Supabase storage
+      const previewPath = `previews/${crypto.randomUUID()}.jpg`;
+      const { error: previewUploadError } = await supabase.storage
+        .from('ad-images')
+        .upload(previewPath, previewBlob, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (previewUploadError) {
+        throw new Error(`Failed to upload preview: ${previewUploadError.message}`);
+      }
+
+      // Get the public URL for the preview
+      const { data: { publicUrl: previewUrl } } = supabase.storage
+        .from('ad-images')
+        .getPublicUrl(previewPath);
+
       let imageUrl: string;
       let imageBlob: Blob;
       
@@ -78,6 +118,7 @@ export const processImages = async (
         text_color: adData.text_color || '#FFFFFF',
         description_color: adData.description_color || '#333333',
         image_url: generatedData.imageUrl,
+        preview_url: previewUrl,
         width,
         height,
         status: 'completed'
