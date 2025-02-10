@@ -56,7 +56,8 @@ export const AdPreviewCapture: React.FC<AdPreviewCaptureProps> = ({ onCapture, c
         height: '100%',
         transformOrigin: 'center center',
         backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden'
+        WebkitBackfaceVisibility: 'hidden',
+        transform: 'none'
       }}
     >
       {children}
