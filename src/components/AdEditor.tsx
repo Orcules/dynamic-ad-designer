@@ -13,6 +13,7 @@ import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
 import { getDimensions } from "@/utils/adDimensions";
 import { capturePreview } from "@/utils/adPreviewCapture";
+import { processImages } from "@/utils/adImageProcessing";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Template {
@@ -79,57 +80,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
     try {
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
-      const generatedAds = [];
-
-      for (let i = 0; i < imagesToProcess.length; i++) {
-        const imageFile = imagesToProcess[i];
-        
-        try {
-          // Wait for the preview to be ready
-          await new Promise(resolve => setTimeout(resolve, 1000));
-
-          if (!previewRef.current) {
-            throw new Error('Preview element not found');
-          }
-
-          console.log(`Capturing preview for image ${i + 1} of ${imagesToProcess.length}`);
-          const previewFile = await capturePreview(previewRef, adData.platform);
-          
-          if (!previewFile) {
-            throw new Error('Failed to capture preview');
-          }
-
-          const uploadId = crypto.randomUUID();
-          const enrichedAdData = {
-            ...adData,
-            status: 'completed',
-            ...getDimensions(adData.platform)
-          };
-
-          const newAd = await handleSubmission(enrichedAdData, imageFile, previewRef, (generatedAd) => {
-            generatedAds.push(generatedAd);
-            onAdGenerated(generatedAd);
-          });
-
-          if (newAd) {
-            console.log(`Successfully generated ad ${i + 1}`);
-          }
-
-          // Move to next image if there are more
-          if (i < imagesToProcess.length - 1) {
-            handleNextPreview();
-            // Wait for the next image to load
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-
-        } catch (error) {
-          console.error(`Error processing image ${i + 1}:`, error);
-          toast.error(`Failed to generate ad ${i + 1}`);
-        }
-      }
-
-      toast.success(`Successfully generated ${generatedAds.length} ads!`);
-      
+      await processImages(
+        adData,
+        imagesToProcess,
+        previewRef,
+        onAdGenerated,
+        handleSubmission,
+        setIsGenerating
+      );
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       toast.error('Failed to generate ads');
