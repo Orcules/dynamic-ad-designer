@@ -10,77 +10,107 @@ export async function capturePreview(
     return null;
   }
 
+  let adElement: Element | null = null;
+  
   try {
-    const adElement = previewRef.current.querySelector('.ad-content');
+    // Find the ad-content element within the preview container
+    adElement = previewRef.current.querySelector('.ad-content');
     if (!adElement) {
       console.error('Ad content element not found');
       return null;
     }
 
-    // Force a layout reflow
-    adElement.getBoundingClientRect();
+    console.log('Starting preview capture process...');
+
+    // Add capturing class before any operations
+    adElement.classList.add('capturing');
 
     // Wait for fonts to load
     await document.fonts.ready;
     console.log('Fonts loaded successfully');
 
-    // Wait for images to load
+    // Wait for images to load with a more robust approach
     const images = Array.from(adElement.getElementsByTagName('img'));
     if (images.length > 0) {
-      console.log(`Waiting for ${images.length} images to load...`);
       await Promise.all(
-        images.map(img => {
-          if (img.complete) return Promise.resolve();
+        images.map((img) => {
+          if (img.complete && img.naturalHeight !== 0) {
+            return Promise.resolve();
+          }
           return new Promise<void>((resolve, reject) => {
-            img.onload = () => resolve();
-            img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+            const timeout = setTimeout(() => {
+              reject(new Error(`Image load timeout: ${img.src}`));
+            }, 10000); // 10 second timeout
+
+            img.onload = () => {
+              clearTimeout(timeout);
+              // Force a small delay after image loads to ensure rendering
+              setTimeout(resolve, 100);
+            };
+            img.onerror = () => {
+              clearTimeout(timeout);
+              reject(new Error(`Failed to load image: ${img.src}`));
+            };
           });
         })
       );
     }
+    console.log('All images loaded successfully');
 
-    // Create canvas with specific settings for better quality
+    // Force layout recalculation and wait a moment
+    adElement.getBoundingClientRect();
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Get exact dimensions after layout is stable
+    const rect = adElement.getBoundingClientRect();
+    console.log('Captured element dimensions:', { width: rect.width, height: rect.height });
+    
+    // Create canvas with exact dimensions
     const canvas = await html2canvas(adElement as HTMLElement, {
       useCORS: true,
       scale: 2,
+      width: rect.width,
+      height: rect.height,
       backgroundColor: null,
       logging: true,
+      allowTaint: true,
+      foreignObjectRendering: true,
+      removeContainer: false,
       onclone: (clonedDoc) => {
         const clonedElement = clonedDoc.querySelector('.ad-content');
         if (clonedElement) {
           clonedElement.classList.add('capturing');
-          // Force layout recalculation
-          clonedElement.getBoundingClientRect();
+          // Copy all computed styles
+          const styles = window.getComputedStyle(adElement as HTMLElement);
+          Array.from(styles).forEach(key => {
+            (clonedElement as HTMLElement).style[key as any] = styles.getPropertyValue(key);
+          });
         }
-      },
-      allowTaint: true,
-      foreignObjectRendering: true,
-      removeContainer: false,
-      imageTimeout: 0,
-      width: adElement.clientWidth,
-      height: adElement.clientHeight,
+      }
     });
 
-    // Convert to file with high quality
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          console.error('Failed to create blob from canvas');
-          resolve(null);
-          return;
-        }
-        
-        const file = new File([blob], "ad-preview.png", { 
-          type: "image/png",
-          lastModified: Date.now()
-        });
-        console.log('Image file created successfully');
-        resolve(file);
-      }, 'image/png', 1.0);
+    console.log('Canvas captured successfully');
+
+    // Convert to high quality JPEG
+    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    
+    const file = new File([blob], "ad-preview.jpg", { 
+      type: "image/jpeg",
+      lastModified: Date.now()
     });
+
+    console.log('JPEG file created successfully');
+    return file;
 
   } catch (error) {
     console.error("Error capturing preview:", error);
     return null;
+  } finally {
+    // Remove capturing class in finally block to ensure it's always removed
+    if (adElement) {
+      adElement.classList.remove('capturing');
+    }
   }
 }

@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface Position {
@@ -18,24 +17,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   onPositionChange
 }) => {
   if (!imageUrl) return null;
-
-  const handleMove = (direction: 'up' | 'down' | 'left' | 'right') => {
-    const step = 10;
-    switch (direction) {
-      case 'up':
-        onPositionChange({ ...position, y: position.y - step });
-        break;
-      case 'down':
-        onPositionChange({ ...position, y: position.y + step });
-        break;
-      case 'left':
-        onPositionChange({ ...position, x: position.x - step });
-        break;
-      case 'right':
-        onPositionChange({ ...position, x: position.x + step });
-        break;
-    }
-  };
 
   return (
     <img

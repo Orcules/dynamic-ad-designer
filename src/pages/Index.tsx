@@ -9,7 +9,6 @@ interface GeneratedAd {
   id: string;
   name: string;
   image_url: string;
-  created_at: string;
 }
 
 const Index = () => {
@@ -24,9 +23,8 @@ const Index = () => {
     console.log("Starting to fetch generated ads...");
     const { data, error } = await supabase
       .from('generated_ads')
-      .select('id, name, image_url, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .select('id, name, image_url')
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error("Error fetching ads:", error);
@@ -36,7 +34,10 @@ const Index = () => {
 
     if (data) {
       console.log("Successfully fetched ads. Count:", data.length);
+      console.log("Fetched ads data:", data);
       setGeneratedAds(data);
+    } else {
+      console.log("No ads data returned");
     }
   };
 
@@ -130,41 +131,24 @@ const Index = () => {
 
         {generatedAds.length > 0 && (
           <div className="space-y-4 backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Recent Generated Ads</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <h2 className="text-xl font-semibold mb-4">Generated Ads</h2>
+            <div className="space-y-2">
               {generatedAds.map((ad) => (
                 <div 
                   key={ad.id} 
-                  className="flex flex-col space-y-2 p-4 bg-card rounded-lg hover:bg-accent/5 transition-colors"
+                  className="flex items-center justify-between p-3 bg-card rounded-lg hover:bg-accent/5 transition-colors"
                 >
+                  <span className="text-sm font-medium">{ad.name}</span>
                   {ad.image_url && (
                     <a
                       href={ad.image_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block aspect-video overflow-hidden rounded-lg"
+                      className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors"
                     >
-                      <img 
-                        src={ad.image_url} 
-                        alt={ad.name}
-                        className="w-full h-full object-cover transition-transform hover:scale-105"
-                      />
+                      View Ad <ExternalLink className="h-4 w-4" />
                     </a>
                   )}
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium truncate">{ad.name}</span>
-                    <a
-                      href={ad.image_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors text-sm"
-                    >
-                      View <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(ad.created_at).toLocaleDateString()}
-                  </span>
                 </div>
               ))}
             </div>
@@ -176,3 +160,4 @@ const Index = () => {
 };
 
 export default Index;
+

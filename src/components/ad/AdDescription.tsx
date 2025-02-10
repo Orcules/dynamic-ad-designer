@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from "@/lib/utils";
 
@@ -11,35 +10,14 @@ interface AdDescriptionProps {
   description?: string;
   descriptionStyle: any;
   position: Position;
-  onPositionChange?: (position: Position) => void;
 }
 
 export const AdDescription: React.FC<AdDescriptionProps> = ({
   description,
   descriptionStyle,
   position,
-  onPositionChange
 }) => {
   if (!description) return null;
-
-  const handleMove = (direction: 'up' | 'down' | 'left' | 'right') => {
-    if (!onPositionChange) return;
-    const step = 10;
-    switch (direction) {
-      case 'up':
-        onPositionChange({ ...position, y: position.y - step });
-        break;
-      case 'down':
-        onPositionChange({ ...position, y: position.y + step });
-        break;
-      case 'left':
-        onPositionChange({ ...position, x: position.x - step });
-        break;
-      case 'right':
-        onPositionChange({ ...position, x: position.x + step });
-        break;
-    }
-  };
 
   return (
     <div 

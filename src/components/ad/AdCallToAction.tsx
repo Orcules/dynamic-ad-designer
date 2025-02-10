@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowBigDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,7 +14,6 @@ interface AdCallToActionProps {
   isButtonHovered: boolean;
   onButtonHover: (isHovered: boolean) => void;
   showArrow?: boolean;
-  onPositionChange?: (position: Position) => void;
 }
 
 export const AdCallToAction: React.FC<AdCallToActionProps> = ({
@@ -24,29 +22,9 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
   position,
   isButtonHovered,
   onButtonHover,
-  showArrow = true,
-  onPositionChange
+  showArrow = true
 }) => {
   if (!ctaText) return null;
-
-  const handleMove = (direction: 'up' | 'down' | 'left' | 'right') => {
-    if (!onPositionChange) return;
-    const step = 10;
-    switch (direction) {
-      case 'up':
-        onPositionChange({ ...position, y: position.y - step });
-        break;
-      case 'down':
-        onPositionChange({ ...position, y: position.y + step });
-        break;
-      case 'left':
-        onPositionChange({ ...position, x: position.x - step });
-        break;
-      case 'right':
-        onPositionChange({ ...position, x: position.x + step });
-        break;
-    }
-  };
 
   return (
     <div 

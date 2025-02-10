@@ -11,10 +11,9 @@ import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
 import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
+import { processImages } from "@/utils/adImageProcessing";
 import { getDimensions } from "@/utils/adDimensions";
 import { capturePreview } from "@/utils/adPreviewCapture";
-import { processImages } from "@/utils/adImageProcessing";
-import { supabase } from "@/integrations/supabase/client";
 
 interface Template {
   id: string;
@@ -75,38 +74,63 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       return;
     }
 
+    if (!previewRef.current) {
+      toast.error('Preview element not found');
+      return;
+    }
+
     setIsGenerating(true);
-    const loadingToast = toast.loading('Generating ads...');
+    toast.loading('Generating ad preview...');
 
     try {
-      const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
-      const adDataWithPositions = {
-        ...adData,
-        headlinePosition,
-        descriptionPosition,
-        ctaPosition,
-        imagePosition
-      };
+      console.log('Starting ad generation process...');
+      
+      // Capture the preview first
+      const previewFile = await capturePreview(previewRef, adData.platform);
+      if (!previewFile) {
+        throw new Error('Failed to capture preview');
+      }
+      console.log('Preview captured successfully');
 
+      // Upload the preview image
+      const previewUrl = await handleSubmission(previewFile);
+      console.log('Preview uploaded, URL:', previewUrl);
+      
+      // Process the rest of the images
+      const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
-        adDataWithPositions,
+        adData,
         imagesToProcess,
         previewRef,
         onAdGenerated,
-        async (file: File) => {
-          const url = await handleSubmission(file);
-          return url;
-        },
+        handleSubmission,
         setIsGenerating
       );
+
+      toast.success('Ad generated successfully!');
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast.error('Failed to generate ads');
+      toast.error('Error generating ad');
     } finally {
       setIsGenerating(false);
-      toast.dismiss(loadingToast);
     }
   };
+
+  const handlePreviewCapture = (file: File) => {
+    console.log('Preview captured:', file);
+    // Upload the captured preview
+    handleSubmission(file)
+      .then(url => {
+        console.log('Preview uploaded successfully:', url);
+        toast.success('Preview captured and uploaded');
+      })
+      .catch(error => {
+        console.error('Error uploading preview:', error);
+        toast.error('Failed to upload preview');
+      });
+  };
+
+  const { width, height } = getDimensions(adData.platform);
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -130,13 +154,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         />
       </div>
       
-      <div className="w-full lg:w-1/2 space-y-6">
-        <div ref={previewRef} className="preview-container">
+      <div className="w-full lg:w-1/2 space-y-6" ref={previewRef}>
+        <AdPreviewCapture onCapture={handlePreviewCapture}>
           <AdPreview
             imageUrl={imageUrls[currentPreviewIndex]}
             imageUrls={imageUrls}
-            width={getDimensions(adData.platform).width}
-            height={getDimensions(adData.platform).height}
+            width={width}
+            height={height}
             headline={adData.headline}
             description={adData.description}
             descriptionColor={adData.description_color}
@@ -157,7 +181,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imagePosition={imagePosition}
             showCtaArrow={showCtaArrow}
           />
-        </div>
+        </AdPreviewCapture>
 
         <AdPreviewControls
           showCtaArrow={showCtaArrow}
