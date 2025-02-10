@@ -38,6 +38,32 @@ export const processImages = async (
 
       const { width, height } = getDimensions(adData.platform);
       
+      // Download the image and prepare form data for the generate-ad function
+      const imageResponse = await fetch(imageUrl);
+      const imageBlob = await imageResponse.blob();
+      
+      const formData = new FormData();
+      formData.append('image', imageBlob);
+      formData.append('data', JSON.stringify({
+        ...adData,
+        width,
+        height
+      }));
+
+      // Call the generate-ad function
+      const { data: generatedData, error: generateError } = await supabase.functions
+        .invoke('generate-ad', {
+          body: formData
+        });
+
+      if (generateError) {
+        throw generateError;
+      }
+
+      if (!generatedData?.imageUrl) {
+        throw new Error('No generated image URL received');
+      }
+
       // Create a unique name for each ad based on the original data
       const enrichedAdData = {
         name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
@@ -52,7 +78,7 @@ export const processImages = async (
         overlay_color: adData.overlay_color || '#000000',
         text_color: adData.text_color || '#FFFFFF',
         description_color: adData.description_color || '#333333',
-        image_url: imageUrl,
+        image_url: generatedData.imageUrl,
         width,
         height,
         status: 'completed'
