@@ -85,7 +85,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         imagesToProcess,
         previewRef,
         onAdGenerated,
-        handleSubmission,
+        async (file: File) => {
+          const url = await handleSubmission(file);
+          return url;
+        },
         setIsGenerating
       );
     } catch (error) {

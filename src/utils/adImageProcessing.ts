@@ -9,7 +9,7 @@ export const processImages = async (
   images: (File | string)[],
   previewRef: React.RefObject<HTMLDivElement>,
   onAdGenerated: (adData: any) => void,
-  handleSubmission: any,
+  handleSubmission: (file: File) => Promise<string>,
   setIsGenerating: (value: boolean) => void
 ) => {
   try {
@@ -35,20 +35,8 @@ export const processImages = async (
           throw new Error('Failed to capture preview');
         }
 
-        // Upload to Supabase
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('ad-images')
-          .upload(`generated/${Date.now()}_${i}_ad.png`, previewFile, {
-            contentType: 'image/png',
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl: generatedImageUrl } } = supabase.storage
-          .from('ad-images')
-          .getPublicUrl(uploadData.path);
+        // Upload using the provided handleSubmission function
+        const generatedImageUrl = await handleSubmission(previewFile);
 
         // Generate enriched ad data
         const enrichedAdData = enrichAdData(adData, i);
