@@ -80,23 +80,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
 
     setIsGenerating(true);
-    toast.loading('Generating ad preview...');
 
     try {
       console.log('Starting ad generation process...');
       
-      // Capture the preview first
-      const previewFile = await capturePreview(previewRef, adData.platform);
-      if (!previewFile) {
-        throw new Error('Failed to capture preview');
-      }
-      console.log('Preview captured successfully');
-
-      // Upload the preview image
-      const previewUrl = await handleSubmission(previewFile);
-      console.log('Preview uploaded, URL:', previewUrl);
-      
-      // Process the rest of the images
+      // Process the images
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
         adData,
@@ -107,7 +95,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         setIsGenerating
       );
 
-      toast.success('Ad generated successfully!');
     } catch (error) {
       console.error('Error in handleSubmit:', error);
       toast.error('Error generating ad');
@@ -118,7 +105,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const handlePreviewCapture = (file: File) => {
     console.log('Preview captured:', file);
-    // Upload the captured preview
     handleSubmission(file)
       .then(url => {
         console.log('Preview uploaded successfully:', url);

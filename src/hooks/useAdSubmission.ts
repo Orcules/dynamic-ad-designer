@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export const useAdSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,6 +18,7 @@ export const useAdSubmission = () => {
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('Upload error:', uploadError);
         throw uploadError;
       }
 
