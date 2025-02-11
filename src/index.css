@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -102,8 +103,6 @@
   overflow: hidden;
   opacity: 1 !important;
   visibility: visible !important;
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
 }
 
 .preview-container .ad-content.capturing {
@@ -112,7 +111,6 @@
   z-index: 4 !important;
   opacity: 1 !important;
   visibility: visible !important;
-  transform-style: flat !important;
 }
 
 .preview-container .ad-content img {
@@ -124,15 +122,6 @@
   object-fit: cover;
   opacity: 1 !important;
   visibility: visible !important;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.ad-content.capturing * {
-  transform: none !important;
-  transition: none !important;
-  animation: none !important;
 }
 
 .ad-content {
