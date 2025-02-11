@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import * as puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import { launch } from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +30,7 @@ serve(async (req) => {
     }
 
     console.log('Launching browser');
-    const browser = await puppeteer.launch({
+    const browser = await launch({
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
