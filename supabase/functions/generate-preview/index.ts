@@ -2,14 +2,27 @@
 import { serve } from "https://deno.fresh.dev/std/http/server.ts";
 import puppeteer from "https://deno.land/x/puppeteer/mod.ts";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     const { url, selector } = await req.json();
 
     if (!url || typeof url !== 'string') {
       return new Response(
         JSON.stringify({ error: 'URL parameter is required.' }),
-        { status: 400 }
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400 
+        }
       );
     }
 
@@ -29,7 +42,10 @@ serve(async (req) => {
       await browser.close();
       return new Response(
         JSON.stringify({ error: 'Element not found.' }),
-        { status: 404 }
+        { 
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 404 
+        }
       );
     }
 
@@ -39,7 +55,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ image: screenshot }),
       { 
-        headers: { "Content-Type": "application/json" },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200 
       }
     );
@@ -47,7 +63,10 @@ serve(async (req) => {
     console.error('Error generating image:', error);
     return new Response(
       JSON.stringify({ error: 'Error generating image.' }),
-      { status: 500 }
+      { 
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500 
+      }
     );
   }
 });
