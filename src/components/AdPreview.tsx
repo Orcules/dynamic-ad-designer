@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -6,6 +7,9 @@ import { getButtonStyle } from "./ad/AdButton";
 import { AdNavigationControls } from "./ad/AdNavigationControls";
 import { AdContent } from "./ad/AdContent";
 import { AdPreviewImage } from "./ad/AdPreviewImage";
+import html2canvas from 'html2canvas';
+import { Button } from "./ui/button";
+import { Download } from "lucide-react";
 
 interface Position {
   x: number;
@@ -85,6 +89,29 @@ export function AdPreview({
     }
   }, [fontUrl]);
 
+  const handleDownload = async () => {
+    const previewElement = document.querySelector('.ad-content');
+    if (!previewElement) return;
+
+    try {
+      const canvas = await html2canvas(previewElement as HTMLElement, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        scale: 2,
+        logging: true,
+      });
+
+      // Create download link
+      const link = document.createElement('a');
+      link.download = 'ad-preview.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Error generating image:', error);
+    }
+  };
+
   const gradientStyle = AdGradient({ 
     style: templateStyle, 
     color: overlayColor, 
@@ -115,8 +142,17 @@ export function AdPreview({
 
   return (
     <Card className="h-fit w-full">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview</CardTitle>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleDownload}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Download Preview
+        </Button>
       </CardHeader>
       <CardContent className="flex justify-center p-4">
         <div className="relative w-full max-w-[600px]">

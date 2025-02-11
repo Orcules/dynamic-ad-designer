@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -121,4 +122,22 @@
   object-fit: cover;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+.ad-content {
+  background-color: transparent;
+  position: relative;
+  z-index: 2;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.ad-content * {
+  backface-visibility: hidden;
+}
+
+.ad-content img {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
