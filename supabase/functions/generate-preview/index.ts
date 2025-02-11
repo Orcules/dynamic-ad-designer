@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import puppeteer from "https://deno.land/x/puppeteer/mod.ts";
+import * as puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,9 +14,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Starting generate-preview function');
     const { url, selector } = await req.json();
+    console.log('Request params:', { url, selector });
 
     if (!url || typeof url !== 'string') {
+      console.error('Invalid URL parameter');
       return new Response(
         JSON.stringify({ error: 'URL parameter is required.' }),
         { 
@@ -26,19 +29,44 @@ serve(async (req) => {
       );
     }
 
+    console.log('Launching browser');
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-extensions'
+      ],
     });
 
+    console.log('Creating new page');
     const page = await browser.newPage();
+    
+    console.log('Setting viewport');
     await page.setViewport({ width: 1280, height: 720 });
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    
+    console.log('Navigating to URL:', url);
+    await page.goto(url, { 
+      waitUntil: 'networkidle0',
+      timeout: 25000 
+    });
     
     const elementSelector = selector || '.ad-content';
-    await page.waitForSelector(elementSelector);
+    console.log('Waiting for selector:', elementSelector);
     
+    await page.waitForSelector(elementSelector, { 
+      timeout: 5000,
+      visible: true 
+    });
+    
+    console.log('Finding element');
     const element = await page.$(elementSelector);
     if (!element) {
+      console.error('Element not found');
       await browser.close();
       return new Response(
         JSON.stringify({ error: 'Element not found.' }),
@@ -49,9 +77,17 @@ serve(async (req) => {
       );
     }
 
-    const screenshot = await element.screenshot({ encoding: 'base64' });
+    console.log('Taking screenshot');
+    const screenshot = await element.screenshot({
+      encoding: 'base64',
+      type: 'png',
+      omitBackground: true
+    });
+    
+    console.log('Closing browser');
     await browser.close();
 
+    console.log('Returning response');
     return new Response(
       JSON.stringify({ image: screenshot }),
       { 
@@ -60,9 +96,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error generating image:', error);
+    console.error('Error in generate-preview:', error);
     return new Response(
-      JSON.stringify({ error: 'Error generating image.' }),
+      JSON.stringify({ 
+        error: 'Error generating image.',
+        details: error.message 
+      }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500 
