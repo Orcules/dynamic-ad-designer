@@ -4,13 +4,9 @@ import { useState, useEffect } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
-import { AdNavigationControls } from "./ad/AdNavigationControls";
-import { AdContent } from "./ad/AdContent";
-import { AdPreviewImage } from "./ad/AdPreviewImage";
-import { Button } from "./ui/button";
-import { Download } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { AdPreviewContainer } from "./ad/AdPreviewContainer";
+import { AdDownloadButton } from "./ad/AdDownloadButton";
+import { useAdImageDownloader } from "./ad/AdImageDownloader";
 
 interface Position {
   x: number;
@@ -70,7 +66,7 @@ export function AdPreview({
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
-  const [isCapturing, setIsCapturing] = useState(false);
+  const { isCapturing, handleDownload } = useAdImageDownloader();
 
   useEffect(() => {
     if (fontUrl) {
@@ -90,46 +86,6 @@ export function AdPreview({
       }
     }
   }, [fontUrl]);
-
-  const handleDownload = async () => {
-    try {
-      setIsCapturing(true);
-
-      // Get the current URL and add a timestamp to prevent caching
-      const timestamp = Date.now();
-      const currentUrl = `${window.location.href}?t=${timestamp}`;
-
-      // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('generate-preview', {
-        body: {
-          url: currentUrl,
-          selector: '.ad-content'
-        }
-      });
-
-      if (error) {
-        console.error('Error calling generate-preview function:', error);
-        toast.error('Error generating image');
-        return;
-      }
-
-      if (!data?.image) {
-        toast.error('No image data received');
-        return;
-      }
-
-      // Create and trigger download
-      const link = document.createElement('a');
-      link.download = 'ad-preview.png';
-      link.href = `data:image/png;base64,${data.image}`;
-      link.click();
-    } catch (error) {
-      console.error('Error generating image:', error);
-      toast.error('Error generating image');
-    } finally {
-      setIsCapturing(false);
-    }
-  };
 
   const gradientStyle = AdGradient({ 
     style: templateStyle, 
@@ -163,61 +119,37 @@ export function AdPreview({
     <Card className="h-fit w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview</CardTitle>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <AdDownloadButton 
+          isCapturing={isCapturing}
           onClick={handleDownload}
-          className="flex items-center gap-2"
-          disabled={isCapturing}
-        >
-          <Download className="h-4 w-4" />
-          {isCapturing ? 'Generating...' : 'Download Preview'}
-        </Button>
+        />
       </CardHeader>
       <CardContent className="flex justify-center p-4">
-        <div className="relative w-full max-w-[600px]">
-          <div
-            className={`ad-content relative overflow-hidden rounded-lg shadow-2xl ${isCapturing ? 'capturing' : ''}`}
-            style={{
-              aspectRatio: `${width} / ${height}`,
-              width: '100%',
-            }}
-          >
-            <AdPreviewImage
-              imageUrl={imageUrl}
-              position={imagePosition}
-              onPositionChange={() => {}}
-            />
-            <div
-              className="absolute inset-0 flex flex-col justify-between pointer-events-none"
-              style={gradientStyle}
-            >
-              <AdContent
-                headline={headline}
-                description={description}
-                descriptionStyle={descriptionStyle}
-                ctaText={ctaText}
-                textStyle={textStyle}
-                buttonStyle={buttonStyle}
-                templateStyle={templateStyle}
-                isButtonHovered={isButtonHovered}
-                onButtonHover={setIsButtonHovered}
-                headlinePosition={headlinePosition}
-                descriptionPosition={descriptionPosition}
-                ctaPosition={ctaPosition}
-                showCtaArrow={showCtaArrow}
-              />
-            </div>
-          </div>
-          {imageUrls.length > 1 && (
-            <AdNavigationControls
-              onPrevious={onPrevious!}
-              onNext={onNext!}
-              currentIndex={currentIndex}
-              totalImages={imageUrls.length}
-            />
-          )}
-        </div>
+        <AdPreviewContainer
+          width={width}
+          height={height}
+          imageUrl={imageUrl}
+          imagePosition={imagePosition}
+          gradientStyle={gradientStyle}
+          headline={headline}
+          description={description}
+          descriptionStyle={descriptionStyle}
+          ctaText={ctaText}
+          textStyle={textStyle}
+          buttonStyle={buttonStyle}
+          templateStyle={templateStyle}
+          isButtonHovered={isButtonHovered}
+          onButtonHover={setIsButtonHovered}
+          headlinePosition={headlinePosition}
+          descriptionPosition={descriptionPosition}
+          ctaPosition={ctaPosition}
+          showCtaArrow={showCtaArrow}
+          isCapturing={isCapturing}
+          imageUrls={imageUrls}
+          currentIndex={currentIndex}
+          onPrevious={onPrevious}
+          onNext={onNext}
+        />
       </CardContent>
     </Card>
   );
