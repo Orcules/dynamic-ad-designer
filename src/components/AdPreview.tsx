@@ -69,6 +69,7 @@ export function AdPreview({
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
+  const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
     if (fontUrl) {
@@ -94,21 +95,35 @@ export function AdPreview({
     if (!previewElement) return;
 
     try {
+      setIsCapturing(true);
+
+      // Wait for a frame to ensure capturing class is applied
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
       const canvas = await html2canvas(previewElement as HTMLElement, {
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        scale: 2,
-        logging: true,
+        scale: 4, // Increased scale for better quality
+        logging: false,
+        width: width,
+        height: height,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('.ad-content');
+          if (clonedElement) {
+            clonedElement.classList.add('capturing');
+          }
+        }
       });
 
-      // Create download link
       const link = document.createElement('a');
       link.download = 'ad-preview.png';
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
     } catch (error) {
       console.error('Error generating image:', error);
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -149,15 +164,16 @@ export function AdPreview({
           size="sm" 
           onClick={handleDownload}
           className="flex items-center gap-2"
+          disabled={isCapturing}
         >
           <Download className="h-4 w-4" />
-          Download Preview
+          {isCapturing ? 'Generating...' : 'Download Preview'}
         </Button>
       </CardHeader>
       <CardContent className="flex justify-center p-4">
         <div className="relative w-full max-w-[600px]">
           <div
-            className="ad-content relative overflow-hidden rounded-lg shadow-2xl"
+            className={`ad-content relative overflow-hidden rounded-lg shadow-2xl ${isCapturing ? 'capturing' : ''}`}
             style={{
               aspectRatio: `${width} / ${height}`,
               width: '100%',
