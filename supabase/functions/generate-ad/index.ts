@@ -18,25 +18,46 @@ serve(async (req) => {
 
   try {
     const formData = await req.formData();
+    console.log(`[${uploadId}] FormData received:`, Array.from(formData.entries()).map(([key]) => key));
+    
     const imageFile = formData.get('image');
     const dataString = formData.get('data');
     
-    if (!imageFile || !dataString) {
-      throw new Error('Missing required fields');
+    if (!imageFile) {
+      throw new Error('Image file is required');
+    }
+    
+    if (!dataString || typeof dataString !== 'string') {
+      throw new Error('Data parameter is required and must be a string');
     }
 
-    const data = JSON.parse(dataString);
-    console.log(`[${uploadId}] Parsed data:`, data);
+    let data;
+    try {
+      data = JSON.parse(dataString);
+      console.log(`[${uploadId}] Parsed data:`, data);
+    } catch (e) {
+      throw new Error('Invalid JSON in data parameter');
+    }
 
     // Convert FormData image to ArrayBuffer
     let imageArrayBuffer: ArrayBuffer;
     
-    if (imageFile instanceof File || imageFile instanceof Blob) {
+    if (imageFile instanceof File) {
+      console.log(`[${uploadId}] Processing File object`);
       imageArrayBuffer = await imageFile.arrayBuffer();
-      console.log(`[${uploadId}] Processing uploaded file`);
+    } else if (imageFile instanceof Blob) {
+      console.log(`[${uploadId}] Processing Blob object`);
+      imageArrayBuffer = await imageFile.arrayBuffer();
     } else {
       console.error(`[${uploadId}] Invalid image data type:`, typeof imageFile);
-      throw new Error('Invalid image data type');
+      throw new Error(`Invalid image data type: ${typeof imageFile}`);
+    }
+
+    // Validate dimensions
+    if (!data.width || !data.height || 
+        typeof data.width !== 'number' || 
+        typeof data.height !== 'number') {
+      throw new Error('Invalid dimensions in data');
     }
 
     // Create canvas with the specified dimensions
