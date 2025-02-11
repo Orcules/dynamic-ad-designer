@@ -34,14 +34,6 @@ serve(async (req) => {
     if (imageFile instanceof File || imageFile instanceof Blob) {
       imageArrayBuffer = await imageFile.arrayBuffer();
       console.log(`[${uploadId}] Processing uploaded file`);
-    } else if (typeof imageFile === 'string') {
-      // If imageFile is a URL string, fetch it first
-      console.log(`[${uploadId}] Fetching image from URL:`, imageFile);
-      const response = await fetch(imageFile);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.statusText}`);
-      }
-      imageArrayBuffer = await response.arrayBuffer();
     } else {
       console.error(`[${uploadId}] Invalid image data type:`, typeof imageFile);
       throw new Error('Invalid image data type');
