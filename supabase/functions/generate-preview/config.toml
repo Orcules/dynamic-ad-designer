@@ -1,0 +1,12 @@
+
+[build]
+cmd = "deno task bundle"
+[[build.engines]]
+name = "deno"
+version = "1.37.1"
+
+[deploy]
+allow_list = ["puppeteer"]
+
+[http]
+timeout = 30
