@@ -6,6 +6,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
@@ -18,7 +20,12 @@ serve(async (req) => {
 
   try {
     const formData = await req.formData();
-    console.log(`[${uploadId}] FormData received:`, Array.from(formData.entries()).map(([key]) => key));
+    console.log(`[${uploadId}] FormData received:`, Array.from(formData.entries()).map(([key, value]) => {
+      if (value instanceof File) {
+        return `${key}: File(${value.name}, ${value.type}, ${value.size} bytes)`;
+      }
+      return `${key}: ${typeof value}`;
+    }));
     
     const imageFile = formData.get('image');
     const dataString = formData.get('data');
@@ -42,11 +49,8 @@ serve(async (req) => {
     // Convert FormData image to ArrayBuffer
     let imageArrayBuffer: ArrayBuffer;
     
-    if (imageFile instanceof File) {
-      console.log(`[${uploadId}] Processing File object`);
-      imageArrayBuffer = await imageFile.arrayBuffer();
-    } else if (imageFile instanceof Blob) {
-      console.log(`[${uploadId}] Processing Blob object`);
+    if (imageFile instanceof File || imageFile instanceof Blob) {
+      console.log(`[${uploadId}] Processing ${imageFile instanceof File ? 'File' : 'Blob'} object`);
       imageArrayBuffer = await imageFile.arrayBuffer();
     } else {
       console.error(`[${uploadId}] Invalid image data type:`, typeof imageFile);
@@ -144,7 +148,6 @@ serve(async (req) => {
     const filePath = `generated/${timestamp}_ad.png`;
 
     console.log(`[${uploadId}] Uploading to Supabase Storage...`);
-    // Upload to Supabase Storage
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -189,7 +192,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { ...corsHeaders, 'Content-Type': "application/json" }
       }
     );
   }
