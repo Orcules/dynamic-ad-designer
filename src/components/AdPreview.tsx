@@ -97,44 +97,26 @@ export function AdPreview({
     try {
       setIsCapturing(true);
 
-      // Force a layout recalculation
-      previewElement.getBoundingClientRect();
-
-      // Wait for any animations to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for a frame to ensure capturing class is applied
+      await new Promise(resolve => requestAnimationFrame(resolve));
 
       const canvas = await html2canvas(previewElement as HTMLElement, {
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        scale: window.devicePixelRatio * 2, // Use device pixel ratio for better quality
+        useCORS: true,          // Allow cross-origin images
+        allowTaint: true,       // Allow loading of cross-origin images
+        backgroundColor: null,   // Transparent background
+        scale: 1,               // Changed from 4 to 1
         logging: false,
-        width: width,
+        width: width,           // Use explicit dimensions
         height: height,
         onclone: (clonedDoc) => {
           const clonedElement = clonedDoc.querySelector('.ad-content');
           if (clonedElement) {
             clonedElement.classList.add('capturing');
-            
-            // Apply computed styles to ensure exact matching
-            const styles = window.getComputedStyle(previewElement);
-            Object.values(styles).forEach(property => {
-              try {
-                if (property) {
-                  (clonedElement as HTMLElement).style[property as any] = 
-                    styles.getPropertyValue(property);
-                }
-              } catch (e) {
-                // Ignore invalid properties
-              }
-            });
           }
-        },
-        foreignObjectRendering: true, // Better CSS support
-        removeContainer: false, // Keep the container for proper rendering
-        imageTimeout: 0, // No timeout for image loading
+        }
       });
 
+      // Create and trigger download
       const link = document.createElement('a');
       link.download = 'ad-preview.png';
       link.href = canvas.toDataURL('image/png', 1.0);
