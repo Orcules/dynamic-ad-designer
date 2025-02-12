@@ -10,6 +10,7 @@ import { AdPreviewImage } from "./ad/AdPreviewImage";
 import html2canvas from 'html2canvas';
 import { Button } from "./ui/button";
 import { Download } from "lucide-react";
+import { toast } from "sonner";
 
 interface Position {
   x: number;
@@ -69,6 +70,7 @@ export function AdPreview({
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
+  const [isCapturing, setIsCapturing] = useState(false);
 
   useEffect(() => {
     if (fontUrl) {
@@ -91,24 +93,73 @@ export function AdPreview({
 
   const handleDownload = async () => {
     const previewElement = document.querySelector('.ad-content');
-    if (!previewElement) return;
+    if (!previewElement) {
+      toast.error('Preview element not found');
+      return;
+    }
 
     try {
-      const canvas = await html2canvas(previewElement as HTMLElement, {
+      setIsCapturing(true);
+
+      // Wait for all images to load
+      const images = previewElement.getElementsByTagName('img');
+      await Promise.all(
+        Array.from(images).map(
+          img =>
+            new Promise((resolve, reject) => {
+              if (img.complete) {
+                resolve(null);
+              } else {
+                img.onload = () => resolve(null);
+                img.onerror = () => reject(new Error(`Failed to load image: ${img.src}`));
+              }
+            })
+        )
+      );
+
+      // Create a clone and apply capturing class
+      const clone = previewElement.cloneNode(true) as HTMLElement;
+      clone.classList.add('capturing');
+      
+      const canvas = await html2canvas(previewElement, {
         useCORS: true,
         allowTaint: true,
         backgroundColor: null,
-        scale: 2,
+        scale: 4,
         logging: true,
+        width: previewElement.clientWidth,
+        height: previewElement.clientHeight,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('.ad-content');
+          if (clonedElement) {
+            clonedElement.classList.add('capturing');
+          }
+        },
+        foreignObjectRendering: true,
+        removeContainer: true
       });
 
-      // Create download link
-      const link = document.createElement('a');
-      link.download = 'ad-preview.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      // Create blob instead of data URL for better performance
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error('Failed to create blob');
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'ad-preview.png';
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('Image downloaded successfully!');
+      }, 'image/png', 1.0);
+
     } catch (error) {
       console.error('Error generating image:', error);
+      toast.error('Failed to generate image');
+    } finally {
+      setIsCapturing(false);
     }
   };
 
@@ -148,10 +199,11 @@ export function AdPreview({
           variant="outline" 
           size="sm" 
           onClick={handleDownload}
+          disabled={isCapturing}
           className="flex items-center gap-2"
         >
           <Download className="h-4 w-4" />
-          Download Preview
+          {isCapturing ? 'Generating...' : 'Download Preview'}
         </Button>
       </CardHeader>
       <CardContent className="flex justify-center p-4">

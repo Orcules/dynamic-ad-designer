@@ -141,3 +141,9 @@
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
+
+.ad-content.capturing {
+  position: relative !important;
+  transform: none !important;
+  transition: none !important;
+}
