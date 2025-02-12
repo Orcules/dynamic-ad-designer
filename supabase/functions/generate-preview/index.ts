@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import puppeteer from "https://deno.land/x/puppeteer@9.0.2/mod.ts";
+import { chromium } from "https://deno.land/x/playwright@0.4.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,41 +32,34 @@ serve(async (req) => {
     }
 
     console.log('Launching browser');
-    const browser = await puppeteer.launch({
+    const browser = await chromium.launch({
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-extensions'
-      ],
+        '--disable-dev-shm-usage'
+      ]
     });
 
     console.log('Creating new page');
-    const page = await browser.newPage();
+    const context = await browser.newContext();
+    const page = await context.newPage();
     
     console.log('Setting viewport');
-    await page.setViewport({ width: 1280, height: 720 });
+    await page.setViewportSize({ width: 1280, height: 720 });
     
     console.log('Navigating to URL:', url);
     await page.goto(url, { 
-      waitUntil: 'networkidle0',
-      timeout: 25000 
+      waitUntil: 'networkidle'
     });
     
     const elementSelector = selector || '.ad-content';
     console.log('Waiting for selector:', elementSelector);
     
-    await page.waitForSelector(elementSelector, { 
+    const element = await page.waitForSelector(elementSelector, { 
       timeout: 5000,
-      visible: true 
+      state: 'visible'
     });
     
-    console.log('Finding element');
-    const element = await page.$(elementSelector);
     if (!element) {
       console.error('Element not found');
       await browser.close();
@@ -81,17 +74,19 @@ serve(async (req) => {
 
     console.log('Taking screenshot');
     const screenshot = await element.screenshot({
-      encoding: 'base64',
       type: 'png',
       omitBackground: true
     });
+
+    // Convert the screenshot to base64
+    const base64Image = btoa(String.fromCharCode(...new Uint8Array(screenshot)));
     
     console.log('Closing browser');
     await browser.close();
 
     console.log('Returning response');
     return new Response(
-      JSON.stringify({ image: screenshot }),
+      JSON.stringify({ image: base64Image }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200 
