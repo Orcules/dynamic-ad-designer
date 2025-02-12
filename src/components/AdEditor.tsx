@@ -82,10 +82,21 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     try {
       console.log('Starting ad generation process...');
       
-      // Process the images
+      // Create the merged data object including positions
+      const enrichedAdData = {
+        ...adData,
+        headlinePosition,
+        descriptionPosition,
+        ctaPosition,
+        imagePosition,
+        overlayOpacity,
+        ...getDimensions(adData.platform)
+      };
+      
+      // Process the images with the enriched data
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
-        adData,
+        enrichedAdData,
         imagesToProcess,
         previewRef,
         onAdGenerated,
@@ -180,4 +191,3 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 };
 
 export default AdEditor;
-
