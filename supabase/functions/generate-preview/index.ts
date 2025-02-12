@@ -31,8 +31,8 @@ serve(async (req) => {
     }
 
     console.log('Initializing browser');
-    const browser = await puppeteer.launch({
-      headless: true,
+    const browser = await puppeteer.connect({
+      browserWSEndpoint: `ws://localhost:9222`,
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
