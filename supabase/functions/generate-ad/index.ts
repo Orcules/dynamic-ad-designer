@@ -28,14 +28,12 @@ serve(async (req) => {
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
-    // Convert FormData image to ArrayBuffer
     let imageArrayBuffer: ArrayBuffer;
     
     if (imageFile instanceof File || imageFile instanceof Blob) {
       imageArrayBuffer = await imageFile.arrayBuffer();
       console.log(`[${uploadId}] Processing uploaded file`);
     } else if (typeof imageFile === 'string') {
-      // If imageFile is a URL string, fetch it first
       console.log(`[${uploadId}] Fetching image from URL:`, imageFile);
       const response = await fetch(imageFile);
       if (!response.ok) {
@@ -47,7 +45,6 @@ serve(async (req) => {
       throw new Error('Invalid image data type');
     }
 
-    // Create canvas with the specified dimensions
     const canvas = createCanvas(data.width, data.height);
     const ctx = canvas.getContext('2d');
 
@@ -55,7 +52,6 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
-    // Load and draw the background image
     console.log(`[${uploadId}] Loading background image... Size:`, imageArrayBuffer.byteLength);
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
@@ -63,20 +59,18 @@ serve(async (req) => {
     ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
     console.log(`[${uploadId}] Background image drawn`);
 
-    // Add overlay with reduced opacity
     const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
     console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
     
-    ctx.save(); // Save the current state
+    ctx.save();
     ctx.globalAlpha = overlayOpacity;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
-    ctx.restore(); // Restore to previous state (resets globalAlpha)
+    ctx.restore();
     
     console.log(`[${uploadId}] Overlay added`);
 
     // Configure text settings
-    ctx.fillStyle = data.text_color || '#FFFFFF';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
@@ -84,6 +78,7 @@ serve(async (req) => {
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
+      ctx.fillStyle = data.text_color || '#FFFFFF';
       console.log(`[${uploadId}] Drawing headline: "${data.headline}" with font size ${fontSize}`);
       ctx.fillText(data.headline, data.width / 2, data.height * 0.4, data.width * 0.8);
     }
@@ -102,7 +97,7 @@ serve(async (req) => {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const buttonX = (data.width - buttonWidth) / 2;
-      const buttonY = data.height * 0.7;
+      const ctaY = data.height * 0.65; // Adjusted Y position to match preview
 
       console.log(`[${uploadId}] Drawing CTA button: "${data.cta_text}"`);
       
@@ -110,18 +105,20 @@ serve(async (req) => {
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
-      ctx.moveTo(buttonX + radius, buttonY);
-      ctx.lineTo(buttonX + buttonWidth - radius, buttonY);
-      ctx.arc(buttonX + buttonWidth - radius, buttonY + radius, radius, -Math.PI/2, Math.PI/2);
-      ctx.lineTo(buttonX + radius, buttonY + buttonHeight);
-      ctx.arc(buttonX + radius, buttonY + radius, radius, Math.PI/2, -Math.PI/2);
+      ctx.moveTo(buttonX + radius, ctaY);
+      ctx.lineTo(buttonX + buttonWidth - radius, ctaY);
+      ctx.arc(buttonX + buttonWidth - radius, ctaY + radius, radius, -Math.PI/2, Math.PI/2);
+      ctx.lineTo(buttonX + radius, ctaY + buttonHeight);
+      ctx.arc(buttonX + radius, ctaY + radius, radius, Math.PI/2, -Math.PI/2);
       ctx.closePath();
       ctx.fill();
 
       // Draw button text
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold ${Math.floor(buttonHeight * 0.6)}px Arial`;
-      ctx.fillText(data.cta_text, data.width / 2, buttonY + buttonHeight / 2, buttonWidth * 0.9);
+      const ctaFontSize = Math.floor(buttonHeight * 0.6);
+      ctx.font = `bold ${ctaFontSize}px Arial`;
+      console.log(`[${uploadId}] Drawing CTA text with font size ${ctaFontSize}`);
+      ctx.fillText(data.cta_text, data.width / 2, ctaY + buttonHeight / 2, buttonWidth * 0.9);
     }
 
     // Convert canvas to buffer and upload
@@ -131,7 +128,6 @@ serve(async (req) => {
     const filePath = `generated/${timestamp}_ad.png`;
 
     console.log(`[${uploadId}] Uploading to Supabase Storage...`);
-    // Upload to Supabase Storage
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
