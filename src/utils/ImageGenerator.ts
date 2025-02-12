@@ -20,21 +20,51 @@ export class ImageGenerator {
     try {
       await this.waitForImages();
       
+      // Get computed styles
+      const computedStyle = window.getComputedStyle(this.previewElement);
+      const width = this.previewElement.offsetWidth;
+      const height = this.previewElement.offsetHeight;
+      
+      // Clone the element to maintain exact styling
+      const clone = this.previewElement.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '-9999px';
+      document.body.appendChild(clone);
+
+      // Apply all computed styles
       const config = {
         quality: this.quality,
         scale: this.scale,
+        width: width,
+        height: height,
         style: {
           transform: `scale(${this.scale})`,
           transformOrigin: 'top left',
-          width: this.previewElement.offsetWidth + "px",
-          height: this.previewElement.offsetHeight + "px"
+          width: width + "px",
+          height: height + "px",
+          margin: '0',
+          padding: computedStyle.padding,
+          border: computedStyle.border,
+          borderRadius: computedStyle.borderRadius,
+          backgroundColor: computedStyle.backgroundColor,
+          boxShadow: computedStyle.boxShadow
         },
         filter: (node: Element) => {
-          return node.tagName !== 'I';
+          const exclusions = ['I', 'IFRAME', 'SCRIPT'];
+          return !exclusions.includes(node.tagName);
         }
       };
 
+      // Ensure fonts are loaded
+      await document.fonts.ready;
+      
+      // Generate the image
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
+      
+      // Clean up
+      document.body.removeChild(clone);
+      
       return dataUrl;
     } catch (error) {
       console.error('Error generating image:', error);
