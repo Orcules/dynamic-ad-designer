@@ -56,8 +56,11 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    ctx.drawImage(backgroundImage, 0, 0, data.width, data.height);
-    console.log(`[${uploadId}] Background image drawn`);
+    // Draw background image with position offset if provided
+    const imageX = data.imagePosition?.x || 0;
+    const imageY = data.imagePosition?.y || 0;
+    ctx.drawImage(backgroundImage, imageX, imageY, data.width, data.height);
+    console.log(`[${uploadId}] Background image drawn at position:`, { x: imageX, y: imageY });
 
     const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
     console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
@@ -74,42 +77,46 @@ serve(async (req) => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw headline (adjusted Y position)
+    // Draw headline at specified position
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
-      console.log(`[${uploadId}] Drawing headline: "${data.headline}" with font size ${fontSize}`);
-      ctx.fillText(data.headline, data.width / 2, data.height * 0.45, data.width * 0.8); // Adjusted from 0.4 to 0.45
+      const headlineX = data.headlinePosition?.x !== undefined ? data.headlinePosition.x : data.width / 2;
+      const headlineY = data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4;
+      console.log(`[${uploadId}] Drawing headline at position:`, { x: headlineX, y: headlineY });
+      ctx.fillText(data.headline, headlineX, headlineY, data.width * 0.8);
     }
 
-    // Draw description (adjusted Y position)
+    // Draw description at specified position
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
-      console.log(`[${uploadId}] Drawing description: "${data.description}" with font size ${descFontSize}`);
-      ctx.fillText(data.description, data.width / 2, data.height * 0.55, data.width * 0.8); // Adjusted from 0.5 to 0.55
+      const descX = data.descriptionPosition?.x !== undefined ? data.descriptionPosition.x : data.width / 2;
+      const descY = data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5;
+      console.log(`[${uploadId}] Drawing description at position:`, { x: descX, y: descY });
+      ctx.fillText(data.description, descX, descY, data.width * 0.8);
     }
 
-    // Draw CTA button (adjusted Y position)
+    // Draw CTA button at specified position
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
-      const buttonX = (data.width - buttonWidth) / 2;
-      const ctaY = data.height * 0.7; // Adjusted from 0.65 to 0.7
-
-      console.log(`[${uploadId}] Drawing CTA button: "${data.cta_text}"`);
+      const ctaX = data.ctaPosition?.x !== undefined ? data.ctaPosition.x : (data.width - buttonWidth) / 2;
+      const ctaY = data.ctaPosition?.y !== undefined ? data.ctaPosition.y : data.height * 0.65;
+      
+      console.log(`[${uploadId}] Drawing CTA button at position:`, { x: ctaX, y: ctaY });
       
       // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
-      ctx.moveTo(buttonX + radius, ctaY);
-      ctx.lineTo(buttonX + buttonWidth - radius, ctaY);
-      ctx.arc(buttonX + buttonWidth - radius, ctaY + radius, radius, -Math.PI/2, Math.PI/2);
-      ctx.lineTo(buttonX + radius, ctaY + buttonHeight);
-      ctx.arc(buttonX + radius, ctaY + radius, radius, Math.PI/2, -Math.PI/2);
+      ctx.moveTo(ctaX + radius, ctaY);
+      ctx.lineTo(ctaX + buttonWidth - radius, ctaY);
+      ctx.arc(ctaX + buttonWidth - radius, ctaY + radius, radius, -Math.PI/2, Math.PI/2);
+      ctx.lineTo(ctaX + radius, ctaY + buttonHeight);
+      ctx.arc(ctaX + radius, ctaY + radius, radius, Math.PI/2, -Math.PI/2);
       ctx.closePath();
       ctx.fill();
 
@@ -117,8 +124,8 @@ serve(async (req) => {
       ctx.fillStyle = '#FFFFFF';
       const ctaFontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${ctaFontSize}px Arial`;
-      console.log(`[${uploadId}] Drawing CTA text with font size ${ctaFontSize}`);
-      ctx.fillText(data.cta_text, data.width / 2, ctaY + buttonHeight / 2, buttonWidth * 0.9);
+      console.log(`[${uploadId}] Drawing CTA text at position:`, { x: ctaX + buttonWidth / 2, y: ctaY + buttonHeight / 2 });
+      ctx.fillText(data.cta_text, ctaX + buttonWidth / 2, ctaY + buttonHeight / 2, buttonWidth * 0.9);
     }
 
     // Convert canvas to buffer and upload
