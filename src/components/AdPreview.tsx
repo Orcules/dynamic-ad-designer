@@ -1,15 +1,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
 import { AdNavigationControls } from "./ad/AdNavigationControls";
 import { AdContent } from "./ad/AdContent";
 import { AdPreviewImage } from "./ad/AdPreviewImage";
-import html2canvas from 'html2canvas';
 import { Button } from "./ui/button";
 import { Download } from "lucide-react";
+import { ImageGenerator } from "@/utils/ImageGenerator";
 
 interface Position {
   x: number;
@@ -70,6 +70,11 @@ export function AdPreview({
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
+  const imageGenerator = useRef<ImageGenerator>();
+
+  useEffect(() => {
+    imageGenerator.current = new ImageGenerator('.ad-content');
+  }, []);
 
   useEffect(() => {
     if (fontUrl) {
@@ -91,36 +96,11 @@ export function AdPreview({
   }, [fontUrl]);
 
   const handleDownload = async () => {
-    const previewElement = document.querySelector('.ad-content');
-    if (!previewElement) return;
+    if (!imageGenerator.current) return;
 
     try {
       setIsCapturing(true);
-
-      // Wait for a frame to ensure capturing class is applied
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
-      const canvas = await html2canvas(previewElement as HTMLElement, {
-        useCORS: true,          // Allow cross-origin images
-        allowTaint: true,       // Allow loading of cross-origin images
-        backgroundColor: null,   // Transparent background
-        scale: 1,               // Changed from 4 to 1
-        logging: false,
-        width: width,           // Use explicit dimensions
-        height: height,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('.ad-content');
-          if (clonedElement) {
-            clonedElement.classList.add('capturing');
-          }
-        }
-      });
-
-      // Create and trigger download
-      const link = document.createElement('a');
-      link.download = 'ad-preview.png';
-      link.href = canvas.toDataURL('image/png', 1.0);
-      link.click();
+      await imageGenerator.current.downloadImage('ad-preview.png');
     } catch (error) {
       console.error('Error generating image:', error);
     } finally {
@@ -174,7 +154,7 @@ export function AdPreview({
       <CardContent className="flex justify-center p-4">
         <div className="relative w-full max-w-[600px]">
           <div
-            className={`ad-content relative overflow-hidden rounded-lg shadow-2xl ${isCapturing ? 'capturing' : ''}`}
+            className="ad-content relative overflow-hidden rounded-lg shadow-2xl"
             style={{
               aspectRatio: `${width} / ${height}`,
               width: '100%',
