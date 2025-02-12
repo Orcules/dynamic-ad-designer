@@ -19,6 +19,9 @@ export class ImageGenerator {
     const clone = this.previewElement.cloneNode(true) as HTMLElement;
     document.body.appendChild(clone);
     
+    // Apply computed styles
+    const computedStyle = window.getComputedStyle(this.previewElement);
+    
     Object.assign(clone.style, {
       position: 'absolute',
       left: '-9999px',
@@ -26,7 +29,20 @@ export class ImageGenerator {
       width: `${this.previewElement.offsetWidth}px`,
       height: `${this.previewElement.offsetHeight}px`,
       transform: 'none',
-      transformOrigin: 'top left'
+      transformOrigin: 'top left',
+      margin: computedStyle.margin,
+      padding: computedStyle.padding,
+      border: computedStyle.border,
+      backgroundColor: computedStyle.backgroundColor,
+      display: 'block',
+      opacity: '1',
+      visibility: 'visible'
+    });
+
+    // Force all child elements to be visible
+    clone.querySelectorAll('*').forEach((el: Element) => {
+      (el as HTMLElement).style.opacity = '1';
+      (el as HTMLElement).style.visibility = 'visible';
     });
 
     return clone;
@@ -36,6 +52,12 @@ export class ImageGenerator {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
     }
+
+    // Wait for fonts and images to load
+    await Promise.all([
+      document.fonts.ready,
+      new Promise(resolve => setTimeout(resolve, 500)) // Small delay to ensure rendering
+    ]);
 
     // Create a clone for capturing
     const clone = this.createClone();
@@ -50,15 +72,20 @@ export class ImageGenerator {
         allowTaint: true,
         logging: true,
         imageTimeout: 0,
-        removeContainer: true,
-        foreignObjectRendering: true,
+        removeContainer: false,
+        foreignObjectRendering: false,
         x: 0,
         y: 0,
         width: this.previewElement.offsetWidth,
         height: this.previewElement.offsetHeight,
         onclone: (clonedDoc: Document) => {
-          // Ensure all fonts are loaded
-          return document.fonts.ready;
+          // Additional setup for the cloned document
+          const clonedElement = clonedDoc.querySelector('.ad-content') as HTMLElement;
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.transformOrigin = 'top left';
+          }
+          return Promise.resolve();
         }
       };
 
@@ -70,8 +97,6 @@ export class ImageGenerator {
         return dataUrl;
       } catch (html2canvasError) {
         console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
-        
-        // If html2canvas fails, try dom-to-image
         return this.fallbackCapture(clone);
       }
     } catch (error) {
