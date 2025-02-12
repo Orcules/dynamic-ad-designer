@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -82,26 +81,22 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     try {
       console.log('Starting ad generation process...');
       
-      // Create the merged data object including positions
-      const enrichedAdData = {
-        ...adData,
+      const positions = {
         headlinePosition,
         descriptionPosition,
         ctaPosition,
-        imagePosition,
-        overlayOpacity,
-        ...getDimensions(adData.platform)
+        imagePosition
       };
       
-      // Process the images with the enriched data
       const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
-        enrichedAdData,
+        adData,
         imagesToProcess,
         previewRef,
         onAdGenerated,
         handleSubmission,
-        setIsGenerating
+        setIsGenerating,
+        positions
       );
 
     } catch (error) {

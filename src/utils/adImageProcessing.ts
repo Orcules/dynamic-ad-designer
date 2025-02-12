@@ -1,8 +1,21 @@
+
 import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import html2canvas from 'html2canvas';
 import { applyImageEffect } from "./imageEffects";
+
+interface Position {
+  x: number;
+  y: number;
+}
+
+interface AdPositions {
+  headlinePosition: Position;
+  descriptionPosition: Position;
+  ctaPosition: Position;
+  imagePosition: Position;
+}
 
 export const processImages = async (
   adData: any,
@@ -10,9 +23,11 @@ export const processImages = async (
   previewRef: React.RefObject<HTMLDivElement>,
   onAdGenerated: (adData: any) => void,
   handleSubmission: any,
-  setIsGenerating: (value: boolean) => void
+  setIsGenerating: (value: boolean) => void,
+  positions: AdPositions // Add positions parameter
 ) => {
   console.log("Starting to process images:", images.length);
+  console.log("Using positions:", positions); // Log positions for debugging
   let successCount = 0;
   
   for (let i = 0; i < images.length; i++) {
@@ -75,13 +90,20 @@ export const processImages = async (
 
       const { width, height } = getDimensions(adData.platform);
 
-      const formData = new FormData();
-      formData.append('image', imageBlob);
-      formData.append('data', JSON.stringify({
+      // Merge positions with adData
+      const enrichedData = {
         ...adData,
         width,
-        height
-      }));
+        height,
+        headlinePosition: positions.headlinePosition,
+        descriptionPosition: positions.descriptionPosition,
+        ctaPosition: positions.ctaPosition,
+        imagePosition: positions.imagePosition
+      };
+
+      const formData = new FormData();
+      formData.append('image', imageBlob);
+      formData.append('data', JSON.stringify(enrichedData));
 
       const { data: generatedData, error: generateError } = await supabase.functions
         .invoke('generate-ad', {
