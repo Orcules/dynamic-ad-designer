@@ -1,15 +1,35 @@
 
 import domtoimage from 'dom-to-image-more';
+import html2canvas from 'html2canvas';
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
-  private quality: number;
-  private scale: number;
+  private pixelRatio: number;
 
   constructor(previewSelector = '.ad-content') {
     this.previewElement = document.querySelector(previewSelector);
-    this.quality = 1.0;
-    this.scale = 2;
+    this.pixelRatio = window.devicePixelRatio || 1;
+  }
+
+  private createClone(): HTMLElement {
+    if (!this.previewElement) {
+      throw new Error('Preview element not found');
+    }
+
+    const clone = this.previewElement.cloneNode(true) as HTMLElement;
+    document.body.appendChild(clone);
+    
+    Object.assign(clone.style, {
+      position: 'absolute',
+      left: '-9999px',
+      top: '-9999px',
+      width: `${this.previewElement.offsetWidth}px`,
+      height: `${this.previewElement.offsetHeight}px`,
+      transform: 'none',
+      transformOrigin: 'top left'
+    });
+
+    return clone;
   }
 
   async generateHighQualityImage() {
@@ -17,32 +37,66 @@ export class ImageGenerator {
       throw new Error('Preview element not found');
     }
 
-    try {
-      await this.waitForImages();
-      
-      // Get computed styles
-      const computedStyle = window.getComputedStyle(this.previewElement);
-      const width = this.previewElement.offsetWidth;
-      const height = this.previewElement.offsetHeight;
-      
-      // Clone the element to maintain exact styling
-      const clone = this.previewElement.cloneNode(true) as HTMLElement;
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '-9999px';
-      document.body.appendChild(clone);
+    // Create a clone for capturing
+    const clone = this.createClone();
+    clone.classList.add('capturing');
 
-      // Apply all computed styles
+    try {
+      // Configure html2canvas options
+      const options = {
+        backgroundColor: null,
+        scale: this.pixelRatio * 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        imageTimeout: 0,
+        removeContainer: true,
+        foreignObjectRendering: true,
+        x: 0,
+        y: 0,
+        width: this.previewElement.offsetWidth,
+        height: this.previewElement.offsetHeight,
+        onclone: (clonedDoc: Document) => {
+          // Ensure all fonts are loaded
+          return document.fonts.ready;
+        }
+      };
+
+      // Try html2canvas first
+      try {
+        const canvas = await html2canvas(clone, options);
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        document.body.removeChild(clone);
+        return dataUrl;
+      } catch (html2canvasError) {
+        console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
+        
+        // If html2canvas fails, try dom-to-image
+        return this.fallbackCapture(clone);
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      if (clone.parentNode) {
+        document.body.removeChild(clone);
+      }
+      throw error;
+    }
+  }
+
+  private async fallbackCapture(clone: HTMLElement): Promise<string> {
+    try {
+      const computedStyle = window.getComputedStyle(this.previewElement!);
+      
       const config = {
-        quality: this.quality,
-        scale: this.scale,
-        width: width,
-        height: height,
+        quality: 1.0,
+        scale: this.pixelRatio * 2,
+        width: clone.offsetWidth,
+        height: clone.offsetHeight,
         style: {
-          transform: `scale(${this.scale})`,
+          transform: 'none',
           transformOrigin: 'top left',
-          width: width + "px",
-          height: height + "px",
+          width: `${clone.offsetWidth}px`,
+          height: `${clone.offsetHeight}px`,
           margin: '0',
           padding: computedStyle.padding,
           border: computedStyle.border,
@@ -56,36 +110,16 @@ export class ImageGenerator {
         }
       };
 
-      // Ensure fonts are loaded
-      await document.fonts.ready;
-      
-      // Generate the image
-      const dataUrl = await domtoimage.toPng(this.previewElement, config);
-      
-      // Clean up
+      const dataUrl = await domtoimage.toPng(clone, config);
       document.body.removeChild(clone);
-      
       return dataUrl;
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Fallback capture failed:', error);
+      if (clone.parentNode) {
+        document.body.removeChild(clone);
+      }
       throw error;
     }
-  }
-
-  private async waitForImages() {
-    if (!this.previewElement) return;
-
-    const images = Array.from(this.previewElement.getElementsByTagName('img'));
-    const imagePromises = images.map(img => {
-      if (img.complete) {
-        return Promise.resolve();
-      }
-      return new Promise(resolve => {
-        img.onload = resolve;
-        img.onerror = resolve;
-      });
-    });
-    await Promise.all(imagePromises);
   }
 
   async downloadImage(filename = 'ad-preview.png') {
@@ -94,7 +128,9 @@ export class ImageGenerator {
       const link = document.createElement('a');
       link.download = filename;
       link.href = dataUrl;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Error downloading image:', error);
       throw error;
