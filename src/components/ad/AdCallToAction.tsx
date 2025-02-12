@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ArrowBigDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,7 +18,7 @@ interface AdCallToActionProps {
 }
 
 export const AdCallToAction: React.FC<AdCallToActionProps> = ({
-  ctaText,
+  ctaText = "Experience Nature's Symphony",
   buttonStyle,
   position,
   isButtonHovered,
@@ -39,7 +40,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         marginLeft: '-45%'
       }}
     >
-      <div 
+      <button 
         className="relative transform flex items-center justify-center gap-2 mx-auto"
         style={{
           ...buttonStyle,
@@ -64,7 +65,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
             )}
           />
         )}
-      </div>
+      </button>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import React from "react";
 import { cn } from "@/lib/utils";
 import { AdHeadline } from "./AdHeadline";
@@ -26,10 +27,10 @@ interface AdContentProps {
 }
 
 export function AdContent({
-  headline,
-  description,
+  headline = "Piano in Paradise",
+  description = "Discover the perfect harmony of music and nature",
   descriptionStyle,
-  ctaText,
+  ctaText = "Experience Nature's Symphony",
   textStyle,
   buttonStyle,
   templateStyle,
