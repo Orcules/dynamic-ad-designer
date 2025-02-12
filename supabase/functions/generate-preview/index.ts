@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { launch } from "https://deno.land/x/puppeteer_lite@0.1.20/mod.ts";
+import { instantiate } from "https://deno.land/x/chrome_aws_lambda@1.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,13 +32,7 @@ serve(async (req) => {
     }
 
     console.log('Launching browser');
-    const browser = await launch({
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage'
-      ]
-    });
+    const browser = await instantiate();
 
     console.log('Creating new page');
     const page = await browser.newPage();

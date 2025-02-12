@@ -6,7 +6,7 @@ name = "deno"
 version = "1.37.1"
 
 [deploy]
-allow_list = ["puppeteer_lite"]
+allow_list = ["chrome_aws_lambda"]
 
 [http]
 timeout = 30
