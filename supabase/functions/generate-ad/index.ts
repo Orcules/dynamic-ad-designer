@@ -74,30 +74,30 @@ serve(async (req) => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw headline
+    // Draw headline (adjusted Y position)
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
       console.log(`[${uploadId}] Drawing headline: "${data.headline}" with font size ${fontSize}`);
-      ctx.fillText(data.headline, data.width / 2, data.height * 0.4, data.width * 0.8);
+      ctx.fillText(data.headline, data.width / 2, data.height * 0.45, data.width * 0.8); // Adjusted from 0.4 to 0.45
     }
 
-    // Draw description
+    // Draw description (adjusted Y position)
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
       console.log(`[${uploadId}] Drawing description: "${data.description}" with font size ${descFontSize}`);
-      ctx.fillText(data.description, data.width / 2, data.height * 0.5, data.width * 0.8);
+      ctx.fillText(data.description, data.width / 2, data.height * 0.55, data.width * 0.8); // Adjusted from 0.5 to 0.55
     }
 
-    // Draw CTA button
+    // Draw CTA button (adjusted Y position)
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const buttonX = (data.width - buttonWidth) / 2;
-      const ctaY = data.height * 0.65; // Adjusted Y position to match preview
+      const ctaY = data.height * 0.7; // Adjusted from 0.65 to 0.7
 
       console.log(`[${uploadId}] Drawing CTA button: "${data.cta_text}"`);
       
