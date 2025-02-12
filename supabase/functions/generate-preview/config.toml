@@ -6,7 +6,7 @@ name = "deno"
 version = "1.37.1"
 
 [deploy]
-allow_list = ["playwright"]
+allow_list = ["puppeteer_lite"]
 
 [http]
 timeout = 30

@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { chromium } from "https://deno.land/x/playwright@0.4.0/mod.ts";
+import { launch } from "https://deno.land/x/puppeteer_lite@0.1.20/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +32,7 @@ serve(async (req) => {
     }
 
     console.log('Launching browser');
-    const browser = await chromium.launch({
+    const browser = await launch({
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
@@ -41,24 +41,27 @@ serve(async (req) => {
     });
 
     console.log('Creating new page');
-    const context = await browser.newContext();
-    const page = await context.newPage();
+    const page = await browser.newPage();
     
     console.log('Setting viewport');
-    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.setViewport({ width: 1280, height: 720 });
     
     console.log('Navigating to URL:', url);
     await page.goto(url, { 
-      waitUntil: 'networkidle'
+      waitUntil: 'networkidle0',
+      timeout: 25000 
     });
     
     const elementSelector = selector || '.ad-content';
     console.log('Waiting for selector:', elementSelector);
     
-    const element = await page.waitForSelector(elementSelector, { 
+    await page.waitForSelector(elementSelector, { 
       timeout: 5000,
-      state: 'visible'
+      visible: true 
     });
+    
+    console.log('Finding element');
+    const element = await page.$(elementSelector);
     
     if (!element) {
       console.error('Element not found');
@@ -75,18 +78,16 @@ serve(async (req) => {
     console.log('Taking screenshot');
     const screenshot = await element.screenshot({
       type: 'png',
+      encoding: 'base64',
       omitBackground: true
     });
-
-    // Convert the screenshot to base64
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(screenshot)));
     
     console.log('Closing browser');
     await browser.close();
 
     console.log('Returning response');
     return new Response(
-      JSON.stringify({ image: base64Image }),
+      JSON.stringify({ image: screenshot }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200 
