@@ -4,9 +4,12 @@ import { useState, useEffect } from "react";
 import { AdGradient } from "./ad/AdGradient";
 import { getTextStyle } from "./ad/AdText";
 import { getButtonStyle } from "./ad/AdButton";
-import { AdPreviewContainer } from "./ad/AdPreviewContainer";
-import { AdDownloadButton } from "./ad/AdDownloadButton";
-import { useAdImageDownloader } from "./ad/AdImageDownloader";
+import { AdNavigationControls } from "./ad/AdNavigationControls";
+import { AdContent } from "./ad/AdContent";
+import { AdPreviewImage } from "./ad/AdPreviewImage";
+import html2canvas from 'html2canvas';
+import { Button } from "./ui/button";
+import { Download } from "lucide-react";
 
 interface Position {
   x: number;
@@ -66,7 +69,6 @@ export function AdPreview({
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
-  const { isCapturing, handleDownload } = useAdImageDownloader();
 
   useEffect(() => {
     if (fontUrl) {
@@ -86,6 +88,29 @@ export function AdPreview({
       }
     }
   }, [fontUrl]);
+
+  const handleDownload = async () => {
+    const previewElement = document.querySelector('.ad-content');
+    if (!previewElement) return;
+
+    try {
+      const canvas = await html2canvas(previewElement as HTMLElement, {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        scale: 2,
+        logging: true,
+      });
+
+      // Create download link
+      const link = document.createElement('a');
+      link.download = 'ad-preview.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Error generating image:', error);
+    }
+  };
 
   const gradientStyle = AdGradient({ 
     style: templateStyle, 
@@ -119,37 +144,60 @@ export function AdPreview({
     <Card className="h-fit w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview</CardTitle>
-        <AdDownloadButton 
-          isCapturing={isCapturing}
+        <Button 
+          variant="outline" 
+          size="sm" 
           onClick={handleDownload}
-        />
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Download Preview
+        </Button>
       </CardHeader>
       <CardContent className="flex justify-center p-4">
-        <AdPreviewContainer
-          width={width}
-          height={height}
-          imageUrl={imageUrl}
-          imagePosition={imagePosition}
-          gradientStyle={gradientStyle}
-          headline={headline}
-          description={description}
-          descriptionStyle={descriptionStyle}
-          ctaText={ctaText}
-          textStyle={textStyle}
-          buttonStyle={buttonStyle}
-          templateStyle={templateStyle}
-          isButtonHovered={isButtonHovered}
-          onButtonHover={setIsButtonHovered}
-          headlinePosition={headlinePosition}
-          descriptionPosition={descriptionPosition}
-          ctaPosition={ctaPosition}
-          showCtaArrow={showCtaArrow}
-          isCapturing={isCapturing}
-          imageUrls={imageUrls}
-          currentIndex={currentIndex}
-          onPrevious={onPrevious}
-          onNext={onNext}
-        />
+        <div className="relative w-full max-w-[600px]">
+          <div
+            className="ad-content relative overflow-hidden rounded-lg shadow-2xl"
+            style={{
+              aspectRatio: `${width} / ${height}`,
+              width: '100%',
+            }}
+          >
+            <AdPreviewImage
+              imageUrl={imageUrl}
+              position={imagePosition}
+              onPositionChange={() => {}}
+            />
+            <div
+              className="absolute inset-0 flex flex-col justify-between pointer-events-none"
+              style={gradientStyle}
+            >
+              <AdContent
+                headline={headline}
+                description={description}
+                descriptionStyle={descriptionStyle}
+                ctaText={ctaText}
+                textStyle={textStyle}
+                buttonStyle={buttonStyle}
+                templateStyle={templateStyle}
+                isButtonHovered={isButtonHovered}
+                onButtonHover={setIsButtonHovered}
+                headlinePosition={headlinePosition}
+                descriptionPosition={descriptionPosition}
+                ctaPosition={ctaPosition}
+                showCtaArrow={showCtaArrow}
+              />
+            </div>
+          </div>
+          {imageUrls.length > 1 && (
+            <AdNavigationControls
+              onPrevious={onPrevious!}
+              onNext={onNext!}
+              currentIndex={currentIndex}
+              totalImages={imageUrls.length}
+            />
+          )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -141,13 +141,3 @@
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
-
-.ad-content.capturing {
-  transform: none !important;
-  transform-style: flat !important;
-}
-
-.ad-content.capturing * {
-  transform: none !important;
-  transition: none !important;
-}

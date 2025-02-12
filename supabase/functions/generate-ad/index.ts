@@ -6,8 +6,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 };
 
 serve(async (req) => {
@@ -20,48 +18,33 @@ serve(async (req) => {
 
   try {
     const formData = await req.formData();
-    console.log(`[${uploadId}] FormData received:`, Array.from(formData.entries()).map(([key, value]) => {
-      if (value instanceof File) {
-        return `${key}: File(${value.name}, ${value.type}, ${value.size} bytes)`;
-      }
-      return `${key}: ${typeof value}`;
-    }));
-    
     const imageFile = formData.get('image');
     const dataString = formData.get('data');
     
-    if (!imageFile) {
-      throw new Error('Image file is required');
-    }
-    
-    if (!dataString || typeof dataString !== 'string') {
-      throw new Error('Data parameter is required and must be a string');
+    if (!imageFile || !dataString) {
+      throw new Error('Missing required fields');
     }
 
-    let data;
-    try {
-      data = JSON.parse(dataString);
-      console.log(`[${uploadId}] Parsed data:`, data);
-    } catch (e) {
-      throw new Error('Invalid JSON in data parameter');
-    }
+    const data = JSON.parse(dataString);
+    console.log(`[${uploadId}] Parsed data:`, data);
 
     // Convert FormData image to ArrayBuffer
     let imageArrayBuffer: ArrayBuffer;
     
     if (imageFile instanceof File || imageFile instanceof Blob) {
-      console.log(`[${uploadId}] Processing ${imageFile instanceof File ? 'File' : 'Blob'} object`);
       imageArrayBuffer = await imageFile.arrayBuffer();
+      console.log(`[${uploadId}] Processing uploaded file`);
+    } else if (typeof imageFile === 'string') {
+      // If imageFile is a URL string, fetch it first
+      console.log(`[${uploadId}] Fetching image from URL:`, imageFile);
+      const response = await fetch(imageFile);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.statusText}`);
+      }
+      imageArrayBuffer = await response.arrayBuffer();
     } else {
       console.error(`[${uploadId}] Invalid image data type:`, typeof imageFile);
-      throw new Error(`Invalid image data type: ${typeof imageFile}`);
-    }
-
-    // Validate dimensions
-    if (!data.width || !data.height || 
-        typeof data.width !== 'number' || 
-        typeof data.height !== 'number') {
-      throw new Error('Invalid dimensions in data');
+      throw new Error('Invalid image data type');
     }
 
     // Create canvas with the specified dimensions
@@ -148,6 +131,7 @@ serve(async (req) => {
     const filePath = `generated/${timestamp}_ad.png`;
 
     console.log(`[${uploadId}] Uploading to Supabase Storage...`);
+    // Upload to Supabase Storage
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -192,7 +176,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': "application/json" }
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
