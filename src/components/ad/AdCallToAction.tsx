@@ -41,26 +41,24 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       }}
     >
       <button 
-        className="relative transform flex items-center justify-center gap-2 mx-auto"
+        className="relative transform flex items-center justify-center gap-3 mx-auto w-auto min-w-[200px]"
         style={{
           ...buttonStyle,
           fontSize: 'clamp(0.75rem, 1.5vw, 1rem)',
-          maxWidth: '100%',
-          padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 3vw, 1.5rem)',
+          padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1.5rem, 3vw, 2rem)',
           whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
+          overflow: 'visible'
         }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
       >
-        <span className="block whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
+        <span className="block whitespace-nowrap">
           {ctaText}
         </span>
         {showArrow && (
           <ArrowBigDown 
             className={cn(
-              "w-4 h-4 transition-transform duration-300",
+              "w-4 h-4 transition-transform duration-300 flex-shrink-0",
               isButtonHovered ? "translate-y-1" : ""
             )}
           />
