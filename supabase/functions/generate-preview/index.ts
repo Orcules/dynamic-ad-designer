@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
+import * as chromium from "https://deno.land/x/puppeteer@16.2.0/vendor/puppeteer/common/Browser.js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +10,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -31,9 +30,15 @@ serve(async (req) => {
       );
     }
 
-    console.log('Launching browser');
-    const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    console.log('Initializing browser');
+    const browser = await chromium.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ]
     });
 
     console.log('Creating new page');
@@ -43,27 +48,21 @@ serve(async (req) => {
     await page.setViewport({ width: 1280, height: 720 });
     
     console.log('Navigating to URL:', url);
-    await page.goto(url, { 
-      waitUntil: 'networkidle0',
-      timeout: 25000 
-    });
+    await page.goto(url, { waitUntil: 'networkidle0' });
     
     const elementSelector = selector || '.ad-content';
     console.log('Waiting for selector:', elementSelector);
     
-    await page.waitForSelector(elementSelector, { 
-      timeout: 5000,
-      visible: true 
-    });
+    await page.waitForSelector(elementSelector);
     
-    console.log('Finding element');
+    console.log('Taking screenshot');
     const element = await page.$(elementSelector);
     
     if (!element) {
       console.error('Element not found');
       await browser.close();
       return new Response(
-        JSON.stringify({ error: 'Element not found.' }),
+        JSON.stringify({ error: 'Element not found' }),
         { 
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 404 
@@ -71,17 +70,14 @@ serve(async (req) => {
       );
     }
 
-    console.log('Taking screenshot');
     const screenshot = await element.screenshot({
       type: 'png',
-      encoding: 'base64',
-      omitBackground: true
+      encoding: 'base64'
     });
     
-    console.log('Closing browser');
     await browser.close();
+    console.log('Browser closed');
 
-    console.log('Returning response');
     return new Response(
       JSON.stringify({ image: screenshot }),
       { 
@@ -90,10 +86,10 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error in generate-preview:', error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Error generating image.',
+        error: 'Error generating preview',
         details: error.message 
       }),
       { 
