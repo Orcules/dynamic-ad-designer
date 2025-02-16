@@ -24,10 +24,10 @@ export const processImages = async (
   onAdGenerated: (adData: any) => void,
   handleSubmission: any,
   setIsGenerating: (value: boolean) => void,
-  positions: AdPositions // Add positions parameter
+  positions: AdPositions // הוספנו את הפרמטר positions
 ) => {
   console.log("Starting to process images:", images.length);
-  console.log("Using positions:", positions); // Log positions for debugging
+  console.log("Using positions:", positions); // הוספנו לוג למיקומים
   let successCount = 0;
   
   for (let i = 0; i < images.length; i++) {
@@ -90,7 +90,7 @@ export const processImages = async (
 
       const { width, height } = getDimensions(adData.platform);
 
-      // Merge positions with adData
+      // שילוב המיקומים עם הנתונים
       const enrichedData = {
         ...adData,
         width,
@@ -136,7 +136,16 @@ export const processImages = async (
         effect: adData.effect || 'none',
         width,
         height,
-        status: 'completed'
+        status: 'completed',
+        // הוספת המיקומים לנתונים המועשרים
+        headline_position_x: positions.headlinePosition.x,
+        headline_position_y: positions.headlinePosition.y,
+        description_position_x: positions.descriptionPosition.x,
+        description_position_y: positions.descriptionPosition.y,
+        cta_position_x: positions.ctaPosition.x,
+        cta_position_y: positions.ctaPosition.y,
+        image_position_x: positions.imagePosition.x,
+        image_position_y: positions.imagePosition.y
       };
 
       const { data: insertedAd, error: insertError } = await supabase
