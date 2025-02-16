@@ -1,3 +1,4 @@
+
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { FontSelector } from "./FontSelector";
@@ -9,6 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Alert, AlertDescription } from "./ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Slider } from "./ui/slider";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Separator } from "./ui/separator";
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 interface ImageUrlState {
   url: string;
@@ -49,6 +57,14 @@ interface AdFormProps {
   onImageUrlsChange: (urls: string[]) => void;
   overlayOpacity: number;
   onOpacityChange: (value: number) => void;
+  headlinePosition: Position;
+  descriptionPosition: Position;
+  ctaPosition: Position;
+  imagePosition: Position;
+  onHeadlinePositionChange: (position: Position) => void;
+  onDescriptionPositionChange: (position: Position) => void;
+  onCtaPositionChange: (position: Position) => void;
+  onImagePositionChange: (position: Position) => void;
 }
 
 export function AdForm({
@@ -66,6 +82,14 @@ export function AdForm({
   onImageUrlsChange,
   overlayOpacity,
   onOpacityChange,
+  headlinePosition,
+  descriptionPosition,
+  ctaPosition,
+  imagePosition,
+  onHeadlinePositionChange,
+  onDescriptionPositionChange,
+  onCtaPositionChange,
+  onImagePositionChange,
 }: AdFormProps) {
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [imageUrls, setImageUrls] = useState<ImageUrlState[]>([{ url: "", isValid: true, isChecking: false }]);
@@ -157,52 +181,186 @@ export function AdForm({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="name">Ad Name</Label>
-        <Input
-          id="name"
-          name="name"
-          value={adData.name}
-          onChange={onInputChange}
-          placeholder="Enter ad name"
-          required
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Ad Details</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Ad Name</Label>
+            <Input
+              id="name"
+              name="name"
+              value={adData.name}
+              onChange={onInputChange}
+              placeholder="Enter ad name"
+              required
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="headline">Headline</Label>
-        <Input
-          id="headline"
-          name="headline"
-          value={adData.headline}
-          onChange={onInputChange}
-          placeholder="Enter ad headline"
-          required
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="headline">Headline</Label>
+            <Input
+              id="headline"
+              name="headline"
+              value={adData.headline}
+              onChange={onInputChange}
+              placeholder="Enter ad headline"
+              required
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Input
-          id="description"
-          name="description"
-          value={adData.description}
-          onChange={onInputChange}
-          placeholder="Enter ad description"
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              name="description"
+              value={adData.description}
+              onChange={onInputChange}
+              placeholder="Enter ad description"
+            />
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="cta_text">CTA Text</Label>
-        <Input
-          id="cta_text"
-          name="cta_text"
-          value={adData.cta_text}
-          onChange={onInputChange}
-          placeholder="Enter button text"
-          required
-        />
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="cta_text">CTA Text</Label>
+            <Input
+              id="cta_text"
+              name="cta_text"
+              value={adData.cta_text}
+              onChange={onInputChange}
+              placeholder="Enter button text"
+              required
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Element Controls</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div>
+            <Label>Background Image Position</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="image-x" className="text-xs">X</Label>
+                <Input
+                  id="image-x"
+                  type="number"
+                  value={imagePosition.x}
+                  onChange={(e) => onImagePositionChange({ 
+                    ...imagePosition, 
+                    x: Number(e.target.value) 
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="image-y" className="text-xs">Y</Label>
+                <Input
+                  id="image-y"
+                  type="number"
+                  value={imagePosition.y}
+                  onChange={(e) => onImagePositionChange({ 
+                    ...imagePosition, 
+                    y: Number(e.target.value) 
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label>Headline Position</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="headline-x" className="text-xs">X</Label>
+                <Input
+                  id="headline-x"
+                  type="number"
+                  value={headlinePosition.x}
+                  onChange={(e) => onHeadlinePositionChange({ 
+                    ...headlinePosition, 
+                    x: Number(e.target.value) 
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="headline-y" className="text-xs">Y</Label>
+                <Input
+                  id="headline-y"
+                  type="number"
+                  value={headlinePosition.y}
+                  onChange={(e) => onHeadlinePositionChange({ 
+                    ...headlinePosition, 
+                    y: Number(e.target.value) 
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label>Description Position</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="description-x" className="text-xs">X</Label>
+                <Input
+                  id="description-x"
+                  type="number"
+                  value={descriptionPosition.x}
+                  onChange={(e) => onDescriptionPositionChange({ 
+                    ...descriptionPosition, 
+                    x: Number(e.target.value) 
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="description-y" className="text-xs">Y</Label>
+                <Input
+                  id="description-y"
+                  type="number"
+                  value={descriptionPosition.y}
+                  onChange={(e) => onDescriptionPositionChange({ 
+                    ...descriptionPosition, 
+                    y: Number(e.target.value) 
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <Label>CTA Position</Label>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <Label htmlFor="cta-x" className="text-xs">X</Label>
+                <Input
+                  id="cta-x"
+                  type="number"
+                  value={ctaPosition.x}
+                  onChange={(e) => onCtaPositionChange({ 
+                    ...ctaPosition, 
+                    x: Number(e.target.value) 
+                  })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="cta-y" className="text-xs">Y</Label>
+                <Input
+                  id="cta-y"
+                  type="number"
+                  value={ctaPosition.y}
+                  onChange={(e) => onCtaPositionChange({ 
+                    ...ctaPosition, 
+                    y: Number(e.target.value) 
+                  })}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <LanguageSelector 
         value={selectedLanguage}
