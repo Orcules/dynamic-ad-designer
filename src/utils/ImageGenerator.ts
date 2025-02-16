@@ -19,7 +19,7 @@ export class ImageGenerator {
     const clone = this.previewElement.cloneNode(true) as HTMLElement;
     document.body.appendChild(clone);
     
-    // Apply computed styles
+    // Apply computed styles from the original element
     const computedStyle = window.getComputedStyle(this.previewElement);
     
     Object.assign(clone.style, {
@@ -39,8 +39,14 @@ export class ImageGenerator {
       visibility: 'visible'
     });
 
-    // Force all child elements to be visible
+    // בשונה מהקוד הקודם, אנחנו נעתיק את המיקומים המדויקים של כל האלמנטים
     clone.querySelectorAll('*').forEach((el: Element) => {
+      const originalEl = this.previewElement?.querySelector(`[data-id="${el.getAttribute('data-id')}"]`);
+      if (originalEl) {
+        const originalStyle = window.getComputedStyle(originalEl);
+        const transformValue = originalStyle.transform;
+        (el as HTMLElement).style.transform = transformValue;
+      }
       (el as HTMLElement).style.opacity = '1';
       (el as HTMLElement).style.visibility = 'visible';
     });
@@ -56,7 +62,7 @@ export class ImageGenerator {
     // Wait for fonts and images to load
     await Promise.all([
       document.fonts.ready,
-      new Promise(resolve => setTimeout(resolve, 500)) // Small delay to ensure rendering
+      new Promise(resolve => setTimeout(resolve, 500))
     ]);
 
     // Create a clone for capturing
@@ -64,7 +70,7 @@ export class ImageGenerator {
     clone.classList.add('capturing');
 
     try {
-      // Configure html2canvas options
+      // Configure html2canvas options with better quality settings
       const options = {
         backgroundColor: null,
         scale: this.pixelRatio * 2,
@@ -73,23 +79,24 @@ export class ImageGenerator {
         logging: true,
         imageTimeout: 0,
         removeContainer: false,
-        foreignObjectRendering: false,
+        foreignObjectRendering: true, // Enable foreign object rendering
         x: 0,
         y: 0,
         width: this.previewElement.offsetWidth,
         height: this.previewElement.offsetHeight,
         onclone: (clonedDoc: Document) => {
-          // Additional setup for the cloned document
           const clonedElement = clonedDoc.querySelector('.ad-content') as HTMLElement;
           if (clonedElement) {
-            clonedElement.style.transform = 'none';
-            clonedElement.style.transformOrigin = 'top left';
+            // שמירה על המיקומים המקוריים של האלמנטים
+            clonedElement.querySelectorAll('[style*="transform"]').forEach((el) => {
+              const originalTransform = (el as HTMLElement).style.transform;
+              (el as HTMLElement).style.transform = originalTransform;
+            });
           }
           return Promise.resolve();
         }
       };
 
-      // Try html2canvas first
       try {
         const canvas = await html2canvas(clone, options);
         const dataUrl = canvas.toDataURL('image/png', 1.0);
