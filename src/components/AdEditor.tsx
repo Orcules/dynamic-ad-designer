@@ -1,10 +1,10 @@
+
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
 import { toast } from "sonner";
 import { useAdImageHandler } from "./ad/AdImageHandler";
 import { useAdSubmission } from "@/hooks/useAdSubmission";
-import { AdPositionControls } from "./ad/AdPositionControls";
 import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
 import { useAdForm } from "@/hooks/useAdForm";
@@ -128,6 +128,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onImageUrlsChange={handleImageUrlsChange}
           overlayOpacity={overlayOpacity}
           onOpacityChange={setOverlayOpacity}
+          headlinePosition={headlinePosition}
+          descriptionPosition={descriptionPosition}
+          ctaPosition={ctaPosition}
+          imagePosition={imagePosition}
+          onHeadlinePositionChange={setHeadlinePosition}
+          onDescriptionPositionChange={setDescriptionPosition}
+          onCtaPositionChange={setCtaPosition}
+          onImagePositionChange={setImagePosition}
         />
       </div>
       
@@ -163,17 +171,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         <AdPreviewControls
           showCtaArrow={showCtaArrow}
           onShowCtaArrowChange={setShowCtaArrow}
-        />
-
-        <AdPositionControls
-          headlinePosition={headlinePosition}
-          descriptionPosition={descriptionPosition}
-          ctaPosition={ctaPosition}
-          imagePosition={imagePosition}
-          onHeadlinePositionChange={setHeadlinePosition}
-          onDescriptionPositionChange={setDescriptionPosition}
-          onCtaPositionChange={setCtaPosition}
-          onImagePositionChange={setImagePosition}
         />
 
         <AdSubmitButton

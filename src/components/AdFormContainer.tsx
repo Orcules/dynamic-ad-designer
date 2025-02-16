@@ -1,5 +1,11 @@
+
 import React from "react";
 import { AdForm } from "./AdForm";
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 interface AdFormContainerProps {
   adData: {
@@ -30,6 +36,14 @@ interface AdFormContainerProps {
   onImageUrlsChange: (urls: string[]) => void;
   overlayOpacity: number;
   onOpacityChange: (value: number) => void;
+  headlinePosition: Position;
+  descriptionPosition: Position;
+  ctaPosition: Position;
+  imagePosition: Position;
+  onHeadlinePositionChange: (position: Position) => void;
+  onDescriptionPositionChange: (position: Position) => void;
+  onCtaPositionChange: (position: Position) => void;
+  onImagePositionChange: (position: Position) => void;
 }
 
 export const AdFormContainer: React.FC<AdFormContainerProps> = ({
@@ -48,6 +62,14 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
   onImageUrlsChange,
   overlayOpacity,
   onOpacityChange,
+  headlinePosition,
+  descriptionPosition,
+  ctaPosition,
+  imagePosition,
+  onHeadlinePositionChange,
+  onDescriptionPositionChange,
+  onCtaPositionChange,
+  onImagePositionChange,
 }) => {
   return (
     <div className="bg-card p-6 rounded-lg">
@@ -66,6 +88,14 @@ export const AdFormContainer: React.FC<AdFormContainerProps> = ({
         onImageUrlsChange={onImageUrlsChange}
         overlayOpacity={overlayOpacity}
         onOpacityChange={onOpacityChange}
+        headlinePosition={headlinePosition}
+        descriptionPosition={descriptionPosition}
+        ctaPosition={ctaPosition}
+        imagePosition={imagePosition}
+        onHeadlinePositionChange={onHeadlinePositionChange}
+        onDescriptionPositionChange={onDescriptionPositionChange}
+        onCtaPositionChange={onCtaPositionChange}
+        onImagePositionChange={onImagePositionChange}
       />
     </div>
   );
