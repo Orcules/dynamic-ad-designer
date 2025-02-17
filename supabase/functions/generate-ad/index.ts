@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -48,11 +49,22 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    // Draw background image with position offset if provided
-    const imageX = data.imagePosition?.x || 0;
-    const imageY = data.imagePosition?.y || 0;
-    ctx.drawImage(backgroundImage, imageX, imageY, data.width, data.height);
-    console.log(`[${uploadId}] Background image drawn at position:`, { x: imageX, y: imageY });
+    // חישוב היחס הנכון לתמונת הרקע
+    const scale = Math.max(
+      data.width / backgroundImage.width,
+      data.height / backgroundImage.height
+    );
+    
+    const scaledWidth = backgroundImage.width * scale;
+    const scaledHeight = backgroundImage.height * scale;
+    
+    // מיקום התמונה במרכז
+    const x = (data.width - scaledWidth) / 2 + (data.imagePosition?.x || 0);
+    const y = (data.height - scaledHeight) / 2 + (data.imagePosition?.y || 0);
+    
+    // ציור התמונה בגודל המתאים
+    ctx.drawImage(backgroundImage, x, y, scaledWidth, scaledHeight);
+    console.log(`[${uploadId}] Background image drawn with scale:`, scale);
 
     const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
     console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
@@ -69,36 +81,32 @@ serve(async (req) => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw headline at specified position
+    // Draw headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
       const headlineX = data.headlinePosition?.x !== undefined ? data.headlinePosition.x : data.width / 2;
       const headlineY = data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4;
-      console.log(`[${uploadId}] Drawing headline at position:`, { x: headlineX, y: headlineY });
       ctx.fillText(data.headline, headlineX, headlineY, data.width * 0.8);
     }
 
-    // Draw description at specified position
+    // Draw description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
       const descX = data.descriptionPosition?.x !== undefined ? data.descriptionPosition.x : data.width / 2;
       const descY = data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5;
-      console.log(`[${uploadId}] Drawing description at position:`, { x: descX, y: descY });
       ctx.fillText(data.description, descX, descY, data.width * 0.8);
     }
 
-    // Draw CTA button at specified position
+    // Draw CTA button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = data.ctaPosition?.x !== undefined ? data.ctaPosition.x : (data.width - buttonWidth) / 2;
       const ctaY = data.ctaPosition?.y !== undefined ? data.ctaPosition.y : data.height * 0.65;
-      
-      console.log(`[${uploadId}] Drawing CTA button at position:`, { x: ctaX, y: ctaY });
       
       // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
@@ -112,12 +120,26 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
-      // Draw button text
+      // Draw button text and arrow
       ctx.fillStyle = '#FFFFFF';
       const ctaFontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${ctaFontSize}px Arial`;
-      console.log(`[${uploadId}] Drawing CTA text at position:`, { x: ctaX + buttonWidth / 2, y: ctaY + buttonHeight / 2 });
-      ctx.fillText(data.cta_text, ctaX + buttonWidth / 2, ctaY + buttonHeight / 2, buttonWidth * 0.9);
+
+      // מרכוז הטקסט עם מקום לחץ
+      const arrowWidth = ctaFontSize * 0.5;
+      const textWidth = ctx.measureText(data.cta_text).width;
+      const totalWidth = textWidth + arrowWidth + (ctaFontSize * 0.3); // מרווח בין הטקסט לחץ
+      const startX = ctaX + (buttonWidth - totalWidth) / 2;
+
+      ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
+
+      // ציור החץ
+      const arrowY = ctaY + buttonHeight/2;
+      ctx.beginPath();
+      ctx.moveTo(startX + textWidth + (ctaFontSize * 0.3), arrowY - arrowWidth/2);
+      ctx.lineTo(startX + textWidth + (ctaFontSize * 0.3) + arrowWidth/2, arrowY + arrowWidth/2);
+      ctx.lineTo(startX + textWidth + (ctaFontSize * 0.3) + arrowWidth, arrowY - arrowWidth/2);
+      ctx.stroke();
     }
 
     // Convert canvas to buffer and upload

@@ -41,13 +41,16 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       }}
     >
       <button 
-        className="relative transform flex items-center justify-center gap-3 mx-auto w-auto min-w-[200px]"
+        className="relative transform flex items-center justify-center gap-2 mx-auto w-auto min-w-[200px]"
         style={{
           ...buttonStyle,
           fontSize: 'clamp(0.75rem, 1.5vw, 1rem)',
           padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1.5rem, 3vw, 2rem)',
           whiteSpace: 'nowrap',
-          overflow: 'visible'
+          overflow: 'visible',
+          display: 'inline-flex',
+          alignItems: 'center',
+          lineHeight: '1'
         }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
