@@ -19,7 +19,6 @@ export class ImageGenerator {
     const clone = this.previewElement.cloneNode(true) as HTMLElement;
     document.body.appendChild(clone);
     
-    // Apply computed styles from the original element
     const computedStyle = window.getComputedStyle(this.previewElement);
     
     Object.assign(clone.style, {
@@ -30,25 +29,33 @@ export class ImageGenerator {
       height: `${this.previewElement.offsetHeight}px`,
       transform: 'none',
       transformOrigin: 'top left',
-      margin: computedStyle.margin,
-      padding: computedStyle.padding,
-      border: computedStyle.border,
+      margin: '0',
+      padding: '0',
+      border: 'none',
       backgroundColor: computedStyle.backgroundColor,
-      display: 'block',
-      opacity: '1',
-      visibility: 'visible'
+      display: 'block'
     });
 
-    // בשונה מהקוד הקודם, אנחנו נעתיק את המיקומים המדויקים של כל האלמנטים
-    clone.querySelectorAll('*').forEach((el: Element) => {
-      const originalEl = this.previewElement?.querySelector(`[data-id="${el.getAttribute('data-id')}"]`);
+    const elements = clone.querySelectorAll('*');
+    elements.forEach((el: Element) => {
+      const elem = el as HTMLElement;
+      const originalEl = this.previewElement?.querySelector(`#${elem.id}`) as HTMLElement;
+      
       if (originalEl) {
-        const originalStyle = window.getComputedStyle(originalEl);
-        const transformValue = originalStyle.transform;
-        (el as HTMLElement).style.transform = transformValue;
+        const style = window.getComputedStyle(originalEl);
+        elem.style.position = style.position;
+        elem.style.transform = style.transform;
+        elem.style.top = style.top;
+        elem.style.left = style.left;
+        elem.style.width = style.width;
+        elem.style.height = style.height;
+        elem.style.margin = '0';
+        elem.style.padding = style.padding;
+        elem.style.border = style.border;
+        elem.style.opacity = '1';
+        elem.style.visibility = 'visible';
+        elem.style.display = style.display;
       }
-      (el as HTMLElement).style.opacity = '1';
-      (el as HTMLElement).style.visibility = 'visible';
     });
 
     return clone;
@@ -59,18 +66,16 @@ export class ImageGenerator {
       throw new Error('Preview element not found');
     }
 
-    // Wait for fonts and images to load
     await Promise.all([
       document.fonts.ready,
-      new Promise(resolve => setTimeout(resolve, 500))
+      new Promise(resolve => setTimeout(resolve, 1000))
     ]);
 
-    // Create a clone for capturing
     const clone = this.createClone();
     clone.classList.add('capturing');
 
     try {
-      // Configure html2canvas options with better quality settings
+      console.log('Starting image generation...');
       const options = {
         backgroundColor: null,
         scale: this.pixelRatio * 2,
@@ -78,19 +83,21 @@ export class ImageGenerator {
         allowTaint: true,
         logging: true,
         imageTimeout: 0,
-        removeContainer: false,
-        foreignObjectRendering: true, // Enable foreign object rendering
+        removeContainer: true,
+        foreignObjectRendering: true,
         x: 0,
         y: 0,
         width: this.previewElement.offsetWidth,
         height: this.previewElement.offsetHeight,
         onclone: (clonedDoc: Document) => {
+          console.log('Cloning document...');
           const clonedElement = clonedDoc.querySelector('.ad-content') as HTMLElement;
           if (clonedElement) {
-            // שמירה על המיקומים המקוריים של האלמנטים
-            clonedElement.querySelectorAll('[style*="transform"]').forEach((el) => {
-              const originalTransform = (el as HTMLElement).style.transform;
-              (el as HTMLElement).style.transform = originalTransform;
+            const elements = clonedElement.querySelectorAll('*');
+            elements.forEach((el: Element) => {
+              const elem = el as HTMLElement;
+              elem.style.opacity = '1';
+              elem.style.visibility = 'visible';
             });
           }
           return Promise.resolve();
@@ -98,13 +105,18 @@ export class ImageGenerator {
       };
 
       try {
+        console.log('Using html2canvas...');
         const canvas = await html2canvas(clone, options);
+        console.log('Canvas generated successfully');
         const dataUrl = canvas.toDataURL('image/png', 1.0);
-        document.body.removeChild(clone);
         return dataUrl;
       } catch (html2canvasError) {
         console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
         return this.fallbackCapture(clone);
+      } finally {
+        if (clone.parentNode) {
+          document.body.removeChild(clone);
+        }
       }
     } catch (error) {
       console.error('Error generating image:', error);
@@ -117,8 +129,7 @@ export class ImageGenerator {
 
   private async fallbackCapture(clone: HTMLElement): Promise<string> {
     try {
-      const computedStyle = window.getComputedStyle(this.previewElement!);
-      
+      console.log('Using dom-to-image fallback...');
       const config = {
         quality: 1.0,
         scale: this.pixelRatio * 2,
@@ -128,34 +139,25 @@ export class ImageGenerator {
           transform: 'none',
           transformOrigin: 'top left',
           width: `${clone.offsetWidth}px`,
-          height: `${clone.offsetHeight}px`,
-          margin: '0',
-          padding: computedStyle.padding,
-          border: computedStyle.border,
-          borderRadius: computedStyle.borderRadius,
-          backgroundColor: computedStyle.backgroundColor,
-          boxShadow: computedStyle.boxShadow
+          height: `${clone.offsetHeight}px`
         },
         filter: (node: Element) => {
-          const exclusions = ['I', 'IFRAME', 'SCRIPT'];
-          return !exclusions.includes(node.tagName);
+          return !['SCRIPT', 'STYLE'].includes(node.tagName);
         }
       };
 
       const dataUrl = await domtoimage.toPng(clone, config);
-      document.body.removeChild(clone);
+      console.log('Dom-to-image generated successfully');
       return dataUrl;
     } catch (error) {
       console.error('Fallback capture failed:', error);
-      if (clone.parentNode) {
-        document.body.removeChild(clone);
-      }
       throw error;
     }
   }
 
   async downloadImage(filename = 'ad-preview.png') {
     try {
+      console.log('Starting download process...');
       const dataUrl = await this.generateHighQualityImage();
       const link = document.createElement('a');
       link.download = filename;
@@ -163,6 +165,7 @@ export class ImageGenerator {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      console.log('Download completed successfully');
     } catch (error) {
       console.error('Error downloading image:', error);
       throw error;
