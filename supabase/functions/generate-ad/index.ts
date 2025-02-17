@@ -147,9 +147,9 @@ serve(async (req) => {
       // ציור החץ כלפי מטה
       ctx.moveTo(arrowX + arrowWidth/2, arrowY - arrowHeight/2);
       ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
-      ctx.moveTo(arrowX, arrowY + arrowHeight/4);
-      ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
       ctx.lineTo(arrowX + arrowWidth, arrowY + arrowHeight/4);
+      ctx.moveTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
+      ctx.lineTo(arrowX, arrowY + arrowHeight/4);
       
       ctx.stroke();
     }
