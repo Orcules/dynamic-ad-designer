@@ -34,7 +34,7 @@ export class ImageGenerator {
     
     // Apply base styles to clone
     Object.assign(clone.style, {
-      position: 'absolute',
+      position: 'relative',
       left: '0',
       top: '0',
       width: '100%',
@@ -50,7 +50,23 @@ export class ImageGenerator {
       pointerEvents: 'none'
     });
 
-    // Apply styles to all child elements
+    // Find and preserve flex container styles
+    const flexContainer = this.previewElement.querySelector('.flex.flex-col');
+    if (flexContainer) {
+      const clonedFlexContainer = clone.querySelector('.flex.flex-col') as HTMLElement;
+      if (clonedFlexContainer) {
+        const flexStyle = window.getComputedStyle(flexContainer);
+        Object.assign(clonedFlexContainer.style, {
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          width: '100%',
+          height: '100%'
+        });
+      }
+    }
+
+    // Process all direct children preserving their layout
     const processElements = (originalParent: Element, cloneParent: Element) => {
       const originalChildren = originalParent.children;
       const cloneChildren = cloneParent.children;
@@ -62,13 +78,20 @@ export class ImageGenerator {
         if (originalChild && cloneChild) {
           const computedStyle = window.getComputedStyle(originalChild);
           const originalRect = originalChild.getBoundingClientRect();
-          const relativeTop = originalRect.top - rect.top;
-          const relativeLeft = originalRect.left - rect.left;
-
-          // העתקת סגנונות מקוריים
-          cloneChild.style.cssText = computedStyle.cssText;
+          const parentRect = originalParent.getBoundingClientRect();
           
-          // שמירה על המיקום המדויק
+          // Calculate relative positions
+          const relativeTop = originalRect.top - parentRect.top;
+          const relativeLeft = originalRect.left - parentRect.left;
+
+          // Copy all computed styles
+          for (let j = 0; j < computedStyle.length; j++) {
+            const property = computedStyle[j];
+            const value = computedStyle.getPropertyValue(property);
+            if (value) cloneChild.style.setProperty(property, value);
+          }
+
+          // Override specific styles for correct positioning
           Object.assign(cloneChild.style, {
             position: 'absolute',
             top: `${relativeTop}px`,
@@ -77,31 +100,21 @@ export class ImageGenerator {
             height: `${originalRect.height}px`,
             transform: 'none',
             margin: '0',
-            padding: computedStyle.padding,
-            border: computedStyle.border,
-            color: computedStyle.color,
-            background: computedStyle.background,
-            fontSize: computedStyle.fontSize,
-            fontFamily: computedStyle.fontFamily,
-            fontWeight: computedStyle.fontWeight,
-            textAlign: computedStyle.textAlign,
-            lineHeight: computedStyle.lineHeight,
-            opacity: '1',
-            visibility: 'visible',
-            display: computedStyle.display === 'none' ? 'none' : 'block',
-            zIndex: computedStyle.zIndex,
-            boxShadow: computedStyle.boxShadow,
-            borderRadius: computedStyle.borderRadius,
-            pointerEvents: 'none',
-            overflow: 'visible'
+            opacity: computedStyle.opacity,
+            visibility: computedStyle.visibility,
+            display: computedStyle.display,
+            zIndex: computedStyle.zIndex
           });
 
-          // העתקת תוכן טקסטואלי
-          if (originalChild.tagName === 'H2' || originalChild.tagName === 'P' || originalChild.tagName === 'BUTTON' || originalChild.tagName === 'SPAN') {
+          // Ensure text content is preserved
+          if (originalChild.tagName === 'H2' || 
+              originalChild.tagName === 'P' || 
+              originalChild.tagName === 'BUTTON' || 
+              originalChild.tagName === 'SPAN') {
             cloneChild.textContent = originalChild.textContent;
           }
 
-          // Recursively process children
+          // Process children recursively
           processElements(originalChild, cloneChild);
         }
       }
@@ -142,10 +155,6 @@ export class ImageGenerator {
         y: 0,
         onclone: (clonedDoc: Document) => {
           console.log('Cloning document...');
-          const clonedElement = clonedDoc.querySelector('.ad-content');
-          if (clonedElement) {
-            (clonedElement as HTMLElement).style.transform = 'none';
-          }
           return Promise.resolve();
         }
       };
