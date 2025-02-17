@@ -11,12 +11,22 @@ export interface GeneratedAdResult {
 export class AdGenerationService {
   static async generateAd(adData: any, imageBlob: Blob): Promise<GeneratedAdResult> {
     const formData = new FormData();
-    formData.append('image', imageBlob);
+    
+    // בדיקה שה-blob הוא תקין ויצירת קובץ ממנו
+    const imageFile = new File([imageBlob], 'image.png', { type: 'image/png' });
+    formData.append('image', imageFile);
+    
     formData.append('data', JSON.stringify({
       ...adData,
       ...getDimensions(adData.platform),
       overlayOpacity: 0.4
     }));
+
+    console.log('Sending to edge function:', {
+      imageType: imageFile.type,
+      imageSize: imageFile.size,
+      data: adData
+    });
 
     const { data: generatedAd, error: generateError } = await supabase.functions
       .invoke('generate-ad', {
