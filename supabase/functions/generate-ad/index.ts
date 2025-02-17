@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -32,6 +33,11 @@ serve(async (req) => {
     if (imageFile instanceof File || imageFile instanceof Blob) {
       imageArrayBuffer = await imageFile.arrayBuffer();
       console.log(`[${uploadId}] Processing uploaded file. Type:`, imageFile.type);
+    } else if (typeof imageFile === 'string') {
+      // אם התמונה היא URL, נטען אותה
+      const response = await fetch(imageFile);
+      imageArrayBuffer = await response.arrayBuffer();
+      console.log(`[${uploadId}] Processing image from URL`);
     } else {
       console.error(`[${uploadId}] Invalid image data type:`, typeof imageFile);
       throw new Error('Invalid image data type');
