@@ -36,27 +36,30 @@ export class ImageGenerator {
       display: 'block'
     });
 
-    const elements = clone.querySelectorAll('*');
-    elements.forEach((el: Element) => {
-      const elem = el as HTMLElement;
-      const originalEl = this.previewElement?.querySelector(`#${elem.id}`) as HTMLElement;
+    // העתקת סגנונות לכל האלמנטים בתוך הקלון
+    const cloneElements = clone.getElementsByTagName('*');
+    const originalElements = this.previewElement.getElementsByTagName('*');
+
+    for (let i = 0; i < cloneElements.length; i++) {
+      const cloneElement = cloneElements[i] as HTMLElement;
+      const originalElement = originalElements[i] as HTMLElement;
       
-      if (originalEl) {
-        const style = window.getComputedStyle(originalEl);
-        elem.style.position = style.position;
-        elem.style.transform = style.transform;
-        elem.style.top = style.top;
-        elem.style.left = style.left;
-        elem.style.width = style.width;
-        elem.style.height = style.height;
-        elem.style.margin = '0';
-        elem.style.padding = style.padding;
-        elem.style.border = style.border;
-        elem.style.opacity = '1';
-        elem.style.visibility = 'visible';
-        elem.style.display = style.display;
+      if (originalElement) {
+        const style = window.getComputedStyle(originalElement);
+        cloneElement.style.position = style.position;
+        cloneElement.style.transform = style.transform;
+        cloneElement.style.top = style.top;
+        cloneElement.style.left = style.left;
+        cloneElement.style.width = style.width;
+        cloneElement.style.height = style.height;
+        cloneElement.style.margin = '0';
+        cloneElement.style.padding = style.padding;
+        cloneElement.style.border = style.border;
+        cloneElement.style.opacity = '1';
+        cloneElement.style.visibility = 'visible';
+        cloneElement.style.display = style.display;
       }
-    });
+    }
 
     return clone;
   }
@@ -93,12 +96,12 @@ export class ImageGenerator {
           console.log('Cloning document...');
           const clonedElement = clonedDoc.querySelector('.ad-content') as HTMLElement;
           if (clonedElement) {
-            const elements = clonedElement.querySelectorAll('*');
-            elements.forEach((el: Element) => {
-              const elem = el as HTMLElement;
+            const elements = clonedElement.getElementsByTagName('*');
+            for (let i = 0; i < elements.length; i++) {
+              const elem = elements[i] as HTMLElement;
               elem.style.opacity = '1';
               elem.style.visibility = 'visible';
-            });
+            }
           }
           return Promise.resolve();
         }
