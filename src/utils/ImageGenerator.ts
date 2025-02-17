@@ -65,32 +65,27 @@ export class ImageGenerator {
           const relativeTop = originalRect.top - rect.top;
           const relativeLeft = originalRect.left - rect.left;
 
+          // שמירה על המיקום המקורי של האלמנט
+          cloneChild.style.cssText = computedStyle.cssText;
           Object.assign(cloneChild.style, {
-            position: computedStyle.position === 'static' ? 'absolute' : computedStyle.position,
+            position: 'absolute',
             top: `${relativeTop}px`,
             left: `${relativeLeft}px`,
             width: `${originalRect.width}px`,
             height: `${originalRect.height}px`,
             transform: 'none',
             margin: '0',
-            padding: computedStyle.padding,
-            border: computedStyle.border,
-            color: computedStyle.color,
-            background: computedStyle.background,
-            fontSize: computedStyle.fontSize,
-            fontFamily: computedStyle.fontFamily,
-            fontWeight: computedStyle.fontWeight,
-            textAlign: computedStyle.textAlign,
-            lineHeight: computedStyle.lineHeight,
             opacity: '1',
             visibility: 'visible',
-            display: computedStyle.display === 'none' ? 'block' : computedStyle.display,
-            zIndex: computedStyle.zIndex,
-            boxShadow: computedStyle.boxShadow,
-            borderRadius: computedStyle.borderRadius,
             pointerEvents: 'none',
-            overflow: 'visible'
+            overflow: 'visible',
+            zIndex: 'auto'
           });
+
+          // העתקת תוכן טקסטואלי
+          if (originalChild.tagName === 'H2' || originalChild.tagName === 'P' || originalChild.tagName === 'BUTTON' || originalChild.tagName === 'SPAN') {
+            cloneChild.textContent = originalChild.textContent;
+          }
 
           // Recursively process children
           processElements(originalChild, cloneChild);
@@ -133,6 +128,10 @@ export class ImageGenerator {
         y: 0,
         onclone: (clonedDoc: Document) => {
           console.log('Cloning document...');
+          const clonedElement = clonedDoc.querySelector('.ad-content');
+          if (clonedElement) {
+            (clonedElement as HTMLElement).style.transform = 'none';
+          }
           return Promise.resolve();
         }
       };
