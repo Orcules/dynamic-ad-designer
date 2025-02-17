@@ -87,7 +87,7 @@ serve(async (req) => {
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
       const headlineX = data.headlinePosition?.x !== undefined ? data.headlinePosition.x : data.width / 2;
-      const headlineY = data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4;
+      const headlineY = (data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4) - 3;
       ctx.fillText(data.headline, headlineX, headlineY, data.width * 0.8);
     }
 
@@ -97,7 +97,7 @@ serve(async (req) => {
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
       const descX = data.descriptionPosition?.x !== undefined ? data.descriptionPosition.x : data.width / 2;
-      const descY = data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5;
+      const descY = (data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5) - 3;
       ctx.fillText(data.description, descX, descY, data.width * 0.8);
     }
 
@@ -106,7 +106,7 @@ serve(async (req) => {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = data.ctaPosition?.x !== undefined ? data.ctaPosition.x : (data.width - buttonWidth) / 2;
-      const ctaY = data.ctaPosition?.y !== undefined ? data.ctaPosition.y : data.height * 0.65;
+      const ctaY = (data.ctaPosition?.y !== undefined ? data.ctaPosition.y : data.height * 0.65) - 3;
       
       // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
@@ -126,19 +126,31 @@ serve(async (req) => {
       ctx.font = `bold ${ctaFontSize}px Arial`;
 
       // מרכוז הטקסט עם מקום לחץ
-      const arrowWidth = ctaFontSize * 0.5;
       const textWidth = ctx.measureText(data.cta_text).width;
-      const totalWidth = textWidth + arrowWidth + (ctaFontSize * 0.3); // מרווח בין הטקסט לחץ
+      const arrowHeight = ctaFontSize * 0.5;
+      const arrowWidth = ctaFontSize * 0.3;
+      const spacing = ctaFontSize * 0.2;
+      const totalWidth = textWidth + arrowWidth + spacing;
       const startX = ctaX + (buttonWidth - totalWidth) / 2;
 
+      // ציור הטקסט
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
       // ציור החץ
       const arrowY = ctaY + buttonHeight/2;
+      const arrowX = startX + textWidth + spacing;
+      
       ctx.beginPath();
-      ctx.moveTo(startX + textWidth + (ctaFontSize * 0.3), arrowY - arrowWidth/2);
-      ctx.lineTo(startX + textWidth + (ctaFontSize * 0.3) + arrowWidth/2, arrowY + arrowWidth/2);
-      ctx.lineTo(startX + textWidth + (ctaFontSize * 0.3) + arrowWidth, arrowY - arrowWidth/2);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#FFFFFF';
+      
+      // ציור החץ כלפי מטה
+      ctx.moveTo(arrowX + arrowWidth/2, arrowY - arrowHeight/2);
+      ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
+      ctx.moveTo(arrowX, arrowY + arrowHeight/4);
+      ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
+      ctx.lineTo(arrowX + arrowWidth, arrowY + arrowHeight/4);
+      
       ctx.stroke();
     }
 
