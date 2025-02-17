@@ -87,7 +87,7 @@ serve(async (req) => {
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
       const headlineX = data.headlinePosition?.x !== undefined ? data.headlinePosition.x : data.width / 2;
-      const headlineY = (data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4) - 5;
+      const headlineY = (data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4) - 10;
       ctx.fillText(data.headline, headlineX, headlineY, data.width * 0.8);
     }
 
@@ -97,7 +97,7 @@ serve(async (req) => {
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
       const descX = data.descriptionPosition?.x !== undefined ? data.descriptionPosition.x : data.width / 2;
-      const descY = (data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5) - 5;
+      const descY = (data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5) - 10;
       ctx.fillText(data.description, descX, descY, data.width * 0.8);
     }
 
