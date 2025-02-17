@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -49,7 +48,6 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    // חישוב היחס הנכון לתמונת הרקע
     const scale = Math.max(
       data.width / backgroundImage.width,
       data.height / backgroundImage.height
@@ -58,11 +56,9 @@ serve(async (req) => {
     const scaledWidth = backgroundImage.width * scale;
     const scaledHeight = backgroundImage.height * scale;
     
-    // מיקום התמונה במרכז
     const x = (data.width - scaledWidth) / 2 + (data.imagePosition?.x || 0);
     const y = (data.height - scaledHeight) / 2 + (data.imagePosition?.y || 0);
     
-    // ציור התמונה בגודל המתאים
     ctx.drawImage(backgroundImage, x, y, scaledWidth, scaledHeight);
     console.log(`[${uploadId}] Background image drawn with scale:`, scale);
 
@@ -77,38 +73,33 @@ serve(async (req) => {
     
     console.log(`[${uploadId}] Overlay added`);
 
-    // Configure text settings
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
       const headlineX = data.headlinePosition?.x !== undefined ? data.headlinePosition.x : data.width / 2;
-      const headlineY = (data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4) - 10;
-      ctx.fillText(data.headline, headlineX, headlineY, data.width * 0.8);
+      const baseHeadlineY = data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4;
+      ctx.fillText(data.headline, headlineX, baseHeadlineY - 5, data.width * 0.8);
     }
 
-    // Draw description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
       const descX = data.descriptionPosition?.x !== undefined ? data.descriptionPosition.x : data.width / 2;
-      const descY = (data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5) - 10;
-      ctx.fillText(data.description, descX, descY, data.width * 0.8);
+      const baseDescY = data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5;
+      ctx.fillText(data.description, descX, baseDescY - 5, data.width * 0.8);
     }
 
-    // Draw CTA button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = data.ctaPosition?.x !== undefined ? data.ctaPosition.x : (data.width - buttonWidth) / 2;
       const ctaY = (data.ctaPosition?.y !== undefined ? data.ctaPosition.y : data.height * 0.65) - 3;
       
-      // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
@@ -120,12 +111,10 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
-      // Draw button text and arrow
       ctx.fillStyle = '#FFFFFF';
       const ctaFontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${ctaFontSize}px Arial`;
 
-      // מרכוז הטקסט עם מקום לחץ
       const textWidth = ctx.measureText(data.cta_text).width;
       const arrowHeight = ctaFontSize * 0.5;
       const arrowWidth = ctaFontSize * 0.3;
@@ -133,10 +122,8 @@ serve(async (req) => {
       const totalWidth = textWidth + arrowWidth + spacing;
       const startX = ctaX + (buttonWidth - totalWidth) / 2;
 
-      // ציור הטקסט
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
-      // ציור החץ
       const arrowY = ctaY + buttonHeight/2;
       const arrowX = startX + textWidth + spacing;
       
@@ -144,7 +131,6 @@ serve(async (req) => {
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#FFFFFF';
       
-      // ציור החץ כלפי מטה
       ctx.moveTo(arrowX + arrowWidth/2, arrowY - arrowHeight/2);
       ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
       ctx.lineTo(arrowX + arrowWidth, arrowY + arrowHeight/4);
@@ -154,7 +140,6 @@ serve(async (req) => {
       ctx.stroke();
     }
 
-    // Convert canvas to buffer and upload
     console.log(`[${uploadId}] Converting canvas to buffer...`);
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
