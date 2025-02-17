@@ -51,46 +51,54 @@ export class ImageGenerator {
     });
 
     // Apply styles to all child elements
-    const elements = clone.querySelectorAll('*');
-    elements.forEach((el) => {
-      const element = el as HTMLElement;
-      const originalElement = this.previewElement?.querySelector(
-        `.${Array.from(element.classList).join('.')}`) as HTMLElement;
-      
-      if (originalElement) {
-        const computedStyle = window.getComputedStyle(originalElement);
-        const originalRect = originalElement.getBoundingClientRect();
-        const relativeTop = originalRect.top - rect.top;
-        const relativeLeft = originalRect.left - rect.left;
+    const processElements = (originalParent: Element, cloneParent: Element) => {
+      const originalChildren = originalParent.children;
+      const cloneChildren = cloneParent.children;
 
-        Object.assign(element.style, {
-          position: computedStyle.position === 'static' ? 'absolute' : computedStyle.position,
-          top: `${relativeTop}px`,
-          left: `${relativeLeft}px`,
-          width: `${originalRect.width}px`,
-          height: `${originalRect.height}px`,
-          transform: 'none',
-          margin: '0',
-          padding: computedStyle.padding,
-          border: computedStyle.border,
-          color: computedStyle.color,
-          background: computedStyle.background,
-          fontSize: computedStyle.fontSize,
-          fontFamily: computedStyle.fontFamily,
-          fontWeight: computedStyle.fontWeight,
-          textAlign: computedStyle.textAlign,
-          lineHeight: computedStyle.lineHeight,
-          opacity: '1',
-          visibility: 'visible',
-          display: computedStyle.display === 'none' ? 'block' : computedStyle.display,
-          zIndex: computedStyle.zIndex,
-          boxShadow: computedStyle.boxShadow,
-          borderRadius: computedStyle.borderRadius,
-          pointerEvents: 'none'
-        });
+      for (let i = 0; i < originalChildren.length; i++) {
+        const originalChild = originalChildren[i] as HTMLElement;
+        const cloneChild = cloneChildren[i] as HTMLElement;
+
+        if (originalChild && cloneChild) {
+          const computedStyle = window.getComputedStyle(originalChild);
+          const originalRect = originalChild.getBoundingClientRect();
+          const relativeTop = originalRect.top - rect.top;
+          const relativeLeft = originalRect.left - rect.left;
+
+          Object.assign(cloneChild.style, {
+            position: computedStyle.position === 'static' ? 'absolute' : computedStyle.position,
+            top: `${relativeTop}px`,
+            left: `${relativeLeft}px`,
+            width: `${originalRect.width}px`,
+            height: `${originalRect.height}px`,
+            transform: 'none',
+            margin: '0',
+            padding: computedStyle.padding,
+            border: computedStyle.border,
+            color: computedStyle.color,
+            background: computedStyle.background,
+            fontSize: computedStyle.fontSize,
+            fontFamily: computedStyle.fontFamily,
+            fontWeight: computedStyle.fontWeight,
+            textAlign: computedStyle.textAlign,
+            lineHeight: computedStyle.lineHeight,
+            opacity: '1',
+            visibility: 'visible',
+            display: computedStyle.display === 'none' ? 'block' : computedStyle.display,
+            zIndex: computedStyle.zIndex,
+            boxShadow: computedStyle.boxShadow,
+            borderRadius: computedStyle.borderRadius,
+            pointerEvents: 'none',
+            overflow: 'visible'
+          });
+
+          // Recursively process children
+          processElements(originalChild, cloneChild);
+        }
       }
-    });
+    };
 
+    processElements(this.previewElement, clone);
     return container;
   }
 
