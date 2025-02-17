@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -34,7 +33,6 @@ serve(async (req) => {
       imageArrayBuffer = await imageFile.arrayBuffer();
       console.log(`[${uploadId}] Processing uploaded file. Type:`, imageFile.type);
     } else if (typeof imageFile === 'string') {
-      // אם התמונה היא URL, נטען אותה
       const response = await fetch(imageFile);
       imageArrayBuffer = await response.arrayBuffer();
       console.log(`[${uploadId}] Processing image from URL`);
@@ -101,6 +99,9 @@ serve(async (req) => {
     }
 
     if (data.cta_text) {
+      console.log(`[${uploadId}] Drawing CTA button with text:`, data.cta_text);
+      console.log(`[${uploadId}] Show arrow:`, data.showArrow);
+      
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = data.ctaPosition?.x !== undefined ? data.ctaPosition.x : (data.width - buttonWidth) / 2;
@@ -125,25 +126,29 @@ serve(async (req) => {
       const arrowHeight = ctaFontSize * 0.5;
       const arrowWidth = ctaFontSize * 0.3;
       const spacing = ctaFontSize * 0.2;
-      const totalWidth = textWidth + arrowWidth + spacing;
+      
+      const totalWidth = data.showArrow ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - totalWidth) / 2;
 
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
-      const arrowY = ctaY + buttonHeight/2;
-      const arrowX = startX + textWidth + spacing;
-      
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#FFFFFF';
-      
-      ctx.moveTo(arrowX + arrowWidth/2, arrowY - arrowHeight/2);
-      ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
-      ctx.lineTo(arrowX + arrowWidth, arrowY + arrowHeight/4);
-      ctx.moveTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
-      ctx.lineTo(arrowX, arrowY + arrowHeight/4);
-      
-      ctx.stroke();
+      if (data.showArrow !== false) {
+        console.log(`[${uploadId}] Drawing arrow`);
+        const arrowY = ctaY + buttonHeight/2;
+        const arrowX = startX + textWidth + spacing;
+        
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#FFFFFF';
+        
+        ctx.moveTo(arrowX + arrowWidth/2, arrowY - arrowHeight/2);
+        ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
+        ctx.lineTo(arrowX + arrowWidth, arrowY + arrowHeight/4);
+        ctx.moveTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
+        ctx.lineTo(arrowX, arrowY + arrowHeight/4);
+        
+        ctx.stroke();
+      }
     }
 
     console.log(`[${uploadId}] Converting canvas to buffer...`);
