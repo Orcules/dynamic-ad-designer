@@ -65,8 +65,10 @@ export class ImageGenerator {
           const relativeTop = originalRect.top - rect.top;
           const relativeLeft = originalRect.left - rect.left;
 
-          // שמירה על המיקום המקורי של האלמנט
+          // העתקת סגנונות מקוריים
           cloneChild.style.cssText = computedStyle.cssText;
+          
+          // שמירה על המיקום המדויק
           Object.assign(cloneChild.style, {
             position: 'absolute',
             top: `${relativeTop}px`,
@@ -75,11 +77,23 @@ export class ImageGenerator {
             height: `${originalRect.height}px`,
             transform: 'none',
             margin: '0',
+            padding: computedStyle.padding,
+            border: computedStyle.border,
+            color: computedStyle.color,
+            background: computedStyle.background,
+            fontSize: computedStyle.fontSize,
+            fontFamily: computedStyle.fontFamily,
+            fontWeight: computedStyle.fontWeight,
+            textAlign: computedStyle.textAlign,
+            lineHeight: computedStyle.lineHeight,
             opacity: '1',
             visibility: 'visible',
+            display: computedStyle.display === 'none' ? 'none' : 'block',
+            zIndex: computedStyle.zIndex,
+            boxShadow: computedStyle.boxShadow,
+            borderRadius: computedStyle.borderRadius,
             pointerEvents: 'none',
-            overflow: 'visible',
-            zIndex: 'auto'
+            overflow: 'visible'
           });
 
           // העתקת תוכן טקסטואלי
