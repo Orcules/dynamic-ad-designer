@@ -24,7 +24,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       <img
         src={imageUrl}
         alt="Ad preview"
-        className="absolute w-[120%] h-[120%] object-cover"
+        className="absolute w-full h-full object-cover"
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out'
