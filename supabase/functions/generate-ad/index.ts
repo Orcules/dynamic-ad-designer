@@ -32,13 +32,10 @@ serve(async (req) => {
     
     if (imageFile instanceof File || imageFile instanceof Blob) {
       imageArrayBuffer = await imageFile.arrayBuffer();
-      console.log(`[${uploadId}] Processing uploaded file. Type:`, imageFile.type);
     } else if (typeof imageFile === 'string') {
       const response = await fetch(imageFile);
       imageArrayBuffer = await response.arrayBuffer();
-      console.log(`[${uploadId}] Processing image from URL`);
     } else {
-      console.error(`[${uploadId}] Invalid image data type:`, typeof imageFile);
       throw new Error('Invalid image data type');
     }
 
@@ -49,74 +46,72 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
-    console.log(`[${uploadId}] Loading background image...`);
     const backgroundImage = await loadImage(imageArrayBuffer);
-    console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
+    console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
-    // תיקון עיוות התמונה - שימוש ב-object-fit: cover בצורה פרוגרמטית
-    const imageRatio = backgroundImage.width / backgroundImage.height;
-    const canvasRatio = data.width / data.height;
+    // שיפור חדש לטיפול בתמונה
+    const imageAspect = backgroundImage.width / backgroundImage.height;
+    const canvasAspect = data.width / data.height;
     
-    let drawWidth = data.width;
-    let drawHeight = data.height;
-    
-    if (imageRatio > canvasRatio) {
-      drawWidth = data.height * imageRatio;
-      drawHeight = data.height;
+    let renderWidth = data.width;
+    let renderHeight = data.height;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (imageAspect > canvasAspect) {
+      renderWidth = data.height * imageAspect;
+      offsetX = -(renderWidth - data.width) / 2;
     } else {
-      drawWidth = data.width;
-      drawHeight = data.width / imageRatio;
+      renderHeight = data.width / imageAspect;
+      offsetY = -(renderHeight - data.height) / 2;
     }
-    
-    const x = (data.width - drawWidth) / 2 + (data.imagePosition?.x || 0);
-    const y = (data.height - drawHeight) / 2 + (data.imagePosition?.y || 0);
-    
-    ctx.drawImage(backgroundImage, x, y, drawWidth, drawHeight);
-    console.log(`[${uploadId}] Background image drawn with dimensions:`, drawWidth, 'x', drawHeight);
 
-    const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
-    console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
-    
+    // מיקום התמונה עם התחשבות בהזזה של המשתמש
+    const x = offsetX + (data.imagePosition?.x || 0);
+    const y = offsetY + (data.imagePosition?.y || 0);
+
+    // ציור התמונה
+    ctx.drawImage(backgroundImage, x, y, renderWidth, renderHeight);
+
+    // הוספת השכבה השקופה
     ctx.save();
-    ctx.globalAlpha = overlayOpacity;
+    ctx.globalAlpha = data.overlayOpacity || 0.4;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
     ctx.restore();
-    
-    console.log(`[${uploadId}] Overlay added`);
 
+    // הגדרות טקסט
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // ציור הטקסטים
+    // כותרת
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
-      const headlineX = data.headlinePosition?.x !== undefined ? data.headlinePosition.x : data.width / 2;
-      const baseHeadlineY = data.headlinePosition?.y !== undefined ? data.headlinePosition.y : data.height * 0.4;
-      ctx.fillText(data.headline, headlineX, baseHeadlineY - 5, data.width * 0.8);
+      const headlineX = data.width / 2 + (data.headlinePosition?.x || 0);
+      const headlineY = data.height * 0.4 + (data.headlinePosition?.y || 0);
+      ctx.fillText(data.headline, headlineX, headlineY);
     }
 
+    // תיאור
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
-      const descX = data.descriptionPosition?.x !== undefined ? data.descriptionPosition.x : data.width / 2;
-      const baseDescY = data.descriptionPosition?.y !== undefined ? data.descriptionPosition.y : data.height * 0.5;
-      ctx.fillText(data.description, descX, baseDescY - 5, data.width * 0.8);
+      const descX = data.width / 2 + (data.descriptionPosition?.x || 0);
+      const descY = data.height * 0.5 + (data.descriptionPosition?.y || 0);
+      ctx.fillText(data.description, descX, descY);
     }
 
-    // ציור כפתור ה-CTA
+    // כפתור CTA
     if (data.cta_text) {
-      console.log(`[${uploadId}] Drawing CTA button with text:`, data.cta_text);
-      console.log(`[${uploadId}] Show arrow:`, data.showArrow);
-      
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
-      const ctaX = data.ctaPosition?.x !== undefined ? data.ctaPosition.x : (data.width - buttonWidth) / 2;
-      const ctaY = (data.ctaPosition?.y !== undefined ? data.ctaPosition.y : data.height * 0.65) - 3;
-      
+      const ctaX = (data.width - buttonWidth) / 2 + (data.ctaPosition?.x || 0);
+      const ctaY = data.height * 0.65 + (data.ctaPosition?.y || 0);
+
+      // רקע הכפתור
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
@@ -128,53 +123,55 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
-      // מרכוז הטקסט בכפתור
+      // טקסט הכפתור וחץ
       ctx.fillStyle = '#FFFFFF';
-      const ctaFontSize = Math.floor(buttonHeight * 0.6);
-      ctx.font = `bold ${ctaFontSize}px Arial`;
-
-      const textWidth = ctx.measureText(data.cta_text).width;
-      const arrowHeight = ctaFontSize * 0.5;
-      const arrowWidth = ctaFontSize * 0.3;
-      const spacing = ctaFontSize * 0.2;
+      const fontSize = Math.floor(buttonHeight * 0.6);
+      ctx.font = `bold ${fontSize}px Arial`;
       
-      let totalWidth;
-      if (data.showArrow !== false) {
-        totalWidth = textWidth + arrowWidth + spacing;
-      } else {
-        totalWidth = textWidth;
-      }
-
-      // חישוב מחדש של מיקום הטקסט כדי שיהיה במרכז
-      const startX = ctaX + (buttonWidth - totalWidth) / 2;
+      const textWidth = ctx.measureText(data.cta_text).width;
+      const arrowWidth = fontSize * 0.3;
+      const spacing = fontSize * 0.3;
+      
+      // מיקום מדויק של הטקסט והחץ
+      const contentWidth = data.showArrow !== false ? textWidth + arrowWidth + spacing : textWidth;
+      const startX = ctaX + (buttonWidth - contentWidth) / 2;
+      
+      // ציור הטקסט
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
-      // ציור החץ רק אם showArrow לא false
+      // ציור החץ
       if (data.showArrow !== false) {
-        console.log(`[${uploadId}] Drawing arrow`);
-        const arrowY = ctaY + buttonHeight/2;
         const arrowX = startX + textWidth + spacing;
-        
+        const arrowY = ctaY + buttonHeight/2;
+        const arrowSize = fontSize * 0.4;
+
         ctx.beginPath();
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        ctx.moveTo(arrowX + arrowWidth/2, arrowY - arrowHeight/2);
-        ctx.lineTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
-        ctx.lineTo(arrowX + arrowWidth, arrowY + arrowHeight/4);
-        ctx.moveTo(arrowX + arrowWidth/2, arrowY + arrowHeight/2);
-        ctx.lineTo(arrowX, arrowY + arrowHeight/4);
+        // קו אנכי של החץ
+        ctx.moveTo(arrowX, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2);
+        
+        // חץ העליון
+        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
+        ctx.lineTo(arrowX, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
+        
+        // חץ התחתון
+        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
         
         ctx.stroke();
       }
     }
 
-    console.log(`[${uploadId}] Converting canvas to buffer...`);
+    // המרה והעלאה
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
     const filePath = `generated/${timestamp}_ad.png`;
 
-    console.log(`[${uploadId}] Uploading to Supabase Storage...`);
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -189,34 +186,22 @@ serve(async (req) => {
       });
 
     if (uploadError) {
-      console.error(`[${uploadId}] Upload error:`, uploadError);
       throw new Error(`Failed to upload generated image: ${uploadError.message}`);
     }
 
-    console.log(`[${uploadId}] Upload successful`);
-
-    const { data: { publicUrl: generatedImageUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabase.storage
       .from('ad-images')
       .getPublicUrl(filePath);
 
-    console.log(`[${uploadId}] Generated image URL:`, generatedImageUrl);
-
     return new Response(
-      JSON.stringify({
-        imageUrl: generatedImageUrl,
-        success: true
-      }),
+      JSON.stringify({ imageUrl: publicUrl, success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
-    console.error(`[${uploadId}] Error generating ad:`, error);
-    
+    console.error(`[${uploadId}] Error:`, error);
     return new Response(
-      JSON.stringify({
-        error: error.message,
-        success: false
-      }),
+      JSON.stringify({ error: error.message, success: false }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
