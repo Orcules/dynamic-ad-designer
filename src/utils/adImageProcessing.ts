@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +38,12 @@ export const processImages = async (
         throw new Error('Preview element not found');
       }
 
+      // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
+      const ctaText = previewRef.current.querySelector('.ad-content button span span');
+      if (ctaText) {
+        ctaText.classList.add('translate-y-[-8px]');
+      }
+
       // קפיטורינג של התצוגה המקדימה
       const canvas = await html2canvas(previewRef.current, {
         useCORS: true,
@@ -47,6 +52,11 @@ export const processImages = async (
         scale: 2,
         logging: true,
       });
+
+      // הסרת המחלקה הזמנית אחרי הקפיטורינג
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
 
       // אפקט על התמונה אם יש
       const finalImageUrl = await applyImageEffect(canvas, adData.effect || 'none');

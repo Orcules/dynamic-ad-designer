@@ -50,7 +50,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         onMouseLeave={() => onButtonHover(false)}
       >
         <span className="inline-flex items-center gap-2">
-          <span className="translate-y-[-8px]">{ctaText}</span>
+          <span>{ctaText}</span>
           {showArrow && (
             <ArrowBigDown 
               className={cn(
