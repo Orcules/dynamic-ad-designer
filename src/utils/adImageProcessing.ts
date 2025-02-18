@@ -24,10 +24,10 @@ export const processImages = async (
   onAdGenerated: (adData: any) => void,
   handleSubmission: any,
   setIsGenerating: (value: boolean) => void,
-  positions: AdPositions // הוספנו את הפרמטר positions
+  positions: AdPositions
 ) => {
   console.log("Starting to process images:", images.length);
-  console.log("Using positions:", positions); // הוספנו לוג למיקומים
+  console.log("Using positions:", positions);
   let successCount = 0;
   
   for (let i = 0; i < images.length; i++) {
@@ -39,6 +39,7 @@ export const processImages = async (
         throw new Error('Preview element not found');
       }
 
+      // קפיטורינג של התצוגה המקדימה
       const canvas = await html2canvas(previewRef.current, {
         useCORS: true,
         allowTaint: true,
@@ -47,11 +48,14 @@ export const processImages = async (
         logging: true,
       });
 
+      // אפקט על התמונה אם יש
       const finalImageUrl = await applyImageEffect(canvas, adData.effect || 'none');
-
+      
+      // המרה של התצוגה המקדימה ל-blob
       const response = await fetch(finalImageUrl);
       const previewBlob = await response.blob();
 
+      // העלאת התצוגה המקדימה
       const previewPath = `previews/${crypto.randomUUID()}.jpg`;
       const { error: previewUploadError } = await supabase.storage
         .from('ad-images')
@@ -69,6 +73,7 @@ export const processImages = async (
         .from('ad-images')
         .getPublicUrl(previewPath);
 
+      // טיפול בתמונה המקורית
       let imageUrl: string;
       let imageBlob: Blob;
       
@@ -90,21 +95,38 @@ export const processImages = async (
 
       const { width, height } = getDimensions(adData.platform);
 
-      // שילוב המיקומים עם הנתונים
+      // העשרת הנתונים עם המיקומים העדכניים
       const enrichedData = {
         ...adData,
         width,
         height,
-        headlinePosition: positions.headlinePosition,
-        descriptionPosition: positions.descriptionPosition,
-        ctaPosition: positions.ctaPosition,
-        imagePosition: positions.imagePosition
+        headlinePosition: {
+          x: positions.headlinePosition.x || 0,
+          y: positions.headlinePosition.y || 0
+        },
+        descriptionPosition: {
+          x: positions.descriptionPosition.x || 0,
+          y: positions.descriptionPosition.y || 0
+        },
+        ctaPosition: {
+          x: positions.ctaPosition.x || 0,
+          y: positions.ctaPosition.y || 0
+        },
+        imagePosition: {
+          x: positions.imagePosition.x || 0,
+          y: positions.imagePosition.y || 0
+        },
+        showArrow: true // הוספנו אינדיקציה מפורשת להצגת החץ
       };
 
+      // הכנת הנתונים לשליחה
       const formData = new FormData();
       formData.append('image', imageBlob);
       formData.append('data', JSON.stringify(enrichedData));
 
+      console.log("Sending data to edge function:", enrichedData);
+
+      // שליחה לפונקציית Edge
       const { data: generatedData, error: generateError } = await supabase.functions
         .invoke('generate-ad', {
           body: formData
@@ -118,6 +140,7 @@ export const processImages = async (
         throw new Error('No generated image URL received');
       }
 
+      // שמירת המודעה שנוצרה
       const enrichedAdData = {
         name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
         headline: adData.headline,
@@ -137,7 +160,6 @@ export const processImages = async (
         width,
         height,
         status: 'completed',
-        // הוספת המיקומים לנתונים המועשרים
         headline_position_x: positions.headlinePosition.x,
         headline_position_y: positions.headlinePosition.y,
         description_position_x: positions.descriptionPosition.x,
@@ -145,7 +167,8 @@ export const processImages = async (
         cta_position_x: positions.ctaPosition.x,
         cta_position_y: positions.ctaPosition.y,
         image_position_x: positions.imagePosition.x,
-        image_position_y: positions.imagePosition.y
+        image_position_y: positions.imagePosition.y,
+        show_arrow: true
       };
 
       const { data: insertedAd, error: insertError } = await supabase
