@@ -43,20 +43,20 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         style={{
           ...buttonStyle,
           minWidth: '180px',
-          padding: '12px 24px',
+          padding: '8px 24px',
           fontSize: '14px',
           lineHeight: '1'
         }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
       >
-        <div className="relative z-10 flex items-center justify-center gap-2">
-          {ctaText}
+        <div className="relative z-10 flex items-center justify-center gap-1.5">
+          <span className="relative top-[1px]">{ctaText}</span>
           {showArrow && (
             <ArrowBigDown 
               className={cn(
                 "transition-transform duration-300",
-                isButtonHovered ? "-translate-y-0.5 translate-y-0.5" : ""
+                isButtonHovered ? "translate-y-0.5" : ""
               )}
               size={20}
               strokeWidth={2.5}

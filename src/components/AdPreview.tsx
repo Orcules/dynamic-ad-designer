@@ -153,10 +153,10 @@ export function AdPreview({
           {isCapturing ? 'Generating...' : 'Download Preview'}
         </Button>
       </CardHeader>
-      <CardContent className="flex justify-center p-4">
-        <div className="relative w-full max-w-[600px]">
+      <CardContent className="p-0">
+        <div className="relative w-full">
           <div
-            className="ad-content relative overflow-hidden rounded-lg shadow-2xl"
+            className="ad-content relative overflow-hidden"
             style={{
               aspectRatio: `${width} / ${height}`,
               width: '100%',
