@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -48,23 +49,30 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
-    console.log(`[${uploadId}] Loading background image... Size:`, imageArrayBuffer.byteLength);
+    console.log(`[${uploadId}] Loading background image...`);
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Background image loaded. Dimensions:`, backgroundImage.width, 'x', backgroundImage.height);
+
+    // תיקון עיוות התמונה - שימוש ב-object-fit: cover בצורה פרוגרמטית
+    const imageRatio = backgroundImage.width / backgroundImage.height;
+    const canvasRatio = data.width / data.height;
     
-    const scale = Math.max(
-      data.width / backgroundImage.width,
-      data.height / backgroundImage.height
-    );
+    let drawWidth = data.width;
+    let drawHeight = data.height;
     
-    const scaledWidth = backgroundImage.width * scale;
-    const scaledHeight = backgroundImage.height * scale;
+    if (imageRatio > canvasRatio) {
+      drawWidth = data.height * imageRatio;
+      drawHeight = data.height;
+    } else {
+      drawWidth = data.width;
+      drawHeight = data.width / imageRatio;
+    }
     
-    const x = (data.width - scaledWidth) / 2 + (data.imagePosition?.x || 0);
-    const y = (data.height - scaledHeight) / 2 + (data.imagePosition?.y || 0);
+    const x = (data.width - drawWidth) / 2 + (data.imagePosition?.x || 0);
+    const y = (data.height - drawHeight) / 2 + (data.imagePosition?.y || 0);
     
-    ctx.drawImage(backgroundImage, x, y, scaledWidth, scaledHeight);
-    console.log(`[${uploadId}] Background image drawn with scale:`, scale);
+    ctx.drawImage(backgroundImage, x, y, drawWidth, drawHeight);
+    console.log(`[${uploadId}] Background image drawn with dimensions:`, drawWidth, 'x', drawHeight);
 
     const overlayOpacity = data.overlayOpacity !== undefined ? data.overlayOpacity : 0.4;
     console.log(`[${uploadId}] Adding overlay with opacity:`, overlayOpacity);
@@ -80,6 +88,7 @@ serve(async (req) => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    // ציור הטקסטים
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -98,6 +107,7 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, baseDescY - 5, data.width * 0.8);
     }
 
+    // ציור כפתור ה-CTA
     if (data.cta_text) {
       console.log(`[${uploadId}] Drawing CTA button with text:`, data.cta_text);
       console.log(`[${uploadId}] Show arrow:`, data.showArrow);
@@ -118,6 +128,7 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
+      // מרכוז הטקסט בכפתור
       ctx.fillStyle = '#FFFFFF';
       const ctaFontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${ctaFontSize}px Arial`;
@@ -127,11 +138,18 @@ serve(async (req) => {
       const arrowWidth = ctaFontSize * 0.3;
       const spacing = ctaFontSize * 0.2;
       
-      const totalWidth = data.showArrow ? textWidth + arrowWidth + spacing : textWidth;
-      const startX = ctaX + (buttonWidth - totalWidth) / 2;
+      let totalWidth;
+      if (data.showArrow !== false) {
+        totalWidth = textWidth + arrowWidth + spacing;
+      } else {
+        totalWidth = textWidth;
+      }
 
+      // חישוב מחדש של מיקום הטקסט כדי שיהיה במרכז
+      const startX = ctaX + (buttonWidth - totalWidth) / 2;
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
+      // ציור החץ רק אם showArrow לא false
       if (data.showArrow !== false) {
         console.log(`[${uploadId}] Drawing arrow`);
         const arrowY = ctaY + buttonHeight/2;
