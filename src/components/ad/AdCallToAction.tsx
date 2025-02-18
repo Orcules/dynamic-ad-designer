@@ -39,33 +39,30 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       }}
     >
       <button 
-        className={cn(
-          "relative transform flex items-center justify-center gap-1",
-          "px-4 py-1.5 rounded-full transition-all duration-300"
-        )}
+        className="relative transform rounded-full transition-all duration-300 overflow-hidden"
         style={{
           ...buttonStyle,
           minWidth: '180px',
-          height: '40px',
+          padding: '12px 24px',
           fontSize: '14px',
-          lineHeight: '1',
-          whiteSpace: 'nowrap'
+          lineHeight: '1'
         }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
       >
-        <span className="relative z-10 flex items-center justify-center gap-2 h-full">
+        <div className="relative z-10 flex items-center justify-center gap-2">
           {ctaText}
           {showArrow && (
             <ArrowBigDown 
               className={cn(
-                "w-5 h-5 transition-transform duration-300",
-                isButtonHovered ? "translate-y-0.5" : ""
+                "transition-transform duration-300",
+                isButtonHovered ? "-translate-y-0.5 translate-y-0.5" : ""
               )}
+              size={20}
               strokeWidth={2.5}
             />
           )}
-        </span>
+        </div>
       </button>
     </div>
   );
