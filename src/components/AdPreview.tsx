@@ -100,6 +100,8 @@ export function AdPreview({
 
     try {
       setIsCapturing(true);
+      // ממתין לאנימציות שיסתיימו
+      await new Promise(resolve => setTimeout(resolve, 100));
       await imageGenerator.current.downloadImage('ad-preview.png');
     } catch (error) {
       console.error('Error generating image:', error);
