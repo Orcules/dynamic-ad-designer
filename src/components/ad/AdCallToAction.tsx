@@ -39,19 +39,19 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       }}
     >
       <button 
-        className="relative transform rounded-full transition-all duration-300 overflow-hidden"
+        className="relative transform rounded-full transition-all duration-300 overflow-hidden whitespace-nowrap"
         style={{
           ...buttonStyle,
           minWidth: '180px',
-          padding: '8px 24px',
+          padding: '10px 24px',
           fontSize: '14px',
-          lineHeight: '1'
+          lineHeight: '1.2'
         }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
       >
-        <div className="relative z-10 flex items-center justify-center gap-1.5">
-          <span className="relative top-[1px]">{ctaText}</span>
+        <div className="relative z-10 flex items-center justify-center gap-2">
+          <span className="relative">{ctaText}</span>
           {showArrow && (
             <ArrowBigDown 
               className={cn(

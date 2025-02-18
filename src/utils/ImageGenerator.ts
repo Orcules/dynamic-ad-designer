@@ -23,7 +23,7 @@ export class ImageGenerator {
 
     const options = {
       backgroundColor: null,
-      scale: this.pixelRatio * 2,
+      scale: 1,
       useCORS: true,
       allowTaint: true,
       logging: true,
@@ -56,7 +56,7 @@ export class ImageGenerator {
     console.log('Using dom-to-image fallback...');
     const config = {
       quality: 1.0,
-      scale: this.pixelRatio * 2,
+      scale: 1,
       width: this.previewElement.offsetWidth,
       height: this.previewElement.offsetHeight,
       style: {
@@ -67,7 +67,6 @@ export class ImageGenerator {
       }
     };
 
-    // נסה להשתמש ב-toPng
     try {
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log('Dom-to-image generated successfully');
