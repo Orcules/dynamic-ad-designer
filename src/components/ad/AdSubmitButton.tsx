@@ -1,14 +1,17 @@
+
 import React from 'react';
 import { Button } from "../ui/button";
 
 interface AdSubmitButtonProps {
   isGenerating: boolean;
   onClick: (e: React.MouseEvent) => void;
+  imageCount?: number;
 }
 
 export const AdSubmitButton: React.FC<AdSubmitButtonProps> = ({
   isGenerating,
-  onClick
+  onClick,
+  imageCount = 0
 }) => {
   return (
     <Button 
@@ -17,7 +20,7 @@ export const AdSubmitButton: React.FC<AdSubmitButtonProps> = ({
       disabled={isGenerating} 
       onClick={onClick}
     >
-      {isGenerating ? 'Generating Ad...' : 'Generate Ad'}
+      {isGenerating ? 'Generating Ads...' : `Generate ${imageCount > 1 ? `${imageCount} Ads` : 'Ad'}`}
     </Button>
   );
 };

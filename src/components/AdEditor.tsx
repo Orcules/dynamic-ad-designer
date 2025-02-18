@@ -88,10 +88,11 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         imagePosition
       };
       
-      const imagesToProcess = selectedImages.length > 0 ? selectedImages : imageUrls;
+      // עכשיו משתמשים בכל התמונות מהקרוסלה
+      const allImages = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
         adData,
-        imagesToProcess,
+        allImages,
         previewRef,
         onAdGenerated,
         handleSubmission,
@@ -101,7 +102,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
     } catch (error) {
       console.error('Error in handleSubmit:', error);
-      toast.error('Error generating ad');
+      toast.error('Error generating ads');
     } finally {
       setIsGenerating(false);
     }
@@ -176,6 +177,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         <AdSubmitButton
           isGenerating={isGenerating}
           onClick={handleSubmit}
+          imageCount={imageUrls.length}
         />
       </div>
     </div>
