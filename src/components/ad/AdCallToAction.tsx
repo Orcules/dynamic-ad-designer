@@ -29,39 +29,35 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
 
   return (
     <div 
-      className="w-full max-w-[90%] mx-auto flex justify-center items-center relative"
+      className="w-full max-w-[90%] mx-auto flex justify-center items-center"
       style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: 'transform 0.1s ease-out',
         position: 'absolute',
-        zIndex: 1,
-        bottom: '10%',
+        bottom: '15%',
         left: '50%',
-        marginLeft: '-45%'
+        transform: `translate(-50%, ${position.y}px)`,
+        zIndex: 10
       }}
     >
       <button 
-        className="relative transform flex items-center justify-center gap-2 mx-auto w-auto min-w-[200px]"
+        className={cn(
+          "relative transform flex items-center justify-center gap-2 mx-auto",
+          "px-6 py-2 rounded-full transition-all duration-300"
+        )}
         style={{
           ...buttonStyle,
-          fontSize: 'clamp(0.75rem, 1.5vw, 1rem)',
-          padding: 'clamp(0.5rem, 1.5vw, 0.75rem) clamp(1.5rem, 3vw, 2rem)',
-          whiteSpace: 'nowrap',
-          overflow: 'visible',
-          display: 'inline-flex',
-          alignItems: 'center',
-          lineHeight: '1'
+          minWidth: '200px',
+          fontSize: 'clamp(0.75rem, 1.5vw, 1rem)'
         }}
         onMouseEnter={() => onButtonHover(true)}
         onMouseLeave={() => onButtonHover(false)}
       >
-        <span className="block whitespace-nowrap">
+        <span className="relative z-10">
           {ctaText}
         </span>
         {showArrow && (
           <ArrowBigDown 
             className={cn(
-              "w-4 h-4 transition-transform duration-300 flex-shrink-0",
+              "w-4 h-4 transition-transform duration-300 relative z-10",
               isButtonHovered ? "translate-y-1" : ""
             )}
           />

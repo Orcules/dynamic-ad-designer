@@ -166,7 +166,7 @@ export function AdPreview({
               onPositionChange={() => {}}
             />
             <div
-              className="absolute inset-0 flex flex-col justify-between pointer-events-none"
+              className="absolute inset-0 flex flex-col justify-between"
               style={gradientStyle}
             >
               <AdContent
