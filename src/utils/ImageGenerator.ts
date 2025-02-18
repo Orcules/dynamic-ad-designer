@@ -21,6 +21,12 @@ export class ImageGenerator {
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
 
+    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
+    const ctaText = this.previewElement.querySelector('button span span');
+    if (ctaText) {
+      ctaText.classList.add('translate-y-[-8px]');
+    }
+
     const options = {
       backgroundColor: null,
       scale: 1,
@@ -41,9 +47,21 @@ export class ImageGenerator {
       console.log('Using html2canvas...');
       const canvas = await html2canvas(this.previewElement, options);
       console.log('Canvas generated successfully');
+
+      // הסרת המחלקה הזמנית אחרי הקפיטורינג
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       return canvas.toDataURL('image/png', 1.0);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
+      
+      // הסרת המחלקה הזמנית במקרה של שגיאה
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       return this.fallbackCapture();
     }
   }
@@ -51,6 +69,12 @@ export class ImageGenerator {
   private async fallbackCapture(): Promise<string> {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
+    }
+
+    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
+    const ctaText = this.previewElement.querySelector('button span span');
+    if (ctaText) {
+      ctaText.classList.add('translate-y-[-8px]');
     }
 
     console.log('Using dom-to-image fallback...');
@@ -70,8 +94,19 @@ export class ImageGenerator {
     try {
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log('Dom-to-image generated successfully');
+      
+      // הסרת המחלקה הזמנית אחרי הקפיטורינג
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       return dataUrl;
     } catch (error) {
+      // הסרת המחלקה הזמנית במקרה של שגיאה
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       console.error('Fallback capture failed:', error);
       throw error;
     }
