@@ -4,11 +4,9 @@ import html2canvas from 'html2canvas';
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
-  private pixelRatio: number;
 
   constructor(previewSelector = '.ad-content') {
     this.previewElement = document.querySelector(previewSelector);
-    this.pixelRatio = window.devicePixelRatio || 1;
   }
 
   private async captureElement(): Promise<string> {
@@ -29,7 +27,7 @@ export class ImageGenerator {
 
     const options = {
       backgroundColor: null,
-      scale: this.pixelRatio,
+      scale: 1,
       useCORS: true,
       allowTaint: true,
       logging: true,
@@ -80,7 +78,7 @@ export class ImageGenerator {
     console.log('Using dom-to-image fallback...');
     const config = {
       quality: 1.0,
-      scale: this.pixelRatio,
+      scale: 1,
       width: this.previewElement.offsetWidth,
       height: this.previewElement.offsetHeight,
       style: {
