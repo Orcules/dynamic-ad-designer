@@ -29,7 +29,7 @@ export class ImageGenerator {
 
     const options = {
       backgroundColor: null,
-      scale: 1,
+      scale: this.pixelRatio,
       useCORS: true,
       allowTaint: true,
       logging: true,
@@ -80,7 +80,7 @@ export class ImageGenerator {
     console.log('Using dom-to-image fallback...');
     const config = {
       quality: 1.0,
-      scale: 1,
+      scale: this.pixelRatio,
       width: this.previewElement.offsetWidth,
       height: this.previewElement.offsetHeight,
       style: {
