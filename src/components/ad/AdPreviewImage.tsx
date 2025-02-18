@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface Position {
@@ -19,15 +20,17 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   if (!imageUrl) return null;
 
   return (
-    <img
-      src={imageUrl}
-      alt="Ad preview"
-      className="absolute inset-0 h-full w-full object-cover"
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        transition: 'transform 0.1s ease-out'
-      }}
-      crossOrigin="anonymous"
-    />
+    <div className="absolute inset-0 w-full h-full overflow-hidden">
+      <img
+        src={imageUrl}
+        alt="Ad preview"
+        className="absolute w-[120%] h-[120%] object-cover"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          transition: 'transform 0.1s ease-out'
+        }}
+        crossOrigin="anonymous"
+      />
+    </div>
   );
 };
