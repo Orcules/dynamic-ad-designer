@@ -34,19 +34,17 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: true,
-    target: 'es2015', // Ensure broader browser compatibility
+    target: 'es2015',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
         },
-        // Prevent excessive code splitting
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]'
       },
     },
-    // Add polyfills and compatibility settings
     polyfillDynamicImport: true,
     minify: 'esbuild',
     cssCodeSplit: true,
