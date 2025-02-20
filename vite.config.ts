@@ -34,12 +34,31 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: true,
+    target: 'es2015', // Ensure broader browser compatibility
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
         },
+        // Prevent excessive code splitting
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       },
     },
+    // Add polyfills and compatibility settings
+    polyfillDynamicImport: true,
+    minify: 'esbuild',
+    cssCodeSplit: true,
+    commonjsOptions: {
+      include: [/node_modules/],
+      extensions: ['.js', '.cjs', '.jsx', '.tsx', '.ts'],
+      strictRequires: true,
+      transformMixedEsModules: true,
+    },
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    exclude: [],
   },
 }));
