@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getLanguageFonts } from './LanguageSelector';
@@ -23,6 +24,23 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
       onChange(fonts[0].url);
     }
   }, [language, value, onChange, fonts]);
+
+  // Load fonts only when they're selected
+  useEffect(() => {
+    if (!value) return;
+
+    const link = document.createElement('link');
+    link.href = value;
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+    link.crossOrigin = 'anonymous';
+    link.setAttribute('as', 'style');
+    document.head.appendChild(link);
+
+    return () => {
+      document.head.removeChild(link);
+    };
+  }, [value]);
 
   return (
     <div className="space-y-2">
