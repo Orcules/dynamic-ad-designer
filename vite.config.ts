@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    cors: true, // Enable CORS for development
   },
   plugins: [
     react(),
@@ -28,5 +29,8 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
+  },
+  optimizeDeps: {
+    exclude: ['firebase', 'firestore'], // Exclude problematic dependencies
   },
 }));

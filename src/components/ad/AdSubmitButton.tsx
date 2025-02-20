@@ -16,16 +16,10 @@ export const AdSubmitButton: React.FC<AdSubmitButtonProps> = ({
 }) => {
   const handleClick = async (e: React.MouseEvent) => {
     e.preventDefault();
-    const imageGenerator = new ImageGenerator('.ad-content');
     try {
-      // קודם נשמור את התמונה הנוכחית
-      const currentImageUrl = await imageGenerator.getImageUrl();
-      
-      // נקרא לפונקציה המקורית שמעדכנת את הסטייט ומבצעת את השמירה בדאטאבייס
       onClick(e);
-      
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Error in submit button:', error);
     }
   };
 
