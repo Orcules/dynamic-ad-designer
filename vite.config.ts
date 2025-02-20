@@ -14,6 +14,13 @@ export default defineConfig(({ mode }) => ({
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
       "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept",
     },
+    proxy: {
+      '/api': {
+        target: 'https://lovable.dev',
+        changeOrigin: true,
+        secure: false,
+      }
+    }
   },
   plugins: [
     react(),
