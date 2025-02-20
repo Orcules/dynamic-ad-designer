@@ -25,25 +25,24 @@ export class ImageGenerator {
       ctaText.classList.add('translate-y-[-8px]');
     }
 
-    const options = {
-      backgroundColor: null,
-      scale: 1,
-      useCORS: true,
-      allowTaint: true,
-      logging: true,
-      width: this.previewElement.offsetWidth,
-      height: this.previewElement.offsetHeight,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: this.previewElement.offsetWidth,
-      windowHeight: this.previewElement.offsetHeight,
-      x: 0,
-      y: 0
-    };
-
     try {
       console.log('Using html2canvas...');
-      const canvas = await html2canvas(this.previewElement, options);
+      const canvas = await html2canvas(this.previewElement, {
+        backgroundColor: null,
+        scale: 1,
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        width: this.previewElement.offsetWidth,
+        height: this.previewElement.offsetHeight,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: this.previewElement.offsetWidth,
+        windowHeight: this.previewElement.offsetHeight,
+        x: 0,
+        y: 0
+      });
+
       console.log('Canvas generated successfully');
 
       // הסרת המחלקה הזמנית אחרי הקפיטורינג
@@ -51,7 +50,9 @@ export class ImageGenerator {
         ctaText.classList.remove('translate-y-[-8px]');
       }
 
-      return canvas.toDataURL('image/png', 1.0);
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      return dataUrl;
+
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
@@ -69,42 +70,34 @@ export class ImageGenerator {
       throw new Error('Preview element not found');
     }
 
-    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
     const ctaText = this.previewElement.querySelector('button span span');
     if (ctaText) {
       ctaText.classList.add('translate-y-[-8px]');
     }
 
-    console.log('Using dom-to-image fallback...');
-    const config = {
-      quality: 1.0,
-      scale: 1,
-      width: this.previewElement.offsetWidth,
-      height: this.previewElement.offsetHeight,
-      style: {
-        transform: 'none',
-        transformOrigin: 'top left',
-        width: '100%',
-        height: '100%'
-      }
-    };
-
     try {
-      const dataUrl = await domtoimage.toPng(this.previewElement, config);
-      console.log('Dom-to-image generated successfully');
-      
-      // הסרת המחלקה הזמנית אחרי הקפיטורינג
+      const dataUrl = await domtoimage.toPng(this.previewElement, {
+        quality: 1.0,
+        scale: 1,
+        width: this.previewElement.offsetWidth,
+        height: this.previewElement.offsetHeight,
+        style: {
+          transform: 'none',
+          transformOrigin: 'top left',
+          width: '100%',
+          height: '100%'
+        }
+      });
+
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
       }
 
       return dataUrl;
     } catch (error) {
-      // הסרת המחלקה הזמנית במקרה של שגיאה
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
       }
-
       console.error('Fallback capture failed:', error);
       throw error;
     }
@@ -129,9 +122,10 @@ export class ImageGenerator {
     }
   }
 
-  async getImageUrl() {
+  async getImageUrl(): Promise<string> {
     try {
-      return await this.captureElement();
+      const dataUrl = await this.captureElement();
+      return dataUrl;
     } catch (error) {
       console.error('Error getting image URL:', error);
       throw error;
