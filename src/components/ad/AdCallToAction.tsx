@@ -29,7 +29,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
 
   return (
     <div 
-      className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] flex justify-center items-center"
+      className="absolute bottom-[15%] left-1/2 -translate-x-1/2 w-full max-w-[90%] flex justify-center items-center"
       style={{
         transform: `translate(-50%, ${position.y}px)`,
         zIndex: 10
@@ -40,9 +40,9 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         style={{
           ...buttonStyle,
           minWidth: '180px',
-          padding: '12px 24px',
-          fontSize: '14px',
-          lineHeight: '1',
+          padding: '16px 32px',
+          fontSize: '1rem',
+          lineHeight: '1.2',
           backdropFilter: 'blur(5px)',
           WebkitBackdropFilter: 'blur(5px)'
         }}
