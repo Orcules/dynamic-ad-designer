@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ export const AdDescription: React.FC<AdDescriptionProps> = ({
         className="text-center leading-tight break-words"
         style={{
           ...descriptionStyle,
-          fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)',
+          fontSize: 'clamp(1rem, 3vw, 1.5rem)',
           maxWidth: '100%',
           overflowWrap: 'break-word',
           wordWrap: 'break-word',

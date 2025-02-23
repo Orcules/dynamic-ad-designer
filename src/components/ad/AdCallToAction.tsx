@@ -39,10 +39,10 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         className="relative transform rounded-full transition-all duration-300 overflow-hidden whitespace-nowrap inline-flex items-center justify-center"
         style={{
           ...buttonStyle,
-          minWidth: '180px',
-          padding: '12px 24px',
-          fontSize: '14px',
-          lineHeight: '1',
+          minWidth: '200px',
+          padding: '16px 32px',
+          fontSize: '1.125rem',
+          lineHeight: '1.2',
           backdropFilter: 'blur(5px)',
           WebkitBackdropFilter: 'blur(5px)'
         }}
@@ -57,7 +57,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
                 "transition-transform duration-300 inline-block",
                 isButtonHovered ? "translate-y-0.5" : ""
               )}
-              size={20}
+              size={24}
               strokeWidth={2.5}
             />
           )}

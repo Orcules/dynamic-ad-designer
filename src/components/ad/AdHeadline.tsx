@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { cn } from "@/lib/utils";
 
@@ -36,7 +37,7 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
         className="text-center leading-tight break-words"
         style={{
           ...textStyle,
-          fontSize: 'clamp(1.25rem, 4vw, 2.5rem)',
+          fontSize: 'clamp(1.75rem, 5vw, 3rem)',
           maxWidth: '100%',
           overflowWrap: 'break-word',
           wordWrap: 'break-word',
