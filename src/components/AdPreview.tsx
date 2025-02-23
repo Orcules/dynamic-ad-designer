@@ -86,7 +86,6 @@ export function AdPreview({
         const link = document.createElement('link');
         link.href = fontUrl;
         link.rel = 'stylesheet';
-        link.crossOrigin = 'anonymous';
         document.head.appendChild(link);
 
         return () => {
@@ -101,6 +100,7 @@ export function AdPreview({
 
     try {
       setIsCapturing(true);
+      // ממתין לאנימציות שיסתיימו
       await new Promise(resolve => setTimeout(resolve, 100));
       await imageGenerator.current.downloadImage('ad-preview.png');
     } catch (error) {
