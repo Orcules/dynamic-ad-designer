@@ -40,31 +40,35 @@ export class ImageGenerator {
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
 
-    const { width, height, scale } = this.getElementDimensions();
+    // מעתיק את האלמנט כדי לא לשנות את המקורי
+    const clonedElement = this.previewElement.cloneNode(true) as HTMLElement;
+    document.body.appendChild(clonedElement);
+    clonedElement.style.position = 'absolute';
+    clonedElement.style.left = '-9999px';
+    clonedElement.style.top = '-9999px';
 
-    const options = {
-      backgroundColor: null,
-      scale: scale,
-      useCORS: true,
-      allowTaint: true,
-      logging: true,
-      width: width,
-      height: height,
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0,
-      windowWidth: width,
-      windowHeight: height
-    };
+    const { width, height, scale } = this.getElementDimensions();
 
     try {
       console.log('Using html2canvas with dimensions:', { width, height, scale });
-      const canvas = await html2canvas(this.previewElement, options);
+      const canvas = await html2canvas(clonedElement, {
+        backgroundColor: null,
+        scale: scale,
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        width: width,
+        height: height,
+        scrollX: -window.scrollX,
+        scrollY: -window.scrollY
+      });
+      
+      document.body.removeChild(clonedElement);
       console.log('Canvas generated successfully');
       return canvas.toDataURL('image/png', 1.0);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
+      document.body.removeChild(clonedElement);
       return this.fallbackCapture();
     }
   }
@@ -74,26 +78,35 @@ export class ImageGenerator {
       throw new Error('Preview element not found');
     }
 
+    // מעתיק את האלמנט כדי לא לשנות את המקורי
+    const clonedElement = this.previewElement.cloneNode(true) as HTMLElement;
+    document.body.appendChild(clonedElement);
+    clonedElement.style.position = 'absolute';
+    clonedElement.style.left = '-9999px';
+    clonedElement.style.top = '-9999px';
+
     const { width, height, scale } = this.getElementDimensions();
 
     console.log('Using dom-to-image fallback with dimensions:', { width, height, scale });
-    const config = {
-      quality: 1.0,
-      width: width,
-      height: height,
-      style: {
-        transform: `scale(${scale})`,
-        transformOrigin: 'top left',
-        width: `${width}px`,
-        height: `${height}px`
-      }
-    };
-
+    
     try {
-      const dataUrl = await domtoimage.toPng(this.previewElement, config);
+      const dataUrl = await domtoimage.toPng(clonedElement, {
+        quality: 1.0,
+        width: width,
+        height: height,
+        style: {
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          width: `${width}px`,
+          height: `${height}px`
+        }
+      });
+      
+      document.body.removeChild(clonedElement);
       console.log('Dom-to-image generated successfully');
       return dataUrl;
     } catch (error) {
+      document.body.removeChild(clonedElement);
       console.error('Fallback capture failed:', error);
       throw error;
     }
