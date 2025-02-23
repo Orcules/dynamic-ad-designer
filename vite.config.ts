@@ -24,8 +24,7 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
@@ -34,29 +33,12 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     sourcemap: true,
-    target: 'es2015',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-        },
-        chunkFileNames: 'assets/[name]-[hash].js',
-        entryFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      },
-    },
-    polyfillDynamicImport: true,
-    minify: 'esbuild',
-    cssCodeSplit: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      extensions: ['.js', '.cjs', '.jsx', '.tsx', '.ts'],
-      strictRequires: true,
-      transformMixedEsModules: true,
-    },
-  },
-  optimizeDeps: {
-    include: ['react', 'react-dom'],
-    exclude: [],
-  },
+        }
+      }
+    }
+  }
 }));
