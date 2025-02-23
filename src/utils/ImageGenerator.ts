@@ -9,27 +9,6 @@ export class ImageGenerator {
     this.previewElement = document.querySelector(previewSelector);
   }
 
-  private getElementDimensions() {
-    if (!this.previewElement) {
-      throw new Error('Preview element not found');
-    }
-    
-    const rect = this.previewElement.getBoundingClientRect();
-    const computedStyle = window.getComputedStyle(this.previewElement);
-    const aspectRatio = computedStyle.aspectRatio || '1.91';
-    const [widthRatio, heightRatio] = aspectRatio.split('/').map(Number);
-    
-    // קובע את הגודל הרצוי לפי היחס המקורי
-    const targetWidth = 1200; // רוחב קבוע
-    const targetHeight = Math.round(targetWidth * (heightRatio / widthRatio));
-    
-    return {
-      width: targetWidth,
-      height: targetHeight,
-      scale: targetWidth / rect.width
-    };
-  }
-
   private async captureElement(): Promise<string> {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
@@ -40,35 +19,47 @@ export class ImageGenerator {
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
 
-    // מעתיק את האלמנט כדי לא לשנות את המקורי
-    const clonedElement = this.previewElement.cloneNode(true) as HTMLElement;
-    document.body.appendChild(clonedElement);
-    clonedElement.style.position = 'absolute';
-    clonedElement.style.left = '-9999px';
-    clonedElement.style.top = '-9999px';
+    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
+    const ctaText = this.previewElement.querySelector('button span span');
+    if (ctaText) {
+      ctaText.classList.add('translate-y-[-8px]');
+    }
 
-    const { width, height, scale } = this.getElementDimensions();
+    const options = {
+      backgroundColor: null,
+      scale: 1,
+      useCORS: true,
+      allowTaint: true,
+      logging: true,
+      width: this.previewElement.offsetWidth,
+      height: this.previewElement.offsetHeight,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: this.previewElement.offsetWidth,
+      windowHeight: this.previewElement.offsetHeight,
+      x: 0,
+      y: 0
+    };
 
     try {
-      console.log('Using html2canvas with dimensions:', { width, height, scale });
-      const canvas = await html2canvas(clonedElement, {
-        backgroundColor: null,
-        scale: scale,
-        useCORS: true,
-        allowTaint: true,
-        logging: true,
-        width: width,
-        height: height,
-        scrollX: -window.scrollX,
-        scrollY: -window.scrollY
-      });
-      
-      document.body.removeChild(clonedElement);
+      console.log('Using html2canvas...');
+      const canvas = await html2canvas(this.previewElement, options);
       console.log('Canvas generated successfully');
+
+      // הסרת המחלקה הזמנית אחרי הקפיטורינג
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       return canvas.toDataURL('image/png', 1.0);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
-      document.body.removeChild(clonedElement);
+      
+      // הסרת המחלקה הזמנית במקרה של שגיאה
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       return this.fallbackCapture();
     }
   }
@@ -78,35 +69,42 @@ export class ImageGenerator {
       throw new Error('Preview element not found');
     }
 
-    // מעתיק את האלמנט כדי לא לשנות את המקורי
-    const clonedElement = this.previewElement.cloneNode(true) as HTMLElement;
-    document.body.appendChild(clonedElement);
-    clonedElement.style.position = 'absolute';
-    clonedElement.style.left = '-9999px';
-    clonedElement.style.top = '-9999px';
+    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
+    const ctaText = this.previewElement.querySelector('button span span');
+    if (ctaText) {
+      ctaText.classList.add('translate-y-[-8px]');
+    }
 
-    const { width, height, scale } = this.getElementDimensions();
+    console.log('Using dom-to-image fallback...');
+    const config = {
+      quality: 1.0,
+      scale: 1,
+      width: this.previewElement.offsetWidth,
+      height: this.previewElement.offsetHeight,
+      style: {
+        transform: 'none',
+        transformOrigin: 'top left',
+        width: '100%',
+        height: '100%'
+      }
+    };
 
-    console.log('Using dom-to-image fallback with dimensions:', { width, height, scale });
-    
     try {
-      const dataUrl = await domtoimage.toPng(clonedElement, {
-        quality: 1.0,
-        width: width,
-        height: height,
-        style: {
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          width: `${width}px`,
-          height: `${height}px`
-        }
-      });
-      
-      document.body.removeChild(clonedElement);
+      const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log('Dom-to-image generated successfully');
+      
+      // הסרת המחלקה הזמנית אחרי הקפיטורינג
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       return dataUrl;
     } catch (error) {
-      document.body.removeChild(clonedElement);
+      // הסרת המחלקה הזמנית במקרה של שגיאה
+      if (ctaText) {
+        ctaText.classList.remove('translate-y-[-8px]');
+      }
+
       console.error('Fallback capture failed:', error);
       throw error;
     }
