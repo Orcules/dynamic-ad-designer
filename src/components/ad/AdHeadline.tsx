@@ -28,7 +28,7 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
         transition: 'transform 0.1s ease-out',
         position: 'absolute',
         zIndex: 3,
-        top: '20%',
+        top: '10%',
         left: '50%',
         marginLeft: '-45%'
       }}
@@ -37,7 +37,7 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
         className="text-center leading-tight break-words"
         style={{
           ...textStyle,
-          fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+          fontSize: 'clamp(1.25rem, 4vw, 2.5rem)',
           maxWidth: '100%',
           overflowWrap: 'break-word',
           wordWrap: 'break-word',
