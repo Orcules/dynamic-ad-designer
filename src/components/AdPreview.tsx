@@ -156,7 +156,7 @@ export function AdPreview({
       <CardContent className="p-0">
         <div className="relative w-full">
           <div
-            className="ad-content relative overflow-hidden"
+            className="ad-content relative overflow-hidden bg-black"
             style={{
               aspectRatio: `${width} / ${height}`,
               width: '100%',
