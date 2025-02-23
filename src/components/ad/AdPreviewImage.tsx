@@ -20,17 +20,21 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   if (!imageUrl) return null;
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden bg-black">
-      <img
-        src={imageUrl}
-        alt="Ad preview"
-        className="absolute object-cover w-full h-full"
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-          transition: 'transform 0.1s ease-out'
-        }}
-        crossOrigin="anonymous"
-      />
+    <div className="absolute inset-0 w-full h-full overflow-hidden">
+      <div className="relative w-full h-full bg-black">
+        <img
+          src={imageUrl}
+          alt="Ad preview"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{
+            transform: `translate(${position.x}px, ${position.y}px)`,
+            transition: 'transform 0.1s ease-out',
+            objectFit: 'cover',
+            objectPosition: 'center'
+          }}
+          crossOrigin="anonymous"
+        />
+      </div>
     </div>
   );
 };
