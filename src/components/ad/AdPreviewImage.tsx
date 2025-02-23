@@ -20,7 +20,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   if (!imageUrl) return null;
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden">
+    <div className="absolute inset-0 w-full h-full overflow-hidden bg-black">
       <img
         src={imageUrl}
         alt="Ad preview"
