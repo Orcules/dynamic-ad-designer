@@ -24,7 +24,7 @@ export class ImageGenerator {
       ctaText.classList.add('translate-y-[-8px]');
     }
 
-    const options: html2canvas.Options = {
+    const options: Partial<html2canvas.Options> = {
       backgroundColor: null,
       scale: 1,
       useCORS: true,
