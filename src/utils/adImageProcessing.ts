@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageGenerator } from "./ImageGenerator";
+import { Logger } from "./utils/logger";
 
 interface Position {
   x: number;
@@ -25,8 +26,9 @@ export const processImages = async (
   setIsGenerating: (value: boolean) => void,
   positions: AdPositions
 ) => {
-  console.log("Starting to process images:", images.length);
-  console.log("Using positions:", positions);
+  Logger.info(`Starting to process ${images.length} images`);
+  Logger.info(`Using positions: ${JSON.stringify(positions)}`);
+  
   let successCount = 0;
   let retryCount = 0;
   const maxRetries = 3;
@@ -34,30 +36,37 @@ export const processImages = async (
   
   for (let i = 0; i < images.length; i++) {
     const currentImage = images[i];
-    console.log(`Processing image ${i + 1}/${images.length}`);
+    Logger.info(`Processing image ${i + 1}/${images.length}`);
 
     while (retryCount < maxRetries) {
       try {
         if (!previewRef.current) {
+          Logger.error('Preview element not found');
           throw new Error('Preview element not found');
         }
 
         // Capture preview
+        Logger.info('Generating preview image...');
         const previewUrl = await imageGenerator.getImageUrl();
-        console.log('Generated preview URL:', previewUrl);
+        Logger.info('Preview URL generated successfully');
 
         // Convert base64 URL to file
+        Logger.info('Converting preview to file...');
         const response = await fetch(previewUrl);
         const blob = await response.blob();
         const previewFile = new File([blob], `preview_${i + 1}.png`, { type: 'image/png' });
+        Logger.info('Preview file created successfully');
 
         // Upload to storage with retry mechanism
+        Logger.info('Uploading to storage...');
         const publicUrl = await handleSubmission(previewFile);
-        console.log('Uploaded to storage:', publicUrl);
+        Logger.info(`Upload successful, public URL: ${publicUrl}`);
 
         const { width, height } = getDimensions(adData.platform);
+        Logger.info(`Using dimensions: ${width}x${height} for platform ${adData.platform}`);
 
         // Add ad to table with retry mechanism
+        Logger.info('Inserting ad data into database...');
         const { data: insertedAd, error: insertError } = await supabase
           .from('generated_ads')
           .insert([{
@@ -83,25 +92,29 @@ export const processImages = async (
           .single();
 
         if (insertError) {
+          Logger.error(`Database insertion error: ${insertError.message}`);
           throw insertError;
         }
 
         if (insertedAd) {
           successCount++;
+          Logger.info(`Successfully inserted ad ${i + 1} with ID: ${insertedAd.id}`);
           onAdGenerated(insertedAd);
-          console.log(`Successfully inserted ad ${i + 1}`);
           break; // Break the retry loop on success
         }
 
       } catch (error) {
-        console.error(`Error processing image ${i + 1} (attempt ${retryCount + 1}):`, error);
+        Logger.error(`Error processing image ${i + 1} (attempt ${retryCount + 1}): ${error instanceof Error ? error.message : String(error)}`);
         retryCount++;
         
         if (retryCount === maxRetries) {
+          Logger.error(`Failed to process image ${i + 1} after ${maxRetries} attempts`);
           toast.error(`Failed to process image ${i + 1} after ${maxRetries} attempts`);
         } else {
           // Wait before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+          const backoffTime = Math.pow(2, retryCount) * 1000;
+          Logger.info(`Retrying in ${backoffTime}ms...`);
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
           continue;
         }
       }
@@ -110,8 +123,10 @@ export const processImages = async (
   }
   
   if (successCount > 0) {
+    Logger.info(`Processing completed. Successfully created ${successCount} ads`);
     toast.success(`Successfully created ${successCount} ads!`);
   } else {
+    Logger.error('No ads were created successfully');
     toast.error('No ads were created. Please check the errors and try again.');
   }
 };
