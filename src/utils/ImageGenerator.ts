@@ -14,7 +14,7 @@ export class ImageGenerator {
 
     const images = Array.from(this.previewElement.getElementsByTagName('img'));
     const imagePromises = images.map(img => {
-      if (img.complete) return Promise.resolve<void>();
+      if (img.complete) return Promise.resolve(undefined);
       
       return new Promise<void>((resolve) => {
         img.onload = () => resolve();
