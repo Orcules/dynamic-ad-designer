@@ -58,10 +58,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handleNextPreview
   } = useAdImageHandler({
     onImageChange: (urls) => {
-      Logger.info("Images changed:", urls);
+      Logger.info(`Images changed: ${JSON.stringify(urls)}`);
     },
     onCurrentIndexChange: (index) => {
-      Logger.info("Current index changed:", index);
+      Logger.info(`Current index changed: ${index}`);
     }
   });
 
@@ -102,8 +102,18 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           
           const { width, height } = getDimensions(adData.platform);
           
-          // Handle image upload
-          const uploadedUrl = await handleSubmission(currentImage);
+          // Handle image upload - convert URL to File if needed
+          let imageToUpload: File;
+          if (typeof currentImage === 'string') {
+            // Create a File object from the URL
+            const response = await fetch(currentImage);
+            const blob = await response.blob();
+            imageToUpload = new File([blob], 'image.jpg', { type: blob.type });
+          } else {
+            imageToUpload = currentImage;
+          }
+          
+          const uploadedUrl = await handleSubmission(imageToUpload);
           
           if (uploadedUrl) {
             onAdGenerated({
@@ -129,13 +139,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
           }
         } catch (error) {
-          Logger.error(`Error processing image ${i + 1}: ${error}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          Logger.error(`Error processing image ${i + 1}: ${errorMessage}`);
           toast.error(`Failed to process image ${i + 1}`);
         }
       }
 
     } catch (error) {
-      Logger.error('Error in handleSubmit:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Logger.error(`Error in handleSubmit: ${errorMessage}`);
       toast.error('Error generating ads');
     } finally {
       setIsGenerating(false);
