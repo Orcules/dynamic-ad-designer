@@ -15,12 +15,22 @@ export class Logger {
     switch (type) {
       case 'error':
         console.error(logEntry);
+        // Send error to monitoring service if needed
         break;
       case 'warn':
         console.warn(logEntry);
         break;
       default:
         console.log(logEntry);
+    }
+
+    // If it's an error, also log the stack trace if available
+    if (type === 'error' && Error.captureStackTrace) {
+      const stack = new Error().stack;
+      if (stack) {
+        const stackLogEntry = `[${timestamp}] [STACK] ${stack}\n`;
+        localStorage.setItem('applicationLogs', localStorage.getItem('applicationLogs') + stackLogEntry);
+      }
     }
   }
 
