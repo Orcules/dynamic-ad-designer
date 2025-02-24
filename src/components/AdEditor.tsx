@@ -94,7 +94,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       
       const allImages = selectedImages.length > 0 ? selectedImages : imageUrls;
       
-      // Process images directly here instead of importing processImages
       for (let i = 0; i < allImages.length; i++) {
         try {
           const currentImage = allImages[i];
@@ -102,42 +101,50 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           
           const { width, height } = getDimensions(adData.platform);
           
-          // Handle image upload - convert URL to File if needed
+          // Create a File object from URL if needed
           let imageToUpload: File;
           if (typeof currentImage === 'string') {
-            // Create a File object from the URL
-            const response = await fetch(currentImage);
-            const blob = await response.blob();
-            imageToUpload = new File([blob], 'image.jpg', { type: blob.type });
+            try {
+              const response = await fetch(currentImage);
+              if (!response.ok) throw new Error('Failed to fetch image');
+              const blob = await response.blob();
+              imageToUpload = new File([blob], `image-${i + 1}.${blob.type.split('/')[1] || 'jpg'}`, { 
+                type: blob.type || 'image/jpeg' 
+              });
+            } catch (fetchError) {
+              throw new Error(`Failed to process image URL: ${fetchError.message}`);
+            }
           } else {
             imageToUpload = currentImage;
           }
           
           const uploadedUrl = await handleSubmission(imageToUpload);
           
-          if (uploadedUrl) {
-            onAdGenerated({
-              name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
-              headline: adData.headline,
-              description: adData.description,
-              cta_text: adData.cta_text,
-              font_url: adData.font_url,
-              platform: adData.platform,
-              template_style: adData.template_style,
-              accent_color: adData.accent_color,
-              cta_color: adData.cta_color,
-              overlay_color: adData.overlay_color,
-              text_color: adData.text_color,
-              description_color: adData.description_color,
-              image_url: typeof currentImage === 'string' ? currentImage : uploadedUrl,
-              preview_url: uploadedUrl,
-              width,
-              height,
-              status: 'completed'
-            });
-            
-            toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
+          if (!uploadedUrl) {
+            throw new Error('Failed to upload image');
           }
+          
+          onAdGenerated({
+            name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
+            headline: adData.headline,
+            description: adData.description,
+            cta_text: adData.cta_text,
+            font_url: adData.font_url,
+            platform: adData.platform,
+            template_style: adData.template_style,
+            accent_color: adData.accent_color,
+            cta_color: adData.cta_color,
+            overlay_color: adData.overlay_color,
+            text_color: adData.text_color,
+            description_color: adData.description_color,
+            image_url: typeof currentImage === 'string' ? currentImage : uploadedUrl,
+            preview_url: uploadedUrl,
+            width,
+            height,
+            status: 'completed'
+          });
+          
+          toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           Logger.error(`Error processing image ${i + 1}: ${errorMessage}`);
