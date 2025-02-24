@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageGenerator } from "./ImageGenerator";
-import { Logger } from "./utils/logger";
+import { Logger } from "@/utils/logger"; // Fixed import path
 
 interface Position {
   x: number;
