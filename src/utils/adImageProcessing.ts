@@ -43,7 +43,7 @@ export const processImages = async (
       const previewUrl = await imageGenerator.getImageUrl();
       console.log('Generated preview URL:', previewUrl);
 
-      // המרת ה-URL לקובץ
+      // המרת ה-base64 URL לקובץ
       const response = await fetch(previewUrl);
       const blob = await response.blob();
       const previewFile = new File([blob], `preview_${i + 1}.png`, { type: 'image/png' });
