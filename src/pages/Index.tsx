@@ -4,6 +4,7 @@ import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
+import { Logger } from "@/utils/logger";
 
 interface GeneratedAd {
   id: string;
@@ -17,18 +18,19 @@ const Index = () => {
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
-    console.log("Initial mount - fetching ads");
+    Logger.info("Application started - Initial mount");
     fetchGeneratedAds();
 
     return () => {
       document.documentElement.classList.remove('dark');
+      Logger.info("Application unmounting");
     };
   }, []);
 
   const fetchGeneratedAds = async () => {
     try {
       setIsUpdating(true);
-      console.log("Starting to fetch generated ads...");
+      Logger.info("Starting to fetch generated ads...");
       
       const { data, error } = await supabase
         .from('generated_ads')
@@ -36,23 +38,23 @@ const Index = () => {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      console.log("Supabase response received:", { data, error });
+      Logger.info(`Supabase response received - Data count: ${data?.length || 0}`);
 
       if (error) {
-        console.error("Error fetching ads:", error);
+        Logger.error(`Error fetching ads: ${error.message}`);
         toast.error("Error loading ads");
         return;
       }
 
       if (data) {
-        console.log("Successfully fetched ads. Count:", data.length);
+        Logger.info(`Successfully fetched ${data.length} ads`);
         setGeneratedAds(data);
-        console.log("State updated with new ads");
+        Logger.info("State updated with new ads");
       } else {
-        console.log("No ads data returned");
+        Logger.warn("No ads data returned");
       }
     } catch (err) {
-      console.error("Unexpected error during fetch:", err);
+      Logger.error(`Unexpected error during fetch: ${err instanceof Error ? err.message : String(err)}`);
       toast.error("Unexpected error occurred");
     } finally {
       setIsUpdating(false);
@@ -60,12 +62,12 @@ const Index = () => {
   };
 
   const handleAdGenerated = async (adData: any) => {
-    console.log("Ad generated, data:", adData);
+    Logger.info(`Ad generated with ID: ${adData.id}`);
     try {
       await fetchGeneratedAds();
-      console.log("Ads refreshed after generation");
+      Logger.info("Ads refreshed after generation");
     } catch (err) {
-      console.error("Error refreshing ads after generation:", err);
+      Logger.error(`Error refreshing ads after generation: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
