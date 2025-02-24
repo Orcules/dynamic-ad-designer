@@ -39,22 +39,22 @@ export const processImages = async (
         throw new Error('Preview element not found');
       }
 
-      // קפיטורינג של התצוגה המקדימה
+      // Capture the preview
       const previewUrl = await imageGenerator.getImageUrl();
       console.log('Generated preview URL:', previewUrl);
 
-      // המרת ה-base64 URL לקובץ
+      // Convert base64 URL to file
       const response = await fetch(previewUrl);
       const blob = await response.blob();
       const previewFile = new File([blob], `preview_${i + 1}.png`, { type: 'image/png' });
 
-      // העלאת התמונה לסטוראג'
+      // Upload to storage
       const publicUrl = await handleSubmission(previewFile);
       console.log('Uploaded to storage:', publicUrl);
 
       const { width, height } = getDimensions(adData.platform);
 
-      // הוספת המודעה לטבלה
+      // Insert ad into table
       const { data: insertedAd, error: insertError } = await supabase
         .from('generated_ads')
         .insert([{
