@@ -9,19 +9,64 @@ export class ImageGenerator {
     this.previewElement = document.querySelector(previewSelector);
   }
 
+  private async waitForImages(): Promise<void> {
+    if (!this.previewElement) return;
+
+    const images = Array.from(this.previewElement.getElementsByTagName('img'));
+    const imagePromises = images.map(img => {
+      if (img.complete) return Promise.resolve();
+      
+      return new Promise((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => {
+          console.warn(`Failed to load image: ${img.src}`);
+          resolve(); // Resolve anyway to continue with capture
+        };
+      });
+    });
+
+    await Promise.all([
+      ...imagePromises,
+      document.fonts.ready,
+      new Promise(resolve => setTimeout(resolve, 1000)) // Increased timeout
+    ]);
+  }
+
   private async captureElement(): Promise<string> {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
     }
 
-    await Promise.all([
-      document.fonts.ready,
-      new Promise(resolve => setTimeout(resolve, 500))
-    ]);
+    await this.waitForImages();
 
     const ctaText = this.previewElement.querySelector('button span span');
     if (ctaText) {
       ctaText.classList.add('translate-y-[-8px]');
+    }
+
+    // Convert any blob URLs to data URLs before capture
+    const images = Array.from(this.previewElement.getElementsByTagName('img'));
+    const originalSrcs = new Map<HTMLImageElement, string>();
+
+    for (const img of images) {
+      if (img.src.startsWith('blob:')) {
+        originalSrcs.set(img, img.src);
+        try {
+          const response = await fetch(img.src);
+          const blob = await response.blob();
+          const reader = new FileReader();
+          await new Promise((resolve, reject) => {
+            reader.onload = () => {
+              img.src = reader.result as string;
+              resolve();
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } catch (error) {
+          console.warn(`Failed to convert blob URL: ${img.src}`, error);
+        }
+      }
     }
 
     const options = {
@@ -37,13 +82,23 @@ export class ImageGenerator {
       windowWidth: this.previewElement.offsetWidth,
       windowHeight: this.previewElement.offsetHeight,
       x: 0,
-      y: 0
+      y: 0,
+      imageTimeout: 5000, // Increased timeout for image loading
+      foreignObjectRendering: true
     };
 
     try {
       console.log('Using html2canvas...');
       const canvas = await html2canvas(this.previewElement, options);
       console.log('Canvas generated successfully');
+
+      // Restore original image sources
+      images.forEach(img => {
+        const originalSrc = originalSrcs.get(img);
+        if (originalSrc) {
+          img.src = originalSrc;
+        }
+      });
 
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
@@ -57,6 +112,14 @@ export class ImageGenerator {
         ctaText.classList.remove('translate-y-[-8px]');
       }
 
+      // Restore original image sources before fallback
+      images.forEach(img => {
+        const originalSrc = originalSrcs.get(img);
+        if (originalSrc) {
+          img.src = originalSrc;
+        }
+      });
+
       return this.fallbackCapture();
     }
   }
@@ -65,6 +128,8 @@ export class ImageGenerator {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
     }
+
+    await this.waitForImages();
 
     const ctaText = this.previewElement.querySelector('button span span');
     if (ctaText) {
@@ -82,7 +147,8 @@ export class ImageGenerator {
         transformOrigin: 'top left',
         width: '100%',
         height: '100%'
-      }
+      },
+      imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
 
     try {
