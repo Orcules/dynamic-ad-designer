@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -14,7 +13,7 @@ export class ImageGenerator {
 
     const images = Array.from(this.previewElement.getElementsByTagName('img'));
     const imagePromises = images.map(img => {
-      if (img.complete) return Promise.resolve(undefined);
+      if (img.complete) return Promise.resolve();
       
       return new Promise<void>((resolve) => {
         img.onload = () => resolve();
