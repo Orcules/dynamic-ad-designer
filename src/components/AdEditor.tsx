@@ -88,7 +88,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         imagePosition
       };
       
-      // עכשיו משתמשים בכל התמונות מהקרוסלה
       const allImages = selectedImages.length > 0 ? selectedImages : imageUrls;
       await processImages(
         adData,
