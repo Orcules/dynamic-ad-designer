@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,7 +24,8 @@ const Index = () => {
     const { data, error } = await supabase
       .from('generated_ads')
       .select('id, name, image_url')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(10); // Limit to 10 most recent ads
 
     if (error) {
       console.error("Error fetching ads:", error);
@@ -76,7 +76,7 @@ const Index = () => {
 
         {generatedAds.length > 0 && (
           <div className="space-y-4 backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Generated Ads</h2>
+            <h2 className="text-xl font-semibold mb-4">Recent Generated Ads</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {generatedAds.map((ad) => (
                 <div 
@@ -114,4 +114,3 @@ const Index = () => {
 };
 
 export default Index;
-
