@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Sparkles, ExternalLink } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 interface GeneratedAd {
   id: string;
@@ -25,7 +25,7 @@ const Index = () => {
       .from('generated_ads')
       .select('id, name, image_url')
       .order('created_at', { ascending: false })
-      .limit(10); // Limit to 10 most recent ads
+      .limit(10);
 
     if (error) {
       console.error("Error fetching ads:", error);
@@ -43,7 +43,7 @@ const Index = () => {
 
   const handleAdGenerated = async (adData: any) => {
     console.log("Ad generated:", adData);
-    await fetchGeneratedAds(); // Refresh the list immediately after a new ad is generated
+    await fetchGeneratedAds();
   };
 
   return (
@@ -73,41 +73,6 @@ const Index = () => {
             onAdGenerated={handleAdGenerated} 
           />
         </div>
-
-        {generatedAds.length > 0 && (
-          <div className="space-y-4 backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Recent Generated Ads</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {generatedAds.map((ad) => (
-                <div 
-                  key={ad.id} 
-                  className="flex flex-col p-4 bg-card rounded-lg hover:bg-accent/5 transition-colors"
-                >
-                  <span className="text-sm font-medium mb-2">{ad.name}</span>
-                  {ad.image_url && (
-                    <>
-                      <div className="relative aspect-[9/16] mb-2 rounded-md overflow-hidden">
-                        <img 
-                          src={ad.image_url} 
-                          alt={ad.name}
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
-                      </div>
-                      <a
-                        href={ad.image_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm mt-auto"
-                      >
-                        View Ad <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
