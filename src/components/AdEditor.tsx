@@ -9,8 +9,8 @@ import { AdPreviewControls } from "./ad/AdPreviewControls";
 import { AdSubmitButton } from "./ad/AdSubmitButton";
 import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
-import { processImages } from "@/utils/adImageProcessing";
 import { getDimensions } from "@/utils/adDimensions";
+import { Logger } from "@/utils/logger";
 
 interface Template {
   id: string;
@@ -57,8 +57,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handlePrevPreview,
     handleNextPreview
   } = useAdImageHandler({
-    onImageChange: (urls) => console.log("Images changed:", urls),
-    onCurrentIndexChange: (index) => console.log("Current index changed:", index)
+    onImageChange: (urls) => {
+      Logger.info("Images changed:", urls);
+    },
+    onCurrentIndexChange: (index) => {
+      Logger.info("Current index changed:", index);
+    }
   });
 
   const { handleSubmission } = useAdSubmission();
@@ -79,7 +83,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setIsGenerating(true);
 
     try {
-      console.log('Starting ad generation process...');
+      Logger.info('Starting ad generation process...');
       
       const positions = {
         headlinePosition,
@@ -89,18 +93,49 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       };
       
       const allImages = selectedImages.length > 0 ? selectedImages : imageUrls;
-      await processImages(
-        adData,
-        allImages,
-        previewRef,
-        onAdGenerated,
-        handleSubmission,
-        setIsGenerating,
-        positions
-      );
+      
+      // Process images directly here instead of importing processImages
+      for (let i = 0; i < allImages.length; i++) {
+        try {
+          const currentImage = allImages[i];
+          Logger.info(`Processing image ${i + 1}/${allImages.length}`);
+          
+          const { width, height } = getDimensions(adData.platform);
+          
+          // Handle image upload
+          const uploadedUrl = await handleSubmission(currentImage);
+          
+          if (uploadedUrl) {
+            onAdGenerated({
+              name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
+              headline: adData.headline,
+              description: adData.description,
+              cta_text: adData.cta_text,
+              font_url: adData.font_url,
+              platform: adData.platform,
+              template_style: adData.template_style,
+              accent_color: adData.accent_color,
+              cta_color: adData.cta_color,
+              overlay_color: adData.overlay_color,
+              text_color: adData.text_color,
+              description_color: adData.description_color,
+              image_url: typeof currentImage === 'string' ? currentImage : uploadedUrl,
+              preview_url: uploadedUrl,
+              width,
+              height,
+              status: 'completed'
+            });
+            
+            toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
+          }
+        } catch (error) {
+          Logger.error(`Error processing image ${i + 1}: ${error}`);
+          toast.error(`Failed to process image ${i + 1}`);
+        }
+      }
 
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
+      Logger.error('Error in handleSubmit:', error);
       toast.error('Error generating ads');
     } finally {
       setIsGenerating(false);
