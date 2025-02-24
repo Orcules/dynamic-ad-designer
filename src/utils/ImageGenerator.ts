@@ -19,13 +19,12 @@ export class ImageGenerator {
       new Promise(resolve => setTimeout(resolve, 500))
     ]);
 
-    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
     const ctaText = this.previewElement.querySelector('button span span');
     if (ctaText) {
       ctaText.classList.add('translate-y-[-8px]');
     }
 
-    const options = {
+    const options: html2canvas.Options = {
       backgroundColor: null,
       scale: 1,
       useCORS: true,
@@ -46,7 +45,6 @@ export class ImageGenerator {
       const canvas = await html2canvas(this.previewElement, options);
       console.log('Canvas generated successfully');
 
-      // הסרת המחלקה הזמנית אחרי הקפיטורינג
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
       }
@@ -55,7 +53,6 @@ export class ImageGenerator {
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      // הסרת המחלקה הזמנית במקרה של שגיאה
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
       }
@@ -69,7 +66,6 @@ export class ImageGenerator {
       throw new Error('Preview element not found');
     }
 
-    // הוספת מחלקה זמנית לטקסט של ה-CTA לפני הקפיטורינג
     const ctaText = this.previewElement.querySelector('button span span');
     if (ctaText) {
       ctaText.classList.add('translate-y-[-8px]');
@@ -93,14 +89,12 @@ export class ImageGenerator {
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log('Dom-to-image generated successfully');
       
-      // הסרת המחלקה הזמנית אחרי הקפיטורינג
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
       }
 
       return dataUrl;
     } catch (error) {
-      // הסרת המחלקה הזמנית במקרה של שגיאה
       if (ctaText) {
         ctaText.classList.remove('translate-y-[-8px]');
       }
@@ -110,7 +104,7 @@ export class ImageGenerator {
     }
   }
 
-  async downloadImage(filename = 'ad-preview.png') {
+  async downloadImage(filename = 'ad-preview.png'): Promise<void> {
     try {
       console.log('Starting download process...');
       const dataUrl = await this.captureElement();
@@ -129,7 +123,7 @@ export class ImageGenerator {
     }
   }
 
-  async getImageUrl() {
+  async getImageUrl(): Promise<string> {
     try {
       return await this.captureElement();
     } catch (error) {
