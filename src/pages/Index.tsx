@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,10 +9,12 @@ interface GeneratedAd {
   id: string;
   name: string;
   image_url: string;
+  preview_url: string;
 }
 
 const Index = () => {
   const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([]);
+  const [latestAd, setLatestAd] = useState<GeneratedAd | null>(null);
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -24,7 +25,7 @@ const Index = () => {
     console.log("Starting to fetch generated ads...");
     const { data, error } = await supabase
       .from('generated_ads')
-      .select('id, name, image_url')
+      .select('id, name, image_url, preview_url')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -33,9 +34,10 @@ const Index = () => {
       return;
     }
 
-    if (data) {
+    if (data && data.length > 0) {
       console.log("Successfully fetched ads. Count:", data.length);
       setGeneratedAds(data);
+      setLatestAd(data[0]); // Set the most recent ad
     } else {
       console.log("No ads data returned");
     }
@@ -61,6 +63,30 @@ const Index = () => {
           </p>
         </div>
 
+        {latestAd && (
+          <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6 animate-scale-in">
+            <h2 className="text-xl font-semibold mb-4">Latest Generated Ad</h2>
+            <div className="flex flex-col p-4 bg-card rounded-lg hover:bg-accent/5 transition-colors">
+              <span className="text-sm font-medium mb-2">{latestAd.name}</span>
+              <div className="relative aspect-[9/16] mb-2 rounded-md overflow-hidden">
+                <img 
+                  src={latestAd.preview_url || latestAd.image_url} 
+                  alt={latestAd.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </div>
+              <a
+                href={latestAd.preview_url || latestAd.image_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm mt-2"
+              >
+                View Ad <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+        )}
+
         <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6 animate-scale-in">
           <AdEditor 
             template={{ 
@@ -76,7 +102,7 @@ const Index = () => {
 
         {generatedAds.length > 0 && (
           <div className="space-y-4 backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Generated Ads</h2>
+            <h2 className="text-xl font-semibold mb-4">All Generated Ads</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {generatedAds.map((ad) => (
                 <div 
@@ -84,17 +110,17 @@ const Index = () => {
                   className="flex flex-col p-4 bg-card rounded-lg hover:bg-accent/5 transition-colors"
                 >
                   <span className="text-sm font-medium mb-2">{ad.name}</span>
-                  {ad.image_url && (
+                  {(ad.preview_url || ad.image_url) && (
                     <>
                       <div className="relative aspect-[9/16] mb-2 rounded-md overflow-hidden">
                         <img 
-                          src={ad.image_url} 
+                          src={ad.preview_url || ad.image_url} 
                           alt={ad.name}
                           className="absolute inset-0 w-full h-full object-cover"
                         />
                       </div>
                       <a
-                        href={ad.image_url}
+                        href={ad.preview_url || ad.image_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm mt-auto"
@@ -114,4 +140,3 @@ const Index = () => {
 };
 
 export default Index;
-
