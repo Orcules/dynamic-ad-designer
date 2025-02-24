@@ -14,9 +14,9 @@ export class ImageGenerator {
 
     const images = Array.from(this.previewElement.getElementsByTagName('img'));
     const imagePromises = images.map(img => {
-      if (img.complete) return Promise.resolve();
+      if (img.complete) return Promise.resolve<void>();
       
-      return new Promise((resolve, reject) => {
+      return new Promise<void>((resolve) => {
         img.onload = () => resolve();
         img.onerror = () => {
           console.warn(`Failed to load image: ${img.src}`);
@@ -28,7 +28,7 @@ export class ImageGenerator {
     await Promise.all([
       ...imagePromises,
       document.fonts.ready,
-      new Promise(resolve => setTimeout(resolve, 1000)) // Increased timeout
+      new Promise<void>(resolve => setTimeout(resolve, 1000)) // Increased timeout
     ]);
   }
 
@@ -55,12 +55,15 @@ export class ImageGenerator {
           const response = await fetch(img.src);
           const blob = await response.blob();
           const reader = new FileReader();
-          await new Promise((resolve, reject) => {
+          await new Promise<void>((resolve) => {
             reader.onload = () => {
               img.src = reader.result as string;
               resolve();
             };
-            reader.onerror = reject;
+            reader.onerror = () => {
+              console.warn(`Failed to read blob: ${img.src}`);
+              resolve();
+            };
             reader.readAsDataURL(blob);
           });
         } catch (error) {
