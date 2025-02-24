@@ -12,17 +12,19 @@ export class ImageGenerator {
     if (!this.previewElement) return;
 
     const images = Array.from(this.previewElement.getElementsByTagName('img'));
-    const imagePromises = images.map(img => {
-      if (img.complete) return Promise.resolve();
-      
-      return new Promise<void>((resolve) => {
-        img.onload = () => resolve();
-        img.onerror = () => {
-          console.warn(`Failed to load image: ${img.src}`);
-          resolve(); // Resolve anyway to continue with capture
-        };
-      });
-    });
+    const imagePromises = images.map(img => 
+      new Promise<void>((resolve) => {
+        if (img.complete) {
+          resolve();
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => {
+            console.warn(`Failed to load image: ${img.src}`);
+            resolve(); // Resolve anyway to continue with capture
+          };
+        }
+      })
+    );
 
     await Promise.all([
       ...imagePromises,
