@@ -58,10 +58,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handleNextPreview
   } = useAdImageHandler({
     onImageChange: (urls) => {
-      Logger.info(`Images changed: ${JSON.stringify(urls)}`);
+      Logger.info(JSON.stringify({ message: 'Images changed', urls }));
     },
     onCurrentIndexChange: (index) => {
-      Logger.info(`Current index changed: ${index}`);
+      Logger.info(JSON.stringify({ message: 'Current index changed', index }));
     }
   });
 

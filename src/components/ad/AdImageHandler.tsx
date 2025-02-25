@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 
 interface AdImageHandlerProps {
@@ -19,7 +20,7 @@ export function useAdImageHandler({
       setSelectedImages(prev => [...prev, ...files]);
       const urls = files.map(file => URL.createObjectURL(file));
       setImageUrls(prev => [...prev, ...urls]);
-      onImageChange(urls);
+      onImageChange([...imageUrls, ...urls]);
     }
   };
 
