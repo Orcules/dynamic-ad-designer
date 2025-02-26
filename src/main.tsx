@@ -40,22 +40,38 @@ if (typeof window !== 'undefined') {
           if (node instanceof HTMLElement) {
             // חיפוש אלמנטים עם תפקיד דיאלוג
             const dialogs = node.querySelectorAll('[role="dialog"]:not([aria-describedby])');
-            if (node.getAttribute('role') === 'dialog' && !node.getAttribute('aria-describedby')) {
-              dialogs.add(node);
-            }
             
-            // הוספת aria-describedby לכל דיאלוג
-            dialogs.forEach((dialog, index) => {
-              if (dialog instanceof HTMLElement) {
-                const descId = `auto-dialog-desc-${Date.now()}-${index}`;
-                const descEl = document.createElement('div');
-                descEl.id = descId;
-                descEl.style.display = 'none';
-                descEl.textContent = 'Dialog content';
-                dialog.appendChild(descEl);
-                dialog.setAttribute('aria-describedby', descId);
-              }
-            });
+            // בדיקה האם האלמנט הנוכחי הוא דיאלוג שצריך תיקון
+            if (node.getAttribute('role') === 'dialog' && !node.getAttribute('aria-describedby')) {
+              // יצירת NodeList זמני שכולל את כל הדיאלוגים + האלמנט הנוכחי
+              const allDialogs = [...Array.from(dialogs), node];
+              
+              // הוספת aria-describedby לכל דיאלוג
+              allDialogs.forEach((dialog, index) => {
+                if (dialog instanceof HTMLElement) {
+                  const descId = `auto-dialog-desc-${Date.now()}-${index}`;
+                  const descEl = document.createElement('div');
+                  descEl.id = descId;
+                  descEl.style.display = 'none';
+                  descEl.textContent = 'Dialog content';
+                  dialog.appendChild(descEl);
+                  dialog.setAttribute('aria-describedby', descId);
+                }
+              });
+            } else {
+              // טיפול בכל דיאלוג שנמצא
+              Array.from(dialogs).forEach((dialog, index) => {
+                if (dialog instanceof HTMLElement) {
+                  const descId = `auto-dialog-desc-${Date.now()}-${index}`;
+                  const descEl = document.createElement('div');
+                  descEl.id = descId;
+                  descEl.style.display = 'none';
+                  descEl.textContent = 'Dialog content';
+                  dialog.appendChild(descEl);
+                  dialog.setAttribute('aria-describedby', descId);
+                }
+              });
+            }
           }
         });
       }
