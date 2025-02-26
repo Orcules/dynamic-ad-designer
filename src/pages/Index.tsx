@@ -21,7 +21,7 @@ const Index = () => {
   const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // הפעלת suppressDialogWarnings עם useLayoutEffect, לפני הרינדור
+  // Apply suppressDialogWarnings with useLayoutEffect, before rendering
   useLayoutEffect(() => {
     suppressDialogWarnings();
     monkeyPatchDialogContent();
@@ -31,14 +31,14 @@ const Index = () => {
     document.documentElement.classList.add('dark');
     Logger.info("Application started - Initial mount");
     
-    // הפעלת כל פונקציות הנגישות גם כאן
+    // Apply all accessibility functions here as well
     suppressDialogWarnings();
     monkeyPatchDialogContent();
     const cleanup = setupAccessibilityFixes();
     
     fetchGeneratedAds();
 
-    // הפעלה נוספת אחרי זמן קצר, כדי לתפוס דיאלוגים שנוצרו מאוחר יותר
+    // Apply again after a short time, to catch dialogs created later
     const timer1 = setTimeout(() => {
       monkeyPatchDialogContent();
     }, 500);
@@ -91,7 +91,7 @@ const Index = () => {
     Logger.info(`Ad generated with ID: ${adData.id}`);
 
     try {
-      // יצירת רשומה חדשה בטבלת generated_ads
+      // Create new record in generated_ads table
       const { data, error } = await supabase
         .from('generated_ads')
         .insert([
@@ -103,7 +103,7 @@ const Index = () => {
             platform: adData.platform,
             template_style: adData.template_style,
             image_url: adData.image_url,
-            preview_url: adData.preview_url || adData.image_url, // וידוא שיש תמיד ערך
+            preview_url: adData.preview_url || adData.image_url, // Ensure there's always a value
             width: adData.width,
             height: adData.height
           }
@@ -116,7 +116,7 @@ const Index = () => {
         return;
       }
 
-      // רענון רשימת המודעות שנוצרו
+      // Refresh list of generated ads
       Logger.info("Ad saved to database, refreshing list");
       await fetchGeneratedAds();
       
@@ -157,8 +157,8 @@ const Index = () => {
         
         <div className="space-y-6">
           <div className="flex flex-col space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">המודעות שנוצרו</h2>
-            <p className="text-muted-foreground">כל המודעות שייצרת יופיעו כאן להורדה ושימוש מחדש</p>
+            <h2 className="text-2xl font-bold tracking-tight">Generated Ads</h2>
+            <p className="text-muted-foreground">All ads you've created will appear here for download and reuse</p>
           </div>
           
           <Separator className="my-4" />

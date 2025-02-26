@@ -26,29 +26,29 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   const [validatingImages, setValidatingImages] = useState(false);
   const placeholderImage = "/placeholder.svg";
   
-  // קבוע חדש לניהול מניעת שגיאות לוגים
+  // Constant to manage prevention of log errors
   const maxLogAttempts = 3;
   const [logAttempts, setLogAttempts] = useState(0);
   
   useEffect(() => {
-    // בדיקת תקינות של ה-URLs של התמונות
+    // Validate image URLs
     const validateImageUrls = async () => {
-      // מאתחל את מצב התמונות שנכשלו
+      // Initialize failed images state
       setFailedImages({});
       setValidatingImages(true);
       setValidatedAds(ads);
       
-      // פונקציה לבדיקת תקינות URL - כולל cache-busting
+      // Function to check URL validity - including cache-busting
       const checkImageUrlValidity = async (url: string): Promise<boolean> => {
         if (!url || url === "undefined" || url === "null") return false;
         
         try {
-          // הוספת מניעת מטמון
+          // Add cache busting
           const cacheBustUrl = url.includes('?') 
             ? `${url}&t=${Date.now()}` 
             : `${url}?t=${Date.now()}`;
             
-          // נסיון לבדוק את התמונה באמצעות חיבור HEAD
+          // Try to check the image with a HEAD connection
           const response = await fetch(cacheBustUrl, { 
             method: 'HEAD', 
             cache: 'no-store',
@@ -56,7 +56,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           });
           return response.ok;
         } catch (error) {
-          // מניעת לוגים מרובים מדי
+          // Prevent too many logs
           if (logAttempts < maxLogAttempts) {
             try {
               setLogAttempts(prev => prev + 1);
@@ -69,7 +69,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
         }
       };
       
-      // בודק כל תמונה בנפרד
+      // Check each image individually
       const failedOnes: Record<string, boolean> = {};
       let validatedCount = 0;
       let failedCount = 0;
@@ -82,12 +82,12 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
             failedOnes[ad.id] = true;
             failedCount++;
             
-            // רק מנסה לרשום לוג אם לא הגענו למקסימום ניסיונות
+            // Only try to log if we haven't reached max attempts
             if (logAttempts < maxLogAttempts) {
               try {
                 console.warn(`Found invalid image URL for ad ${ad.id}`);
               } catch (logError) {
-                // אם נכשל לרשום לוג, מפסיק לנסות
+                // If failed to log, stop trying
                 setLogAttempts(maxLogAttempts);
               }
             }
@@ -97,7 +97,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
         }
       }
       
-      // סיכום בקונסול במקום לנסות לרשום כל תמונה בנפרד
+      // Console summary instead of trying to log each image separately
       try {
         console.info(`Image validation complete: ${validatedCount} valid, ${failedCount} failed`);
       } catch (logError) {
@@ -126,9 +126,9 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   if (ads.length === 0) {
     return (
       <div className="text-center p-8 border border-dashed rounded-lg">
-        <p className="text-muted-foreground">לא נוצרו מודעות עדיין</p>
+        <p className="text-muted-foreground">No ads created yet</p>
         <p className="text-sm text-muted-foreground mt-2">
-          המודעות שתיצור יופיעו כאן
+          Ads you create will appear here
         </p>
       </div>
     );
@@ -141,7 +141,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
         setLogAttempts(prev => prev + 1);
       }
     } catch (error) {
-      // התעלם משגיאות ניסיון לוג
+      // Ignore logging errors
       console.warn('Failed to log image error');
     }
     
@@ -153,7 +153,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
 
   const handleRetryImage = async (ad: GeneratedAd) => {
     try {
-      // ניסיון לבדוק אם התמונה זמינה עם cache-busting
+      // Try to check if the image is available with cache-busting
       const imageUrl = ad.preview_url || ad.image_url;
       const cacheBustUrl = imageUrl.includes('?') 
         ? `${imageUrl}&t=${Date.now()}` 
@@ -166,7 +166,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
       });
       
       if (response.ok) {
-        // אם התמונה זמינה, נסיר אותה מרשימת התמונות שנכשלו
+        // If the image is available, remove it from the failed images list
         setFailedImages(prev => {
           const newFailedImages = { ...prev };
           delete newFailedImages[ad.id];
@@ -188,7 +188,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     }
     
     try {
-      // פתיחת התמונה בחלון חדש עם cache-busting
+      // Open the image in a new window with cache-busting
       const cacheBustUrl = imageUrl.includes('?') 
         ? `${imageUrl}&t=${Date.now()}` 
         : `${imageUrl}?t=${Date.now()}`;
@@ -209,7 +209,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     }
     
     const imageUrl = ad.preview_url || ad.image_url;
-    // הוספת מניעת מטמון
+    // Add cache busting
     const cacheBustUrl = imageUrl.includes('?') 
       ? `${imageUrl}&t=${Date.now()}` 
       : `${imageUrl}?t=${Date.now()}`;
@@ -224,7 +224,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           return response.blob();
         })
         .then(blob => {
-          // יצירת אובייקט URL מקומי מה-blob שהורדנו
+          // Create a local URL object from the downloaded blob
           const blobUrl = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = blobUrl;
@@ -232,7 +232,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          // שחרור האובייקט URL כדי למנוע דליפות זיכרון
+          // Release the URL object to prevent memory leaks
           setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
           
           toast.success('Image downloaded successfully');
@@ -247,7 +247,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     }
   };
 
-  // הצגת הודעת אזהרה אם יש תמונות שנכשלו בטעינה
+  // Show warning alert if there are failed images
   const failedImagesCount = Object.keys(failedImages).length;
   
   return (
@@ -255,16 +255,16 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
       {validatingImages && (
         <div className="flex items-center justify-center p-4 mb-4 bg-muted/50 rounded-lg">
           <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-          <p>בודק תקינות תמונות...</p>
+          <p>Validating images...</p>
         </div>
       )}
       
       {failedImagesCount > 0 && (
         <Alert variant="destructive" className="mb-4">
-          <AlertTitle>שים לב</AlertTitle>
+          <AlertTitle>Attention</AlertTitle>
           <AlertDescription>
-            {failedImagesCount} מודעות לא נטענו כראוי בגלל בעיית תמונה. 
-            אנא נסה לרענן את הדף או ליצור מודעות חדשות.
+            {failedImagesCount} ads failed to load properly due to image issues. 
+            Please try refreshing the page or create new ads.
           </AlertDescription>
         </Alert>
       )}
@@ -277,7 +277,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                 failedImages[ad.id] ? (
                   <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
                     <ImageOff className="h-8 w-8 mb-2 text-muted-foreground/50" />
-                    <span className="text-sm text-center">התמונה לא זמינה</span>
+                    <span className="text-sm text-center">Image not available</span>
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -285,7 +285,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                       onClick={() => handleRetryImage(ad)}
                     >
                       <RefreshCw className="h-3 w-3 mr-1" />
-                      נסה שוב
+                      Try again
                     </Button>
                   </div>
                 ) : (
@@ -295,7 +295,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                     className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                     onError={(e) => {
                       handleImageError(ad);
-                      // שימוש בתמונת גיבוי מקומית
+                      // Use local fallback image
                       (e.target as HTMLImageElement).src = placeholderImage;
                     }}
                   />
@@ -303,7 +303,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4">
                   <ImageOff className="h-8 w-8 mb-2 text-muted-foreground/50" />
-                  <span className="text-sm text-center">התמונה לא זמינה</span>
+                  <span className="text-sm text-center">Image not available</span>
                 </div>
               )}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -313,8 +313,8 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                   className="rounded-full bg-white/20 backdrop-blur-sm" 
                   onClick={() => handlePreviewClick(ad.preview_url || ad.image_url)}
                   disabled={!ad.preview_url && !ad.image_url || failedImages[ad.id]}
-                  title="צפייה בתמונה" 
-                  aria-label="צפייה בתמונה"
+                  title="View image" 
+                  aria-label="View image"
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -324,8 +324,8 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                   className="rounded-full bg-white/20 backdrop-blur-sm" 
                   onClick={() => handleDownloadClick(ad)}
                   disabled={!ad.preview_url && !ad.image_url || failedImages[ad.id]}
-                  title="הורדת תמונה"
-                  aria-label="הורדת תמונה"
+                  title="Download image"
+                  aria-label="Download image"
                 >
                   <Download className="h-4 w-4" />
                 </Button>
@@ -349,8 +349,8 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                     }
                   }}
                   disabled={failedImages[ad.id]}
-                  title="פתיחת תמונה בחלון חדש"
-                  aria-label="פתיחת תמונה בחלון חדש"
+                  title="Open image in new window"
+                  aria-label="Open image in new window"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
