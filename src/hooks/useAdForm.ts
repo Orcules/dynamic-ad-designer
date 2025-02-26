@@ -27,6 +27,7 @@ interface AdFormState {
   ctaPosition: Position;
   imagePosition: Position;
   showCtaArrow: boolean;
+  platform: string; // Add the missing platform property
 }
 
 // Default form state
@@ -49,6 +50,7 @@ const DEFAULT_FORM_STATE: AdFormState = {
   ctaPosition: { x: 50, y: 70 },
   imagePosition: { x: 50, y: 50 },
   showCtaArrow: true,
+  platform: 'facebook', // Set a default platform
 };
 
 export const useAdForm = (initialState: Partial<AdFormState> = {}) => {
@@ -100,7 +102,7 @@ export const useAdForm = (initialState: Partial<AdFormState> = {}) => {
   }, [updateField]);
 
   const handlePlatformChange = useCallback((value: string) => {
-    updateField('platform' as keyof AdFormState, value as any);
+    updateField('platform', value);
   }, [updateField]);
 
   const handleStyleChange = useCallback((value: string) => {

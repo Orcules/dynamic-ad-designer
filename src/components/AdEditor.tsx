@@ -77,7 +77,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     e.preventDefault();
     
     const hasImages = selectedImages.length > 0 || imageUrls.length > 0;
-    if (!validateAdSubmission(formState.platform as string, hasImages)) {
+    if (!validateAdSubmission(formState.platform, hasImages)) {
       return;
     }
 
@@ -127,7 +127,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           
           Logger.info(`Processing image ${i + 1}/${allImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
           
-          const { width, height } = getDimensions(formState.platform as string);
+          const { width, height } = getDimensions(formState.platform);
           
           let imageToUpload: File;
           if (typeof currentImage === 'string') {
@@ -233,7 +233,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
-  const { width, height } = getDimensions(formState.platform as string || 'facebook');
+  const { width, height } = getDimensions(formState.platform || 'facebook');
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
@@ -245,7 +245,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             description: formState.description,
             cta_text: formState.ctaText,
             font_url: formState.fontUrl,
-            platform: formState.platform as string || 'facebook',
+            platform: formState.platform || 'facebook',
             template_style: formState.templateStyle,
             accent_color: formState.accentColor,
             cta_color: formState.ctaColor,
