@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { Logger } from "@/utils/logger";
 
 interface AdImageHandlerProps {
   onImageChange: (urls: string[]) => void;
@@ -21,7 +22,7 @@ export function useAdImageHandler({
       );
       
       if (files.length === 0) {
-        console.warn('No valid image files selected');
+        Logger.warn('No valid image files selected');
         return;
       }
       
@@ -47,26 +48,30 @@ export function useAdImageHandler({
   };
 
   const handleImageUrlsChange = (urls: string[]) => {
-    // סינון URLs ריקים או לא תקינים
-    const validUrls = urls.filter(url => url && url.trim() !== '' && url !== 'undefined');
-    
-    if (validUrls.length === 0) {
-      console.warn('No valid image URLs provided');
-      return;
-    }
-    
-    // וידוא שכל הURLs הם HTTPS (אם לא ספציפית נדרש HTTP)
-    const secureUrls = validUrls.map(url => {
-      if (url.startsWith('http:') && !url.includes('localhost')) {
-        return url.replace(/^http:/, 'https:');
+    try {
+      // סינון URLs ריקים או לא תקינים
+      const validUrls = urls.filter(url => url && url.trim() !== '' && url !== 'undefined');
+      
+      if (validUrls.length === 0) {
+        Logger.warn('No valid image URLs provided');
+        return;
       }
-      return url;
-    });
-    
-    setImageUrls(secureUrls);
-    setCurrentPreviewIndex(0);
-    onImageChange(secureUrls);
-    onCurrentIndexChange(0);
+      
+      // וידוא שכל הURLs הם HTTPS (אם לא ספציפית נדרש HTTP)
+      const secureUrls = validUrls.map(url => {
+        if (url.startsWith('http:') && !url.includes('localhost')) {
+          return url.replace(/^http:/, 'https:');
+        }
+        return url;
+      });
+      
+      setImageUrls(secureUrls);
+      setCurrentPreviewIndex(0);
+      onImageChange(secureUrls);
+      onCurrentIndexChange(0);
+    } catch (error) {
+      Logger.error(`Error in handleImageUrlsChange: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const handlePrevPreview = () => {

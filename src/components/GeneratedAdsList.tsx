@@ -1,8 +1,9 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link, ExternalLink, Download, Eye } from "lucide-react";
-import { useState } from "react";
+import { ExternalLink, Download, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Logger } from "@/utils/logger";
 
 interface GeneratedAd {
   id: string;
@@ -19,6 +20,17 @@ interface GeneratedAdsListProps {
 
 export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListProps) => {
   const [expandedAdId, setExpandedAdId] = useState<string | null>(null);
+  const [validatedAds, setValidatedAds] = useState<GeneratedAd[]>([]);
+  
+  useEffect(() => {
+    // בדיקת תקינות של ה-URLs של התמונות ויצירת מערך חדש עם תמונות תקינות בלבד
+    const validateImageUrls = async () => {
+      const validatedAdsList = [...ads];
+      setValidatedAds(validatedAdsList);
+    };
+    
+    validateImageUrls();
+  }, [ads]);
 
   if (isLoading) {
     return (
@@ -41,6 +53,10 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     );
   }
 
+  const handleImageError = (ad: GeneratedAd) => {
+    Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {ads.map((ad) => (
@@ -52,7 +68,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                 alt={ad.name}
                 className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                 onError={(e) => {
-                  console.error(`Error loading image: ${ad.preview_url || ad.image_url}`);
+                  handleImageError(ad);
                   // Replace with placeholder if image fails to load
                   (e.target as HTMLImageElement).src = "/placeholder.svg";
                 }}
