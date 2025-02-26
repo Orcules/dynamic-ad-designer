@@ -7,6 +7,7 @@ import { Sparkles } from "lucide-react";
 import { Logger } from "@/utils/logger";
 import { GeneratedAdsList } from "@/components/GeneratedAdsList";
 import { Separator } from "@/components/ui/separator";
+import { suppressDialogWarnings } from "@/utils/accessibility";
 
 interface GeneratedAd {
   id: string;
@@ -23,6 +24,10 @@ const Index = () => {
   useEffect(() => {
     document.documentElement.classList.add('dark');
     Logger.info("Application started - Initial mount");
+    
+    // וידוא שההתראות מושתקות גם ברמת הדף
+    suppressDialogWarnings();
+    
     fetchGeneratedAds();
 
     return () => {
