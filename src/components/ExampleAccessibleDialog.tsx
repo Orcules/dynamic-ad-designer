@@ -1,67 +1,50 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
   DialogFooter,
-  DialogClose
+  DialogTrigger,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-
-interface ExampleAccessibleDialogProps {
-  trigger: React.ReactNode;
-  title: string;
-  description: string;
-  children: React.ReactNode;
-  footer?: React.ReactNode;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-}
 
 /**
- * דוגמה לדיאלוג נגיש שמיישם כראוי את תכונות ה-aria
+ * An example of how to create accessible dialogs
+ * To use this pattern:
+ * 1. Create a unique ID for the description
+ * 2. Add aria-describedby attribute to DialogContent
+ * 3. Add DialogDescription with matching ID (can be visually hidden with sr-only)
  */
-export function ExampleAccessibleDialog({
-  trigger,
-  title,
-  description,
-  children,
-  footer,
-  open,
-  onOpenChange
-}: ExampleAccessibleDialogProps) {
+export function ExampleAccessibleDialog() {
+  const [open, setOpen] = React.useState(false);
   const descriptionId = React.useId();
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger}
+        <Button variant="outline">פתח דיאלוג נגיש</Button>
       </DialogTrigger>
-      
       <DialogContent aria-describedby={descriptionId}>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription id={descriptionId}>
-            {description}
-          </DialogDescription>
+          <DialogTitle>דיאלוג לדוגמה</DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
-          {children}
+        {/* This provides the description for screen readers */}
+        <DialogDescription id={descriptionId} className="sr-only">
+          תיאור של הדיאלוג לטכנולוגיות מסייעות
+        </DialogDescription>
+        
+        <div className="p-4">
+          תוכן הדיאלוג
         </div>
         
-        {footer && (
-          <DialogFooter>
-            {footer}
-          </DialogFooter>
-        )}
+        <DialogFooter>
+          <Button onClick={() => setOpen(false)}>סגור</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-export default ExampleAccessibleDialog;

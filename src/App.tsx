@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
-import { suppressDialogWarnings, setupAccessibilityFixes } from "./utils/accessibility";
+import { suppressDialogWarnings } from "./utils/accessibility";
 
 const queryClient = new QueryClient();
 
@@ -14,10 +14,6 @@ const App = () => {
   // Call the suppressDialogWarnings function when the app initializes
   useEffect(() => {
     suppressDialogWarnings();
-    
-    // Setup and return the cleanup function for accessibility fixes
-    const cleanup = setupAccessibilityFixes();
-    return cleanup;
   }, []);
 
   return (
