@@ -53,10 +53,10 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
           <span>{ctaText}</span>
           {showArrow && (
             <ArrowBigDown 
-              className={cn(
-                "transition-transform duration-300 inline-block translate-y-0.5",
-                isButtonHovered ? "translate-y-1" : ""
-              )}
+              className="transition-transform duration-300 inline-block"
+              style={{
+                transform: isButtonHovered ? 'translateY(4px)' : 'translateY(2px)'
+              }}
               size={24}
               strokeWidth={2.5}
             />
