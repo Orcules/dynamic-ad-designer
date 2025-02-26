@@ -30,7 +30,7 @@ export class ImageGenerator {
     await Promise.all([
       ...imagePromises,
       document.fonts.ready,
-      new Promise<void>(resolve => setTimeout(resolve, 1000)) // Increased timeout
+      new Promise<void>(resolve => setTimeout(resolve, 500)) // Give the browser time to render
     ]);
   }
 
@@ -41,90 +41,57 @@ export class ImageGenerator {
 
     await this.waitForImages();
 
-    const ctaText = this.previewElement.querySelector('button span span');
-    if (ctaText) {
-      ctaText.classList.add('translate-y-[-8px]');
-    }
-
-    // Convert any blob URLs to data URLs before capture
-    const images = Array.from(this.previewElement.getElementsByTagName('img'));
-    const originalSrcs = new Map<HTMLImageElement, string>();
-
-    for (const img of images) {
-      if (img.src.startsWith('blob:')) {
-        originalSrcs.set(img, img.src);
-        try {
-          const response = await fetch(img.src);
-          const blob = await response.blob();
-          const reader = new FileReader();
-          await new Promise<void>((resolve) => {
-            reader.onload = () => {
-              img.src = reader.result as string;
-              resolve();
-            };
-            reader.onerror = () => {
-              console.warn(`Failed to read blob: ${img.src}`);
-              resolve();
-            };
-            reader.readAsDataURL(blob);
-          });
-        } catch (error) {
-          console.warn(`Failed to convert blob URL: ${img.src}`, error);
-        }
-      }
-    }
-
-    const options = {
-      backgroundColor: null as null,
-      scale: 1,
-      useCORS: true,
-      allowTaint: true,
-      logging: true,
-      width: this.previewElement.offsetWidth,
-      height: this.previewElement.offsetHeight,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: this.previewElement.offsetWidth,
-      windowHeight: this.previewElement.offsetHeight,
-      x: 0,
-      y: 0,
-      imageTimeout: 5000, // Increased timeout for image loading
-      foreignObjectRendering: true
-    };
+    // Save original styles
+    const originalStyles = new Map<Element, string>();
+    const elementsToFixPosition = Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]'));
+    
+    elementsToFixPosition.forEach(el => {
+      originalStyles.set(el, el.getAttribute('style') || '');
+      const computedStyle = window.getComputedStyle(el);
+      const currentLeft = computedStyle.left;
+      const currentTop = computedStyle.top;
+      const currentTransform = computedStyle.transform;
+      
+      // Apply computed position directly
+      el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
+    });
 
     try {
       console.log('Using html2canvas...');
-      const canvas = await html2canvas(this.previewElement, options);
+      const canvas = await html2canvas(this.previewElement, {
+        backgroundColor: null,
+        scale: 2, // Higher scale for better quality
+        useCORS: true,
+        allowTaint: true,
+        logging: true,
+        x: 0,
+        y: 0,
+        scrollX: 0,
+        scrollY: 0
+      });
+      
       console.log('Canvas generated successfully');
-
-      // Restore original image sources
-      images.forEach(img => {
-        const originalSrc = originalSrcs.get(img);
-        if (originalSrc) {
-          img.src = originalSrc;
+      
+      // Restore original styles
+      elementsToFixPosition.forEach(el => {
+        const original = originalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
         }
       });
-
-      if (ctaText) {
-        ctaText.classList.remove('translate-y-[-8px]');
-      }
-
+      
       return canvas.toDataURL('image/png', 1.0);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      if (ctaText) {
-        ctaText.classList.remove('translate-y-[-8px]');
-      }
-
-      // Restore original image sources before fallback
-      images.forEach(img => {
-        const originalSrc = originalSrcs.get(img);
-        if (originalSrc) {
-          img.src = originalSrc;
+      // Restore original styles before fallback
+      elementsToFixPosition.forEach(el => {
+        const original = originalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
         }
       });
-
+      
       return this.fallbackCapture();
     }
   }
@@ -136,42 +103,64 @@ export class ImageGenerator {
 
     await this.waitForImages();
 
-    const ctaText = this.previewElement.querySelector('button span span');
-    if (ctaText) {
-      ctaText.classList.add('translate-y-[-8px]');
-    }
-
     console.log('Using dom-to-image fallback...');
     const config = {
       quality: 1.0,
-      scale: 1,
-      width: this.previewElement.offsetWidth,
-      height: this.previewElement.offsetHeight,
+      scale: 2, // Higher scale for better quality
+      bgcolor: null,
       style: {
-        transform: 'none',
-        transformOrigin: 'top left',
-        width: '100%',
-        height: '100%'
+        'transform-origin': 'top left',
       },
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
 
     try {
+      // Fix for cross-origin images
+      const images = Array.from(this.previewElement.querySelectorAll('img[src^="http"]'));
+      for (const img of images) {
+        try {
+          const response = await fetch(img.getAttribute('src') || '', { mode: 'cors' });
+          const blob = await response.blob();
+          const dataUrl = await new Promise<string>(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+          img.setAttribute('src', dataUrl);
+        } catch (err) {
+          console.warn('Could not convert image URL:', err);
+        }
+      }
+      
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log('Dom-to-image generated successfully');
-      
-      if (ctaText) {
-        ctaText.classList.remove('translate-y-[-8px]');
-      }
-
       return dataUrl;
     } catch (error) {
-      if (ctaText) {
-        ctaText.classList.remove('translate-y-[-8px]');
-      }
-
       console.error('Fallback capture failed:', error);
-      throw error;
+      
+      // Last resort: try to get a screenshot with a simpler approach
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+        
+        const rect = this.previewElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        
+        // Fill with a background color as placeholder
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText('Image generation failed', canvas.width / 2, canvas.height / 2);
+        
+        return canvas.toDataURL('image/png');
+      } catch (lastError) {
+        console.error('Last resort failed:', lastError);
+        throw error;
+      }
     }
   }
 
