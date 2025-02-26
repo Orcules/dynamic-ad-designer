@@ -135,4 +135,21 @@ const Index = () => {
         </div>
         
         <div className="space-y-6">
-          <div className="flex flex
+          <div className="flex flex-col space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">המודעות שנוצרו</h2>
+            <p className="text-muted-foreground">כל המודעות שייצרת יופיעו כאן להורדה ושימוש מחדש</p>
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <GeneratedAdsList 
+            ads={generatedAds} 
+            isLoading={isUpdating} 
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Index;
