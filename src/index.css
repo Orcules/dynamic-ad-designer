@@ -151,18 +151,3 @@
   transform: none !important;
   transition: none !important;
 }
-
-/* Add utility classes for accessibility */
-.a11y-inert {
-  inert: true;
-}
-
-/* Never hide focused elements from assistive technology */
-*:focus-within {
-  aria-hidden: false !important;
-}
-
-/* Helper class for preventing aria-hidden issues */
-.preserve-a11y:focus-within {
-  aria-hidden: false !important;
-}
