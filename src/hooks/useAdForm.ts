@@ -27,7 +27,6 @@ interface AdFormState {
   ctaPosition: Position;
   imagePosition: Position;
   showCtaArrow: boolean;
-  platform: string; // Add the missing platform property
 }
 
 // Default form state
@@ -50,7 +49,6 @@ const DEFAULT_FORM_STATE: AdFormState = {
   ctaPosition: { x: 50, y: 70 },
   imagePosition: { x: 50, y: 50 },
   showCtaArrow: true,
-  platform: 'facebook', // Set a default platform
 };
 
 export const useAdForm = (initialState: Partial<AdFormState> = {}) => {
@@ -63,7 +61,7 @@ export const useAdForm = (initialState: Partial<AdFormState> = {}) => {
   // Function to update a single form field
   const updateField = useCallback(
     <K extends keyof AdFormState>(field: K, value: AdFormState[K]) => {
-      Logger.info(`Updating field ${String(field)} with value: ${JSON.stringify(value)}`);
+      Logger.info(`Updating field ${String(field)} with value:`, value);
       setFormState(prev => ({ ...prev, [field]: value }));
     },
     []
@@ -71,63 +69,25 @@ export const useAdForm = (initialState: Partial<AdFormState> = {}) => {
   
   // Handle image URLs change
   const handleImageUrlsChange = useCallback((urls: string[]) => {
-    Logger.info(`Updating image URLs: ${JSON.stringify(urls)}`);
+    Logger.info('Updating image URLs:', urls);
     setFormState(prev => ({ ...prev, imageUrls: urls }));
   }, []);
   
   // Handle current image index change
   const handleCurrentImageIndexChange = useCallback((index: number) => {
-    Logger.info(`Updating current image index: ${index}`);
+    Logger.info('Updating current image index:', index);
     setFormState(prev => ({ ...prev, currentImageIndex: index }));
   }, []);
   
   // Update position for draggable elements
   const updatePosition = useCallback((element: string, position: Position) => {
     const positionKey = `${element}Position` as keyof AdFormState;
-    Logger.info(`Updating position for ${element}: ${JSON.stringify(position)}`);
+    Logger.info(`Updating position for ${element}:`, position);
     setFormState(prev => ({ 
       ...prev, 
       [positionKey]: position 
     }));
   }, []);
-  
-  // Create handler functions for the form
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    updateField(name as keyof AdFormState, value as any);
-  }, [updateField]);
-
-  const handleFontChange = useCallback((value: string) => {
-    updateField('fontUrl', value);
-  }, [updateField]);
-
-  const handlePlatformChange = useCallback((value: string) => {
-    updateField('platform', value);
-  }, [updateField]);
-
-  const handleStyleChange = useCallback((value: string) => {
-    updateField('templateStyle', value);
-  }, [updateField]);
-
-  const handleColorChange = useCallback((value: string) => {
-    updateField('accentColor', value);
-  }, [updateField]);
-
-  const handleCtaColorChange = useCallback((value: string) => {
-    updateField('ctaColor', value);
-  }, [updateField]);
-
-  const handleOverlayColorChange = useCallback((value: string) => {
-    updateField('overlayColor', value);
-  }, [updateField]);
-
-  const handleTextColorChange = useCallback((value: string) => {
-    updateField('textColor', value);
-  }, [updateField]);
-
-  const handleDescriptionColorChange = useCallback((value: string) => {
-    updateField('descriptionColor', value);
-  }, [updateField]);
   
   return {
     formState,
@@ -135,15 +95,6 @@ export const useAdForm = (initialState: Partial<AdFormState> = {}) => {
     handleImageUrlsChange,
     handleCurrentImageIndexChange,
     updatePosition,
-    handleInputChange,
-    handleFontChange,
-    handlePlatformChange,
-    handleStyleChange,
-    handleColorChange,
-    handleCtaColorChange,
-    handleOverlayColorChange,
-    handleTextColorChange,
-    handleDescriptionColorChange,
   };
 };
 
