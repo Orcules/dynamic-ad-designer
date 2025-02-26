@@ -1,4 +1,6 @@
 
+import * as React from 'react';
+
 /**
  * This file contains utility functions for improving accessibility
  */
@@ -210,9 +212,9 @@ export const monkeyPatchDialogContent = () => {
     return;
   }
 
-  // מוודאים שליבת React זמינה בהיקף הגלובלי
-  if (typeof React === 'undefined' || typeof React.createElement === 'undefined') {
-    console.warn('React not available in global scope, cannot patch DialogContent');
+  // מוודאים שליבת React זמינה בהיקף הגלובלי או מייבאים אותה
+  if (typeof React.createElement === 'undefined') {
+    console.warn('React not available in expected form, cannot patch DialogContent');
     return;
   }
 
