@@ -14,72 +14,66 @@ export const useAdSubmission = () => {
       // Log file details for debugging
       Logger.info(`Starting file upload: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
-      // בדיקה קודם אם ה-bucket 'ad-images' קיים, אם לא - ננסה ליצור אותו
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
-      
-      if (!bucketExists) {
-        Logger.info('Bucket "ad-images" does not exist, attempting to create it');
-        try {
-          const { error: createBucketError } = await supabase.storage.createBucket('ad-images', {
-            public: true,
-            fileSizeLimit: 5242880, // 5MB
-          });
-          
-          if (createBucketError) {
-            Logger.error(`Error creating bucket: ${createBucketError.message}`);
-            // במידה ולא ניתן ליצור את ה-bucket, נחזיר URL לתמונה שהמשתמש העלה באמצעות ה-blob
-            const objectURL = URL.createObjectURL(file);
-            return objectURL;
+      // First, create a blob URL as fallback in case of storage API issues
+      const blobUrl = URL.createObjectURL(file);
+
+      try {
+        // Check if the 'ad-images' bucket exists
+        const { data: buckets } = await supabase.storage.listBuckets();
+        const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
+        
+        if (bucketExists) {
+          // If the bucket exists, try to upload the file
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          Logger.info(`Attempting upload with path: ${filePath}`);
+
+          // Try to upload file to Supabase
+          const { error: uploadError, data } = await supabase.storage
+            .from('ad-images')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            Logger.error(`Upload error: ${uploadError.message}`);
+            // In case of upload error, return the blob URL
+            return blobUrl;
           }
-          
-          Logger.info('Bucket "ad-images" created successfully');
-        } catch (bucketError) {
-          Logger.error(`Error creating bucket: ${bucketError instanceof Error ? bucketError.message : String(bucketError)}`);
-          // במידה ויש שגיאה ביצירת ה-bucket, נחזיר URL לתמונה שהמשתמש העלה באמצעות ה-blob
-          const objectURL = URL.createObjectURL(file);
-          return objectURL;
+
+          Logger.info('Upload successful');
+
+          // Get the public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('ad-images')
+            .getPublicUrl(filePath);
+
+          Logger.info(`Generated public URL: ${publicUrl}`);
+          return publicUrl;
+        } else {
+          Logger.info('Bucket "ad-images" does not exist, using blob URL');
+          return blobUrl;
         }
+      } catch (storageError) {
+        Logger.error(`Storage API error: ${storageError instanceof Error ? storageError.message : String(storageError)}`);
+        // Return the blob URL if there's any error with storage
+        return blobUrl;
       }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${fileName}`;
-
-      Logger.info(`Attempting upload with path: ${filePath}`);
-
-      // ניסיון להעלאת קובץ ל-supabase
-      const { error: uploadError, data } = await supabase.storage
-        .from('ad-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        Logger.error(`Upload error: ${uploadError.message}`);
-        // במקרה של שגיאה בהעלאה, נחזיר URL מקומי לתמונה
-        const objectURL = URL.createObjectURL(file);
-        return objectURL;
-      }
-
-      Logger.info('Upload successful');
-
-      // קבלת ה-URL הציבורי
-      const { data: { publicUrl } } = supabase.storage
-        .from('ad-images')
-        .getPublicUrl(filePath);
-
-      Logger.info(`Generated public URL: ${publicUrl}`);
-      return publicUrl;
-      
     } catch (error) {
       Logger.error(`Error in handleSubmission: ${error instanceof Error ? error.message : String(error)}`);
       toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
-      // במקרה של שגיאה, נחזיר URL מקומי לתמונה
-      const objectURL = URL.createObjectURL(file);
-      return objectURL;
+      // In case of error, try to create a blob URL
+      try {
+        const objectURL = URL.createObjectURL(file);
+        return objectURL;
+      } catch (blobError) {
+        Logger.error(`Failed to create blob URL: ${blobError instanceof Error ? blobError.message : String(blobError)}`);
+        return null;
+      }
     } finally {
       setIsSubmitting(false);
     }
