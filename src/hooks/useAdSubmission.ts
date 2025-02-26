@@ -33,6 +33,12 @@ export const useAdSubmission = () => {
         }
         
         Logger.info('Bucket "ad-images" created successfully');
+
+        // הוספת מדיניות גישה ציבורית
+        const { error: policyError } = await supabase.storage.from('ad-images').createSignedUrl('test.txt', 60);
+        if (policyError && !policyError.message.includes('not found')) {
+          Logger.error(`Error setting public policy: ${policyError.message}`);
+        }
       }
       
       return true;
@@ -132,10 +138,19 @@ export const useAdSubmission = () => {
   };
 
   const sanitizeFileName = (fileName: string): string => {
-    // הסרת תווים בעייתיים מהשם
-    const sanitized = fileName.replace(/[^\w\s.-]/g, '');
+    // הסרת תווים בעייתיים מהשם וגם תווים לא אנגליים
+    const sanitized = fileName.replace(/[^\w\s.-]/g, '').replace(/[^\x00-\x7F]/g, '');
     // הגבלת אורך השם
-    return sanitized.substring(0, 100);
+    return sanitized.substring(0, 50);
+  };
+
+  const generateSafeFileName = (originalName: string): string => {
+    // נוצר שם קובץ ייחודי שלא מסתמך על מספרים אקראיים בלבד
+    const fileExt = (originalName.split('.').pop() || 'jpg').toLowerCase();
+    const sanitizedName = sanitizeFileName(originalName.split('.')[0] || 'image');
+    const timestamp = new Date().toISOString().replace(/[-:.]/g, '');
+    const uniqueId = Math.random().toString(36).substring(2, 8); // שש תווים קצר יותר
+    return `img-${timestamp}-${uniqueId}.${fileExt}`;
   };
 
   const handleSubmission = async (file: File) => {
@@ -169,12 +184,8 @@ export const useAdSubmission = () => {
         return URL.createObjectURL(file);
       }
 
-      // יצירת שם קובץ ייחודי וטוחן
-      const fileExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const sanitizedName = sanitizeFileName(file.name.split('.')[0] || 'image');
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 10);
-      const fileName = `${sanitizedName}-${timestamp}-${randomStr}.${fileExt}`;
+      // יצירת שם קובץ ייחודי ובטוח
+      const safeFileName = generateSafeFileName(file.name);
       
       // התאמת גודל התמונה לדרישות השרת (במיוחד עבור שגיאת 422)
       Logger.info(`Original file size: ${(file.size / 1024).toFixed(2)} KB`);
@@ -183,15 +194,15 @@ export const useAdSubmission = () => {
         // תמיד מדחסים תמונות לפני העלאה כדי למנוע שגיאות
         const compressedFile = await compressImage(file, 1500); // מגבלה בקילובייטים
         
-        Logger.info(`Compressed file size: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+        Logger.info(`Compressed file size: ${(compressedFile.size / 1024).toFixed(2)} KB, uploading as: ${safeFileName}`);
         
         // העלאת הקובץ לאחר דחיסה
         const { data, error: uploadError } = await supabase.storage
           .from('ad-images')
-          .upload(fileName, compressedFile, {
+          .upload(safeFileName, compressedFile, {
             cacheControl: '3600',
             contentType: 'image/jpeg', // אנו מוודאים שסוג התוכן תקין
-            upsert: false
+            upsert: true // שינוי ל-true במקרה שקיים קובץ זהה
           });
 
         if (uploadError) {
@@ -201,15 +212,18 @@ export const useAdSubmission = () => {
             toast.error('Upload failed: Your image might be too large or in an unsupported format');
             
             // ניסיון נוסף עם דחיסה גבוהה יותר
-            const heavilyCompressedFile = await compressImage(file, 800);
+            const heavilyCompressedFile = await compressImage(file, 500);
             Logger.info(`Heavily compressed file size: ${(heavilyCompressedFile.size / 1024).toFixed(2)} KB`);
+            
+            // ניצור שם קובץ שונה לניסיון השני
+            const retryFileName = `retry-${safeFileName}`;
             
             const { data: retryData, error: retryError } = await supabase.storage
               .from('ad-images')
-              .upload(`retry-${fileName}`, heavilyCompressedFile, {
+              .upload(retryFileName, heavilyCompressedFile, {
                 cacheControl: '3600',
                 contentType: 'image/jpeg',
-                upsert: false
+                upsert: true
               });
             
             if (retryError) {
@@ -221,10 +235,12 @@ export const useAdSubmission = () => {
             // קבלת URL לתמונה המדוחסת שהצליחה לעלות
             const { data: { publicUrl } } = supabase.storage
               .from('ad-images')
-              .getPublicUrl(`retry-${fileName}`);
+              .getPublicUrl(retryFileName);
             
-            Logger.info(`Successfully uploaded compressed image: ${publicUrl}`);
-            return publicUrl;
+            // וידוא שה-URL ציבורי
+            const publicUrlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+            Logger.info(`Successfully uploaded compressed image: ${publicUrlWithCacheBust}`);
+            return publicUrlWithCacheBust;
             
           } else {
             Logger.error(`Upload error: ${uploadError.message}`);
@@ -236,13 +252,15 @@ export const useAdSubmission = () => {
         // קבלת URL ציבורי לתמונה שהועלתה
         const { data: { publicUrl } } = supabase.storage
           .from('ad-images')
-          .getPublicUrl(fileName);
+          .getPublicUrl(safeFileName);
 
-        Logger.info(`Generated public URL: ${publicUrl}`);
+        // מוסיף פרמטר cache-busting כדי למנוע בעיות מטמון
+        const publicUrlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+        Logger.info(`Generated public URL: ${publicUrlWithCacheBust}`);
         
         // וידוא שה-URL אכן פעיל
         try {
-          const response = await fetch(publicUrl, { method: 'HEAD' });
+          const response = await fetch(publicUrlWithCacheBust, { method: 'HEAD' });
           if (!response.ok) {
             Logger.warn(`Public URL check failed: ${response.status} ${response.statusText}`);
           }
@@ -250,17 +268,18 @@ export const useAdSubmission = () => {
           Logger.warn(`Failed to verify public URL: ${urlCheckError instanceof Error ? urlCheckError.message : String(urlCheckError)}`);
         }
         
-        return publicUrl;
+        return publicUrlWithCacheBust;
       } catch (compressionError) {
         Logger.error(`Compression error: ${compressionError instanceof Error ? compressionError.message : String(compressionError)}`);
         toast.error('Failed to process image. Trying with original image...');
         
         // ניסיון העלאה עם הקובץ המקורי כגיבוי
+        const backupFileName = `backup-${safeFileName}`;
         const { error: originalUploadError, data } = await supabase.storage
           .from('ad-images')
-          .upload(`original-${fileName}`, file, {
+          .upload(backupFileName, file, {
             cacheControl: '3600',
-            upsert: false
+            upsert: true
           });
         
         if (originalUploadError) {
@@ -271,9 +290,10 @@ export const useAdSubmission = () => {
         
         const { data: { publicUrl } } = supabase.storage
           .from('ad-images')
-          .getPublicUrl(`original-${fileName}`);
+          .getPublicUrl(backupFileName);
         
-        return publicUrl;
+        // מוסיף פרמטר cache-busting
+        return `${publicUrl}?t=${Date.now()}`;
       }
     } catch (error) {
       Logger.error(`Error in handleSubmission: ${error instanceof Error ? error.message : String(error)}`);
