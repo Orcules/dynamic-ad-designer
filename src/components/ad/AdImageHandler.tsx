@@ -28,18 +28,18 @@ export function useAdImageHandler({
       
       setSelectedImages(prev => [...prev, ...files]);
       
-      // Create temporary URLs for preview
+      // יצירת URLs זמניים לתצוגה מקדימה
       const urls = files.map(file => URL.createObjectURL(file));
       
-      // Update state safely
+      // עדכון state באופן בטוח
       setImageUrls(prevUrls => {
         const newUrls = [...prevUrls, ...urls];
-        // Call the callback after update
+        // קריאה לקולבק אחרי עדכון
         setTimeout(() => onImageChange(newUrls), 0);
         return newUrls;
       });
       
-      // Update the current index to the first new image
+      // עדכון האינדקס הנוכחי לתמונה הראשונה החדשה
       if (imageUrls.length === 0) {
         setCurrentPreviewIndex(0);
         onCurrentIndexChange(0);
@@ -49,7 +49,7 @@ export function useAdImageHandler({
 
   const handleImageUrlsChange = (urls: string[]) => {
     try {
-      // Filter empty or invalid URLs
+      // סינון URLs ריקים או לא תקינים
       const validUrls = urls.filter(url => url && url.trim() !== '' && url !== 'undefined');
       
       if (validUrls.length === 0) {
@@ -57,7 +57,7 @@ export function useAdImageHandler({
         return;
       }
       
-      // Ensure all URLs are HTTPS (unless HTTP is specifically required)
+      // וידוא שכל הURLs הם HTTPS (אם לא ספציפית נדרש HTTP)
       const secureUrls = validUrls.map(url => {
         if (url.startsWith('http:') && !url.includes('localhost')) {
           return url.replace(/^http:/, 'https:');
