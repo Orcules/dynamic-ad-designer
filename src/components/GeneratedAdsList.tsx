@@ -59,8 +59,61 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
 
   const handlePreviewClick = (imageUrl: string) => {
     if (!imageUrl) return;
-    // פתיחת התמונה בחלון חדש
-    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    
+    // במקום לפתוח חלון חדש, נציג את התמונה במסך מלא במסגרת האפליקציה הנוכחית
+    try {
+      // יצירת אלמנט דיב עם תמונה וכפתור סגירה
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+      overlay.style.display = 'flex';
+      overlay.style.flexDirection = 'column';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '9999';
+      overlay.style.padding = '20px';
+      
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.style.maxWidth = '90%';
+      img.style.maxHeight = '80%';
+      img.style.objectFit = 'contain';
+      img.style.border = '1px solid #333';
+      img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
+      
+      const closeButton = document.createElement('button');
+      closeButton.innerText = 'סגור';
+      closeButton.style.marginTop = '20px';
+      closeButton.style.padding = '8px 16px';
+      closeButton.style.backgroundColor = '#333';
+      closeButton.style.color = 'white';
+      closeButton.style.border = 'none';
+      closeButton.style.borderRadius = '4px';
+      closeButton.style.cursor = 'pointer';
+      
+      closeButton.onclick = () => {
+        document.body.removeChild(overlay);
+      };
+      
+      overlay.appendChild(img);
+      overlay.appendChild(closeButton);
+      
+      // סגירה בלחיצה על הרקע
+      overlay.onclick = (e) => {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay);
+        }
+      };
+      
+      document.body.appendChild(overlay);
+      
+    } catch (error) {
+      Logger.error(`Error showing preview: ${error instanceof Error ? error.message : String(error)}`);
+    }
   };
 
   const handleDownloadClick = (ad: GeneratedAd) => {
@@ -68,15 +121,49 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     
     const imageUrl = ad.preview_url || ad.image_url;
     
-    // יצירת אלמנט a זמני, הגדרת קישור ושם קובץ, הפעלת לחיצה והסרתו מה-DOM
-    const a = document.createElement('a');
-    a.href = imageUrl;
-    a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    
-    Logger.info(`Downloading image: ${imageUrl}`);
+    try {
+      // בדיקה אם מדובר בURL חיצוני או מקומי
+      const isExternalUrl = imageUrl.startsWith('http') && !imageUrl.includes(window.location.hostname);
+      
+      if (isExternalUrl) {
+        // לגבי תמונות חיצוניות, נשתמש בפתרון שונה: נוריד את התמונה ונציג אותה מקומית
+        fetch(imageUrl)
+          .then(response => response.blob())
+          .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl); // שחרור משאבים
+            Logger.info(`Downloaded image from external URL: ${imageUrl}`);
+          })
+          .catch(error => {
+            Logger.error(`Failed to download from external URL: ${error.message}`);
+            // אם נכשל, ננסה פתרון אחר
+            const a = document.createElement('a');
+            a.href = imageUrl;
+            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+            a.target = '_self'; // חשוב: לא פותחים חלון חדש
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+      } else {
+        // לגבי תמונות מקומיות, נשתמש בגישה הרגילה
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        Logger.info(`Downloaded image: ${imageUrl}`);
+      }
+    } catch (err) {
+      Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   return (
