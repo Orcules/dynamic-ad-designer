@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { GeneratedAdsList } from "@/components/GeneratedAdsList";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { suppressDialogWarnings, monkeyPatchDialogContent, setupAccessibilityFixes } from "@/utils/accessibility";
 
 interface GeneratedAd {
   id: string;
@@ -23,12 +24,36 @@ const Index = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Apply suppressDialogWarnings with useLayoutEffect, before rendering
+  useLayoutEffect(() => {
+    suppressDialogWarnings();
+    monkeyPatchDialogContent();
+  }, []);
+
   useEffect(() => {
     document.documentElement.classList.add('dark');
     Logger.info("Application started - Initial mount");
+    
+    // Apply all accessibility functions here as well
+    suppressDialogWarnings();
+    monkeyPatchDialogContent();
+    const cleanup = setupAccessibilityFixes();
+    
     fetchGeneratedAds();
 
+    // Apply again after a short time, to catch dialogs created later
+    const timer1 = setTimeout(() => {
+      monkeyPatchDialogContent();
+    }, 500);
+    
+    const timer2 = setTimeout(() => {
+      monkeyPatchDialogContent();
+    }, 1500);
+
     return () => {
+      cleanup();
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       document.documentElement.classList.remove('dark');
       Logger.info("Application unmounting");
     };
