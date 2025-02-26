@@ -138,6 +138,19 @@ export function AdPreview({
     fontFamily 
   });
 
+  // פונקציות ניווט משופרות
+  const handlePrevious = () => {
+    if (onPrevious && typeof onPrevious === 'function') {
+      onPrevious();
+    }
+  };
+
+  const handleNext = () => {
+    if (onNext && typeof onNext === 'function') {
+      onNext();
+    }
+  };
+
   return (
     <Card className="h-fit w-full">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -190,8 +203,8 @@ export function AdPreview({
           </div>
           {imageUrls.length > 1 && (
             <AdNavigationControls
-              onPrevious={onPrevious!}
-              onNext={onNext!}
+              onPrevious={handlePrevious}
+              onNext={handleNext}
               currentIndex={currentIndex}
               totalImages={imageUrls.length}
             />

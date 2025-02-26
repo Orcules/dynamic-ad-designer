@@ -57,6 +57,28 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
   };
 
+  const handlePreviewClick = (imageUrl: string) => {
+    if (!imageUrl) return;
+    // פתיחת התמונה בחלון חדש
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDownloadClick = (ad: GeneratedAd) => {
+    if (!ad.preview_url && !ad.image_url) return;
+    
+    const imageUrl = ad.preview_url || ad.image_url;
+    
+    // יצירת אלמנט a זמני, הגדרת קישור ושם קובץ, הפעלת לחיצה והסרתו מה-DOM
+    const a = document.createElement('a');
+    a.href = imageUrl;
+    a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    Logger.info(`Downloading image: ${imageUrl}`);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {ads.map((ad) => (
@@ -83,7 +105,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                 size="icon" 
                 variant="outline" 
                 className="rounded-full bg-white/20 backdrop-blur-sm" 
-                onClick={() => window.open(ad.preview_url || ad.image_url, '_blank')}
+                onClick={() => handlePreviewClick(ad.preview_url || ad.image_url)}
                 disabled={!ad.preview_url && !ad.image_url}
               >
                 <Eye className="h-4 w-4" />
@@ -92,16 +114,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                 size="icon" 
                 variant="outline" 
                 className="rounded-full bg-white/20 backdrop-blur-sm" 
-                onClick={() => {
-                  if (!ad.preview_url && !ad.image_url) return;
-                  
-                  const a = document.createElement('a');
-                  a.href = ad.preview_url || ad.image_url;
-                  a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-                }}
+                onClick={() => handleDownloadClick(ad)}
                 disabled={!ad.preview_url && !ad.image_url}
               >
                 <Download className="h-4 w-4" />
@@ -120,7 +133,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setExpandedAdId(expandedAdId === ad.id ? null : ad.id)}
+                onClick={() => {
+                  if (ad.preview_url || ad.image_url) {
+                    handlePreviewClick(ad.preview_url || ad.image_url);
+                  }
+                }}
               >
                 <ExternalLink className="h-4 w-4" />
               </Button>
