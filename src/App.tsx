@@ -4,43 +4,20 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect, useLayoutEffect } from "react";
+import { useEffect } from "react";
 import Index from "./pages/Index";
-import { setupAccessibilityFixes, suppressDialogWarnings, monkeyPatchDialogContent } from "./utils/accessibility";
+import { suppressDialogWarnings, setupAccessibilityFixes } from "./utils/accessibility";
 
 const queryClient = new QueryClient();
 
-// תיקון נגישות שמופעל לפני הרינדור הראשוני
-if (typeof window !== 'undefined') {
-  suppressDialogWarnings();
-  monkeyPatchDialogContent();
-}
-
 const App = () => {
-  // הפעלת setupAccessibilityFixes כשהאפליקציה מאותחלת - לפני הרינדור
-  useLayoutEffect(() => {
-    // וידוא שהפונקציות להשתקת האזהרות מופעלות גם מהאפליקציה
+  // Call the suppressDialogWarnings function when the app initializes
+  useEffect(() => {
     suppressDialogWarnings();
     
-    // monkeyPatchDialogContent כדי לתקן את הבעיה של דיאלוגים מובנים
-    monkeyPatchDialogContent();
-  }, []);
-  
-  // הגדרה נוספת - לאחר הרינדור
-  useEffect(() => {
-    // setupAccessibilityFixes כולל גם את suppressDialogWarnings 
-    // אבל מוסיף עוד פיצ'רים כמו MutationObserver
+    // Setup and return the cleanup function for accessibility fixes
     const cleanup = setupAccessibilityFixes();
-    
-    // תיקון נגישות אחרי 500 מילישניות
-    const timer = setTimeout(() => {
-      monkeyPatchDialogContent();
-    }, 500);
-    
-    return () => {
-      if (cleanup) cleanup();
-      clearTimeout(timer);
-    };
+    return cleanup;
   }, []);
 
   return (

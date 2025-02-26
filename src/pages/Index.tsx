@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -7,7 +7,6 @@ import { Sparkles } from "lucide-react";
 import { Logger } from "@/utils/logger";
 import { GeneratedAdsList } from "@/components/GeneratedAdsList";
 import { Separator } from "@/components/ui/separator";
-import { suppressDialogWarnings, monkeyPatchDialogContent, setupAccessibilityFixes } from "@/utils/accessibility";
 
 interface GeneratedAd {
   id: string;
@@ -21,36 +20,12 @@ const Index = () => {
   const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Apply suppressDialogWarnings with useLayoutEffect, before rendering
-  useLayoutEffect(() => {
-    suppressDialogWarnings();
-    monkeyPatchDialogContent();
-  }, []);
-
   useEffect(() => {
     document.documentElement.classList.add('dark');
     Logger.info("Application started - Initial mount");
-    
-    // Apply all accessibility functions here as well
-    suppressDialogWarnings();
-    monkeyPatchDialogContent();
-    const cleanup = setupAccessibilityFixes();
-    
     fetchGeneratedAds();
 
-    // Apply again after a short time, to catch dialogs created later
-    const timer1 = setTimeout(() => {
-      monkeyPatchDialogContent();
-    }, 500);
-    
-    const timer2 = setTimeout(() => {
-      monkeyPatchDialogContent();
-    }, 1500);
-
     return () => {
-      cleanup();
-      clearTimeout(timer1);
-      clearTimeout(timer2);
       document.documentElement.classList.remove('dark');
       Logger.info("Application unmounting");
     };
@@ -67,6 +42,8 @@ const Index = () => {
         .order('created_at', { ascending: false })
         .limit(20);
 
+      Logger.info(`Supabase response received - Data count: ${data?.length || 0}`);
+
       if (error) {
         Logger.error(`Error fetching ads: ${error.message}`);
         toast.error("Error loading ads");
@@ -76,6 +53,7 @@ const Index = () => {
       if (data) {
         Logger.info(`Successfully fetched ${data.length} ads`);
         setGeneratedAds(data);
+        Logger.info("State updated with new ads");
       } else {
         Logger.warn("No ads data returned");
       }
@@ -91,7 +69,7 @@ const Index = () => {
     Logger.info(`Ad generated with ID: ${adData.id}`);
 
     try {
-      // Create new record in generated_ads table
+      // יצירת רשומה חדשה בטבלת generated_ads
       const { data, error } = await supabase
         .from('generated_ads')
         .insert([
@@ -103,7 +81,7 @@ const Index = () => {
             platform: adData.platform,
             template_style: adData.template_style,
             image_url: adData.image_url,
-            preview_url: adData.preview_url || adData.image_url, // Ensure there's always a value
+            preview_url: adData.preview_url || adData.image_url, // וידוא שיש תמיד ערך
             width: adData.width,
             height: adData.height
           }
@@ -116,9 +94,10 @@ const Index = () => {
         return;
       }
 
-      // Refresh list of generated ads
+      // רענון רשימת המודעות שנוצרו
       Logger.info("Ad saved to database, refreshing list");
       await fetchGeneratedAds();
+      Logger.info("Ads refreshed after generation");
       
       toast.success("Ad created successfully!");
     } catch (err) {
@@ -157,8 +136,8 @@ const Index = () => {
         
         <div className="space-y-6">
           <div className="flex flex-col space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">Generated Ads</h2>
-            <p className="text-muted-foreground">All ads you've created will appear here for download and reuse</p>
+            <h2 className="text-2xl font-bold tracking-tight">המודעות שנוצרו</h2>
+            <p className="text-muted-foreground">כל המודעות שייצרת יופיעו כאן להורדה ושימוש מחדש</p>
           </div>
           
           <Separator className="my-4" />

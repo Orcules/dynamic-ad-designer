@@ -23,7 +23,7 @@ interface AccessibleDialogProps {
 }
 
 /**
- * Example of an accessible dialog that properly implements aria attributes
+ * קומפוננט דיאלוג נגיש שמיישם את כל תכונות ה-aria הדרושות
  */
 export function AccessibleDialog({
   trigger,
@@ -34,7 +34,7 @@ export function AccessibleDialog({
   open,
   onOpenChange
 }: AccessibleDialogProps) {
-  // No need to create a manual ID - the enhanced DialogContent component already adds a description automatically
+  const descriptionId = React.useId();
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,10 +42,10 @@ export function AccessibleDialog({
         {trigger}
       </DialogTrigger>
       
-      <DialogContent>
+      <DialogContent aria-describedby={descriptionId}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
+          <DialogDescription id={descriptionId}>
             {description}
           </DialogDescription>
         </DialogHeader>
@@ -61,6 +61,39 @@ export function AccessibleDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * דוגמת שימוש בדיאלוג נגיש
+ */
+export function ExampleAccessibleDialog() {
+  const [isOpen, setIsOpen] = React.useState(false);
+  
+  return (
+    <AccessibleDialog
+      trigger={<Button>פתח דיאלוג נגיש</Button>}
+      title="כותרת הדיאלוג"
+      description="תיאור קצר של מטרת הדיאלוג. טקסט זה יקרא על ידי קוראי מסך."
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={() => setIsOpen(false)}>ביטול</Button>
+          <Button onClick={() => setIsOpen(false)}>אישור</Button>
+        </div>
+      }
+    >
+      <div className="space-y-4">
+        <p>
+          זו דוגמה לתוכן דיאלוג נגיש שמיישם בצורה נכונה את מאפייני ה-ARIA.
+          הדיאלוג כולל קישור בין תיאור הדיאלוג לתוכן עצמו באמצעות aria-describedby.
+        </p>
+        <p>
+          כל רכיבי הדיאלוג מוגדרים כראוי כדי להבטיח חוויה טובה למשתמשים עם טכנולוגיות מסייעות.
+        </p>
+      </div>
+    </AccessibleDialog>
   );
 }
 
