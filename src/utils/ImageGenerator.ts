@@ -43,32 +43,62 @@ export class ImageGenerator {
     const ctaButton = this.previewElement.querySelector('button');
     console.log('CTA Button found:', ctaButton !== null);
     
+    // Find all text elements and move them up by 7px
+    const headlineElement = this.previewElement.querySelector('h2');
+    const descriptionElement = this.previewElement.querySelector('p');
+    const buttonTextElement = ctaButton?.querySelector('span');
+    
+    // Store original positions to restore later
+    const originalPositions: Map<Element, string> = new Map();
+    
+    // Helper to move elements up
+    const moveElementUp = (element: Element | null, pixels: number = 7) => {
+      if (!element) return;
+      
+      const currentTransform = window.getComputedStyle(element).transform;
+      originalPositions.set(element, currentTransform);
+      
+      // Apply transform to move up
+      if (currentTransform && currentTransform !== 'none') {
+        element.style.transform = `${currentTransform} translateY(-${pixels}px)`;
+      } else {
+        element.style.transform = `translateY(-${pixels}px)`;
+      }
+      
+      console.log(`Moved element up by ${pixels}px:`, element);
+    };
+    
+    // Move text elements up
+    moveElementUp(headlineElement);
+    moveElementUp(descriptionElement);
+    moveElementUp(buttonTextElement);
+    
     if (ctaButton) {
-      // Apply hover effect manually
+      // Apply hover effect to the arrow if exists
       const arrowElement = ctaButton.querySelector('svg');
       if (arrowElement) {
         console.log('Arrow element found, applying transform');
         const originalTransform = arrowElement.style.transform;
+        originalPositions.set(arrowElement, originalTransform);
         arrowElement.style.transform = 'translateY(4px)';
-        
-        return () => {
-          // Restore normal state
-          console.log('Resetting arrow transform');
-          arrowElement.style.transform = originalTransform;
-        };
+      } else {
+        // If no arrow found, try mouseenter event as fallback
+        console.log('Using mouseenter event as fallback');
+        ctaButton.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
       }
-      
-      // If no arrow found, try mouseenter event as fallback
-      console.log('Using mouseenter event as fallback');
-      ctaButton.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-      
-      // Allow animation to take effect
-      return () => {
-        ctaButton.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
-      };
     }
     
-    return () => {}; // No button found
+    return () => {
+      // Restore original positions
+      originalPositions.forEach((originalTransform, element) => {
+        element.style.transform = originalTransform;
+      });
+      
+      // Restore button state if needed
+      if (ctaButton && !ctaButton.querySelector('svg')) {
+        ctaButton.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+      }
+    };
   }
 
   private async captureElement(): Promise<string> {
@@ -81,7 +111,7 @@ export class ImageGenerator {
     // Trigger hover effect
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
-    console.log('Hover effect applied, waiting for animation...');
+    console.log('Text elements moved up, waiting for animation...');
     
     // Give time for animation to take effect
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -126,7 +156,7 @@ export class ImageGenerator {
       });
       
       // Reset hover effect after capture
-      console.log('Resetting hover effect');
+      console.log('Resetting text positions and hover effect');
       resetEffect();
       
       return canvas.toDataURL('image/png', 1.0);
