@@ -39,21 +39,36 @@ export class ImageGenerator {
       return () => {};
     }
 
-    // Simulate hover effect on button
-    const ctaButton = this.previewElement.querySelector('.ad-content button');
+    // Simulate hover effect on button - fix the selector
+    const ctaButton = this.previewElement.querySelector('button');
+    console.log('CTA Button found:', ctaButton !== null);
+    
     if (ctaButton) {
-      ctaButton.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-    }
-
-    // Allow animation to take effect
-    await new Promise(resolve => setTimeout(resolve, 300));
-
-    return () => {
-      // Restore normal state
-      if (ctaButton) {
-        ctaButton.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+      // Apply hover effect manually
+      const arrowElement = ctaButton.querySelector('svg');
+      if (arrowElement) {
+        console.log('Arrow element found, applying transform');
+        const originalTransform = arrowElement.style.transform;
+        arrowElement.style.transform = 'translateY(4px)';
+        
+        return () => {
+          // Restore normal state
+          console.log('Resetting arrow transform');
+          arrowElement.style.transform = originalTransform;
+        };
       }
-    };
+      
+      // If no arrow found, try mouseenter event as fallback
+      console.log('Using mouseenter event as fallback');
+      ctaButton.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+      
+      // Allow animation to take effect
+      return () => {
+        ctaButton.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+      };
+    }
+    
+    return () => {}; // No button found
   }
 
   private async captureElement(): Promise<string> {
@@ -64,7 +79,12 @@ export class ImageGenerator {
     await this.waitForImages();
 
     // Trigger hover effect
+    console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
+    console.log('Hover effect applied, waiting for animation...');
+    
+    // Give time for animation to take effect
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Save original styles
     const originalStyles = new Map<Element, string>();
@@ -105,7 +125,8 @@ export class ImageGenerator {
         }
       });
       
-      // Reset hover effect
+      // Reset hover effect after capture
+      console.log('Resetting hover effect');
       resetEffect();
       
       return canvas.toDataURL('image/png', 1.0);
