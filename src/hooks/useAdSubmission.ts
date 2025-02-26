@@ -14,8 +14,22 @@ export const useAdSubmission = () => {
       // Log file details for debugging
       Logger.info(`Starting file upload: ${file.name}, size: ${file.size}, type: ${file.type}`);
 
+      // בדיקה אם הקובץ קיים והוא תקין
+      if (!file || file.size === 0) {
+        Logger.error('Invalid file: file is empty or undefined');
+        toast.error('Invalid file: Please select a valid image');
+        return URL.createObjectURL(new Blob(['Invalid image'], { type: 'text/plain' }));
+      }
+
       // בדיקה קודם אם ה-bucket 'ad-images' קיים, אם לא - ננסה ליצור אותו
-      const { data: buckets } = await supabase.storage.listBuckets();
+      const { data: buckets, error: bucketListError } = await supabase.storage.listBuckets();
+      
+      if (bucketListError) {
+        Logger.error(`Error listing buckets: ${bucketListError.message}`);
+        const objectURL = URL.createObjectURL(file);
+        return objectURL;
+      }
+      
       const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
       
       if (!bucketExists) {
@@ -42,6 +56,7 @@ export const useAdSubmission = () => {
         }
       }
 
+      // יצירת שם קובץ ייחודי עם סיומת מקורית
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `${fileName}`;
@@ -58,6 +73,10 @@ export const useAdSubmission = () => {
 
       if (uploadError) {
         Logger.error(`Upload error: ${uploadError.message}`);
+        if (uploadError.message.includes('422')) {
+          Logger.error('Server validation error (422): The file may not meet server requirements');
+          toast.error('File upload failed: The file does not meet server requirements');
+        }
         // במקרה של שגיאה בהעלאה, נחזיר URL מקומי לתמונה
         const objectURL = URL.createObjectURL(file);
         return objectURL;
