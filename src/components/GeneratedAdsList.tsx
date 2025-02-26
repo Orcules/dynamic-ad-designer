@@ -26,10 +26,14 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   const [validatingImages, setValidatingImages] = useState(false);
   const placeholderImage = "/placeholder.svg";
   
+  // קבוע חדש לניהול מניעת שגיאות לוגים
+  const maxLogAttempts = 3;
+  const [logAttempts, setLogAttempts] = useState(0);
+  
   useEffect(() => {
     // בדיקת תקינות של ה-URLs של התמונות
     const validateImageUrls = async () => {
-      // מאתחל את מצב התמונות שנכשלו כדי למנוע בלבול עם תמונות קודמות
+      // מאתחל את מצב התמונות שנכשלו
       setFailedImages({});
       setValidatingImages(true);
       setValidatedAds(ads);
@@ -44,7 +48,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
             ? `${url}&t=${Date.now()}` 
             : `${url}?t=${Date.now()}`;
             
-          // נסיון לבדוק את התמונה באמצעות חיבור HEAD כדי לא להוריד את כל התמונה
+          // נסיון לבדוק את התמונה באמצעות חיבור HEAD
           const response = await fetch(cacheBustUrl, { 
             method: 'HEAD', 
             cache: 'no-store',
@@ -52,22 +56,52 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           });
           return response.ok;
         } catch (error) {
-          Logger.warn(`Failed to validate image URL (${url}): ${error}`);
+          // מניעת לוגים מרובים מדי
+          if (logAttempts < maxLogAttempts) {
+            try {
+              setLogAttempts(prev => prev + 1);
+              console.warn(`Failed to validate image URL (${url}):`, error);
+            } catch (logError) {
+              console.warn('Failed to log warning - storage might be full');
+            }
+          }
           return false;
         }
       };
       
       // בודק כל תמונה בנפרד
       const failedOnes: Record<string, boolean> = {};
+      let validatedCount = 0;
+      let failedCount = 0;
+      
       for (const ad of ads) {
         const imageUrl = ad.preview_url || ad.image_url;
         if (imageUrl) {
           const isValid = await checkImageUrlValidity(imageUrl);
           if (!isValid) {
-            Logger.warn(`Found invalid image URL for ad ${ad.id}: ${imageUrl}`);
             failedOnes[ad.id] = true;
+            failedCount++;
+            
+            // רק מנסה לרשום לוג אם לא הגענו למקסימום ניסיונות
+            if (logAttempts < maxLogAttempts) {
+              try {
+                console.warn(`Found invalid image URL for ad ${ad.id}`);
+              } catch (logError) {
+                // אם נכשל לרשום לוג, מפסיק לנסות
+                setLogAttempts(maxLogAttempts);
+              }
+            }
+          } else {
+            validatedCount++;
           }
         }
+      }
+      
+      // סיכום בקונסול במקום לנסות לרשום כל תמונה בנפרד
+      try {
+        console.info(`Image validation complete: ${validatedCount} valid, ${failedCount} failed`);
+      } catch (logError) {
+        console.warn('Failed to log summary');
       }
       
       setFailedImages(failedOnes);
@@ -77,7 +111,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     if (ads.length > 0) {
       validateImageUrls();
     }
-  }, [ads]);
+  }, [ads, logAttempts, maxLogAttempts]);
 
   if (isLoading) {
     return (
@@ -101,7 +135,16 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   }
 
   const handleImageError = (ad: GeneratedAd) => {
-    Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
+    try {
+      if (logAttempts < maxLogAttempts) {
+        console.warn(`Failed to load image for ad ${ad.id}`);
+        setLogAttempts(prev => prev + 1);
+      }
+    } catch (error) {
+      // התעלם משגיאות ניסיון לוג
+      console.warn('Failed to log image error');
+    }
+    
     setFailedImages(prev => ({
       ...prev,
       [ad.id]: true
@@ -155,7 +198,6 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
         toast.error('Popup was blocked. Please allow popups for this site.');
       }
     } catch (error) {
-      Logger.error(`Error showing preview: ${error instanceof Error ? error.message : String(error)}`);
       toast.error('Failed to open preview');
     }
   };
@@ -196,11 +238,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           toast.success('Image downloaded successfully');
         })
         .catch(err => {
-          Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);
+          console.error('Error downloading image:', err);
           toast.error('Failed to download image');
         });
     } catch (err) {
-      Logger.error(`Error initiating download: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Error initiating download:', err);
       toast.error('Failed to download image');
     }
   };
