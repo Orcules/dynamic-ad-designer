@@ -60,25 +60,23 @@ const Index = () => {
   }, []);
 
   // Function to fetch data with timeout
-  const fetchWithTimeout = async (fetchPromise: Promise<any>, timeoutMs: number) => {
-    let timeoutId: NodeJS.Timeout;
-    
-    // Create a promise that rejects after timeoutMs
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(() => {
+  const fetchWithTimeout = async (timeoutMs: number, fetchFn: () => Promise<any>) => {
+    return new Promise<any>(async (resolve, reject) => {
+      // Set up the timeout
+      const timeoutId = setTimeout(() => {
         reject(new Error(`Request timed out after ${timeoutMs}ms`));
       }, timeoutMs);
+      
+      try {
+        // Execute the provided function
+        const result = await fetchFn();
+        clearTimeout(timeoutId);
+        resolve(result);
+      } catch (error) {
+        clearTimeout(timeoutId);
+        reject(error);
+      }
     });
-    
-    try {
-      // Race the fetch against the timeout
-      const result = await Promise.race([fetchPromise, timeoutPromise]);
-      clearTimeout(timeoutId!);
-      return result;
-    } catch (error) {
-      clearTimeout(timeoutId!);
-      throw error;
-    }
   };
 
   const fetchGeneratedAds = async () => {
@@ -91,40 +89,76 @@ const Index = () => {
       // Use a smaller limit to reduce the chance of timeout
       const limit = 5;
       
-      // We'll request a smaller batch first to get something showing quickly
-      const fetchPromise = supabase
-        .from('generated_ads')
-        .select('id, name, image_url, preview_url, platform')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-      
-      // Use our custom timeout function
-      const result = await fetchWithTimeout(fetchPromise, 5000);
-      const { data, error } = result;
-      
-      // Handle any errors from the first query
-      if (error) {
-        Logger.error(`Error in initial fetch: ${error.message}`);
-        // Don't set error state yet, we'll try a fallback approach
+      try {
+        // We'll request a smaller batch first to get something showing quickly
+        const { data, error } = await fetchWithTimeout(5000, async () => {
+          return await supabase
+            .from('generated_ads')
+            .select('id, name, image_url, preview_url, platform')
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        });
         
-        // Try an even simpler query as fallback
+        // Handle any errors from the first query
+        if (error) {
+          Logger.error(`Error in initial fetch: ${error.message}`);
+          throw error; // Let the catch block handle this
+        }
+
+        // If we got data from the first query, use it
+        if (data) {
+          Logger.info(`Successfully fetched initial ${data.length} ads`);
+          setGeneratedAds(data);
+          
+          // Only try to fetch more if we actually got some data
+          if (data.length > 0) {
+            try {
+              // If first batch succeeded, try to get more in the background
+              Logger.info("Fetching additional ads in background...");
+              
+              const { data: moreData, error: moreError } = await fetchWithTimeout(8000, async () => {
+                return await supabase
+                  .from('generated_ads')
+                  .select('id, name, image_url, preview_url, platform')
+                  .order('created_at', { ascending: false })
+                  .range(limit, limit + 10);
+              });
+                
+              if (!moreError && moreData && moreData.length > 0) {
+                Logger.info(`Fetched ${moreData.length} additional ads`);
+                // Combine without duplicates
+                setGeneratedAds(prev => {
+                  const existingIds = new Set(prev.map(ad => ad.id));
+                  const newAds = moreData.filter(ad => !existingIds.has(ad.id));
+                  return [...prev, ...newAds];
+                });
+              }
+            } catch (moreErr) {
+              // We already have some data, so just log this error
+              Logger.warn(`Error fetching additional ads: ${moreErr instanceof Error ? moreErr.message : String(moreErr)}`);
+              // Don't show an error to the user since we have some data
+            }
+          }
+        } else {
+          Logger.warn("No ads data returned from initial query");
+          setGeneratedAds([]);
+        }
+      } catch (initialErr) {
+        // Try a simpler fallback query if the initial one fails
         try {
           Logger.info("Trying fallback simple query...");
           
-          const fallbackPromise = supabase
-            .from('generated_ads')
-            .select('id, name, image_url')
-            .limit(3);
-            
-          const fallbackResult = await fetchWithTimeout(fallbackPromise, 3000);
-          const { data: fallbackData, error: fallbackError } = fallbackResult;
+          const { data: fallbackData, error: fallbackError } = await fetchWithTimeout(3000, async () => {
+            return await supabase
+              .from('generated_ads')
+              .select('id, name, image_url')
+              .limit(3);
+          });
             
           if (fallbackError) {
             // If even the fallback fails, show the error
             Logger.error(`Fallback query also failed: ${fallbackError.message}`);
-            setLoadError(`Failed to load ads: ${error.message}`);
-            toast.error("Error loading ads");
-            return;
+            throw fallbackError;
           }
           
           if (fallbackData) {
@@ -136,52 +170,12 @@ const Index = () => {
             setGeneratedAds([]);
           }
         } catch (fallbackErr) {
+          const errorMessage = initialErr instanceof Error ? initialErr.message : String(initialErr);
           Logger.error(`Fallback attempt failed: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`);
-          setLoadError(`Failed to load ads: ${error.message}`);
+          setLoadError(`Failed to load ads: ${errorMessage}`);
           toast.error("Error loading ads");
           setGeneratedAds([]);
         }
-        return;
-      }
-
-      // If we got data from the first query, use it
-      if (data) {
-        Logger.info(`Successfully fetched initial ${data.length} ads`);
-        setGeneratedAds(data);
-        
-        // Only try to fetch more if we actually got some data
-        if (data.length > 0) {
-          try {
-            // If first batch succeeded, try to get more in the background
-            Logger.info("Fetching additional ads in background...");
-            
-            const moreDataPromise = supabase
-              .from('generated_ads')
-              .select('id, name, image_url, preview_url, platform')
-              .order('created_at', { ascending: false })
-              .range(limit, limit + 10);
-              
-            const moreResult = await fetchWithTimeout(moreDataPromise, 8000);
-            const { data: moreData, error: moreError } = moreResult;
-              
-            if (!moreError && moreData && moreData.length > 0) {
-              Logger.info(`Fetched ${moreData.length} additional ads`);
-              // Combine without duplicates
-              setGeneratedAds(prev => {
-                const existingIds = new Set(prev.map(ad => ad.id));
-                const newAds = moreData.filter(ad => !existingIds.has(ad.id));
-                return [...prev, ...newAds];
-              });
-            }
-          } catch (moreErr) {
-            // We already have some data, so just log this error
-            Logger.warn(`Error fetching additional ads: ${moreErr instanceof Error ? moreErr.message : String(moreErr)}`);
-            // Don't show an error to the user since we have some data
-          }
-        }
-      } else {
-        Logger.warn("No ads data returned from initial query");
-        setGeneratedAds([]);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
