@@ -49,10 +49,10 @@ export class ImageGenerator {
     const buttonTextElement = ctaButton?.querySelector('span');
     
     // Store original positions to restore later
-    const originalPositions: Map<Element, string> = new Map();
+    const originalPositions: Map<HTMLElement, string> = new Map();
     
     // Helper to move elements up
-    const moveElementUp = (element: Element | null, pixels: number = 7) => {
+    const moveElementUp = (element: HTMLElement | null, pixels: number = 7) => {
       if (!element) return;
       
       const currentTransform = window.getComputedStyle(element).transform;
@@ -69,18 +69,18 @@ export class ImageGenerator {
     };
     
     // Move text elements up
-    moveElementUp(headlineElement);
-    moveElementUp(descriptionElement);
-    moveElementUp(buttonTextElement);
+    moveElementUp(headlineElement as HTMLElement);
+    moveElementUp(descriptionElement as HTMLElement);
+    moveElementUp(buttonTextElement as HTMLElement);
     
     if (ctaButton) {
       // Apply hover effect to the arrow if exists
       const arrowElement = ctaButton.querySelector('svg');
       if (arrowElement) {
         console.log('Arrow element found, applying transform');
-        const originalTransform = arrowElement.style.transform;
-        originalPositions.set(arrowElement, originalTransform);
-        arrowElement.style.transform = 'translateY(4px)';
+        const originalTransform = (arrowElement as HTMLElement).style.transform;
+        originalPositions.set(arrowElement as HTMLElement, originalTransform);
+        (arrowElement as HTMLElement).style.transform = 'translateY(4px)';
       } else {
         // If no arrow found, try mouseenter event as fallback
         console.log('Using mouseenter event as fallback');

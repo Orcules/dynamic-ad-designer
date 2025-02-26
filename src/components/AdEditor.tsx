@@ -11,6 +11,7 @@ import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
 import { getDimensions } from "@/utils/adDimensions";
 import { Logger } from "@/utils/logger";
+import { ImageGenerator } from "@/utils/ImageGenerator";
 
 interface Template {
   id: string;
@@ -47,6 +48,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [showCtaArrow, setShowCtaArrow] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
+  const imageGeneratorRef = useRef<ImageGenerator | null>(null);
 
   const {
     selectedImages,
@@ -66,6 +68,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   });
 
   const { handleSubmission } = useAdSubmission();
+
+  // Ensure the image generator is initialized
+  React.useEffect(() => {
+    if (previewRef.current) {
+      imageGeneratorRef.current = new ImageGenerator('.ad-content');
+    }
+  }, [previewRef.current]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,6 +127,28 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imageToUpload = currentImage;
           }
           
+          // Make sure we're showing the correct preview for multi-image ads
+          if (i !== currentPreviewIndex && allImages.length > 1) {
+            if (i > currentPreviewIndex) {
+              handleNextPreview();
+            } else {
+              handlePrevPreview();
+            }
+            // Give time for the preview to update
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+          
+          // Generate a preview with text jump effect
+          let previewUrl = '';
+          if (imageGeneratorRef.current) {
+            try {
+              // Use the image generator to capture with text jump effect
+              previewUrl = await imageGeneratorRef.current.getImageUrl();
+            } catch (captureError) {
+              console.error("Error capturing preview:", captureError);
+            }
+          }
+          
           const uploadedUrl = await handleSubmission(imageToUpload);
           
           if (!uploadedUrl) {
@@ -138,7 +169,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             text_color: adData.text_color,
             description_color: adData.description_color,
             image_url: typeof currentImage === 'string' ? currentImage : uploadedUrl,
-            preview_url: uploadedUrl,
+            preview_url: previewUrl || uploadedUrl,
             width,
             height,
             status: 'completed'
