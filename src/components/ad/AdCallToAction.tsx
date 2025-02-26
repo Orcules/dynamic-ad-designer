@@ -54,8 +54,8 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
           {showArrow && (
             <ArrowBigDown 
               className={cn(
-                "transition-transform duration-300 inline-block",
-                isButtonHovered ? "translate-y-0.5" : ""
+                "transition-transform duration-300 inline-block translate-y-0.5",
+                isButtonHovered ? "translate-y-1" : ""
               )}
               size={24}
               strokeWidth={2.5}
