@@ -49,10 +49,10 @@ export class ImageGenerator {
     const buttonTextElement = ctaButton?.querySelector('span');
     
     // Store original positions to restore later
-    const originalPositions: Map<HTMLElement, string> = new Map();
+    const originalPositions = new Map<Element, string>();
     
     // Helper to move elements up
-    const moveElementUp = (element: HTMLElement | null, pixels: number = 7) => {
+    const moveElementUp = (element: Element | null, pixels: number = 7) => {
       if (!element) return;
       
       const currentTransform = window.getComputedStyle(element).transform;
@@ -60,27 +60,29 @@ export class ImageGenerator {
       
       // Apply transform to move up
       if (currentTransform && currentTransform !== 'none') {
-        element.style.transform = `${currentTransform} translateY(-${pixels}px)`;
+        (element as HTMLElement).style.transform = `${currentTransform} translateY(-${pixels}px)`;
       } else {
-        element.style.transform = `translateY(-${pixels}px)`;
+        (element as HTMLElement).style.transform = `translateY(-${pixels}px)`;
       }
       
       console.log(`Moved element up by ${pixels}px:`, element);
     };
     
     // Move text elements up
-    moveElementUp(headlineElement as HTMLElement);
-    moveElementUp(descriptionElement as HTMLElement);
-    moveElementUp(buttonTextElement as HTMLElement);
+    moveElementUp(headlineElement);
+    moveElementUp(descriptionElement);
+    moveElementUp(buttonTextElement);
     
     if (ctaButton) {
       // Apply hover effect to the arrow if exists
       const arrowElement = ctaButton.querySelector('svg');
       if (arrowElement) {
         console.log('Arrow element found, applying transform');
-        const originalTransform = (arrowElement as HTMLElement).style.transform;
-        originalPositions.set(arrowElement as HTMLElement, originalTransform);
-        (arrowElement as HTMLElement).style.transform = 'translateY(4px)';
+        // Type-safe version
+        const svgElement = arrowElement as SVGElement;
+        const originalTransform = svgElement.style.transform;
+        originalPositions.set(svgElement, originalTransform);
+        svgElement.style.transform = 'translateY(4px)';
       } else {
         // If no arrow found, try mouseenter event as fallback
         console.log('Using mouseenter event as fallback');
@@ -91,7 +93,9 @@ export class ImageGenerator {
     return () => {
       // Restore original positions
       originalPositions.forEach((originalTransform, element) => {
-        element.style.transform = originalTransform;
+        if (element instanceof SVGElement || element instanceof HTMLElement) {
+          element.style.transform = originalTransform;
+        }
       });
       
       // Restore button state if needed

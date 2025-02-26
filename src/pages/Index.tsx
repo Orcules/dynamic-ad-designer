@@ -5,11 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { Logger } from "@/utils/logger";
+import { GeneratedAdsList } from "@/components/GeneratedAdsList";
+import { Separator } from "@/components/ui/separator";
 
 interface GeneratedAd {
   id: string;
   name: string;
   image_url: string;
+  preview_url?: string;
+  platform?: string;
 }
 
 const Index = () => {
@@ -34,9 +38,9 @@ const Index = () => {
       
       const { data, error } = await supabase
         .from('generated_ads')
-        .select('id, name, image_url')
+        .select('id, name, image_url, preview_url, platform')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
       Logger.info(`Supabase response received - Data count: ${data?.length || 0}`);
 
@@ -73,7 +77,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/10 text-foreground p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-12">
         <div className="space-y-4 text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full animate-fade-in">
             <Sparkles className="h-5 w-5 text-primary animate-pulse" />
@@ -96,6 +100,20 @@ const Index = () => {
               description: "" 
             }} 
             onAdGenerated={handleAdGenerated} 
+          />
+        </div>
+        
+        <div className="space-y-6">
+          <div className="flex flex-col space-y-2">
+            <h2 className="text-2xl font-bold tracking-tight">המודעות שנוצרו</h2>
+            <p className="text-muted-foreground">כל המודעות שייצרת יופיעו כאן להורדה ושימוש מחדש</p>
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <GeneratedAdsList 
+            ads={generatedAds} 
+            isLoading={isUpdating} 
           />
         </div>
       </div>
