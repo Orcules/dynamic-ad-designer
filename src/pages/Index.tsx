@@ -67,11 +67,42 @@ const Index = () => {
 
   const handleAdGenerated = async (adData: any) => {
     Logger.info(`Ad generated with ID: ${adData.id}`);
+
     try {
+      // יצירת רשומה חדשה בטבלת generated_ads
+      const { data, error } = await supabase
+        .from('generated_ads')
+        .insert([
+          {
+            name: adData.name,
+            headline: adData.headline,
+            description: adData.description,
+            cta_text: adData.cta_text,
+            platform: adData.platform,
+            template_style: adData.template_style,
+            image_url: adData.image_url,
+            preview_url: adData.preview_url || adData.image_url, // וידוא שיש תמיד ערך
+            width: adData.width,
+            height: adData.height
+          }
+        ])
+        .select();
+
+      if (error) {
+        Logger.error(`Error creating ad record: ${error.message}`);
+        toast.error("Failed to save ad");
+        return;
+      }
+
+      // רענון רשימת המודעות שנוצרו
+      Logger.info("Ad saved to database, refreshing list");
       await fetchGeneratedAds();
       Logger.info("Ads refreshed after generation");
+      
+      toast.success("Ad created successfully!");
     } catch (err) {
       Logger.error(`Error refreshing ads after generation: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error("Error saving ad");
     }
   };
 
@@ -104,21 +135,4 @@ const Index = () => {
         </div>
         
         <div className="space-y-6">
-          <div className="flex flex-col space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">המודעות שנוצרו</h2>
-            <p className="text-muted-foreground">כל המודעות שייצרת יופיעו כאן להורדה ושימוש מחדש</p>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <GeneratedAdsList 
-            ads={generatedAds} 
-            isLoading={isUpdating} 
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default Index;
+          <div className="flex flex

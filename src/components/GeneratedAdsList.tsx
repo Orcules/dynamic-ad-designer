@@ -45,24 +45,49 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {ads.map((ad) => (
         <Card key={ad.id} className="overflow-hidden group relative">
-          <div className="aspect-video relative overflow-hidden bg-muted">
-            <img
-              src={ad.preview_url || ad.image_url}
-              alt={ad.name}
-              className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-            />
+          <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
+            {ad.preview_url || ad.image_url ? (
+              <img
+                src={ad.preview_url || ad.image_url}
+                alt={ad.name}
+                className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                onError={(e) => {
+                  console.error(`Error loading image: ${ad.preview_url || ad.image_url}`);
+                  // Replace with placeholder if image fails to load
+                  (e.target as HTMLImageElement).src = "/placeholder.svg";
+                }}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
+                <span className="text-sm">Image not available</span>
+              </div>
+            )}
             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <Button size="icon" variant="outline" className="rounded-full bg-white/20 backdrop-blur-sm" onClick={() => window.open(ad.preview_url || ad.image_url, '_blank')}>
+              <Button 
+                size="icon" 
+                variant="outline" 
+                className="rounded-full bg-white/20 backdrop-blur-sm" 
+                onClick={() => window.open(ad.preview_url || ad.image_url, '_blank')}
+                disabled={!ad.preview_url && !ad.image_url}
+              >
                 <Eye className="h-4 w-4" />
               </Button>
-              <Button size="icon" variant="outline" className="rounded-full bg-white/20 backdrop-blur-sm" onClick={() => {
-                const a = document.createElement('a');
-                a.href = ad.preview_url || ad.image_url;
-                a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-              }}>
+              <Button 
+                size="icon" 
+                variant="outline" 
+                className="rounded-full bg-white/20 backdrop-blur-sm" 
+                onClick={() => {
+                  if (!ad.preview_url && !ad.image_url) return;
+                  
+                  const a = document.createElement('a');
+                  a.href = ad.preview_url || ad.image_url;
+                  a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }}
+                disabled={!ad.preview_url && !ad.image_url}
+              >
                 <Download className="h-4 w-4" />
               </Button>
             </div>
