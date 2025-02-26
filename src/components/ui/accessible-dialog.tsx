@@ -67,14 +67,25 @@ export function AccessibleDialog({
 }
 
 /**
- * Example usage:
- * 
- * <AccessibleDialog
- *   trigger={<Button>Open Dialog</Button>}
- *   title="Settings"
- *   description="Configure your account preferences"
- *   footer={<Button onClick={handleSave}>Save Changes</Button>}
- * >
- *   <p>Dialog content goes here</p>
- * </AccessibleDialog>
+ * דוגמה לשימוש ברכיב הדיאלוג הנגיש
  */
+export const ExampleAccessibleDialogUsage = () => {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <AccessibleDialog
+      trigger={<Button variant="outline">פתח דיאלוג נגיש</Button>}
+      title="כותרת הדיאלוג"
+      description="זהו תיאור הדיאלוג שמתאר את תוכנו והשימוש בו"
+      open={open}
+      onOpenChange={setOpen}
+      footer={
+        <Button onClick={() => setOpen(false)}>סגור</Button>
+      }
+    >
+      <p>זהו תוכן הדיאלוג שמופיע בחלק המרכזי.</p>
+      <p>ניתן להוסיף כל תוכן שהוא כאן, כולל טפסים ואלמנטים אינטראקטיביים.</p>
+    </AccessibleDialog>
+  );
+};
+
+export default AccessibleDialog;

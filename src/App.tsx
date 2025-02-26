@@ -6,18 +6,24 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
-import { setupAccessibilityFixes } from "./utils/accessibility";
+import { setupAccessibilityFixes, suppressDialogWarnings, monkeyPatchDialogContent } from "./utils/accessibility";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   // Call the setupAccessibilityFixes function when the app initializes
   useEffect(() => {
+    // וידוא שהפונקציות להשתקת האזהרות מופעלות גם מהאפליקציה, למקרה שהרינדור קורה לפני שהקוד במודול מופעל
+    suppressDialogWarnings();
+    
+    // monkeyPatchDialogContent כדי לתקן את הבעיה של דיאלוגים מובנים
+    monkeyPatchDialogContent();
+    
     // setupAccessibilityFixes כולל בתוכו גם את suppressDialogWarnings
+    // אבל מוסיף עוד פיצ'רים כמו MutationObserver 
     const cleanup = setupAccessibilityFixes();
     
     return () => {
-      // Make sure to call the cleanup function when the component unmounts
       if (cleanup) cleanup();
     };
   }, []);

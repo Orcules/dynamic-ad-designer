@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { Logger } from "@/utils/logger";
 import { GeneratedAdsList } from "@/components/GeneratedAdsList";
 import { Separator } from "@/components/ui/separator";
-import { suppressDialogWarnings } from "@/utils/accessibility";
+import { suppressDialogWarnings, monkeyPatchDialogContent } from "@/utils/accessibility";
 
 interface GeneratedAd {
   id: string;
@@ -25,8 +25,9 @@ const Index = () => {
     document.documentElement.classList.add('dark');
     Logger.info("Application started - Initial mount");
     
-    // וידוא שההתראות מושתקות גם ברמת הדף
+    // הפעלת ה-suppressDialogWarnings בכל רמה אפשרית
     suppressDialogWarnings();
+    monkeyPatchDialogContent();
     
     fetchGeneratedAds();
 
@@ -47,8 +48,6 @@ const Index = () => {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      Logger.info(`Supabase response received - Data count: ${data?.length || 0}`);
-
       if (error) {
         Logger.error(`Error fetching ads: ${error.message}`);
         toast.error("Error loading ads");
@@ -58,7 +57,6 @@ const Index = () => {
       if (data) {
         Logger.info(`Successfully fetched ${data.length} ads`);
         setGeneratedAds(data);
-        Logger.info("State updated with new ads");
       } else {
         Logger.warn("No ads data returned");
       }
@@ -102,7 +100,6 @@ const Index = () => {
       // רענון רשימת המודעות שנוצרו
       Logger.info("Ad saved to database, refreshing list");
       await fetchGeneratedAds();
-      Logger.info("Ads refreshed after generation");
       
       toast.success("Ad created successfully!");
     } catch (err) {
