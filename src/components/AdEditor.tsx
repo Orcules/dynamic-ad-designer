@@ -28,7 +28,7 @@ interface AdEditorProps {
 
 const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const {
-    adData,
+    formState,
     handleInputChange,
     handleFontChange,
     handlePlatformChange,
@@ -37,15 +37,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handleCtaColorChange,
     handleOverlayColorChange,
     handleTextColorChange,
-    handleDescriptionColorChange
+    handleDescriptionColorChange,
+    updatePosition
   } = useAdForm();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
-  const [headlinePosition, setHeadlinePosition] = useState({ x: 0, y: 0 });
-  const [descriptionPosition, setDescriptionPosition] = useState({ x: 0, y: 0 });
-  const [ctaPosition, setCtaPosition] = useState({ x: 0, y: 0 });
-  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [showCtaArrow, setShowCtaArrow] = useState(true);
   const previewRef = useRef<HTMLDivElement>(null);
   const imageGeneratorRef = useRef<ImageGenerator | null>(null);
@@ -80,7 +77,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     e.preventDefault();
     
     const hasImages = selectedImages.length > 0 || imageUrls.length > 0;
-    if (!validateAdSubmission(adData.platform, hasImages)) {
+    if (!validateAdSubmission(formState.platform as string, hasImages)) {
       return;
     }
 
@@ -94,28 +91,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     try {
       Logger.info('Starting ad generation process...');
       
+      // Use positions from formState
       const positions = {
-        headlinePosition,
-        descriptionPosition,
-        ctaPosition,
-        imagePosition
+        headlinePosition: formState.headlinePosition,
+        descriptionPosition: formState.descriptionPosition,
+        ctaPosition: formState.ctaPosition,
+        imagePosition: formState.imagePosition
       };
       
-      // החלפת הקוד הבעייתי לשימוש מדויק יותר במערך התמונות
+      // Processing images
       let allImages: Array<File | string> = [];
       
-      // אם יש תמונות שנבחרו מהמחשב, נשתמש בהן
       if (selectedImages.length > 0) {
         allImages = [...selectedImages];
       } 
-      // אחרת, אם יש URLs של תמונות, נשתמש בהם
       else if (imageUrls.length > 0) {
         allImages = [...imageUrls];
       }
       
       Logger.info(`Processing ${allImages.length} images`);
       
-      // נוודא שיש לנו תמונות תקינות לעבוד איתן
       if (allImages.length === 0) {
         toast.error('No valid images to process');
         setIsGenerating(false);
@@ -127,19 +122,18 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           const currentImage = allImages[i];
           if (!currentImage) {
             Logger.error(`Skipping empty image at index ${i}`);
-            continue; // דילוג על תמונות ריקות
+            continue;
           }
           
           Logger.info(`Processing image ${i + 1}/${allImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
           
-          const { width, height } = getDimensions(adData.platform);
+          const { width, height } = getDimensions(formState.platform as string);
           
-          // יצירת אובייקט File מתוך URL אם צריך
           let imageToUpload: File;
           if (typeof currentImage === 'string') {
             if (!currentImage.trim() || currentImage === 'undefined') {
               Logger.error(`Skipping invalid image URL: ${currentImage}`);
-              continue; // דילוג על URLs לא תקינים
+              continue;
             }
             
             try {
@@ -150,41 +144,36 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               const blob = await response.blob();
               if (blob.size === 0) {
                 Logger.error(`Empty blob for URL: ${currentImage}`);
-                continue; // דילוג על תמונות ריקות
+                continue;
               }
               imageToUpload = new File([blob], `image-${i + 1}.${blob.type.split('/')[1] || 'jpg'}`, { 
                 type: blob.type || 'image/jpeg' 
               });
             } catch (fetchError) {
               Logger.error(`Failed to process image URL: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-              continue; // דילוג במקרה של שגיאה
+              continue;
             }
           } else {
             imageToUpload = currentImage;
           }
           
-          // וידוא גודל תקין לקובץ התמונה
           if (imageToUpload.size === 0) {
             Logger.error(`Skipping zero-size image: ${imageToUpload.name}`);
-            continue; // דילוג על תמונות בגודל 0
+            continue;
           }
           
-          // וידוא שאנחנו מציגים את התצוגה המקדימה הנכונה למודעות עם מספר תמונות
           if (i !== currentPreviewIndex && allImages.length > 1) {
             if (i > currentPreviewIndex) {
               handleNextPreview();
             } else {
               handlePrevPreview();
             }
-            // מתן זמן לעדכון התצוגה המקדימה
             await new Promise(resolve => setTimeout(resolve, 300));
           }
           
-          // יצירת תצוגה מקדימה עם אפקט קפיצת הטקסט
           let previewUrl = '';
           if (imageGeneratorRef.current) {
             try {
-              // שימוש ב-image generator ללכידה עם אפקט קפיצת טקסט
               previewUrl = await imageGeneratorRef.current.getImageUrl();
               Logger.info(`Generated preview URL of length: ${previewUrl.length}`);
             } catch (captureError) {
@@ -192,7 +181,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             }
           }
           
-          // העלאת התמונה לשרת
           Logger.info(`Starting file upload: ${JSON.stringify({
             name: imageToUpload.name,
             size: imageToUpload.size,
@@ -203,24 +191,24 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           
           if (!uploadedUrl) {
             Logger.error('Failed to upload image, no URL returned');
-            continue; // דילוג במקרה שלא קיבלנו URL
+            continue;
           }
           
           const adDataToGenerate = {
-            name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
-            headline: adData.headline,
-            description: adData.description,
-            cta_text: adData.cta_text,
-            font_url: adData.font_url,
-            platform: adData.platform,
-            template_style: adData.template_style,
-            accent_color: adData.accent_color,
-            cta_color: adData.cta_color,
-            overlay_color: adData.overlay_color,
-            text_color: adData.text_color,
-            description_color: adData.description_color,
-            image_url: uploadedUrl, // תמיד משתמשים ב-URL שהועלה
-            preview_url: previewUrl || uploadedUrl, // משתמשים בתצוגה מקדימה אם זמינה, אחרת בתמונה המקורית
+            name: `${formState.headline || 'Untitled'} - Version ${i + 1}`,
+            headline: formState.headline,
+            description: formState.description,
+            cta_text: formState.ctaText,
+            font_url: formState.fontUrl,
+            platform: formState.platform,
+            template_style: formState.templateStyle,
+            accent_color: formState.accentColor,
+            cta_color: formState.ctaColor,
+            overlay_color: formState.overlayColor,
+            text_color: formState.textColor,
+            description_color: formState.descriptionColor,
+            image_url: uploadedUrl,
+            preview_url: previewUrl || uploadedUrl,
             width,
             height,
             status: 'completed'
@@ -245,13 +233,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   };
 
-  const { width, height } = getDimensions(adData.platform);
+  const { width, height } = getDimensions(formState.platform as string || 'facebook');
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       <div className="w-full lg:w-1/2">
         <AdFormContainer
-          adData={adData}
+          adData={{
+            name: '',
+            headline: formState.headline,
+            description: formState.description,
+            cta_text: formState.ctaText,
+            font_url: formState.fontUrl,
+            platform: formState.platform as string || 'facebook',
+            template_style: formState.templateStyle,
+            accent_color: formState.accentColor,
+            cta_color: formState.ctaColor,
+            overlay_color: formState.overlayColor,
+            text_color: formState.textColor,
+            description_color: formState.descriptionColor
+          }}
           isGenerating={isGenerating}
           onInputChange={handleInputChange}
           onFontChange={handleFontChange}
@@ -266,14 +267,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onImageUrlsChange={handleImageUrlsChange}
           overlayOpacity={overlayOpacity}
           onOpacityChange={setOverlayOpacity}
-          headlinePosition={headlinePosition}
-          descriptionPosition={descriptionPosition}
-          ctaPosition={ctaPosition}
-          imagePosition={imagePosition}
-          onHeadlinePositionChange={setHeadlinePosition}
-          onDescriptionPositionChange={setDescriptionPosition}
-          onCtaPositionChange={setCtaPosition}
-          onImagePositionChange={setImagePosition}
+          headlinePosition={formState.headlinePosition}
+          descriptionPosition={formState.descriptionPosition}
+          ctaPosition={formState.ctaPosition}
+          imagePosition={formState.imagePosition}
+          onHeadlinePositionChange={(position) => updatePosition('headline', position)}
+          onDescriptionPositionChange={(position) => updatePosition('description', position)}
+          onCtaPositionChange={(position) => updatePosition('cta', position)}
+          onImagePositionChange={(position) => updatePosition('image', position)}
         />
       </div>
       
@@ -284,24 +285,24 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imageUrls={imageUrls}
             width={width}
             height={height}
-            headline={adData.headline}
-            description={adData.description}
-            descriptionColor={adData.description_color}
-            ctaText={adData.cta_text}
-            templateStyle={adData.template_style}
-            accentColor={adData.accent_color}
-            ctaColor={adData.cta_color}
-            overlayColor={adData.overlay_color}
-            textColor={adData.text_color}
-            fontUrl={adData.font_url}
+            headline={formState.headline}
+            description={formState.description}
+            descriptionColor={formState.descriptionColor}
+            ctaText={formState.ctaText}
+            templateStyle={formState.templateStyle}
+            accentColor={formState.accentColor}
+            ctaColor={formState.ctaColor}
+            overlayColor={formState.overlayColor}
+            textColor={formState.textColor}
+            fontUrl={formState.fontUrl}
             overlayOpacity={overlayOpacity}
             currentIndex={currentPreviewIndex}
             onPrevious={handlePrevPreview}
             onNext={handleNextPreview}
-            headlinePosition={headlinePosition}
-            descriptionPosition={descriptionPosition}
-            ctaPosition={ctaPosition}
-            imagePosition={imagePosition}
+            headlinePosition={formState.headlinePosition}
+            descriptionPosition={formState.descriptionPosition}
+            ctaPosition={formState.ctaPosition}
+            imagePosition={formState.imagePosition}
             showCtaArrow={showCtaArrow}
           />
         </div>
