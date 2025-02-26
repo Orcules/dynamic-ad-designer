@@ -64,43 +64,94 @@ const Index = () => {
       setIsUpdating(true);
       setLoadError(null);
       
-      Logger.info("Starting to fetch generated ads...");
+      Logger.info("Starting to fetch generated ads with smaller batch size...");
       
-      // Set up a timeout for the request
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 10000);
-      });
+      // Use a smaller limit to reduce the chance of timeout
+      const limit = 5;
       
-      // Actual fetch request
-      const fetchPromise = supabase
+      // We'll request a smaller batch first to get something showing quickly
+      const { data, error } = await supabase
         .from('generated_ads')
         .select('id, name, image_url, preview_url, platform')
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(limit)
+        .timeout(5000); // Set a shorter timeout for the initial query
       
-      // Race the fetch against the timeout
-      const { data, error } = await Promise.race([
-        fetchPromise,
-        timeoutPromise.then(() => { 
-          throw new Error("Database request timed out");
-        })
-      ]) as any;
-
-      Logger.info(`Supabase response received - Data count: ${data?.length || 0}`);
-
+      // Handle any errors from the first query
       if (error) {
-        Logger.error(`Error fetching ads: ${error.message}`);
-        setLoadError(`Failed to load ads: ${error.message}`);
-        toast.error("Error loading ads");
+        Logger.error(`Error in initial fetch: ${error.message}`);
+        // Don't set error state yet, we'll try a fallback approach
+        
+        // Try an even simpler query as fallback
+        try {
+          Logger.info("Trying fallback simple query...");
+          
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('generated_ads')
+            .select('id, name, image_url')
+            .limit(3)
+            .timeout(3000);
+            
+          if (fallbackError) {
+            // If even the fallback fails, show the error
+            Logger.error(`Fallback query also failed: ${fallbackError.message}`);
+            setLoadError(`Failed to load ads: ${error.message}`);
+            toast.error("Error loading ads");
+            return;
+          }
+          
+          if (fallbackData) {
+            // Use fallback data if available
+            Logger.info(`Fallback query succeeded with ${fallbackData.length} results`);
+            setGeneratedAds(fallbackData);
+          } else {
+            // No data in fallback query
+            setGeneratedAds([]);
+          }
+        } catch (fallbackErr) {
+          Logger.error(`Fallback attempt failed: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`);
+          setLoadError(`Failed to load ads: ${error.message}`);
+          toast.error("Error loading ads");
+          setGeneratedAds([]);
+        }
         return;
       }
 
+      // If we got data from the first query, use it
       if (data) {
-        Logger.info(`Successfully fetched ${data.length} ads`);
+        Logger.info(`Successfully fetched initial ${data.length} ads`);
         setGeneratedAds(data);
-        Logger.info("State updated with new ads");
+        
+        // Only try to fetch more if we actually got some data
+        if (data.length > 0) {
+          try {
+            // If first batch succeeded, try to get more in the background
+            Logger.info("Fetching additional ads in background...");
+            
+            const { data: moreData, error: moreError } = await supabase
+              .from('generated_ads')
+              .select('id, name, image_url, preview_url, platform')
+              .order('created_at', { ascending: false })
+              .range(limit, limit + 10)
+              .timeout(8000);
+              
+            if (!moreError && moreData && moreData.length > 0) {
+              Logger.info(`Fetched ${moreData.length} additional ads`);
+              // Combine without duplicates
+              setGeneratedAds(prev => {
+                const existingIds = new Set(prev.map(ad => ad.id));
+                const newAds = moreData.filter(ad => !existingIds.has(ad.id));
+                return [...prev, ...newAds];
+              });
+            }
+          } catch (moreErr) {
+            // We already have some data, so just log this error
+            Logger.warn(`Error fetching additional ads: ${moreErr instanceof Error ? moreErr.message : String(moreErr)}`);
+            // Don't show an error to the user since we have some data
+          }
+        }
       } else {
-        Logger.warn("No ads data returned");
+        Logger.warn("No ads data returned from initial query");
         setGeneratedAds([]);
       }
     } catch (err) {
