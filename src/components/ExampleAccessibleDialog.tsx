@@ -34,7 +34,7 @@ export function ExampleAccessibleDialog({
   open,
   onOpenChange
 }: ExampleAccessibleDialogProps) {
-  const descriptionId = React.useId();
+  // לא צריך ליצור ID ידני - הרכיב DialogContent המשודרג כבר מוסיף תיאור אוטומטית
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -42,10 +42,10 @@ export function ExampleAccessibleDialog({
         {trigger}
       </DialogTrigger>
       
-      <DialogContent aria-describedby={descriptionId}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription id={descriptionId}>
+          <DialogDescription>
             {description}
           </DialogDescription>
         </DialogHeader>
