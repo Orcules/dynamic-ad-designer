@@ -59,6 +59,28 @@ const Index = () => {
     };
   }, []);
 
+  // Function to fetch data with timeout
+  const fetchWithTimeout = async (fetchPromise: Promise<any>, timeoutMs: number) => {
+    let timeoutId: NodeJS.Timeout;
+    
+    // Create a promise that rejects after timeoutMs
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`Request timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+    
+    try {
+      // Race the fetch against the timeout
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      clearTimeout(timeoutId!);
+      return result;
+    } catch (error) {
+      clearTimeout(timeoutId!);
+      throw error;
+    }
+  };
+
   const fetchGeneratedAds = async () => {
     try {
       setIsUpdating(true);
@@ -70,12 +92,15 @@ const Index = () => {
       const limit = 5;
       
       // We'll request a smaller batch first to get something showing quickly
-      const { data, error } = await supabase
+      const fetchPromise = supabase
         .from('generated_ads')
         .select('id, name, image_url, preview_url, platform')
         .order('created_at', { ascending: false })
-        .limit(limit)
-        .timeout(5000); // Set a shorter timeout for the initial query
+        .limit(limit);
+      
+      // Use our custom timeout function
+      const result = await fetchWithTimeout(fetchPromise, 5000);
+      const { data, error } = result;
       
       // Handle any errors from the first query
       if (error) {
@@ -86,11 +111,13 @@ const Index = () => {
         try {
           Logger.info("Trying fallback simple query...");
           
-          const { data: fallbackData, error: fallbackError } = await supabase
+          const fallbackPromise = supabase
             .from('generated_ads')
             .select('id, name, image_url')
-            .limit(3)
-            .timeout(3000);
+            .limit(3);
+            
+          const fallbackResult = await fetchWithTimeout(fallbackPromise, 3000);
+          const { data: fallbackData, error: fallbackError } = fallbackResult;
             
           if (fallbackError) {
             // If even the fallback fails, show the error
@@ -128,12 +155,14 @@ const Index = () => {
             // If first batch succeeded, try to get more in the background
             Logger.info("Fetching additional ads in background...");
             
-            const { data: moreData, error: moreError } = await supabase
+            const moreDataPromise = supabase
               .from('generated_ads')
               .select('id, name, image_url, preview_url, platform')
               .order('created_at', { ascending: false })
-              .range(limit, limit + 10)
-              .timeout(8000);
+              .range(limit, limit + 10);
+              
+            const moreResult = await fetchWithTimeout(moreDataPromise, 8000);
+            const { data: moreData, error: moreError } = moreResult;
               
             if (!moreError && moreData && moreData.length > 0) {
               Logger.info(`Fetched ${moreData.length} additional ads`);
