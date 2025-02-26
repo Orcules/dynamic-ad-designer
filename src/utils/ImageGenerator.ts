@@ -34,12 +34,37 @@ export class ImageGenerator {
     ]);
   }
 
+  private async prepareForCapture(): Promise<(() => void)> {
+    if (!this.previewElement) {
+      return () => {};
+    }
+
+    // Simulate hover effect on button
+    const ctaButton = this.previewElement.querySelector('.ad-content button');
+    if (ctaButton) {
+      ctaButton.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+    }
+
+    // Allow animation to take effect
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    return () => {
+      // Restore normal state
+      if (ctaButton) {
+        ctaButton.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
+      }
+    };
+  }
+
   private async captureElement(): Promise<string> {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
     }
 
     await this.waitForImages();
+
+    // Trigger hover effect
+    const resetEffect = await this.prepareForCapture();
 
     // Save original styles
     const originalStyles = new Map<Element, string>();
@@ -80,6 +105,9 @@ export class ImageGenerator {
         }
       });
       
+      // Reset hover effect
+      resetEffect();
+      
       return canvas.toDataURL('image/png', 1.0);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
@@ -92,6 +120,9 @@ export class ImageGenerator {
         }
       });
       
+      // Reset hover effect
+      resetEffect();
+      
       return this.fallbackCapture();
     }
   }
@@ -102,6 +133,9 @@ export class ImageGenerator {
     }
 
     await this.waitForImages();
+    
+    // Trigger hover effect
+    const resetEffect = await this.prepareForCapture();
 
     console.log('Using dom-to-image fallback...');
     const config = {
@@ -134,9 +168,16 @@ export class ImageGenerator {
       
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log('Dom-to-image generated successfully');
+      
+      // Reset hover effect
+      resetEffect();
+      
       return dataUrl;
     } catch (error) {
       console.error('Fallback capture failed:', error);
+      
+      // Reset hover effect
+      resetEffect();
       
       // Last resort: try to get a screenshot with a simpler approach
       try {
