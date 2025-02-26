@@ -52,11 +52,6 @@ const DialogContent = React.forwardRef<
 ))
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
-// Add Context Provider for Dialog Accessibility
-export const DialogAccessibilityContext = React.createContext<{
-  describedById?: string;
-}>({});
-
 const DialogHeader = ({
   className,
   ...props

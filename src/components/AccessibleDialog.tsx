@@ -6,38 +6,44 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 
-interface AccessibleDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  title?: string;
-  description?: string;
-  children: React.ReactNode;
+/**
+ * This is a simple export that re-exports the dialog components.
+ * Use this in your application code to automatically include an accessible description.
+ */
+export {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+};
+
+/**
+ * Helper function to create a dialog description ID
+ */
+export function useDialogDescriptionId() {
+  return React.useId();
 }
 
-export function AccessibleDialog({
-  open,
-  onOpenChange,
-  title,
-  description = "Dialog content",
-  children
-}: AccessibleDialogProps) {
-  const descriptionId = React.useId();
-  
+/**
+ * Simple component that adds a visually hidden description to dialogs
+ * for accessibility purposes
+ */
+export function ScreenReaderDialogDescription({
+  id,
+  children = "Dialog content",
+}: {
+  id: string;
+  children?: React.ReactNode;
+}) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent aria-describedby={descriptionId}>
-        {title && (
-          <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
-          </DialogHeader>
-        )}
-        <DialogDescription id={descriptionId} className={description ? '' : 'sr-only'}>
-          {description}
-        </DialogDescription>
-        {children}
-      </DialogContent>
-    </Dialog>
+    <DialogDescription id={id} className="sr-only">
+      {children}
+    </DialogDescription>
   );
 }
