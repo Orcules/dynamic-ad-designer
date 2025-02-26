@@ -19,8 +19,13 @@ export function useAdImageHandler({
       const files = Array.from(e.target.files);
       setSelectedImages(prev => [...prev, ...files]);
       const urls = files.map(file => URL.createObjectURL(file));
-      setImageUrls(prev => [...prev, ...urls]);
-      onImageChange([...imageUrls, ...urls]);
+      
+      // Update the state first
+      const newUrls = [...imageUrls, ...urls];
+      setImageUrls(newUrls);
+      
+      // Then call the callback with only the new URLs to avoid infinite loop
+      onImageChange(urls);
     }
   };
 
