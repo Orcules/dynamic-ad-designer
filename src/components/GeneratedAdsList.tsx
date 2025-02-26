@@ -5,6 +5,7 @@ import { ExternalLink, Download, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner"; // חשוב: הוספת ייבוא של toast מ-sonner
 
 interface GeneratedAd {
   id: string;
@@ -153,7 +154,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           })
           .catch(error => {
             Logger.error(`Failed to download from external URL: ${error.message}`);
-            toast.error('Failed to download image');
+            toast.error('Failed to download image'); // כעת toast מיובא כהלכה
             // אם נכשל, ננסה פתרון אחר
             const a = document.createElement('a');
             a.href = imageUrl;

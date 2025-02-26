@@ -33,14 +33,8 @@ export const useAdSubmission = () => {
         }
         
         // יצירת מדיניות גישה ציבורית לבאקט
-        const { error: policyError } = await supabase.rpc('create_public_bucket_policy', {
-          bucket_name: 'ad-images'
-        });
-        
-        if (policyError) {
-          Logger.warn(`Note: Could not set public policy automatically: ${policyError.message}`);
-          // נמשיך בכל זאת - ייתכן שהמדיניות כבר הוגדרה או שאין לנו הרשאות לכך
-        }
+        // הערה: כאן היתה השגיאה - supabase.rpc לא תומך בפרמטר מסוג string כפי שציפינו
+        // ננסה ליצור את הבאקט ולהמשיך, אך לא נקרא ל-RPC
         
         Logger.info('Bucket "ad-images" created successfully');
       }
