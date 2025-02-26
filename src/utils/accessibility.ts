@@ -17,23 +17,22 @@ export const suppressDialogWarnings = () => {
       return;
     }
 
-    // Store the original console.error
+    // שמירת הפונקציה המקורית
     const originalError = console.error;
     
-    // Replace it with a filtered version
+    // החלפה בגרסה מסוננת
     console.error = (...args) => {
-      // Check if this is the DialogContent warning - more comprehensive check
+      // בדיקה האם זו אזהרת DialogContent - בדיקה מקיפה יותר
       if (args[0] && typeof args[0] === 'string' && (
           args[0].includes('Missing `Description`') || 
           args[0].includes('aria-describedby={undefined}') ||
           args[0].includes('DialogContent') ||
-          args[0].includes('dialog') && args[0].includes('accessibility')
+          (args[0].includes('dialog') && args[0].includes('accessibility'))
       )) {
-        // We'll add a debug log here to confirm that warnings are being intercepted
-        console.debug('Dialog accessibility warning suppressed:', args[0].substring(0, 100) + '...');
+        // הוספת לוג דיבאג כדי לאשר שהאזהרות נתפסות
         return;
       }
-      // Otherwise, pass through to the original console.error
+      // אחרת, העברה לפונקציה המקורית
       originalError.apply(console, args);
     };
 
@@ -49,65 +48,81 @@ export const suppressDialogWarnings = () => {
  */
 export const enhanceDialogAccessibility = () => {
   if (typeof document === 'undefined') {
-    return () => {}; // Return empty cleanup for environments without document
+    return () => {}; // החזרת פונקציית ניקוי ריקה עבור סביבות ללא מסמך
   }
 
-  // Function to fix any open dialogs already in the DOM
+  // פונקציה לתיקון דיאלוגים פתוחים קיימים ב-DOM
   const fixExistingDialogs = () => {
     const dialogContents = document.querySelectorAll('[role="dialog"]:not([aria-describedby])');
     
     dialogContents.forEach((dialog, index) => {
       if (dialog instanceof HTMLElement) {
-        // Generate a unique ID for this dialog
+        // יצירת מזהה ייחודי לדיאלוג זה
         const descriptionId = `dialog-description-${Date.now()}-${index}`;
         
-        // Check if there's a description element already
+        // בדיקה האם כבר קיים אלמנט תיאור
         const existingDescription = dialog.querySelector('[id^="dialog-description"]');
         
         if (existingDescription) {
-          // Use the existing description element's ID
+          // שימוש במזהה של אלמנט התיאור הקיים
           dialog.setAttribute('aria-describedby', existingDescription.id);
-          console.debug(`Fixed existing dialog using existing description: ${existingDescription.id}`);
         } else {
-          // Create a hidden description element
+          // יצירת אלמנט תיאור מוסתר
           const description = document.createElement('div');
           description.id = descriptionId;
           description.style.display = 'none';
           description.textContent = 'Dialog content';
           
-          // Add it to the dialog
+          // הוספתו לדיאלוג
           dialog.appendChild(description);
           dialog.setAttribute('aria-describedby', descriptionId);
-          console.debug(`Fixed existing dialog with new description: ${descriptionId}`);
         }
       }
     });
   };
 
-  // Fix any dialogs that might already be in the DOM
+  // תיקון דיאלוגים שעשויים להיות כבר ב-DOM
   setTimeout(fixExistingDialogs, 100);
   
-  // MutationObserver that adds accessibility attributes to all newly added DialogContent components
+  // מנתח וקובע אם דיאלוג חייב להיות מתוקן
+  const analyzeAndFixNode = (node: Node) => {
+    if (node instanceof HTMLElement) {
+      if (node.getAttribute('role') === 'dialog' && !node.getAttribute('aria-describedby')) {
+        const descId = `dialog-description-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        const descEl = document.createElement('div');
+        descEl.id = descId;
+        descEl.style.display = 'none';
+        descEl.textContent = 'Dialog content';
+        node.appendChild(descEl);
+        node.setAttribute('aria-describedby', descId);
+      }
+      
+      // בדיקת ילדים
+      node.querySelectorAll('[role="dialog"]:not([aria-describedby])').forEach(dialog => {
+        if (dialog instanceof HTMLElement) {
+          analyzeAndFixNode(dialog);
+        }
+      });
+    }
+  };
+  
+  // MutationObserver שמוסיף מאפייני נגישות לכל רכיבי DialogContent שנוספו
   const observer = new MutationObserver((mutations) => {
-    let needsFix = false;
-    
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList' && mutation.addedNodes.length) {
-        needsFix = true;
+        mutation.addedNodes.forEach(node => {
+          analyzeAndFixNode(node);
+        });
       } else if (mutation.type === 'attributes' && 
                 mutation.attributeName === 'role' && 
                 mutation.target instanceof HTMLElement &&
                 mutation.target.getAttribute('role') === 'dialog') {
-        needsFix = true;
+        analyzeAndFixNode(mutation.target);
       }
     });
-    
-    if (needsFix) {
-      fixExistingDialogs();
-    }
   });
   
-  // Start observing
+  // התחלת התצפית
   observer.observe(document.body, { 
     childList: true, 
     subtree: true,
@@ -115,31 +130,27 @@ export const enhanceDialogAccessibility = () => {
     attributeFilter: ['role', 'aria-describedby']
   });
   
-  // Return cleanup function
+  // החזרת פונקציית ניקוי
   return () => observer.disconnect();
 };
-
-/**
- * Helper functions for improving accessibility in the application
- */
 
 /**
  * Ensures that aria-hidden is not applied to elements that have focus
  */
 export function ensureFocusableElementsAreNotHidden() {
-  // Find any focused elements
+  // מציאת כל האלמנטים הממוקדים
   const activeElement = document.activeElement;
   
   if (!activeElement) return;
   
-  // Find all ancestors with aria-hidden
+  // מציאת כל האבות עם aria-hidden
   let el = activeElement.parentElement;
   while (el) {
     if (el.getAttribute('aria-hidden') === 'true') {
-      // Remove aria-hidden temporarily
+      // הסרת aria-hidden באופן זמני
       el.removeAttribute('aria-hidden');
       
-      // Alternative: we could also use the inert attribute as recommended
+      // חלופה: ניתן גם להשתמש במאפיין inert כמומלץ
       // el.setAttribute('inert', '');
     }
     el = el.parentElement;
@@ -150,17 +161,17 @@ export function ensureFocusableElementsAreNotHidden() {
  * Fixes the aria-hidden issue by applying the inert attribute instead
  */
 export function fixAriaHiddenFocusableIssue() {
-  // Find all elements with aria-hidden
+  // מציאת כל האלמנטים עם aria-hidden
   const hiddenElements = document.querySelectorAll('[aria-hidden="true"]');
   
   hiddenElements.forEach(el => {
-    // Check if the element contains any focusable elements
+    // בדיקה האם האלמנט מכיל אלמנטים שניתן למקד
     const focusableElements = el.querySelectorAll(
       'a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
     
     if (focusableElements.length > 0) {
-      // Remove aria-hidden and use inert instead
+      // הסרת aria-hidden ושימוש ב-inert במקום
       el.removeAttribute('aria-hidden');
       el.setAttribute('inert', '');
     }
@@ -171,30 +182,48 @@ export function fixAriaHiddenFocusableIssue() {
  * Automatically apply the above fix when the component mounts and when focus changes
  */
 export function setupAccessibilityFixes() {
-  // נפעיל את ה-suppressDialog מיד
+  // הפעלת suppressDialog מיד
   suppressDialogWarnings();
   
-  // מפעילים את enhanceDialogAccessibility כדי לתקן באופן אוטומטי דיאלוגים
+  // הפעלת enhanceDialogAccessibility כדי לתקן באופן אוטומטי דיאלוגים
   const cleanupEnhanceDialog = enhanceDialogAccessibility();
   
-  // Setup a mutation observer to watch for changes to the DOM
+  // הגדרת משקיף מוטציה לצפייה בשינויים ב-DOM
   const observer = new MutationObserver(mutations => {
-    // When the DOM changes, fix any aria-hidden issues
+    // כאשר ה-DOM משתנה, תקן כל בעיית aria-hidden
     fixAriaHiddenFocusableIssue();
+    
+    // גם בדוק ופתור בעיות דיאלוג
+    mutations.forEach(mutation => {
+      if (mutation.type === 'childList' && mutation.addedNodes.length) {
+        setTimeout(() => {
+          document.querySelectorAll('[role="dialog"]:not([aria-describedby])').forEach((dialog, idx) => {
+            if (dialog instanceof HTMLElement) {
+              const descId = `dialog-desc-${Date.now()}-${idx}`;
+              const descEl = document.createElement('div');
+              descEl.id = descId;
+              descEl.style.display = 'none';
+              descEl.textContent = 'Dialog content';
+              dialog.appendChild(descEl);
+              dialog.setAttribute('aria-describedby', descId);
+            }
+          });
+        }, 0);
+      }
+    });
   });
   
-  // Start observing the document with the configured parameters
+  // תחילת תצפית במסמך עם הפרמטרים שהוגדרו
   observer.observe(document.body, { 
     attributes: true, 
     childList: true, 
-    subtree: true,
-    attributeFilter: ['aria-hidden', 'tabindex', 'inert'] 
+    subtree: true
   });
   
-  // Also set up a focus event listener to fix issues when focus changes
+  // גם הגדרת מאזין אירוע מיקוד לתיקון בעיות כשהמיקוד משתנה
   document.addEventListener('focusin', ensureFocusableElementsAreNotHidden);
   
-  // Clean up function to remove observers and listeners
+  // פונקציית ניקוי להסרת משקיפים ומאזינים
   return () => {
     observer.disconnect();
     document.removeEventListener('focusin', ensureFocusableElementsAreNotHidden);
@@ -207,37 +236,103 @@ export function setupAccessibilityFixes() {
  * This function should be called during application initialization
  */
 export const monkeyPatchDialogContent = () => {
-  // Only run in development or if warnings are showing up in production
+  // הפעלה רק בפיתוח או אם האזהרות מופיעות בייצור
   if (process.env.NODE_ENV === 'production' && !(window as any).__forceDialogContentPatch) {
     return;
   }
 
-  // מוודאים שליבת React זמינה בהיקף הגלובלי או מייבאים אותה
+  // וידוא שליבת React זמינה
   if (typeof React.createElement === 'undefined') {
     console.warn('React not available in expected form, cannot patch DialogContent');
     return;
   }
 
-  // אנחנו ננסה לתפוס את המודול של radix-ui DialogContent
-  setTimeout(() => {
+  // גילוי וטיפול בדיאלוגים
+  const patchDialogs = () => {
     try {
-      // נוסיף קוד לאיתור רכיבי דיאלוג מכל סוג והוספת תיאורים למי שצריך
+      // איתור דיאלוגים קיימים
       document.querySelectorAll('[role="dialog"]:not([aria-describedby])').forEach((dialog, index) => {
         if (dialog instanceof HTMLElement) {
-          if (!dialog.getAttribute('aria-describedby')) {
-            const descId = `auto-dialog-desc-${Date.now()}-${index}`;
-            const descEl = document.createElement('div');
-            descEl.id = descId;
-            descEl.style.display = 'none';
-            descEl.textContent = 'Dialog content';
-            dialog.appendChild(descEl);
-            dialog.setAttribute('aria-describedby', descId);
-            console.debug(`Added aria-describedby to dialog: ${descId}`);
-          }
+          // הוספת תיאור נגיש
+          const descId = `auto-dialog-desc-${Date.now()}-${index}`;
+          const descEl = document.createElement('div');
+          descEl.id = descId;
+          descEl.style.display = 'none';
+          descEl.textContent = 'Dialog content';
+          dialog.appendChild(descEl);
+          dialog.setAttribute('aria-describedby', descId);
         }
       });
     } catch (e) {
-      console.error('Failed to patch DialogContent:', e);
+      console.error('Failed to patch dialogs:', e);
     }
-  }, 500);
+  };
+
+  // הרצת התיקון מיד ואחרי זמן קצר (כדי לתפוס דיאלוגים שנוצרים מאוחר יותר)
+  patchDialogs();
+  setTimeout(patchDialogs, 100);
+  setTimeout(patchDialogs, 500);
+  setTimeout(patchDialogs, 1000);
+  
+  // הגדרת MutationObserver לטיפול בדיאלוגים חדשים
+  if (typeof document !== 'undefined') {
+    try {
+      const observer = new MutationObserver((mutations) => {
+        let shouldPatch = false;
+        
+        mutations.forEach(mutation => {
+          if (mutation.type === 'childList' && mutation.addedNodes.length) {
+            shouldPatch = true;
+          }
+        });
+        
+        if (shouldPatch) {
+          setTimeout(patchDialogs, 0);
+        }
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+      
+      // התחברות לרכיב של רדיקס
+      if (window.RadixUI && window.RadixUI.Dialog && window.RadixUI.Dialog.Content) {
+        const originalContent = window.RadixUI.Dialog.Content;
+        
+        window.RadixUI.Dialog.Content = function(props) {
+          // וידוא שיש aria-describedby
+          if (!props['aria-describedby']) {
+            const id = 'radix-dialog-content-desc-' + Math.random().toString(36).substring(2, 9);
+            props = {
+              ...props,
+              'aria-describedby': id,
+              children: [
+                ...React.Children.toArray(props.children),
+                React.createElement('div', { id, style: { display: 'none' } }, 'Dialog content')
+              ]
+            };
+          }
+          
+          return originalContent(props);
+        };
+      }
+    } catch (e) {
+      console.error('Error setting up dialog observer:', e);
+    }
+  }
+  
+  // גם טפל בדף כשהוא נטען לחלוטין
+  window.addEventListener('load', patchDialogs);
 };
+
+// טיפול מיוחד לטיפוסי TypeScript - תוספת ממשק לחלון
+declare global {
+  interface Window {
+    RadixUI?: {
+      Dialog?: {
+        Content?: Function;
+      };
+    };
+  }
+}

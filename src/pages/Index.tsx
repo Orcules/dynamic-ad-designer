@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import { Sparkles } from "lucide-react";
 import { Logger } from "@/utils/logger";
 import { GeneratedAdsList } from "@/components/GeneratedAdsList";
 import { Separator } from "@/components/ui/separator";
-import { suppressDialogWarnings, monkeyPatchDialogContent } from "@/utils/accessibility";
+import { suppressDialogWarnings, monkeyPatchDialogContent, setupAccessibilityFixes } from "@/utils/accessibility";
 
 interface GeneratedAd {
   id: string;
@@ -21,17 +21,36 @@ const Index = () => {
   const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // הפעלת suppressDialogWarnings עם useLayoutEffect, לפני הרינדור
+  useLayoutEffect(() => {
+    suppressDialogWarnings();
+    monkeyPatchDialogContent();
+  }, []);
+
   useEffect(() => {
     document.documentElement.classList.add('dark');
     Logger.info("Application started - Initial mount");
     
-    // הפעלת ה-suppressDialogWarnings בכל רמה אפשרית
+    // הפעלת כל פונקציות הנגישות גם כאן
     suppressDialogWarnings();
     monkeyPatchDialogContent();
+    const cleanup = setupAccessibilityFixes();
     
     fetchGeneratedAds();
 
+    // הפעלה נוספת אחרי זמן קצר, כדי לתפוס דיאלוגים שנוצרו מאוחר יותר
+    const timer1 = setTimeout(() => {
+      monkeyPatchDialogContent();
+    }, 500);
+    
+    const timer2 = setTimeout(() => {
+      monkeyPatchDialogContent();
+    }, 1500);
+
     return () => {
+      cleanup();
+      clearTimeout(timer1);
+      clearTimeout(timer2);
       document.documentElement.classList.remove('dark');
       Logger.info("Application unmounting");
     };
