@@ -20,12 +20,13 @@ export function useAdImageHandler({
       setSelectedImages(prev => [...prev, ...files]);
       const urls = files.map(file => URL.createObjectURL(file));
       
-      // Update the state first
-      const newUrls = [...imageUrls, ...urls];
-      setImageUrls(newUrls);
-      
-      // Then call the callback with only the new URLs to avoid infinite loop
-      onImageChange(urls);
+      // עדכון state באופן בטוח יותר, שימוש בפונקצית עדכון
+      setImageUrls(prevUrls => {
+        const newUrls = [...prevUrls, ...urls];
+        // קריאה לקולבק אחרי עדכון
+        setTimeout(() => onImageChange(urls), 0);
+        return newUrls;
+      });
     }
   };
 
