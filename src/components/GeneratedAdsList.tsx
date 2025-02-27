@@ -23,8 +23,9 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   const [validatedAds, setValidatedAds] = useState<GeneratedAd[]>([]);
   
   useEffect(() => {
-    // בדיקת תקינות של ה-URLs של התמונות ויצירת מערך חדש עם תמונות תקינות בלבד
+    // Validate image URLs and create a new array with only valid images
     const validateImageUrls = async () => {
+      Logger.info(`Validating ${ads.length} ads`);
       const validatedAdsList = [...ads];
       setValidatedAds(validatedAdsList);
     };
@@ -45,9 +46,9 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   if (ads.length === 0) {
     return (
       <div className="text-center p-8 border border-dashed rounded-lg">
-        <p className="text-muted-foreground">לא נוצרו מודעות עדיין</p>
+        <p className="text-muted-foreground">No ads created yet</p>
         <p className="text-sm text-muted-foreground mt-2">
-          המודעות שתיצור יופיעו כאן
+          Ads you create will appear here
         </p>
       </div>
     );
@@ -60,9 +61,9 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   const handlePreviewClick = (imageUrl: string) => {
     if (!imageUrl) return;
     
-    // במקום לפתוח חלון חדש, נציג את התמונה במסך מלא במסגרת האפליקציה הנוכחית
+    // Create an overlay with the image and a close button instead of opening a new window
     try {
-      // יצירת אלמנט דיב עם תמונה וכפתור סגירה
+      // Create a div element with image and close button
       const overlay = document.createElement('div');
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
@@ -86,7 +87,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
       img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
       
       const closeButton = document.createElement('button');
-      closeButton.innerText = 'סגור';
+      closeButton.innerText = 'Close';
       closeButton.style.marginTop = '20px';
       closeButton.style.padding = '8px 16px';
       closeButton.style.backgroundColor = '#333';
@@ -102,7 +103,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
       overlay.appendChild(img);
       overlay.appendChild(closeButton);
       
-      // סגירה בלחיצה על הרקע
+      // Close on background click
       overlay.onclick = (e) => {
         if (e.target === overlay) {
           document.body.removeChild(overlay);
@@ -122,11 +123,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     const imageUrl = ad.preview_url || ad.image_url;
     
     try {
-      // בדיקה אם מדובר בURL חיצוני או מקומי
+      // Check if it's an external URL or a local one
       const isExternalUrl = imageUrl.startsWith('http') && !imageUrl.includes(window.location.hostname);
       
       if (isExternalUrl) {
-        // לגבי תמונות חיצוניות, נשתמש בפתרון שונה: נוריד את התמונה ונציג אותה מקומית
+        // For external images, we'll use a different approach: download the image and serve it locally
         fetch(imageUrl)
           .then(response => response.blob())
           .then(blob => {
@@ -137,22 +138,22 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(blobUrl); // שחרור משאבים
+            URL.revokeObjectURL(blobUrl); // Release resources
             Logger.info(`Downloaded image from external URL: ${imageUrl}`);
           })
           .catch(error => {
             Logger.error(`Failed to download from external URL: ${error.message}`);
-            // אם נכשל, ננסה פתרון אחר
+            // If failed, try alternative approach
             const a = document.createElement('a');
             a.href = imageUrl;
             a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-            a.target = '_self'; // חשוב: לא פותחים חלון חדש
+            a.target = '_self'; // Important: don't open new window
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
           });
       } else {
-        // לגבי תמונות מקומיות, נשתמש בגישה הרגילה
+        // For local images, use the regular approach
         const a = document.createElement('a');
         a.href = imageUrl;
         a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
@@ -181,6 +182,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
                   // Replace with placeholder if image fails to load
                   (e.target as HTMLImageElement).src = "/placeholder.svg";
                 }}
+                crossOrigin="anonymous"
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
