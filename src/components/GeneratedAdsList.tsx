@@ -61,6 +61,8 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
   const handlePreviewClick = (imageUrl: string) => {
     if (!imageUrl) return;
     
+    Logger.info(`Previewing image: ${imageUrl.substring(0, 50)}...`);
+    
     // Create an overlay with the image and a close button instead of opening a new window
     try {
       // Create a div element with image and close button
@@ -85,6 +87,14 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
       img.style.objectFit = 'contain';
       img.style.border = '1px solid #333';
       img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
+      
+      // Add error handling for the image
+      img.onerror = () => {
+        Logger.error(`Failed to load preview image: ${imageUrl}`);
+        img.src = "/placeholder.svg";
+        img.style.maxWidth = '300px';
+        img.style.maxHeight = '300px';
+      };
       
       const closeButton = document.createElement('button');
       closeButton.innerText = 'Close';
@@ -121,6 +131,23 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
     if (!ad.preview_url && !ad.image_url) return;
     
     const imageUrl = ad.preview_url || ad.image_url;
+    Logger.info(`Attempting to download image: ${imageUrl.substring(0, 50)}...`);
+    
+    // Special handling for blob URLs
+    if (imageUrl.startsWith('blob:')) {
+      try {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        Logger.info(`Downloaded blob image: ${imageUrl.substring(0, 30)}...`);
+        return;
+      } catch (err) {
+        Logger.error(`Error downloading blob image: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
     
     try {
       // Check if it's an external URL or a local one
@@ -139,7 +166,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(blobUrl); // Release resources
-            Logger.info(`Downloaded image from external URL: ${imageUrl}`);
+            Logger.info(`Downloaded image from external URL: ${imageUrl.substring(0, 30)}...`);
           })
           .catch(error => {
             Logger.error(`Failed to download from external URL: ${error.message}`);
@@ -160,7 +187,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        Logger.info(`Downloaded image: ${imageUrl}`);
+        Logger.info(`Downloaded image: ${imageUrl.substring(0, 30)}...`);
       }
     } catch (err) {
       Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);

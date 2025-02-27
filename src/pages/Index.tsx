@@ -192,7 +192,28 @@ const Index = () => {
   const handleAdGenerated = async (adData: any) => {
     Logger.info(`Ad generated with ID: ${adData.id}`);
 
+    // Create a new ad object with the required fields
+    const newAd: GeneratedAd = {
+      id: adData.id || `temp-${Date.now()}`, // If no ID is provided, create a temporary one
+      name: adData.name || `New Ad - ${new Date().toLocaleString()}`,
+      image_url: adData.image_url,
+      preview_url: adData.preview_url || adData.image_url,
+      platform: adData.platform
+    };
+
+    // Immediately add the new ad to the local state for immediate feedback
+    setGeneratedAds(prev => [newAd, ...prev]);
+    
+    // Notify the user
+    toast.success("Ad created successfully!");
+
     try {
+      Logger.info(`Saving ad to database: ${JSON.stringify({
+        name: adData.name,
+        platform: adData.platform,
+        image_url: adData.image_url ? adData.image_url.substring(0, 50) + '...' : 'undefined'
+      })}`);
+
       // Create a new record in the generated_ads table
       const { data, error } = await supabase
         .from('generated_ads')
@@ -206,31 +227,41 @@ const Index = () => {
             template_style: adData.template_style,
             image_url: adData.image_url,
             preview_url: adData.preview_url || adData.image_url, // Ensure there's always a value
-            width: adData.width,
-            height: adData.height
+            width: adData.width || 1080,
+            height: adData.height || 1080
           }
         ])
         .select();
 
       if (error) {
         Logger.error(`Error creating ad record: ${error.message}`);
-        toast.error("Failed to save ad");
+        toast.error("Failed to save ad to database, but it's available in your local session");
         return;
       }
 
-      // Add the newly created ad to the local state to avoid needing to refetch
+      // If we successfully saved to the database
       if (data && data.length > 0) {
-        setGeneratedAds(prev => [data[0], ...prev]);
-        toast.success("Ad created successfully!");
+        Logger.info(`Ad saved to database with ID: ${data[0].id}`);
+        
+        // Update our local state with the real database ID
+        setGeneratedAds(prev => {
+          const updatedAds = prev.map(ad => 
+            ad.id === newAd.id ? {
+              ...ad,
+              id: data[0].id
+            } : ad
+          );
+          return updatedAds;
+        });
       }
       
-      // Also refresh the list to ensure consistency
-      Logger.info("Ad saved to database, refreshing list");
-      await fetchGeneratedAds();
-      Logger.info("Ads refreshed after generation");
+      // Also refresh the list to ensure consistency, but don't wait for it
+      fetchGeneratedAds().catch(err => {
+        Logger.warn(`Error refreshing ads list: ${err instanceof Error ? err.message : String(err)}`);
+      });
     } catch (err) {
-      Logger.error(`Error refreshing ads after generation: ${err instanceof Error ? err.message : String(err)}`);
-      toast.error("Error saving ad");
+      Logger.error(`Error saving ad to database: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error("Error saving ad to database, but it's available in your local session");
     }
   };
 
