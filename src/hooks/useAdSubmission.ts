@@ -49,16 +49,10 @@ export const useAdSubmission = () => {
           
           for (const policy of storagePolicies) {
             // Using the Supabase Storage API directly
-            const { error: policyError } = await supabase.storage
-              .from('ad-images')
-              .setAccessPolicy(policy.operation === 'SELECT' ? 'public' : 'private');
-              
-            if (policyError) {
-              Logger.warn(`Failed to set ${policy.name} policy: ${policyError.message}`);
-            }
+            Logger.warn(`Note: Cannot programmatically set ${policy.name} policy from the client`);
           }
           
-          Logger.info('Bucket policies updated successfully');
+          Logger.info('Bucket created with public: true, which should enable read access');
         } catch (policyError) {
           Logger.warn(`Failed to set bucket policies: ${policyError instanceof Error ? policyError.message : String(policyError)}`);
         }
