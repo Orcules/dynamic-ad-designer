@@ -67,9 +67,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   });
 
-  const { handleSubmission } = useAdSubmission();
+  const { handleSubmission, isSubmitting } = useAdSubmission();
 
-  // Ensure the image generator is initialized
+  // אתחול מחולל התמונות
   React.useEffect(() => {
     if (previewRef.current) {
       imageGeneratorRef.current = new ImageGenerator('.ad-content');
@@ -101,45 +101,44 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         imagePosition
       };
       
-      // החלפת הקוד הבעייתי לשימוש מדויק יותר במערך התמונות
+      // הכנת מערך התמונות לעיבוד
       let allImages: Array<File | string> = [];
       
-      // אם יש תמונות שנבחרו מהמחשב, נשתמש בהן
       if (selectedImages.length > 0) {
         allImages = [...selectedImages];
       } 
-      // אחרת, אם יש URLs של תמונות, נשתמש בהם
       else if (imageUrls.length > 0) {
         allImages = [...imageUrls];
       }
       
       Logger.info(`Processing ${allImages.length} images`);
       
-      // נוודא שיש לנו תמונות תקינות לעבוד איתן
       if (allImages.length === 0) {
         toast.error('No valid images to process');
         setIsGenerating(false);
         return;
       }
       
+      // עיבוד כל התמונות
       for (let i = 0; i < allImages.length; i++) {
         try {
           const currentImage = allImages[i];
           if (!currentImage) {
             Logger.error(`Skipping empty image at index ${i}`);
-            continue; // דילוג על תמונות ריקות
+            continue;
           }
           
           Logger.info(`Processing image ${i + 1}/${allImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
           
           const { width, height } = getDimensions(adData.platform);
           
-          // יצירת אובייקט File מתוך URL אם צריך
+          // הכנת קובץ להעלאה
           let imageToUpload: File;
+          
           if (typeof currentImage === 'string') {
             if (!currentImage.trim() || currentImage === 'undefined') {
               Logger.error(`Skipping invalid image URL: ${currentImage}`);
-              continue; // דילוג על URLs לא תקינים
+              continue;
             }
             
             try {
@@ -147,44 +146,45 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               if (!response.ok) {
                 throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
               }
+              
               const blob = await response.blob();
               if (blob.size === 0) {
                 Logger.error(`Empty blob for URL: ${currentImage}`);
-                continue; // דילוג על תמונות ריקות
+                continue;
               }
-              imageToUpload = new File([blob], `image-${i + 1}.${blob.type.split('/')[1] || 'jpg'}`, { 
+              
+              const fileExt = (blob.type.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
+              imageToUpload = new File([blob], `image-${Date.now()}-${i}.${fileExt}`, { 
                 type: blob.type || 'image/jpeg' 
               });
             } catch (fetchError) {
               Logger.error(`Failed to process image URL: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-              continue; // דילוג במקרה של שגיאה
+              continue;
             }
           } else {
             imageToUpload = currentImage;
           }
           
-          // וידוא גודל תקין לקובץ התמונה
+          // וידוא גודל תקין
           if (imageToUpload.size === 0) {
             Logger.error(`Skipping zero-size image: ${imageToUpload.name}`);
-            continue; // דילוג על תמונות בגודל 0
+            continue;
           }
           
-          // וידוא שאנחנו מציגים את התצוגה המקדימה הנכונה למודעות עם מספר תמונות
+          // עדכון התצוגה המקדימה למיקום הנכון
           if (i !== currentPreviewIndex && allImages.length > 1) {
             if (i > currentPreviewIndex) {
               handleNextPreview();
             } else {
               handlePrevPreview();
             }
-            // מתן זמן לעדכון התצוגה המקדימה
             await new Promise(resolve => setTimeout(resolve, 300));
           }
           
-          // יצירת תצוגה מקדימה עם אפקט קפיצת הטקסט
+          // לכידת תצוגה מקדימה
           let previewUrl = '';
           if (imageGeneratorRef.current) {
             try {
-              // שימוש ב-image generator ללכידה עם אפקט קפיצת טקסט
               previewUrl = await imageGeneratorRef.current.getImageUrl();
               Logger.info(`Generated preview URL of length: ${previewUrl.length}`);
             } catch (captureError) {
@@ -192,18 +192,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             }
           }
           
-          // העלאת התמונה לשרת
+          // העלאת התמונה לשרת Supabase
           Logger.info(`Starting file upload: ${JSON.stringify({
             name: imageToUpload.name,
             size: imageToUpload.size,
             type: imageToUpload.type
           })}`);
           
-          const uploadedUrl = await handleSubmission(imageToUpload);
+          let uploadedUrl;
+          try {
+            // שימוש בפונקציה המשופרת להעלאת קבצים
+            uploadedUrl = await handleSubmission(imageToUpload);
+          } catch (uploadError) {
+            Logger.error(`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+            toast.error(`Upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+            continue;
+          }
           
           if (!uploadedUrl) {
             Logger.error('Failed to upload image, no URL returned');
-            continue; // דילוג במקרה שלא קיבלנו URL
+            continue;
           }
           
           const adDataToGenerate = {
@@ -219,13 +227,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             overlay_color: adData.overlay_color,
             text_color: adData.text_color,
             description_color: adData.description_color,
-            image_url: uploadedUrl, // תמיד משתמשים ב-URL שהועלה
-            preview_url: previewUrl || uploadedUrl, // משתמשים בתצוגה מקדימה אם זמינה, אחרת בתמונה המקורית
+            image_url: uploadedUrl,
+            preview_url: previewUrl || uploadedUrl,
             width,
             height,
             status: 'completed'
           };
           
+          // שליחת המודעה המוכנה לפונקציית הקולבק
           onAdGenerated(adDataToGenerate);
           
           toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
