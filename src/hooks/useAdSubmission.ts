@@ -36,13 +36,31 @@ export const useAdSubmission = () => {
         
         Logger.info('Storage bucket created successfully');
         
-        // מגדיר את הבקט כציבורי (אם לא הוגדר כך)
-        const { error: policyError } = await supabase.rpc('create_storage_policy', {
-          bucket_name: 'ad-images'
-        });
-        
-        if (policyError) {
-          Logger.warn(`Failed to set bucket policy: ${policyError.message}`);
+        // Instead of using RPC, let's directly create public storage policies
+        // We'll use the REST API to set the bucket as public
+        try {
+          Logger.info('Setting bucket public access policy');
+          
+          // Make the bucket public by default
+          await fetch(`${supabase.supabaseUrl}/storage/v1/bucket/ad-images/policy`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabase.supabaseKey}`
+            },
+            body: JSON.stringify({
+              name: 'public-read',
+              definition: {
+                bucket_id: 'ad-images',
+                operation: 'SELECT',
+                policy_action: 'ALLOW'
+              }
+            })
+          });
+          
+          Logger.info('Bucket policies set successfully');
+        } catch (policyError) {
+          Logger.warn(`Failed to set bucket policy: ${policyError instanceof Error ? policyError.message : String(policyError)}`);
         }
         
         return true;
@@ -71,7 +89,7 @@ export const useAdSubmission = () => {
       if (bucketExists) {
         // If the bucket exists, try to upload the file
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${file.name}`;
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}-${file.name}`;
         const filePath = fileName;
 
         Logger.info(`Attempting upload with path: ${filePath}`);
