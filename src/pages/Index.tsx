@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useLayoutEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { suppressDialogWarnings, monkeyPatchDialogContent, setupAccessibilityFixes } from "@/utils/accessibility";
+import { Link } from "react-router-dom";
 
 interface GeneratedAd {
   id: string;
@@ -304,6 +306,14 @@ const Index = () => {
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
               Dynamic Ad Designer {isUpdating ? '(Updating...)' : ''}
             </h1>
+            <div className="ml-4">
+              <Link 
+                to="/test-upload" 
+                className="text-sm bg-secondary/20 hover:bg-secondary/30 px-3 py-1 rounded-full transition-colors"
+              >
+                Test Upload Tool
+              </Link>
+            </div>
           </div>
           <p className="text-muted-foreground text-lg animate-fade-in">
             Create stunning ads for multiple platforms with ease

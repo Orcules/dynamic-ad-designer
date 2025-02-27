@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
+import TestUpload from "./pages/TestUpload";
 import { suppressDialogWarnings } from "./utils/accessibility";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/test-upload" element={<TestUpload />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
