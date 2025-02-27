@@ -1,5 +1,4 @@
 
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,7 +13,11 @@ const queryClient = new QueryClient();
 const App = () => {
   // Call the suppressDialogWarnings function when the app initializes
   useEffect(() => {
-    suppressDialogWarnings();
+    try {
+      suppressDialogWarnings();
+    } catch (error) {
+      console.error("Error suppressing dialog warnings:", error);
+    }
   }, []);
 
   return (

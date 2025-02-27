@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useLayoutEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,37 +25,64 @@ const Index = () => {
 
   // Apply suppressDialogWarnings with useLayoutEffect, before rendering
   useLayoutEffect(() => {
-    suppressDialogWarnings();
-    monkeyPatchDialogContent();
+    try {
+      suppressDialogWarnings();
+      monkeyPatchDialogContent();
+    } catch (error) {
+      console.error("Error in useLayoutEffect accessibility setup:", error);
+    }
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-    Logger.info("Application started - Initial mount");
-    
-    // Apply all accessibility functions here as well
-    suppressDialogWarnings();
-    monkeyPatchDialogContent();
-    const cleanup = setupAccessibilityFixes();
-    
-    fetchGeneratedAds();
-
-    // Apply again after a short time, to catch dialogs created later
-    const timer1 = setTimeout(() => {
+    try {
+      document.documentElement.classList.add('dark');
+      Logger.info("Application started - Initial mount");
+      
+      // Apply all accessibility functions here as well
+      suppressDialogWarnings();
       monkeyPatchDialogContent();
-    }, 500);
-    
-    const timer2 = setTimeout(() => {
-      monkeyPatchDialogContent();
-    }, 1500);
+      
+      let cleanup = () => {};
+      try {
+        cleanup = setupAccessibilityFixes();
+      } catch (accessError) {
+        console.error("Error setting up accessibility fixes:", accessError);
+      }
+      
+      fetchGeneratedAds();
 
-    return () => {
-      cleanup();
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      document.documentElement.classList.remove('dark');
-      Logger.info("Application unmounting");
-    };
+      // Apply again after a short time, to catch dialogs created later
+      const timer1 = setTimeout(() => {
+        try {
+          monkeyPatchDialogContent();
+        } catch (e) {
+          console.error("Error in delayed monkeyPatchDialogContent:", e);
+        }
+      }, 500);
+      
+      const timer2 = setTimeout(() => {
+        try {
+          monkeyPatchDialogContent();
+        } catch (e) {
+          console.error("Error in second delayed monkeyPatchDialogContent:", e);
+        }
+      }, 1500);
+
+      return () => {
+        try {
+          cleanup();
+        } catch (e) {
+          console.error("Error in cleanup function:", e);
+        }
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        document.documentElement.classList.remove('dark');
+        Logger.info("Application unmounting");
+      };
+    } catch (error) {
+      console.error("Fatal error in main useEffect:", error);
+      return () => {};
+    }
   }, []);
 
   // Function to fetch data with timeout
