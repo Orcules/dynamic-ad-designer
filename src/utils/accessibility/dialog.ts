@@ -20,7 +20,7 @@ export const suppressDialogWarnings = () => {
           args[0].includes('DialogContent') ||
           args[0].includes('dialog') && args[0].includes('accessibility')
       )) {
-        Logger.info('Dialog accessibility warning suppressed:', args[0].substring(0, 100) + '...');
+        Logger.info(`Dialog accessibility warning suppressed: ${args[0].substring(0, 100)}...`);
         return;
       }
       originalError.apply(console, args);
