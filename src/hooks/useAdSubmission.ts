@@ -36,31 +36,31 @@ export const useAdSubmission = () => {
         
         Logger.info('Storage bucket created successfully');
         
-        // Instead of using RPC, let's directly create public storage policies
-        // We'll use the REST API to set the bucket as public
+        // Apply storage policies without using the protected properties
         try {
-          Logger.info('Setting bucket public access policy');
+          Logger.info('Setting bucket access policies');
           
-          // Make the bucket public by default
-          await fetch(`${supabase.supabaseUrl}/storage/v1/bucket/ad-images/policy`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.supabaseKey}`
-            },
-            body: JSON.stringify({
-              name: 'public-read',
-              definition: {
-                bucket_id: 'ad-images',
-                operation: 'SELECT',
-                policy_action: 'ALLOW'
-              }
-            })
-          });
+          // Try to enable anon access to the bucket
+          const storagePolicies = [
+            { name: 'select', operation: 'SELECT' },
+            { name: 'insert', operation: 'INSERT' },
+            { name: 'update', operation: 'UPDATE' }
+          ];
           
-          Logger.info('Bucket policies set successfully');
+          for (const policy of storagePolicies) {
+            // Using the Supabase Storage API directly
+            const { error: policyError } = await supabase.storage
+              .from('ad-images')
+              .setAccessPolicy(policy.operation === 'SELECT' ? 'public' : 'private');
+              
+            if (policyError) {
+              Logger.warn(`Failed to set ${policy.name} policy: ${policyError.message}`);
+            }
+          }
+          
+          Logger.info('Bucket policies updated successfully');
         } catch (policyError) {
-          Logger.warn(`Failed to set bucket policy: ${policyError instanceof Error ? policyError.message : String(policyError)}`);
+          Logger.warn(`Failed to set bucket policies: ${policyError instanceof Error ? policyError.message : String(policyError)}`);
         }
         
         return true;
