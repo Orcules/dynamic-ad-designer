@@ -38,7 +38,7 @@ export const useAdSubmission = () => {
         
         // מגדיר את הבקט כציבורי (אם לא הוגדר כך)
         const { error: policyError } = await supabase.rpc('create_storage_policy', {
-          bucket_name: 'ad-images' 
+          bucket_name: 'ad-images'
         });
         
         if (policyError) {
