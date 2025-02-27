@@ -7,6 +7,37 @@ import { Logger } from '@/utils/logger';
 export const useAdSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // יצירת בקט אחסון אם אינו קיים
+  const createStorageBucketIfNotExists = async () => {
+    try {
+      // בדיקה אם הבקט כבר קיים
+      const { data: buckets } = await supabase.storage.listBuckets();
+      const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
+      
+      if (!bucketExists) {
+        Logger.info('Creating storage bucket "ad-images"');
+        // ניסיון ליצור את הבקט
+        const { data, error } = await supabase.storage.createBucket('ad-images', {
+          public: true,
+          fileSizeLimit: 10485760 // 10MB limit
+        });
+        
+        if (error) {
+          Logger.error(`Failed to create bucket: ${error.message}`);
+          return false;
+        }
+        
+        Logger.info('Storage bucket created successfully');
+        return true;
+      }
+      
+      return bucketExists;
+    } catch (error) {
+      Logger.error(`Error checking/creating bucket: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  };
+
   const handleSubmission = async (file: File) => {
     try {
       setIsSubmitting(true);
@@ -18,15 +49,14 @@ export const useAdSubmission = () => {
       const blobUrl = URL.createObjectURL(file);
 
       try {
-        // Check if the 'ad-images' bucket exists
-        const { data: buckets } = await supabase.storage.listBuckets();
-        const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
+        // Make sure the storage bucket exists
+        const bucketExists = await createStorageBucketIfNotExists();
         
         if (bucketExists) {
           // If the bucket exists, try to upload the file
           const fileExt = file.name.split('.').pop();
-          const fileName = `${Math.random()}.${fileExt}`;
-          const filePath = `${fileName}`;
+          const fileName = `${Date.now()}-${file.name}`;
+          const filePath = fileName;
 
           Logger.info(`Attempting upload with path: ${filePath}`);
 
@@ -35,7 +65,7 @@ export const useAdSubmission = () => {
             .from('ad-images')
             .upload(filePath, file, {
               cacheControl: '3600',
-              upsert: false
+              upsert: true // Changed to true to overwrite if exists
             });
 
           if (uploadError) {
@@ -54,7 +84,7 @@ export const useAdSubmission = () => {
           Logger.info(`Generated public URL: ${publicUrl}`);
           return publicUrl;
         } else {
-          Logger.info('Bucket "ad-images" does not exist, using blob URL');
+          Logger.info('Bucket "ad-images" does not exist or could not be created, using blob URL');
           return blobUrl;
         }
       } catch (storageError) {
