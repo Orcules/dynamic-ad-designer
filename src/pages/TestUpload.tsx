@@ -11,6 +11,10 @@ import { AlertCircle, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { BucketDetails } from '@/utils/types';
 
+// Import constants from the client file
+const SUPABASE_URL = "https://mmzlufnvxzqdkreatybs.supabase.co";
+const SUPABASE_KEY_PREFIX = "eyJhbG"; // First 5 chars of the key
+
 const TestUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
@@ -46,15 +50,12 @@ const TestUpload = () => {
           setUserId('anonymous');
         }
         
-        // 2. בדיקת מפתח API - fixed approach that doesn't access protected properties
+        // 2. בדיקת מפתח API - safe approach without accessing protected properties
         try {
-          // Instead of trying to access protected headers directly,
-          // we can check if we have a valid configuration by looking at the URL
-          const supabaseUrl = new URL(supabase.supabaseUrl);
-          const apiKeyPrefix = supabase.supabaseKey.substring(0, 5);
-          setAnonKey(`${apiKeyPrefix}...`);
-          addLog(`API Key detected (starts with: ${apiKeyPrefix}...)`);
-          addLog(`Supabase URL: ${supabaseUrl.host}`);
+          // Use the imported constants instead of accessing supabase client properties
+          setAnonKey(`${SUPABASE_KEY_PREFIX}...`);
+          addLog(`API Key detected (starts with: ${SUPABASE_KEY_PREFIX}...)`);
+          addLog(`Supabase URL: ${SUPABASE_URL}`);
         } catch (error) {
           addLog(`Could not detect API key: ${error instanceof Error ? error.message : String(error)}`);
         }
