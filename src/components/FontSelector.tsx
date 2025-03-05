@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getLanguageFonts } from './LanguageSelector';
@@ -24,11 +25,14 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
     }
   }, [language, value, onChange, fonts]);
 
+  // Determine text direction based on language
+  const isRTL = language === 'he' || language === 'ar';
+
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">Font</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="bg-card">
+        <SelectTrigger className="bg-card" dir={isRTL ? "rtl" : "ltr"}>
           <SelectValue placeholder="Select font" />
         </SelectTrigger>
         <SelectContent className="bg-card border-border">
@@ -37,6 +41,7 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
               key={font.name} 
               value={font.url}
               className="hover:bg-muted focus:bg-muted"
+              dir={isRTL ? "rtl" : "ltr"}
             >
               {font.name}
             </SelectItem>

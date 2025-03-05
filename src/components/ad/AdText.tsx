@@ -7,6 +7,7 @@ interface AdTextProps {
   fontFamily: string;
   fontSize?: string;
   isDescription?: boolean;
+  isRTL?: boolean;
 }
 
 export function getTextStyle({ 
@@ -15,7 +16,8 @@ export function getTextStyle({
   textColor, 
   fontFamily, 
   fontSize, 
-  isDescription = false 
+  isDescription = false,
+  isRTL = false
 }: AdTextProps): CSSProperties {
   const baseStyle: CSSProperties = {
     fontWeight: isDescription ? 'normal' : 'bold',
@@ -33,6 +35,7 @@ export function getTextStyle({
     color: textColor,
     position: 'relative',
     zIndex: isDescription ? 2 : 3,
+    direction: isRTL ? 'rtl' : 'ltr',
   };
 
   switch (style) {

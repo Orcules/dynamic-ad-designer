@@ -1,9 +1,10 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const languages = [
   { code: "en", name: "English", fonts: ["Inter", "Roboto", "Poppins", "Montserrat"] },
-  { code: "he", name: "Hebrew", fonts: ["Heebo", "Assistant", "Rubik", "Open Sans Hebrew"] },
-  { code: "ar", name: "Arabic", fonts: ["Cairo", "Tajawal", "Almarai", "Amiri"] },
+  { code: "he", name: "עברית", fonts: ["Heebo", "Assistant", "Rubik", "Open Sans Hebrew"] },
+  { code: "ar", name: "العربية", fonts: ["Cairo", "Tajawal", "Almarai", "Amiri"] },
   { code: "es", name: "Spanish", fonts: ["Montserrat", "Lato", "Open Sans", "Roboto"] },
   { code: "fr", name: "French", fonts: ["Montserrat", "Lato", "Open Sans", "Roboto"] },
   { code: "de", name: "German", fonts: ["Montserrat", "Lato", "Open Sans", "Roboto"] },
@@ -34,6 +35,7 @@ export function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
               key={lang.code} 
               value={lang.code}
               className="hover:bg-muted focus:bg-muted"
+              dir={lang.code === "he" || lang.code === "ar" ? "rtl" : "ltr"}
             >
               {lang.name}
             </SelectItem>
