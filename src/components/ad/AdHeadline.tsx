@@ -20,6 +20,8 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
 }) => {
   if (!headline) return null;
 
+  const direction = textStyle.direction || 'ltr';
+
   return (
     <div 
       className="w-full max-w-[90%] mx-auto px-4 relative"
@@ -30,7 +32,8 @@ export const AdHeadline: React.FC<AdHeadlineProps> = ({
         zIndex: 3,
         top: '10%',
         left: '50%',
-        marginLeft: '-45%'
+        marginLeft: '-45%',
+        direction
       }}
     >
       <h2 

@@ -20,6 +20,8 @@ export const AdDescription: React.FC<AdDescriptionProps> = ({
 }) => {
   if (!description) return null;
 
+  const direction = descriptionStyle.direction || 'ltr';
+
   return (
     <div 
       className="w-full max-w-[90%] mx-auto px-4 relative"
@@ -30,7 +32,8 @@ export const AdDescription: React.FC<AdDescriptionProps> = ({
         zIndex: 2,
         top: '40%',
         left: '50%',
-        marginLeft: '-45%'
+        marginLeft: '-45%',
+        direction
       }}
     >
       <p 
