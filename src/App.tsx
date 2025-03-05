@@ -9,13 +9,23 @@ import Index from "./pages/Index";
 import TestUpload from "./pages/TestUpload";
 import { suppressDialogWarnings } from "./utils/accessibility";
 
-const queryClient = new QueryClient();
+// יצירת קליינט שאילתות גלובלי עם הגדרות משופרות
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,             // מספר ניסיונות חוזרים במקרה של שגיאה
+      staleTime: 1000 * 60, // זמן תקף לנתונים (1 דקה)
+      refetchOnWindowFocus: false // לא לשאול שוב בפוקוס חלון
+    }
+  }
+});
 
 const App = () => {
-  // Call the suppressDialogWarnings function when the app initializes
+  // קריאה לפונקציה לדיכוי אזהרות דיאלוג בטעינת האפליקציה
   useEffect(() => {
     try {
       suppressDialogWarnings();
+      console.log("Dialog warnings suppressed successfully");
     } catch (error) {
       console.error("Error suppressing dialog warnings:", error);
     }
@@ -25,7 +35,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Sonner />
+        <Sonner closeButton position="bottom-right" />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
