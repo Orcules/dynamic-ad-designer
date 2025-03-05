@@ -9,12 +9,12 @@ export const useAdSubmission = () => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [bucketStatus, setBucketStatus] = useState<'unknown' | 'exists' | 'not_exists' | 'error'>('unknown');
 
-  // פונקציה לבדיקת סטטוס הבקט
+  // Check if the bucket exists
   const checkBucketStatus = async (): Promise<boolean> => {
     try {
       Logger.info('Checking bucket status...');
       
-      // 1. בדיקה ישירה אם הבקט קיים
+      // Direct method: list all buckets and check if ad-images exists
       const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
       
       if (bucketsError) {
@@ -22,7 +22,7 @@ export const useAdSubmission = () => {
         setBucketStatus('error');
         setLastError(`Bucket listing error: ${bucketsError.message}`);
         
-        // נסיון לגשת לבקט ישירות למרות השגיאה
+        // Try to access the bucket directly despite the error
         try {
           const { data: files } = await supabase.storage.from('ad-images').list();
           if (files) {
@@ -31,13 +31,13 @@ export const useAdSubmission = () => {
             return true;
           }
         } catch (e) {
-          // שגיאת גישה - כנראה הבקט לא קיים או אין הרשאות
+          // Access error - bucket probably doesn't exist or no permissions
         }
         
         return false;
       }
       
-      // 2. בדיקה אם הבקט קיים ברשימה
+      // Check if bucket exists in the list
       const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
       
       if (bucketExists) {
@@ -58,12 +58,12 @@ export const useAdSubmission = () => {
     }
   };
 
-  // פונקציה ליצירת הבקט
+  // Create the bucket if it doesn't exist
   const createBucket = async (): Promise<boolean> => {
     try {
       Logger.info('Creating ad-images bucket...');
       
-      // יצירת הבקט אם הוא לא קיים
+      // Create the bucket if it doesn't exist
       const { error: createError } = await supabase.storage
         .createBucket('ad-images', {
           public: true,
@@ -75,7 +75,7 @@ export const useAdSubmission = () => {
         Logger.error(`Failed to create bucket: ${errorMsg}`);
         setLastError(`Bucket creation error: ${errorMsg}`);
         
-        // בדיקה אם השגיאה קשורה לכך שהבקט כבר קיים
+        // Check if the error indicates the bucket already exists
         if (errorMsg.includes('already exists')) {
           Logger.info('Bucket already exists based on error message');
           setBucketStatus('exists');
@@ -96,7 +96,7 @@ export const useAdSubmission = () => {
     }
   };
 
-  // פונקציה להעלאת קובץ כשיודעים שהבקט קיים
+  // Upload a file when we know the bucket exists
   const uploadFile = async (file: File, path: string): Promise<string | null> => {
     try {
       Logger.info(`Uploading file ${file.name} (${file.size} bytes) to ${path}`);
@@ -115,7 +115,7 @@ export const useAdSubmission = () => {
         return null;
       }
       
-      // קבלת URL ציבורי
+      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
         .getPublicUrl(path);
@@ -130,7 +130,7 @@ export const useAdSubmission = () => {
     }
   };
 
-  // פונקציה ראשית להעלאת קובץ - מטפלת בכל התהליך
+  // Main function to handle the entire upload process
   const handleSubmission = async (file: File): Promise<string> => {
     setIsSubmitting(true);
     setLastError(null);
@@ -138,16 +138,16 @@ export const useAdSubmission = () => {
     try {
       Logger.info(`Starting file upload process for: ${file.name}, size: ${file.size}, type: ${file.type}`);
       
-      // 1. בדיקה אם הבקט קיים
+      // 1. Check if bucket exists
       let bucketReady = await checkBucketStatus();
       
-      // 2. ניסיון ליצור את הבקט אם הוא לא קיים
+      // 2. Try to create the bucket if it doesn't exist
       if (!bucketReady) {
         Logger.info('Bucket not ready, attempting to create it');
         bucketReady = await createBucket();
       }
       
-      // 3. אם עדיין אין בקט, ננסה לקרוא ל-Edge Function
+      // 3. If still no bucket, try to call Edge Function
       if (!bucketReady) {
         Logger.info('Still no bucket, calling Edge Function as last resort');
         
@@ -158,41 +158,41 @@ export const useAdSubmission = () => {
           
           if (error) {
             Logger.error(`Edge Function error: ${error.message}`);
-            // נמשיך בכל זאת, אולי הבקט כבר קיים למרות הכל
+            // Continue anyway, maybe the bucket exists despite the error
           } else {
             Logger.info('Edge Function executed successfully');
-            // נבדוק שוב אם הבקט קיים אחרי הפעלת הפונקציה
+            // Check again if the bucket exists after the function call
             bucketReady = await checkBucketStatus();
           }
         } catch (funcError) {
           Logger.error(`Failed to call Edge Function: ${funcError instanceof Error ? funcError.message : String(funcError)}`);
-          // נמשיך בכל זאת, אולי הבקט כבר קיים
+          // Continue anyway, maybe the bucket exists
         }
       }
       
-      // 4. הכנת שם קובץ ייחודי
+      // 4. Prepare unique filename
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 15);
       const fileExt = file.name.split('.').pop() || 'jpg';
       const filePath = `${timestamp}-${randomId}.${fileExt}`;
       
-      // 5. ניסיון העלאה גם אם הבקט לא מוכן (אולי יש הרשאות בכל זאת)
+      // 5. Try upload even if bucket not ready (maybe permissions exist anyway)
       Logger.info(`Attempting to upload file to path: ${filePath}`);
       const uploadedUrl = await uploadFile(file, filePath);
       
       if (uploadedUrl) {
-        // העלאה הצליחה
+        // Upload successful
         return uploadedUrl;
       }
       
-      // 6. העלאה נכשלה, ננסה ליצור URL ידני (אם הקובץ אולי הועלה)
+      // 6. Upload failed, try to generate URL manually (if file maybe uploaded)
       Logger.warn('Upload returned null, attempting to generate URL anyway');
       
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
         .getPublicUrl(filePath);
       
-      // 7. בדיקה אם ה-URL תקף (ניסיון לגשת אליו)
+      // 7. Validate if the URL is valid (try to access it)
       try {
         Logger.info(`Testing generated URL: ${publicUrl}`);
         const response = await fetch(publicUrl, { method: 'HEAD' });
@@ -207,7 +207,7 @@ export const useAdSubmission = () => {
         Logger.error(`URL fetch test failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
       }
       
-      // כל הניסיונות נכשלו
+      // All attempts failed
       throw new Error(`Could not upload image. Last error: ${lastError || 'Unknown error'}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -219,7 +219,7 @@ export const useAdSubmission = () => {
     }
   };
 
-  // החזרת הפונקציות והסטטוס
+  // Return functions and status
   return {
     handleSubmission,
     isSubmitting,

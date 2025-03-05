@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { BucketDetails } from '@/utils/types';
 
 const TestUpload = () => {
   const [file, setFile] = useState<File | null>(null);
@@ -18,7 +19,7 @@ const TestUpload = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [anonKey, setAnonKey] = useState<string | null>(null);
-  const [bucketDetails, setBucketDetails] = useState<any>(null);
+  const [bucketDetails, setBucketDetails] = useState<BucketDetails | null>(null);
   
   const {
     handleSubmission,
@@ -45,11 +46,16 @@ const TestUpload = () => {
           setUserId('anonymous');
         }
         
-        // 2. בדיקת מפתח API
-        const keyParts = supabase.supabaseKey.split('.');
-        if (keyParts.length > 0) {
-          setAnonKey(`${keyParts[0].substring(0, 5)}...`);
-          addLog(`API Key detected (starts with: ${keyParts[0].substring(0, 5)}...)`);
+        // 2. בדיקת מפתח API - fix for protected property
+        // Instead of accessing supabaseKey directly, we'll extract it from the auth header
+        const authHeader = supabase.auth.headers();
+        if (authHeader && authHeader.Authorization) {
+          const apiKey = authHeader.Authorization.split(' ')[1];
+          if (apiKey) {
+            const shortKey = apiKey.substring(0, 5);
+            setAnonKey(`${shortKey}...`);
+            addLog(`API Key detected (starts with: ${shortKey}...)`);
+          }
         }
       } catch (error) {
         addLog(`Error checking session: ${error instanceof Error ? error.message : String(error)}`);
@@ -80,12 +86,12 @@ const TestUpload = () => {
       if (bucketsError) {
         addLog(`Error listing buckets: ${bucketsError.message}`);
         setErrorMessage(`Error listing buckets: ${bucketsError.message}`);
-        setBucketDetails({ error: bucketsError.message });
+        setBucketDetails({ count: 0, buckets: [], error: bucketsError.message });
       } else {
         addLog(`Found ${buckets.length} buckets:`);
         
         // מידע מפורט על כל הבאקטים
-        const details = {
+        const details: BucketDetails = {
           count: buckets.length,
           buckets: buckets.map(b => ({
             name: b.name,
