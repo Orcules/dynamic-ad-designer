@@ -23,6 +23,17 @@ const queryClient = new QueryClient({
 const App = () => {
   const [dir, setDir] = useState<'ltr' | 'rtl'>('ltr');
 
+  // Update document direction when dir state changes
+  useEffect(() => {
+    document.documentElement.dir = dir;
+  }, [dir]);
+
+  // Function to update direction that can be passed to context
+  const updateDirection = (language: string) => {
+    const newDir = language === 'he' || language === 'ar' ? 'rtl' : 'ltr';
+    setDir(newDir);
+  };
+
   // קריאה לפונקציה לדיכוי אזהרות דיאלוג בטעינת האפליקציה
   useEffect(() => {
     try {

@@ -24,6 +24,7 @@ interface AdContentProps {
   descriptionPosition: Position;
   ctaPosition: Position;
   showCtaArrow?: boolean;
+  isRTL?: boolean;
 }
 
 export function AdContent({
@@ -40,12 +41,25 @@ export function AdContent({
   descriptionPosition,
   ctaPosition,
   showCtaArrow = true,
+  isRTL = false,
 }: AdContentProps) {
   const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
+
+  // Ensure textStyle and descriptionStyle have proper direction
+  const headlineTextStyle = {
+    ...textStyle,
+    direction: isRTL ? 'rtl' : 'ltr',
+  };
+  
+  const updatedDescriptionStyle = {
+    ...descriptionStyle,
+    direction: isRTL ? 'rtl' : 'ltr',
+  };
 
   return (
     <div 
       className="absolute inset-0 flex flex-col"
+      dir={isRTL ? "rtl" : "ltr"}
     >
       <div className={cn(
         "relative flex-1 flex flex-col items-center justify-center gap-4 p-4",
@@ -57,13 +71,13 @@ export function AdContent({
         )}>
           <AdHeadline
             headline={headline}
-            textStyle={textStyle}
+            textStyle={headlineTextStyle}
             position={headlinePosition}
           />
           
           <AdDescription
             description={description}
-            descriptionStyle={descriptionStyle}
+            descriptionStyle={updatedDescriptionStyle}
             position={descriptionPosition}
           />
           

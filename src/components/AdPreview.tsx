@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -40,6 +39,7 @@ interface AdPreviewProps {
   ctaPosition: Position;
   imagePosition: Position;
   showCtaArrow?: boolean;
+  language?: string;
 }
 
 export function AdPreview({ 
@@ -66,11 +66,13 @@ export function AdPreview({
   ctaPosition,
   imagePosition,
   showCtaArrow = true,
+  language = "en",
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
   const imageGenerator = useRef<ImageGenerator>();
+  const isRTL = language === 'he' || language === 'ar';
 
   useEffect(() => {
     imageGenerator.current = new ImageGenerator('.ad-content');
@@ -100,7 +102,6 @@ export function AdPreview({
 
     try {
       setIsCapturing(true);
-      // ממתין לאנימציות שיסתיימו
       await new Promise(resolve => setTimeout(resolve, 100));
       await imageGenerator.current.downloadImage('ad-preview.png');
     } catch (error) {
@@ -120,7 +121,8 @@ export function AdPreview({
     style: templateStyle, 
     accentColor: overlayColor, 
     textColor: textColor,
-    fontFamily 
+    fontFamily,
+    isRTL
   });
 
   const descriptionStyle = getTextStyle({
@@ -128,7 +130,8 @@ export function AdPreview({
     accentColor: overlayColor,
     textColor: descriptionColor,
     fontFamily,
-    isDescription: true
+    isDescription: true,
+    isRTL
   });
   
   const buttonStyle = getButtonStyle({ 
@@ -138,7 +141,6 @@ export function AdPreview({
     fontFamily 
   });
 
-  // פונקציות ניווט משופרות
   const handlePrevious = () => {
     if (onPrevious && typeof onPrevious === 'function') {
       onPrevious();
@@ -174,6 +176,7 @@ export function AdPreview({
               aspectRatio: `${width} / ${height}`,
               width: '100%',
             }}
+            dir={isRTL ? "rtl" : "ltr"}
           >
             <AdPreviewImage
               imageUrl={imageUrl}
@@ -198,6 +201,7 @@ export function AdPreview({
                 descriptionPosition={descriptionPosition}
                 ctaPosition={ctaPosition}
                 showCtaArrow={showCtaArrow}
+                isRTL={isRTL}
               />
             </div>
           </div>
