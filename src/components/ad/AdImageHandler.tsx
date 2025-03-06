@@ -97,6 +97,7 @@ export function useAdImageHandler({
     handleImageChange,
     handleImageUrlsChange,
     handlePrevPreview,
-    handleNextPreview
+    handleNextPreview,
+    setCurrentPreviewIndex
   };
 }
