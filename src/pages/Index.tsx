@@ -3,6 +3,7 @@ import { useState, useEffect, useLayoutEffect } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Sparkles, AlertCircle } from "lucide-react";
 import { Logger } from "@/utils/logger";
 import { GeneratedAdsList } from "@/components/GeneratedAdsList";
 import { Separator } from "@/components/ui/separator";
@@ -301,11 +302,7 @@ const Index = () => {
       <div className="max-w-7xl mx-auto space-y-12">
         <div className="space-y-4 text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full animate-fade-in">
-            <svg className="h-5 w-5 text-primary animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-              <path d="M19 3v4"></path>
-              <path d="M21 5h-4"></path>
-            </svg>
+            <Sparkles className="h-5 w-5 text-primary animate-pulse" />
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
               Dynamic Ad Designer {isUpdating ? '(Updating...)' : ''}
             </h1>
@@ -346,11 +343,7 @@ const Index = () => {
 
           {loadError && (
             <Alert variant="destructive" className="mb-4">
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12.01" y2="16"></line>
-              </svg>
+              <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error Loading Ads</AlertTitle>
               <AlertDescription className="flex flex-col gap-2">
                 <p>{loadError}</p>
