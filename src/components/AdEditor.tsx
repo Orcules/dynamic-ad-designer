@@ -101,7 +101,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         imagePosition
       };
       
-      // הכנת מערך התמונות לעיבוד
+      // Prepare images array
       let allImages: Array<File | string> = [];
       
       if (selectedImages.length > 0) {
@@ -119,7 +119,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         return;
       }
       
-      // עיבוד כל התמונות
+      // Save original index to restore later
+      const originalIndex = currentPreviewIndex;
+      
+      // Process all images sequentially
       for (let i = 0; i < allImages.length; i++) {
         try {
           const currentImage = allImages[i];
@@ -130,9 +133,26 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           
           Logger.info(`Processing image ${i + 1}/${allImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
           
+          // Force preview update to current image
+          if (handlePrevPreview && handleNextPreview) {
+            // Navigate to the correct index
+            while (currentPreviewIndex !== i) {
+              if (currentPreviewIndex < i) {
+                handleNextPreview();
+              } else {
+                handlePrevPreview();
+              }
+              // Give time for the state to update
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
+          
           const { width, height } = getDimensions(adData.platform);
           
-          // הכנת קובץ להעלאה
+          // Wait for any animations or state updates to complete
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // Prepare image for upload
           let imageToUpload: File;
           
           if (typeof currentImage === 'string') {
@@ -165,23 +185,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imageToUpload = currentImage;
           }
           
-          // וידוא גודל תקין
+          // Validate file
           if (imageToUpload.size === 0) {
             Logger.error(`Skipping zero-size image: ${imageToUpload.name}`);
             continue;
           }
           
-          // עדכון התצוגה המקדימה למיקום הנכון
-          if (i !== currentPreviewIndex && allImages.length > 1) {
-            if (i > currentPreviewIndex) {
-              handleNextPreview();
-            } else {
-              handlePrevPreview();
-            }
-            await new Promise(resolve => setTimeout(resolve, 300));
-          }
-          
-          // לכידת תצוגה מקדימה
+          // Capture preview
           let previewUrl = '';
           if (imageGeneratorRef.current) {
             try {
@@ -192,16 +202,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             }
           }
           
-          // העלאת התמונה לשרת Supabase
-          Logger.info(`Starting file upload: ${JSON.stringify({
-            name: imageToUpload.name,
-            size: imageToUpload.size,
-            type: imageToUpload.type
-          })}`);
-          
+          // Upload image
           let uploadedUrl;
           try {
-            // שימוש בפונקציה המשופרת להעלאת קבצים
             uploadedUrl = await handleSubmission(imageToUpload);
           } catch (uploadError) {
             Logger.error(`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
@@ -214,6 +217,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             continue;
           }
           
+          // Prepare ad data
           const adDataToGenerate = {
             name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
             headline: adData.headline,
@@ -234,15 +238,27 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             status: 'completed'
           };
           
-          // שליחת המודעה המוכנה לפונקציית הקולבק
           onAdGenerated(adDataToGenerate);
-          
           toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
+          
+          // Brief pause between processing images
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           Logger.error(`Error processing image ${i + 1}: ${errorMessage}`);
           toast.error(`Failed to process image ${i + 1}`);
         }
+      }
+
+      // Restore original preview index after processing all images
+      while (currentPreviewIndex !== originalIndex) {
+        if (currentPreviewIndex < originalIndex) {
+          handleNextPreview();
+        } else {
+          handlePrevPreview();
+        }
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
     } catch (error) {
