@@ -11,7 +11,6 @@ export const AdPreviewControls: React.FC<AdPreviewControlsProps> = ({
   showCtaArrow,
   onShowCtaArrowChange
 }) => {
-  // Use useCallback to stabilize the handler and requestAnimationFrame for better performance
   const handleCheckedChange = useCallback((checked: boolean) => {
     requestAnimationFrame(() => {
       onShowCtaArrowChange(checked);

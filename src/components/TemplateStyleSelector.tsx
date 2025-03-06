@@ -1,4 +1,3 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -70,30 +69,18 @@ export function TemplateStyleSelector({
     { id: "artistic", label: "Artistic" }
   ];
 
-  // Safely handle style changes with proper validation
   const handleStyleChange = useCallback((newValue: string) => {
-    // Ensure we have a valid value before calling onChange
     if (newValue && newValue.trim() !== "") {
-      // Use RAF and a small timeout to ensure all UI events complete properly
+      onChange(newValue);
+      
       requestAnimationFrame(() => {
-        onChange(newValue);
-        
-        // Force any open portals to close by clicking outside
-        // This ensures that any modal/dropdown related elements are properly cleaned up
-        setTimeout(() => {
-          // Create and dispatch a click event outside of the dropdown to ensure it closes
-          const clickEvent = new MouseEvent('click', {
-            bubbles: true,
-            cancelable: true,
-            view: window
-          });
-          document.body.dispatchEvent(clickEvent);
-        }, 50);
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
       });
     }
   }, [onChange]);
 
-  // Handle color input changes safely
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
     requestAnimationFrame(() => {
       handler(value);
@@ -114,17 +101,12 @@ export function TemplateStyleSelector({
           <SelectContent 
             className="bg-card border-border z-[100]"
             onCloseAutoFocus={(e) => {
-              // Prevent focus trapping that could interfere with future interactions
               e.preventDefault();
             }}
             onEscapeKeyDown={() => {
-              // Additional cleanup on escape key
-              const clickEvent = new MouseEvent('click', {
-                bubbles: true,
-                cancelable: true,
-                view: window
-              });
-              document.body.dispatchEvent(clickEvent);
+              if (document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
             }}
           >
             {templates.map((template) => (
