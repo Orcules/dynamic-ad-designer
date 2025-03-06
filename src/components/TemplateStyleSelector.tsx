@@ -70,12 +70,23 @@ export function TemplateStyleSelector({
     { id: "artistic", label: "Artistic" }
   ];
 
-  // Safely handle style changes
+  // Safely handle style changes with proper validation
   const handleStyleChange = useCallback((newValue: string) => {
+    // Ensure we have a valid value before calling onChange
     if (newValue && newValue.trim() !== "") {
-      onChange(newValue);
+      // Use requestAnimationFrame to prevent UI blocking
+      requestAnimationFrame(() => {
+        onChange(newValue);
+      });
     }
   }, [onChange]);
+
+  // Handle color input changes safely
+  const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
+    requestAnimationFrame(() => {
+      handler(value);
+    });
+  }, []);
 
   return (
     <div className="space-y-4">
@@ -110,13 +121,13 @@ export function TemplateStyleSelector({
             id="text_color"
             name="text_color"
             value={textColor}
-            onChange={(e) => onTextColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onTextColorChange, e.target.value)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={textColor}
-            onChange={(e) => onTextColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onTextColorChange, e.target.value)}
             placeholder="#FFFFFF"
             className="flex-1"
           />
@@ -131,13 +142,13 @@ export function TemplateStyleSelector({
             id="description_color"
             name="description_color"
             value={descriptionColor}
-            onChange={(e) => onDescriptionColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onDescriptionColorChange, e.target.value)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={descriptionColor}
-            onChange={(e) => onDescriptionColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onDescriptionColorChange, e.target.value)}
             placeholder="#333333"
             className="flex-1"
           />
@@ -152,13 +163,13 @@ export function TemplateStyleSelector({
             id="overlay_color"
             name="overlay_color"
             value={overlayColor}
-            onChange={(e) => onOverlayColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onOverlayColorChange, e.target.value)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={overlayColor}
-            onChange={(e) => onOverlayColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onOverlayColorChange, e.target.value)}
             placeholder="#000000"
             className="flex-1"
           />
@@ -173,13 +184,13 @@ export function TemplateStyleSelector({
             id="cta_color"
             name="cta_color"
             value={ctaColor}
-            onChange={(e) => onCtaColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onCtaColorChange, e.target.value)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={ctaColor}
-            onChange={(e) => onCtaColorChange(e.target.value)}
+            onChange={(e) => handleInputChange(onCtaColorChange, e.target.value)}
             placeholder="#000000"
             className="flex-1"
           />
@@ -191,7 +202,11 @@ export function TemplateStyleSelector({
         <div className="flex gap-4 items-center">
           <Slider
             value={[overlayOpacity * 100]}
-            onValueChange={(values) => onOpacityChange?.(values[0] / 100)}
+            onValueChange={(values) => {
+              requestAnimationFrame(() => {
+                onOpacityChange?.(values[0] / 100);
+              });
+            }}
             min={0}
             max={100}
             step={1}

@@ -31,16 +31,16 @@ export const useAdForm = () => {
   }, []);
 
   const handleStyleChange = useCallback((value: string) => {
-    // Prevent invalid values and potential UI freezing
-    if (!value) return;
+    // Guard against invalid values
+    if (!value || value.trim() === "") return;
     
-    // Use a small timeout to avoid UI freezing during state update
-    setTimeout(() => {
+    // Use requestAnimationFrame instead of setTimeout for better performance
+    requestAnimationFrame(() => {
       setAdData(prev => ({ 
         ...prev, 
-        template_style: value || "modern"
+        template_style: value.trim() || "modern"
       }));
-    }, 0);
+    });
   }, []);
 
   const handleColorChange = useCallback((value: string) => {

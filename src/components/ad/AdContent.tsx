@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { AdHeadline } from "./AdHeadline";
 import { AdDescription } from "./AdDescription";
@@ -34,7 +34,7 @@ export function AdContent({
   ctaText = "Experience Nature's Symphony",
   textStyle,
   buttonStyle,
-  templateStyle = "modern", // Provide default value
+  templateStyle = "modern",
   isButtonHovered,
   onButtonHover,
   headlinePosition,
@@ -43,20 +43,36 @@ export function AdContent({
   showCtaArrow = true,
   isRTL = false,
 }: AdContentProps) {
-  // Safely check template style
-  const safeTemplateStyle = templateStyle || "modern";
-  const isBottomOverlay = safeTemplateStyle.startsWith('overlay-bottom-');
-
-  // Ensure textStyle and descriptionStyle have proper direction
-  const headlineTextStyle = {
-    ...textStyle,
-    direction: isRTL ? 'rtl' : 'ltr',
-  };
+  // Safely check template style with useMemo to prevent unnecessary recalculations
+  const safeTemplateStyle = useMemo(() => {
+    return templateStyle && templateStyle.trim() ? templateStyle : "modern";
+  }, [templateStyle]);
   
-  const updatedDescriptionStyle = {
-    ...descriptionStyle,
-    direction: isRTL ? 'rtl' : 'ltr',
-  };
+  const isBottomOverlay = useMemo(() => {
+    return safeTemplateStyle.startsWith('overlay-bottom-');
+  }, [safeTemplateStyle]);
+
+  // Use useMemo for style objects to prevent unnecessary re-renders
+  const headlineTextStyle = useMemo(() => {
+    return {
+      ...textStyle,
+      direction: isRTL ? 'rtl' : 'ltr',
+    };
+  }, [textStyle, isRTL]);
+  
+  const updatedDescriptionStyle = useMemo(() => {
+    return {
+      ...descriptionStyle,
+      direction: isRTL ? 'rtl' : 'ltr',
+    };
+  }, [descriptionStyle, isRTL]);
+
+  // Make sure button hover handler works reliably
+  const handleButtonHover = React.useCallback((isHovered: boolean) => {
+    requestAnimationFrame(() => {
+      onButtonHover(isHovered);
+    });
+  }, [onButtonHover]);
 
   return (
     <div 
@@ -88,7 +104,7 @@ export function AdContent({
             buttonStyle={buttonStyle}
             position={ctaPosition}
             isButtonHovered={isButtonHovered}
-            onButtonHover={onButtonHover}
+            onButtonHover={handleButtonHover}
             showArrow={showCtaArrow}
           />
         </div>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
 interface Position {
   x: number;
@@ -25,12 +25,12 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
 }) => {
   if (!ctaText) return null;
 
-  // Use safe event handlers to prevent UI freezes
-  const handleMouseEnter = React.useCallback(() => {
+  // Use safe event handlers with requestAnimationFrame for better performance
+  const handleMouseEnter = useCallback(() => {
     requestAnimationFrame(() => onButtonHover(true));
   }, [onButtonHover]);
   
-  const handleMouseLeave = React.useCallback(() => {
+  const handleMouseLeave = useCallback(() => {
     requestAnimationFrame(() => onButtonHover(false));
   }, [onButtonHover]);
 
