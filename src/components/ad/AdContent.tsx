@@ -34,7 +34,7 @@ export function AdContent({
   ctaText = "Experience Nature's Symphony",
   textStyle,
   buttonStyle,
-  templateStyle,
+  templateStyle = "modern", // Provide default value
   isButtonHovered,
   onButtonHover,
   headlinePosition,
@@ -43,7 +43,9 @@ export function AdContent({
   showCtaArrow = true,
   isRTL = false,
 }: AdContentProps) {
-  const isBottomOverlay = templateStyle?.startsWith('overlay-bottom-');
+  // Safely check template style
+  const safeTemplateStyle = templateStyle || "modern";
+  const isBottomOverlay = safeTemplateStyle.startsWith('overlay-bottom-');
 
   // Ensure textStyle and descriptionStyle have proper direction
   const headlineTextStyle = {

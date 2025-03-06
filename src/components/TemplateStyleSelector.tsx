@@ -1,7 +1,9 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { useCallback } from "react";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -68,11 +70,21 @@ export function TemplateStyleSelector({
     { id: "artistic", label: "Artistic" }
   ];
 
+  // Safely handle style changes
+  const handleStyleChange = useCallback((newValue: string) => {
+    if (newValue && newValue.trim() !== "") {
+      onChange(newValue);
+    }
+  }, [onChange]);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
-        <Select value={value} onValueChange={onChange}>
+        <Select 
+          value={value || "modern"} 
+          onValueChange={handleStyleChange}
+        >
           <SelectTrigger className="bg-card">
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>

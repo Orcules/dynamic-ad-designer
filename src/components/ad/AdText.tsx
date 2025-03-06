@@ -1,3 +1,4 @@
+
 import { CSSProperties } from "react";
 
 interface AdTextProps {
@@ -19,6 +20,9 @@ export function getTextStyle({
   isDescription = false,
   isRTL = false
 }: AdTextProps): CSSProperties {
+  // Ensure we have a valid style
+  const safeStyle = style && style.trim() ? style : 'minimal';
+  
   const baseStyle: CSSProperties = {
     fontWeight: isDescription ? 'normal' : 'bold',
     fontSize: fontSize || (isDescription ? 'clamp(0.875rem, 2.5vw, 1.25rem)' : 'clamp(1.25rem, 4vw, 2.5rem)'),
@@ -38,7 +42,8 @@ export function getTextStyle({
     direction: isRTL ? 'rtl' : 'ltr',
   };
 
-  switch (style) {
+  // Use the safe style value for switch
+  switch (safeStyle) {
     case 'modern':
       return {
         ...baseStyle,
