@@ -1,7 +1,9 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { useCallback } from "react";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -68,15 +70,37 @@ export function TemplateStyleSelector({
     { id: "artistic", label: "Artistic" }
   ];
 
+  // Use memoized callbacks to prevent excessive re-renders
+  const handleStyleChange = useCallback((newValue: string) => {
+    // Add a small delay to prevent UI freeze
+    setTimeout(() => {
+      onChange(newValue);
+    }, 0);
+  }, [onChange]);
+
+  const handleColorInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>, handler: (value: string) => void) => {
+    // Debounce the color change
+    handler(e.target.value);
+  }, []);
+
+  const handleOpacityChange = useCallback((values: number[]) => {
+    if (onOpacityChange) {
+      // Debounce the opacity change
+      setTimeout(() => {
+        onOpacityChange(values[0] / 100);
+      }, 0);
+    }
+  }, [onOpacityChange]);
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
-        <Select value={value} onValueChange={onChange}>
+        <Select value={value} onValueChange={handleStyleChange}>
           <SelectTrigger className="bg-card">
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border">
+          <SelectContent className="bg-card border-border max-h-[40vh] overflow-y-auto">
             {templates.map((template) => (
               <SelectItem 
                 key={template.id} 
@@ -98,13 +122,13 @@ export function TemplateStyleSelector({
             id="text_color"
             name="text_color"
             value={textColor}
-            onChange={(e) => onTextColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onTextColorChange)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={textColor}
-            onChange={(e) => onTextColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onTextColorChange)}
             placeholder="#FFFFFF"
             className="flex-1"
           />
@@ -119,13 +143,13 @@ export function TemplateStyleSelector({
             id="description_color"
             name="description_color"
             value={descriptionColor}
-            onChange={(e) => onDescriptionColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onDescriptionColorChange)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={descriptionColor}
-            onChange={(e) => onDescriptionColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onDescriptionColorChange)}
             placeholder="#333333"
             className="flex-1"
           />
@@ -140,13 +164,13 @@ export function TemplateStyleSelector({
             id="overlay_color"
             name="overlay_color"
             value={overlayColor}
-            onChange={(e) => onOverlayColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onOverlayColorChange)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={overlayColor}
-            onChange={(e) => onOverlayColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onOverlayColorChange)}
             placeholder="#000000"
             className="flex-1"
           />
@@ -161,13 +185,13 @@ export function TemplateStyleSelector({
             id="cta_color"
             name="cta_color"
             value={ctaColor}
-            onChange={(e) => onCtaColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onCtaColorChange)}
             className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={ctaColor}
-            onChange={(e) => onCtaColorChange(e.target.value)}
+            onChange={(e) => handleColorInputChange(e, onCtaColorChange)}
             placeholder="#000000"
             className="flex-1"
           />
@@ -179,7 +203,7 @@ export function TemplateStyleSelector({
         <div className="flex gap-4 items-center">
           <Slider
             value={[overlayOpacity * 100]}
-            onValueChange={(values) => onOpacityChange?.(values[0] / 100)}
+            onValueChange={handleOpacityChange}
             min={0}
             max={100}
             step={1}

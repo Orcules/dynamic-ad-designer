@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { ArrowBigDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Position {
@@ -52,14 +51,25 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         <span className="inline-flex items-center gap-2">
           <span>{ctaText}</span>
           {showArrow && (
-            <ArrowBigDown 
+            <svg 
               className="transition-transform duration-300 inline-block"
               style={{
                 transform: isButtonHovered ? 'translateY(4px)' : 'translateY(2px)'
               }}
-              size={24}
-              strokeWidth={2.5}
-            />
+              width="24" 
+              height="24" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2.5" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+            >
+              <path d="M15 3H9a6 6 0 0 0-6 6v12" />
+              <path d="M15 3c3.3 0 6 2.7 6 6v12" />
+              <path d="M12 9v14" />
+              <path d="M8 17l4 4 4-4" />
+            </svg>
           )}
         </span>
       </button>

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export const useAdForm = () => {
   const [adData, setAdData] = useState({
@@ -17,46 +17,51 @@ export const useAdForm = () => {
     description_color: "#333333"
   });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAdData(prev => ({ ...prev, [name]: value }));
-  };
+  }, []);
 
-  const handleFontChange = (value: string) => {
+  const handleFontChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, font_url: value }));
-  };
+  }, []);
 
-  const handlePlatformChange = (value: string) => {
+  const handlePlatformChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, platform: value }));
-  };
+  }, []);
 
-  const handleStyleChange = (value: string) => {
-    // Ensure template_style is never empty
-    setAdData(prev => ({ 
-      ...prev, 
-      template_style: value || "modern"
-    }));
-  };
+  const handleStyleChange = useCallback((value: string) => {
+    // Ensure template_style is never empty and apply with setTimeout to avoid UI freeze
+    if (!value) return; // Prevent empty values from even being processed
+    
+    // Use setTimeout to defer the state update to the next tick
+    setTimeout(() => {
+      setAdData(prev => ({ 
+        ...prev, 
+        template_style: value || "modern"
+      }));
+    }, 0);
+  }, []);
 
-  const handleColorChange = (value: string) => {
+  const handleColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, accent_color: value }));
-  };
+  }, []);
 
-  const handleCtaColorChange = (value: string) => {
+  const handleCtaColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, cta_color: value }));
-  };
+  }, []);
 
-  const handleOverlayColorChange = (value: string) => {
+  const handleOverlayColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, overlay_color: value }));
-  };
+  }, []);
 
-  const handleTextColorChange = (value: string) => {
+  const handleTextColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, text_color: value }));
-  };
+  }, []);
 
-  const handleDescriptionColorChange = (value: string) => {
+  const handleDescriptionColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, description_color: value }));
-  };
+  }, []);
 
   return {
     adData,
