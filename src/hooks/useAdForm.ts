@@ -34,12 +34,23 @@ export const useAdForm = () => {
     // Guard against invalid values
     if (!value || value.trim() === "") return;
     
-    // Use requestAnimationFrame instead of setTimeout for better performance
+    // Use requestAnimationFrame to update state asynchronously
+    // This prevents UI blocking and allows other interactions to continue
     requestAnimationFrame(() => {
-      setAdData(prev => ({ 
-        ...prev, 
-        template_style: value.trim() || "modern"
-      }));
+      setAdData(prev => {
+        const newValue = value.trim() || "modern";
+        // Only update if the value actually changed
+        if (prev.template_style === newValue) return prev;
+        return { ...prev, template_style: newValue };
+      });
+      
+      // Force any trapped focus or event handlers to release
+      setTimeout(() => {
+        // Restore normal interaction state by clearing any trapped focus
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      }, 10);
     });
   }, []);
 

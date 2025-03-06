@@ -74,9 +74,21 @@ export function TemplateStyleSelector({
   const handleStyleChange = useCallback((newValue: string) => {
     // Ensure we have a valid value before calling onChange
     if (newValue && newValue.trim() !== "") {
-      // Use requestAnimationFrame to prevent UI blocking
+      // Use RAF and a small timeout to ensure all UI events complete properly
       requestAnimationFrame(() => {
         onChange(newValue);
+        
+        // Force any open portals to close by clicking outside
+        // This ensures that any modal/dropdown related elements are properly cleaned up
+        setTimeout(() => {
+          // Create and dispatch a click event outside of the dropdown to ensure it closes
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          });
+          document.body.dispatchEvent(clickEvent);
+        }, 50);
       });
     }
   }, [onChange]);
@@ -99,7 +111,22 @@ export function TemplateStyleSelector({
           <SelectTrigger className="bg-card">
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>
-          <SelectContent className="bg-card border-border">
+          <SelectContent 
+            className="bg-card border-border z-[100]"
+            onCloseAutoFocus={(e) => {
+              // Prevent focus trapping that could interfere with future interactions
+              e.preventDefault();
+            }}
+            onEscapeKeyDown={() => {
+              // Additional cleanup on escape key
+              const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+              });
+              document.body.dispatchEvent(clickEvent);
+            }}
+          >
             {templates.map((template) => (
               <SelectItem 
                 key={template.id} 

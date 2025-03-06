@@ -1,5 +1,5 @@
 
-import React, { useMemo } from "react";
+import React, { useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { AdHeadline } from "./AdHeadline";
 import { AdDescription } from "./AdDescription";
@@ -68,7 +68,8 @@ export function AdContent({
   }, [descriptionStyle, isRTL]);
 
   // Make sure button hover handler works reliably
-  const handleButtonHover = React.useCallback((isHovered: boolean) => {
+  const handleButtonHover = useCallback((isHovered: boolean) => {
+    // Use requestAnimationFrame to ensure UI updates smoothly
     requestAnimationFrame(() => {
       onButtonHover(isHovered);
     });
@@ -76,7 +77,7 @@ export function AdContent({
 
   return (
     <div 
-      className="absolute inset-0 flex flex-col"
+      className="absolute inset-0 flex flex-col pointer-events-auto"
       dir={isRTL ? "rtl" : "ltr"}
     >
       <div className={cn(

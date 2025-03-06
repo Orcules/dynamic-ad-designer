@@ -36,7 +36,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
 
   return (
     <div 
-      className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] flex justify-center items-center"
+      className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] flex justify-center items-center pointer-events-auto"
       style={{
         transform: `translate(-50%, ${position.y}px)`,
         zIndex: 10
@@ -55,6 +55,10 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
+        onClick={(e) => {
+          // Prevent event bubbling which could cause issues
+          e.stopPropagation();
+        }}
       >
         <span className="inline-flex items-center gap-2">
           <span>{ctaText}</span>
