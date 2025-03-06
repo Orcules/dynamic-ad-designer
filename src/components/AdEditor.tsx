@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -69,7 +68,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const { handleSubmission, isSubmitting } = useAdSubmission();
 
-  // אתחול מחולל התמונות
   React.useEffect(() => {
     if (previewRef.current) {
       imageGeneratorRef.current = new ImageGenerator('.ad-content');
@@ -101,7 +99,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         imagePosition
       };
       
-      // Prepare images array
       let allImages: Array<File | string> = [];
       
       if (selectedImages.length > 0) {
@@ -118,11 +115,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         setIsGenerating(false);
         return;
       }
-      
-      // Save original index to restore later
-      const originalIndex = currentPreviewIndex;
-      
-      // Process all images sequentially
+
       for (let i = 0; i < allImages.length; i++) {
         try {
           const currentImage = allImages[i];
@@ -131,40 +124,47 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             continue;
           }
           
-          Logger.info(`Processing image ${i + 1}/${allImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
+          Logger.info(`Processing image ${i + 1}/${allImages.length}`);
+
+          let retryCount = 0;
+          const maxRetries = 3;
           
-          // Force preview update to current image
-          if (handlePrevPreview && handleNextPreview) {
-            // Navigate to the correct index
-            while (currentPreviewIndex !== i) {
+          while (currentPreviewIndex !== i && retryCount < maxRetries) {
+            Logger.info(`Attempting to set preview to index ${i}, current: ${currentPreviewIndex}, attempt: ${retryCount + 1}`);
+            
+            if (handlePrevPreview && handleNextPreview) {
               if (currentPreviewIndex < i) {
                 handleNextPreview();
               } else {
                 handlePrevPreview();
               }
-              // Give time for the state to update
-              await new Promise(resolve => setTimeout(resolve, 100));
             }
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            retryCount++;
           }
+
+          if (currentPreviewIndex !== i) {
+            Logger.error(`Failed to set preview index to ${i} after ${maxRetries} attempts`);
+            continue;
+          }
+
+          await new Promise(resolve => setTimeout(resolve, 500));
           
           const { width, height } = getDimensions(adData.platform);
           
-          // Wait for any animations or state updates to complete
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          // Prepare image for upload
           let imageToUpload: File;
           
           if (typeof currentImage === 'string') {
             if (!currentImage.trim() || currentImage === 'undefined') {
-              Logger.error(`Skipping invalid image URL: ${currentImage}`);
+              Logger.error(`Invalid image URL: ${currentImage}`);
               continue;
             }
             
             try {
               const response = await fetch(currentImage);
               if (!response.ok) {
-                throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+                throw new Error(`Failed to fetch image: ${response.status}`);
               }
               
               const blob = await response.blob();
@@ -185,39 +185,39 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imageToUpload = currentImage;
           }
           
-          // Validate file
           if (imageToUpload.size === 0) {
             Logger.error(`Skipping zero-size image: ${imageToUpload.name}`);
             continue;
           }
           
-          // Capture preview
           let previewUrl = '';
-          if (imageGeneratorRef.current) {
-            try {
-              previewUrl = await imageGeneratorRef.current.getImageUrl();
-              Logger.info(`Generated preview URL of length: ${previewUrl.length}`);
-            } catch (captureError) {
-              Logger.error(`Error capturing preview: ${captureError instanceof Error ? captureError.message : String(captureError)}`);
+          let captureRetries = 0;
+          while (!previewUrl && captureRetries < 3) {
+            if (imageGeneratorRef.current) {
+              try {
+                previewUrl = await imageGeneratorRef.current.getImageUrl();
+                Logger.info(`Generated preview URL on attempt ${captureRetries + 1}`);
+                break;
+              } catch (captureError) {
+                Logger.error(`Capture attempt ${captureRetries + 1} failed: ${captureError instanceof Error ? captureError.message : String(captureError)}`);
+                captureRetries++;
+                await new Promise(resolve => setTimeout(resolve, 500));
+              }
             }
           }
           
-          // Upload image
           let uploadedUrl;
           try {
             uploadedUrl = await handleSubmission(imageToUpload);
+            if (!uploadedUrl) {
+              throw new Error('No URL returned from upload');
+            }
           } catch (uploadError) {
-            Logger.error(`Failed to upload image: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
-            toast.error(`Upload failed: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`);
+            Logger.error(`Upload failed: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+            toast.error(`Upload failed for image ${i + 1}`);
             continue;
           }
           
-          if (!uploadedUrl) {
-            Logger.error('Failed to upload image, no URL returned');
-            continue;
-          }
-          
-          // Prepare ad data
           const adDataToGenerate = {
             name: `${adData.headline || 'Untitled'} - Version ${i + 1}`,
             headline: adData.headline,
@@ -241,24 +241,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           onAdGenerated(adDataToGenerate);
           toast.success(`Generated ad ${i + 1} of ${allImages.length}`);
           
-          // Brief pause between processing images
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 1000));
           
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           Logger.error(`Error processing image ${i + 1}: ${errorMessage}`);
           toast.error(`Failed to process image ${i + 1}`);
         }
-      }
-
-      // Restore original preview index after processing all images
-      while (currentPreviewIndex !== originalIndex) {
-        if (currentPreviewIndex < originalIndex) {
-          handleNextPreview();
-        } else {
-          handlePrevPreview();
-        }
-        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
     } catch (error) {
