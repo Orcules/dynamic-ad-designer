@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -48,8 +47,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   const [showCtaArrow, setShowCtaArrow] = useState(true);
   const [currentProcessingIndex, setCurrentProcessingIndex] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState<Record<number, 'pending' | 'processing' | 'completed' | 'failed'>>({});
   const previewRef = useRef<HTMLDivElement>(null);
   const imageGeneratorRef = useRef<ImageGenerator | null>(null);
+  const generationInProgress = useRef<boolean>(false);
 
   const {
     selectedImages,
@@ -59,7 +60,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handleImageUrlsChange,
     handlePrevPreview,
     handleNextPreview,
-    setCurrentPreviewIndex
+    setCurrentPreviewIndex,
+    setCurrentPreviewIndexSafely,
+    markIndexProcessed,
+    isIndexProcessed,
+    resetProcessedIndexes,
+    getUnprocessedIndexes,
+    isChangingIndex
   } = useAdImageHandler({
     onImageChange: (urls) => {
       Logger.info(JSON.stringify({ message: 'Images changed', urls }));
@@ -77,63 +84,66 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
   }, [previewRef.current]);
 
-  // This effect directly updates the currentProcessingIndex when currentPreviewIndex changes
-  useEffect(() => {
-    if (!isGenerating) return;
-    setCurrentProcessingIndex(currentPreviewIndex);
-  }, [currentPreviewIndex, isGenerating]);
-
-  // Function to ensure the preview index is set correctly
-  const ensurePreviewIndex = async (targetIndex: number): Promise<boolean> => {
+  const ensurePreviewIndex = async (targetIndex: number, maxRetries = 3): Promise<boolean> => {
     Logger.info(`Ensuring preview index is set to ${targetIndex}, current: ${currentPreviewIndex}`);
     
-    if (currentPreviewIndex === targetIndex) {
+    if (currentPreviewIndex === targetIndex && !isChangingIndex()) {
+      Logger.info(`Preview index is already ${targetIndex}`);
       return true;
     }
     
-    // Directly set the index rather than clicking through
-    setCurrentPreviewIndex(targetIndex);
+    if (isChangingIndex()) {
+      Logger.info(`Waiting for ongoing index change to complete before setting to ${targetIndex}`);
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
     
-    // Wait for the index change to take effect
-    return new Promise((resolve) => {
-      // We'll check multiple times if needed
-      let attempts = 0;
-      const maxAttempts = 5;
-      const interval = setInterval(() => {
-        attempts++;
-        if (currentPreviewIndex === targetIndex) {
-          clearInterval(interval);
-          resolve(true);
-        } else if (attempts >= maxAttempts) {
-          clearInterval(interval);
-          Logger.error(`Failed to set preview index to ${targetIndex} after ${maxAttempts} attempts`);
-          resolve(false);
-        }
-      }, 200);
-    });
+    let success = false;
+    let attempts = 0;
+    
+    while (!success && attempts < maxRetries) {
+      attempts++;
+      Logger.info(`Attempt ${attempts}/${maxRetries} to set preview index to ${targetIndex}`);
+      
+      success = await setCurrentPreviewIndexSafely(targetIndex);
+      
+      if (success) {
+        Logger.info(`Successfully set preview index to ${targetIndex} on attempt ${attempts}`);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return true;
+      }
+      
+      if (attempts < maxRetries) {
+        Logger.warn(`Failed to set preview index to ${targetIndex}, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    if (!success) {
+      Logger.error(`Failed to set preview index to ${targetIndex} after ${maxRetries} attempts`);
+    }
+    
+    return success;
   };
 
-  // Function to capture the current preview image
-  const capturePreview = async (): Promise<string> => {
+  const capturePreview = async (maxRetries = 3): Promise<string> => {
     if (!imageGeneratorRef.current) {
       throw new Error("Image generator not initialized");
     }
     
     let captureRetries = 0;
-    const maxCaptureRetries = 3;
     let previewUrl = '';
     
-    while (!previewUrl && captureRetries < maxCaptureRetries) {
+    while (!previewUrl && captureRetries < maxRetries) {
       try {
-        // Wait a bit before capturing to ensure rendering is complete
-        await new Promise(resolve => setTimeout(resolve, 500));
+        captureRetries++;
+        await new Promise(resolve => setTimeout(resolve, 1000));
         previewUrl = await imageGeneratorRef.current.getImageUrl();
-        Logger.info(`Generated preview URL on attempt ${captureRetries + 1}`);
+        Logger.info(`Generated preview URL on attempt ${captureRetries}`);
         break;
       } catch (captureError) {
-        captureRetries++;
         Logger.error(`Capture attempt ${captureRetries} failed: ${captureError instanceof Error ? captureError.message : String(captureError)}`);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        if (captureRetries >= maxRetries) break;
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     
@@ -146,28 +156,28 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const processImage = async (imageIndex: number, allImages: Array<File | string>): Promise<string | null> => {
     try {
+      setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'processing' }));
+      
       const currentImage = allImages[imageIndex];
       if (!currentImage) {
         Logger.error(`Invalid image at index ${imageIndex}`);
+        setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'failed' }));
         return null;
       }
       
       Logger.info(`Processing image ${imageIndex + 1}/${allImages.length}`);
       
-      // Ensure we're showing the correct preview
       const indexSet = await ensurePreviewIndex(imageIndex);
       if (!indexSet) {
-        Logger.warn(`Could not set preview to index ${imageIndex}, but continuing anyway`);
-        // Even if we couldn't set the index, we'll try to proceed
+        Logger.warn(`Could not set preview to index ${imageIndex}, skipping this image`);
+        setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'failed' }));
+        return null;
       }
       
-      // Allow time for the preview to render
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Capture the preview
       const previewUrl = await capturePreview();
       
-      // Process the image file
       let imageToUpload: File;
       
       if (typeof currentImage === 'string') {
@@ -201,7 +211,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         throw new Error(`Skipping zero-size image: ${imageToUpload.name}`);
       }
       
-      // Upload the image
       let uploadedUrl = await handleSubmission(imageToUpload);
       if (!uploadedUrl) {
         throw new Error('No URL returned from upload');
@@ -209,7 +218,6 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       
       const { width, height } = getDimensions(adData.platform);
       
-      // Create the ad data object
       const adDataToGenerate = {
         name: `${adData.headline || 'Untitled'} - Version ${imageIndex + 1}`,
         headline: adData.headline,
@@ -230,21 +238,35 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         status: 'completed'
       };
       
-      // Pass the generated ad data to the parent component
+      markIndexProcessed(imageIndex);
+      
       onAdGenerated(adDataToGenerate);
+      
+      setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'completed' }));
+      
       toast.success(`Generated ad ${imageIndex + 1} of ${allImages.length}`);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       return uploadedUrl;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error(`Error processing image ${imageIndex + 1}: ${errorMessage}`);
       toast.error(`Failed to process image ${imageIndex + 1}: ${errorMessage}`);
+      
+      setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'failed' }));
+      
       return null;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (generationInProgress.current) {
+      toast.info("Ad generation already in progress");
+      return;
+    }
     
     const hasImages = selectedImages.length > 0 || imageUrls.length > 0;
     if (!validateAdSubmission(adData.platform, hasImages)) {
@@ -257,11 +279,12 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     }
 
     setIsGenerating(true);
+    generationInProgress.current = true;
+    resetProcessedIndexes();
 
     try {
       Logger.info('Starting ad generation process...');
       
-      // Preserve the original preview index so we can restore it later
       const originalPreviewIndex = currentPreviewIndex;
       
       let allImages: Array<File | string> = [];
@@ -278,18 +301,40 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       if (allImages.length === 0) {
         toast.error('No valid images to process');
         setIsGenerating(false);
+        generationInProgress.current = false;
         return;
       }
 
-      // Process each image sequentially
+      const initialStatus: Record<number, 'pending' | 'processing' | 'completed' | 'failed'> = {};
+      allImages.forEach((_, i) => {
+        initialStatus[i] = 'pending';
+      });
+      setProcessingStatus(initialStatus);
+
       for (let i = 0; i < allImages.length; i++) {
+        if (isIndexProcessed(i)) {
+          Logger.info(`Image at index ${i} already processed, skipping`);
+          continue;
+        }
+        
+        setCurrentProcessingIndex(i);
         await processImage(i, allImages);
-        // Add a small delay between processing images
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
 
-      // Restore the original preview index
-      setCurrentPreviewIndex(originalPreviewIndex);
+      const unprocessed = getUnprocessedIndexes();
+      if (unprocessed.length > 0) {
+        Logger.warn(`${unprocessed.length} images weren't processed. Retrying...`);
+        
+        for (const index of unprocessed) {
+          setCurrentProcessingIndex(index);
+          await processImage(index, allImages);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      }
+
+      await setCurrentPreviewIndexSafely(originalPreviewIndex);
       
       toast.success(`All ${allImages.length} ads generated successfully!`);
     } catch (error) {
@@ -298,6 +343,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       toast.error(`Error generating ads: ${errorMessage}`);
     } finally {
       setIsGenerating(false);
+      generationInProgress.current = false;
     }
   };
 
