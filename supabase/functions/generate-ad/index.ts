@@ -170,7 +170,7 @@ serve(async (req) => {
     // המרה והעלאה
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
-    const filePath = `generated/${timestamp}_ad.png`;
+    const filePath = `full-ads/${timestamp}_ad.png`;  // Changed path to full-ads directory
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

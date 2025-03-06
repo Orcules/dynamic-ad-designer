@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 export class StorageManager {
@@ -13,7 +12,7 @@ export class StorageManager {
 
   async uploadOriginalImage(uploadId: string, image: any) {
     const timestamp = Date.now();
-    const originalFileName = `original/${uploadId}_${timestamp}.jpg`;
+    const originalFileName = `full-ads/original/${uploadId}_${timestamp}.jpg`;
     
     const { error: uploadError } = await this.supabase.storage
       .from('ad-images')
@@ -36,7 +35,7 @@ export class StorageManager {
 
   async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array) {
     const timestamp = Date.now();
-    const generatedFileName = `generated/${uploadId}_${timestamp}.jpg`;
+    const generatedFileName = `full-ads/generated/${uploadId}_${timestamp}.jpg`;
     
     const { error: saveError } = await this.supabase.storage
       .from('ad-images')

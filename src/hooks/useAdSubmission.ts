@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -101,14 +100,17 @@ export const useAdSubmission = () => {
     try {
       Logger.info(`Uploading file ${file.name} (${file.size} bytes) to ${path}`);
       
+      // Upload to the full-ads directory
+      const fullPath = `full-ads/${path}`;
+      
       const { data, error: uploadError } = await supabase.storage
         .from('ad-images')
-        .upload(path, file, {
+        .upload(fullPath, file, {
           cacheControl: '3600',
           upsert: true,
           contentType: file.type || 'image/jpeg'
         });
-        
+      
       if (uploadError) {
         Logger.error(`Upload error: ${uploadError.message}`);
         setLastError(`Upload error: ${uploadError.message}`);
@@ -118,8 +120,8 @@ export const useAdSubmission = () => {
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
-        .getPublicUrl(path);
-        
+        .getPublicUrl(fullPath);
+      
       Logger.info(`File uploaded successfully: ${publicUrl}`);
       return publicUrl;
     } catch (error) {
