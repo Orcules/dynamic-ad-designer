@@ -50,21 +50,27 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
-    // Calculate dimensions to fit the width while preserving aspect ratio
-    // This approach ensures we fill the width and center vertically if needed
+    // Fill canvas with black background (in case image doesn't cover everything)
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, data.width, data.height);
+    
+    // Calculate dimensions to properly center the image
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
-    let renderWidth = data.width;
-    let renderHeight = data.width / imageAspect; // Calculate height based on width
-    let offsetX = 0;
-    let offsetY = (data.height - renderHeight) / 2; // Center vertically
-
-    // If height overflows, fit to height instead and center horizontally
-    if (renderHeight > data.height) {
+    let renderWidth, renderHeight, offsetX, offsetY;
+    
+    if (imageAspect > canvasAspect) {
+      // Image is wider than canvas (relative to height)
+      renderWidth = data.width;
+      renderHeight = data.width / imageAspect;
+      offsetX = 0;
+      offsetY = (data.height - renderHeight) / 2;
+    } else {
+      // Image is taller than canvas (relative to width)
       renderHeight = data.height;
       renderWidth = data.height * imageAspect;
-      offsetX = (data.width - renderWidth) / 2; // Center horizontally
+      offsetX = (data.width - renderWidth) / 2;
       offsetY = 0;
     }
 
@@ -72,7 +78,7 @@ serve(async (req) => {
     const x = offsetX + (data.imagePosition?.x || 0);
     const y = offsetY + (data.imagePosition?.y || 0);
 
-    // Draw the image with correct positioning
+    // Draw the image with correct centering
     ctx.drawImage(backgroundImage, x, y, renderWidth, renderHeight);
 
     // Add overlay

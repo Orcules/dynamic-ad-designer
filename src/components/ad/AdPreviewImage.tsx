@@ -41,7 +41,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   if (!imageUrl) return null;
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden bg-black">
+    <div className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center">
       <img
         src={imageUrl}
         alt="Ad preview"
@@ -49,16 +49,11 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // Natural size without distortion, centered by default
-          width: 'auto',
+          // Cover the width while maintaining aspect ratio
+          width: '100%',
           height: 'auto',
-          maxWidth: 'none',
-          maxHeight: 'none',
-          objectFit: 'none', // Don't let the browser resize the image
-          // Position in the center by default
-          left: '50%',
-          top: '50%',
-          transformOrigin: '0 0',
+          objectFit: 'contain',
+          objectPosition: 'center'
         }}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
