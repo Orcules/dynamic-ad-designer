@@ -58,22 +58,11 @@ serve(async (req) => {
     
     let renderWidth, renderHeight, offsetX, offsetY;
     
-    // Check if image is wider than canvas
-    const isWider = imageAspect > canvasAspect;
-    
-    if (isWider) {
-      // Wider image - always fit to height and center horizontally
-      renderHeight = data.height;
-      renderWidth = data.height * imageAspect;
-      offsetX = (data.width - renderWidth) / 2;
-      offsetY = 0;
-    } else {
-      // Narrower image - fit to width and center vertically
-      renderWidth = data.width;
-      renderHeight = data.width / imageAspect;
-      offsetX = 0;
-      offsetY = (data.height - renderHeight) / 2;
-    }
+    // For all images, ALWAYS fit to height first regardless of aspect ratio
+    renderHeight = data.height;
+    renderWidth = data.height * imageAspect;
+    offsetX = (data.width - renderWidth) / 2;
+    offsetY = 0;
 
     const x = offsetX + (data.imagePosition?.x || 0);
     const y = offsetY + (data.imagePosition?.y || 0);
