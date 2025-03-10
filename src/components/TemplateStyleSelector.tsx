@@ -1,4 +1,3 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -113,10 +112,6 @@ export function TemplateStyleSelector({
               e.preventDefault();
             }}
             onPointerDownOutside={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-            onInteractOutside={(e) => {
               e.preventDefault();
               e.stopPropagation();
             }}

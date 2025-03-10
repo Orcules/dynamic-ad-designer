@@ -43,10 +43,6 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
             e.preventDefault();
             e.stopPropagation();
           }}
-          onInteractOutside={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
         >
           {platforms.map((platform) => (
             <SelectItem 
