@@ -11,13 +11,15 @@ interface AdPreviewImageProps {
   position: Position;
   onPositionChange: (position: Position) => void;
   onImageLoaded?: () => void;
+  fastMode?: boolean;
 }
 
 export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   imageUrl,
   position,
   onPositionChange,
-  onImageLoaded
+  onImageLoaded,
+  fastMode = false
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -39,26 +41,47 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   // Handle image load to get natural dimensions
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
-    const container = img.parentElement;
     
-    if (container) {
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-      setContainerSize({ width: containerWidth, height: containerHeight });
-      
-      // Get image natural dimensions
-      const imgWidth = img.naturalWidth;
-      const imgHeight = img.naturalHeight;
-      setNaturalSize({ width: imgWidth, height: imgHeight });
+    // In fast mode, we skip some of the detailed measurements
+    if (!fastMode) {
+      const container = img.parentElement;
+      if (container) {
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
+        setContainerSize({ width: containerWidth, height: containerHeight });
+        
+        // Get image natural dimensions
+        const imgWidth = img.naturalWidth;
+        const imgHeight = img.naturalHeight;
+        setNaturalSize({ width: imgWidth, height: imgHeight });
+      }
     }
     
     setLoaded(true);
-    console.log('Image loaded successfully:', imageUrl);
     
-    if (onImageLoaded) {
-      onImageLoaded();
+    if (fastMode) {
+      // In fast mode, trigger the callback immediately
+      if (onImageLoaded) {
+        onImageLoaded();
+      }
+    } else {
+      console.log('Image loaded successfully:', imageUrl);
+      if (onImageLoaded) {
+        onImageLoaded();
+      }
     }
-  }, [imageUrl, onImageLoaded]);
+  }, [imageUrl, onImageLoaded, fastMode]);
+
+  // Low-quality placeholder for faster initial rendering
+  const placeholderStyle = fastMode ? {
+    filter: 'blur(8px)',
+    transform: `translate(${position.x}px, ${position.y}px)`,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover' as const,
+    objectPosition: 'center' as const,
+    backgroundColor: '#333',
+  } : {};
 
   if (!imageUrl) return null;
 
@@ -71,7 +94,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         className={`absolute transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
-          transition: 'transform 0.1s ease-out',
+          transition: fastMode ? 'none' : 'transform 0.1s ease-out',
           width: '100%',
           height: '100%',
           objectFit: 'cover',
@@ -86,7 +109,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          {fastMode ? 
+            <div style={placeholderStyle}></div> : 
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          }
         </div>
       )}
       {error && (

@@ -20,6 +20,18 @@ export function useAdImageHandler({
   const isChangingIndex = useRef<boolean>(false);
   const previousIndex = useRef<number>(0);
   const lastImageLoadTime = useRef<number>(0);
+  const imageCacheRef = useRef<Map<string, boolean>>(new Map());
+  
+  // Preload images for faster rendering
+  const preloadImage = (url: string) => {
+    if (imageCacheRef.current.has(url)) return;
+    
+    const img = new Image();
+    img.onload = () => {
+      imageCacheRef.current.set(url, true);
+    };
+    img.src = url;
+  };
 
   useEffect(() => {
     // Track when the preview index changes to allow detection of actual image changes
@@ -27,7 +39,23 @@ export function useAdImageHandler({
       previousIndex.current = currentPreviewIndex;
       Logger.info(`Index changed from effect: ${currentPreviewIndex}`);
     }
-  }, [currentPreviewIndex]);
+    
+    // Preload adjacent images to make navigation faster
+    if (imageUrls.length > 0) {
+      // Preload current image
+      preloadImage(imageUrls[currentPreviewIndex]);
+      
+      // Preload next image if it exists
+      if (currentPreviewIndex < imageUrls.length - 1) {
+        preloadImage(imageUrls[currentPreviewIndex + 1]);
+      }
+      
+      // Preload previous image if it exists
+      if (currentPreviewIndex > 0) {
+        preloadImage(imageUrls[currentPreviewIndex - 1]);
+      }
+    }
+  }, [currentPreviewIndex, imageUrls]);
 
   const confirmImageChanged = () => {
     if (onImageChangeConfirmed) {
@@ -50,8 +78,12 @@ export function useAdImageHandler({
       
       setSelectedImages(prev => [...prev, ...files]);
       
-      // Create temporary URLs for preview
-      const urls = files.map(file => URL.createObjectURL(file));
+      // Create temporary URLs and preload images for faster rendering
+      const urls = files.map(file => {
+        const url = URL.createObjectURL(file);
+        preloadImage(url);
+        return url;
+      });
       
       // Safely update state
       setImageUrls(prevUrls => {
@@ -90,6 +122,9 @@ export function useAdImageHandler({
         return url;
       });
       
+      // Preload all images for faster rendering
+      secureUrls.forEach(url => preloadImage(url));
+      
       setImageUrls(secureUrls);
       setCurrentPreviewIndex(0);
       previousIndex.current = 0;
@@ -113,10 +148,10 @@ export function useAdImageHandler({
     previousIndex.current = newIndex;
     onCurrentIndexChange(newIndex);
     
-    // Use a timeout to prevent rapid index changes
+    // Shorter timeout for faster navigation
     setTimeout(() => {
       isChangingIndex.current = false;
-    }, 500);
+    }, 300);
   };
 
   const handleNextPreview = () => {
@@ -129,10 +164,10 @@ export function useAdImageHandler({
     previousIndex.current = newIndex;
     onCurrentIndexChange(newIndex);
     
-    // Use a timeout to prevent rapid index changes
+    // Shorter timeout for faster navigation
     setTimeout(() => {
       isChangingIndex.current = false;
-    }, 500);
+    }, 300);
   };
 
   // Method to safely set current preview index with confirmation
@@ -157,13 +192,13 @@ export function useAdImageHandler({
     previousIndex.current = index;
     onCurrentIndexChange(index);
     
-    // Wait for the state to update
+    // Wait for the state to update - use a shorter timeout for faster processing
     return new Promise((resolve) => {
       setTimeout(() => {
         Logger.info(`Index safely changed to ${index}`);
         isChangingIndex.current = false;
         resolve(true);
-      }, 800); // Longer delay for reliable state updates
+      }, 500); // Shorter delay for faster processing
     });
   };
 
@@ -205,6 +240,7 @@ export function useAdImageHandler({
     resetProcessedIndexes,
     getUnprocessedIndexes,
     isChangingIndex: () => isChangingIndex.current,
-    confirmImageChanged
+    confirmImageChanged,
+    preloadImage // Expose preload function
   };
 }

@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
+import { StorageManager } from './storageManager.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +21,7 @@ serve(async (req) => {
     const formData = await req.formData();
     const imageFile = formData.get('image');
     const dataString = formData.get('data');
+    const fastMode = formData.get('fastMode') === 'true';
     
     if (!imageFile || !dataString) {
       throw new Error('Missing required fields');
@@ -28,6 +30,20 @@ serve(async (req) => {
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
+    // Skip generating the image if we're in fast mode and an image URL is already provided
+    if (fastMode && data.existingImageUrl) {
+      console.log(`[${uploadId}] Fast mode active with existing URL: ${data.existingImageUrl}`);
+      return new Response(
+        JSON.stringify({ 
+          imageUrl: data.existingImageUrl, 
+          success: true, 
+          fastMode: true 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Process image file
     let imageArrayBuffer: ArrayBuffer;
     
     if (imageFile instanceof File || imageFile instanceof Blob) {
@@ -39,6 +55,34 @@ serve(async (req) => {
       throw new Error('Invalid image data type');
     }
 
+    // Create storage manager
+    const storageManager = new StorageManager();
+    
+    // First, quickly upload the original image and return its URL
+    try {
+      const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, imageArrayBuffer);
+      
+      // If we're in fast mode, return immediately with the original image URL
+      if (fastMode) {
+        console.log(`[${uploadId}] Fast mode: returning original image URL`);
+        return new Response(
+          JSON.stringify({ 
+            imageUrl: originalImageUrl, 
+            success: true, 
+            fastMode: true 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // If not in fast mode, continue with full image processing
+      console.log(`[${uploadId}] Standard mode: proceeding with image generation`);
+    } catch (uploadError) {
+      console.error(`[${uploadId}] Error uploading original:`, uploadError);
+      // Continue with processing even if original upload fails
+    }
+
+    // Create canvas with optimized settings
     const canvas = createCanvas(data.width, data.height);
     const ctx = canvas.getContext('2d');
 
@@ -46,6 +90,7 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
+    // Optimize image loading
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
@@ -185,38 +230,15 @@ serve(async (req) => {
       }
     }
 
-    // Export the generated image
+    // Export the generated image with optimized settings
     const imageBuffer = canvas.toBuffer();
-    const timestamp = Date.now();
-    const filePath = `full-ads/${timestamp}_ad.png`;
+    
+    // Upload the generated image using StorageManager
+    const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer);
 
-    // Create Supabase client
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
-    // Use a more efficient upload strategy
-    const { error: uploadError, data: uploadData } = await supabase.storage
-      .from('ad-images')
-      .upload(filePath, imageBuffer, {
-        contentType: 'image/png',
-        cacheControl: '3600',
-        upsert: false
-      });
-
-    if (uploadError) {
-      throw new Error(`Failed to upload generated image: ${uploadError.message}`);
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('ad-images')
-      .getPublicUrl(filePath);
-
-    // Return the response without waiting for database insertion
-    // This prevents timeouts while ensuring the image is available
+    // Return the response immediately
     return new Response(
-      JSON.stringify({ imageUrl: publicUrl, success: true }),
+      JSON.stringify({ imageUrl: generatedImageUrl, success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

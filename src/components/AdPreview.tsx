@@ -42,6 +42,7 @@ interface AdPreviewProps {
   showCtaArrow?: boolean;
   language?: string;
   onImageLoaded?: () => void;
+  fastRenderMode?: boolean;
 }
 
 export function AdPreview({ 
@@ -70,6 +71,7 @@ export function AdPreview({
   showCtaArrow = true,
   language = "en",
   onImageLoaded,
+  fastRenderMode = false,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -77,9 +79,12 @@ export function AdPreview({
   const imageGenerator = useRef<ImageGenerator>();
   const isRTL = language === 'he' || language === 'ar';
   const currentImageUrl = useRef<string | undefined>(imageUrl);
+  const fontLoaded = useRef<boolean>(false);
 
   useEffect(() => {
-    imageGenerator.current = new ImageGenerator('.ad-content');
+    if (!imageGenerator.current) {
+      imageGenerator.current = new ImageGenerator('.ad-content');
+    }
   }, []);
 
   useEffect(() => {
@@ -90,28 +95,37 @@ export function AdPreview({
   }, [imageUrl]);
 
   useEffect(() => {
-    if (fontUrl) {
+    if (fontUrl && !fontLoaded.current) {
       const familyMatch = fontUrl.match(/family=([^:&]+)/);
       if (familyMatch && familyMatch[1]) {
         const family = familyMatch[1].replace(/\+/g, ' ');
         setFontFamily(family);
 
-        const link = document.createElement('link');
-        link.href = fontUrl;
-        link.rel = 'stylesheet';
-        document.head.appendChild(link);
-
-        return () => {
-          document.head.removeChild(link);
-        };
+        // Only load each font once per session
+        if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+          const link = document.createElement('link');
+          link.href = fontUrl;
+          link.rel = 'stylesheet';
+          document.head.appendChild(link);
+          fontLoaded.current = true;
+        } else {
+          fontLoaded.current = true;
+        }
       }
     }
   }, [fontUrl]);
 
   const handleImageLoaded = () => {
-    console.log('Image loaded callback in AdPreview');
-    if (onImageLoaded) {
-      onImageLoaded();
+    if (fastRenderMode) {
+      // Reduce delay in fast mode
+      setTimeout(() => {
+        if (onImageLoaded) onImageLoaded();
+      }, 200);
+    } else {
+      console.log('Image loaded callback in AdPreview');
+      if (onImageLoaded) {
+        onImageLoaded();
+      }
     }
   };
 
@@ -170,6 +184,49 @@ export function AdPreview({
       onNext();
     }
   };
+
+  // Use simplified rendering in fast mode
+  if (fastRenderMode) {
+    return (
+      <div 
+        className="ad-content relative overflow-hidden bg-black"
+        style={{
+          aspectRatio: `${width} / ${height}`,
+          width: '100%',
+        }}
+        dir={isRTL ? "rtl" : "ltr"}
+      >
+        <AdPreviewImage
+          imageUrl={imageUrl}
+          position={imagePosition}
+          onPositionChange={() => {}}
+          onImageLoaded={handleImageLoaded}
+          fastMode={true}
+        />
+        <div
+          className="absolute inset-0 flex flex-col justify-between"
+          style={gradientStyle}
+        >
+          <AdContent
+            headline={headline}
+            description={description}
+            descriptionStyle={descriptionStyle}
+            ctaText={ctaText}
+            textStyle={textStyle}
+            buttonStyle={buttonStyle}
+            templateStyle={templateStyle}
+            isButtonHovered={isButtonHovered}
+            onButtonHover={setIsButtonHovered}
+            headlinePosition={headlinePosition}
+            descriptionPosition={descriptionPosition}
+            ctaPosition={ctaPosition}
+            showCtaArrow={showCtaArrow}
+            isRTL={isRTL}
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Card className="h-fit w-full">
