@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 export const useAdForm = () => {
   const [adData, setAdData] = useState({
@@ -17,7 +17,29 @@ export const useAdForm = () => {
     description_color: "#333333"
   });
   
+  // Refs to store previous values for platform and template style
+  const prevPlatformRef = useRef(adData.platform);
+  const prevTemplateStyleRef = useRef(adData.template_style);
+  
+  // Track whether a reset is in progress
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Effect to handle UI updates after platform or template changes
+  useEffect(() => {
+    if (prevPlatformRef.current !== adData.platform || 
+        prevTemplateStyleRef.current !== adData.template_style) {
+      // Update refs
+      prevPlatformRef.current = adData.platform;
+      prevTemplateStyleRef.current = adData.template_style;
+      
+      // Use a minimal timeout to ensure UI responsiveness
+      const timeoutId = setTimeout(() => {
+        document.body.style.pointerEvents = 'auto';
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [adData.platform, adData.template_style]);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -31,7 +53,10 @@ export const useAdForm = () => {
   const handlePlatformChange = useCallback((value: string) => {
     if (value === adData.platform) return;
     
-    // Use a synchronous update without any delays
+    // Briefly disable pointer events to prevent UI interactions during refresh
+    document.body.style.pointerEvents = 'none';
+    
+    // Update the platform value
     setAdData(prev => ({ ...prev, platform: value }));
   }, [adData.platform]);
 
@@ -39,7 +64,10 @@ export const useAdForm = () => {
     if (!value || value.trim() === "") return;
     if (value === adData.template_style) return;
     
-    // Use a synchronous update without any delays
+    // Briefly disable pointer events to prevent UI interactions during refresh
+    document.body.style.pointerEvents = 'none';
+    
+    // Update the template style
     setAdData(prev => ({
       ...prev,
       template_style: value.trim()

@@ -1,9 +1,9 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useCallback, useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -39,7 +39,6 @@ export function TemplateStyleSelector({
   onDescriptionColorChange,
 }: TemplateStyleSelectorProps) {
   const [selected, setSelected] = useState(value || "modern");
-  const [isChanging, setIsChanging] = useState(false);
   
   useEffect(() => {
     setSelected(value || "modern");
@@ -78,20 +77,26 @@ export function TemplateStyleSelector({
   ];
 
   const handleStyleChange = useCallback((newValue: string) => {
-    if (isChanging) return;
     if (newValue === selected) return;
     
-    setIsChanging(true);
+    // Update local state immediately
     setSelected(newValue);
     
-    // Use a longer timeout to ensure the UI has time to update
-    const timer = setTimeout(() => {
-      onChange(newValue);
-      setIsChanging(false);
-    }, 50);
+    // Show a toast to indicate refreshing
+    toast.info("Refreshing preview...");
     
-    return () => clearTimeout(timer);
-  }, [onChange, isChanging, selected]);
+    // Force a small browser reflow to prevent UI freeze
+    document.body.clientWidth;
+    
+    // Update parent component
+    onChange(newValue);
+    
+    // Force a brief UI refresh by toggling a class on the body
+    document.body.classList.add('ui-refresh');
+    setTimeout(() => {
+      document.body.classList.remove('ui-refresh');
+    }, 50);
+  }, [onChange, selected]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
     handler(value);
@@ -218,9 +223,7 @@ export function TemplateStyleSelector({
           <Slider
             value={[overlayOpacity * 100]}
             onValueChange={(values) => {
-              setTimeout(() => {
-                onOpacityChange?.(values[0] / 100);
-              }, 10);
+              onOpacityChange?.(values[0] / 100);
             }}
             min={0}
             max={100}
