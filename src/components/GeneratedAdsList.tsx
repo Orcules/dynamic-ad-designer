@@ -32,66 +32,95 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
         ad && ad.id && ad.name && (ad.image_url || ad.preview_url)
       );
 
+      // Initialize all ads as visible initially to prevent them from disappearing
+      setValidatedAds(validAds);
+      
       // Initialize loading states
       setLoadingStates(
         validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
       );
 
-      // Function to check if an image URL is valid
+      // Function to check if an image URL is valid with improved reliability
       const checkImageUrl = async (url: string): Promise<boolean> => {
         try {
-          // First try to get the image from Supabase storage
-          const { data: storageData } = await supabase.storage
-            .from('ad-images')
-            .download(url.split('/').pop() || '');
+          // Extract the filename from the URL
+          const urlParts = url.split('/');
+          const filename = urlParts[urlParts.length - 1];
+          
+          // First try to check if this is a Supabase storage URL
+          if (url.includes('storage.googleapis.com') || url.includes('supabase.co/storage')) {
+            try {
+              // Try to fetch metadata about the file to see if it exists
+              const bucketName = 'ad-images';
+              const { data: fileData, error: fileError } = await supabase.storage
+                .from(bucketName)
+                .download(`full-ads/${filename}`);
+                
+              if (!fileError && fileData) {
+                return true;
+              }
+            } catch (storageErr) {
+              Logger.warn(`Storage check failed for ${filename}: ${storageErr}`);
+              // Continue to other checks if storage check fails
+            }
+          }
 
-          if (storageData) return true;
-
-          // If not in storage, try to load the image directly
+          // If not in storage or storage check failed, try to load the image directly
           return new Promise((resolve) => {
             const img = new Image();
-            img.onload = () => resolve(true);
-            img.onerror = () => resolve(false);
+            img.crossOrigin = "anonymous";
+            
+            // Set a reasonable timeout (3 seconds)
+            const timeoutId = setTimeout(() => {
+              Logger.warn(`Image load timeout for ${url}`);
+              resolve(true); // Assume it's valid on timeout to prevent disappearance
+            }, 3000);
+            
+            img.onload = () => {
+              clearTimeout(timeoutId);
+              resolve(true);
+            };
+            
+            img.onerror = () => {
+              clearTimeout(timeoutId);
+              Logger.warn(`Image load error for ${url}`);
+              resolve(true); // Still consider it valid to prevent disappearing ads
+            };
+            
             img.src = url;
           });
         } catch (error) {
           Logger.error(`Error checking image URL ${url}: ${error}`);
-          return false;
+          return true; // Return true on error to prevent ads from disappearing
         }
       };
 
-      // Validate each ad's images
-      const validatedAdsList = await Promise.all(
-        validAds.map(async (ad) => {
-          try {
-            const imageUrl = ad.preview_url || ad.image_url;
-            const isValid = await checkImageUrl(imageUrl);
-            
+      // Validate each ad's images but keep them visible regardless of validation result
+      for (const ad of validAds) {
+        try {
+          const imageUrl = ad.preview_url || ad.image_url;
+          // Start validation but don't wait for it to complete
+          checkImageUrl(imageUrl).finally(() => {
             setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
-            
-            if (!isValid) {
-              Logger.warn(`Invalid image URL for ad ${ad.id}: ${imageUrl}`);
-              return null;
-            }
-            
-            return ad;
-          } catch (error) {
-            Logger.error(`Error validating ad ${ad.id}: ${error}`);
-            setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
-            return null;
-          }
-        })
-      );
-
-      // Filter out null values and update state
-      setValidatedAds(validatedAdsList.filter((ad): ad is GeneratedAd => ad !== null));
+          });
+        } catch (error) {
+          Logger.error(`Error validating ad ${ad.id}: ${error}`);
+          setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
+        }
+      }
     };
 
     validateAndLoadAds();
   }, [ads]);
 
-  const handleImageError = (ad: GeneratedAd) => {
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, ad: GeneratedAd) => {
     Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
+    // Instead of hiding the ad, show placeholder but keep it visible
+    if (e.currentTarget) {
+      e.currentTarget.src = "/placeholder.svg";
+      e.currentTarget.style.opacity = "0.7";
+      e.currentTarget.style.objectFit = "contain";
+    }
   };
 
   const handlePreviewClick = (imageUrl: string) => {
@@ -275,10 +304,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                     src={ad.preview_url || ad.image_url}
                     alt={ad.name}
                     className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-                    onError={(e) => {
-                      Logger.error(`Failed to load image for ad ${ad.id}`);
-                      (e.target as HTMLImageElement).src = "/placeholder.svg";
-                    }}
+                    onError={(e) => handleImageError(e, ad)}
                     crossOrigin="anonymous"
                   />
                 )}
