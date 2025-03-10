@@ -32,14 +32,16 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
     // Show a toast to indicate refreshing
     toast.info("Refreshing preview...");
     
-    // Update the parent component
-    onChange(newValue);
-    
-    // Force a brief UI refresh by toggling a class on the body
-    document.body.classList.add('ui-refresh');
+    // Update the parent component with a slight delay to allow React to process the state change
     setTimeout(() => {
-      document.body.classList.remove('ui-refresh');
-    }, 50);
+      onChange(newValue);
+      
+      // Force a brief UI refresh by toggling a class on the body
+      document.body.classList.add('ui-refresh');
+      setTimeout(() => {
+        document.body.classList.remove('ui-refresh');
+      }, 100);
+    }, 10);
   };
   
   return (
@@ -52,7 +54,11 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
         <SelectContent 
           className="bg-card border-border z-[100]"
           position="popper"
+          align="center"
+          side="bottom"
+          sideOffset={4}
           onCloseAutoFocus={(e) => {
+            // Prevent default focus behavior that might cause issues
             e.preventDefault();
           }}
         >
@@ -60,7 +66,7 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
             <SelectItem 
               key={platform.id} 
               value={platform.id}
-              className="hover:bg-muted focus:bg-muted"
+              className="hover:bg-muted focus:bg-muted cursor-pointer"
             >
               {platform.name} ({platform.dimensions})
             </SelectItem>

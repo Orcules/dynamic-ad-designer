@@ -86,14 +86,16 @@ export function TemplateStyleSelector({
     // Show a toast to indicate refreshing
     toast.info("Refreshing preview...");
     
-    // Update parent component
-    onChange(newValue);
-    
-    // Force a brief UI refresh by toggling a class on the body
-    document.body.classList.add('ui-refresh');
+    // Update parent component with a slight delay to allow React to process the state change
     setTimeout(() => {
-      document.body.classList.remove('ui-refresh');
-    }, 50);
+      onChange(newValue);
+      
+      // Force a brief UI refresh by toggling a class on the body
+      document.body.classList.add('ui-refresh');
+      setTimeout(() => {
+        document.body.classList.remove('ui-refresh');
+      }, 100);
+    }, 10);
   }, [onChange, selected]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
@@ -114,7 +116,11 @@ export function TemplateStyleSelector({
           <SelectContent 
             className="bg-card border-border z-[100]"
             position="popper"
+            align="center"
+            side="bottom"
+            sideOffset={4}
             onCloseAutoFocus={(e) => {
+              // Prevent default focus behavior that might cause issues
               e.preventDefault();
             }}
           >
@@ -122,7 +128,7 @@ export function TemplateStyleSelector({
               <SelectItem 
                 key={template.id} 
                 value={template.id}
-                className="hover:bg-muted focus:bg-muted"
+                className="hover:bg-muted focus:bg-muted cursor-pointer"
               >
                 {template.label}
               </SelectItem>
