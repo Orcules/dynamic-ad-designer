@@ -1,6 +1,11 @@
 
 import { useState, useCallback } from "react";
 
+interface Position {
+  x: number;
+  y: number;
+}
+
 export const useAdForm = () => {
   const [adData, setAdData] = useState({
     name: "",
@@ -16,6 +21,12 @@ export const useAdForm = () => {
     text_color: "#FFFFFF",
     description_color: "#333333"
   });
+  
+  const [imagePosition, setImagePosition] = useState<Position>({ x: 0, y: 0 });
+  const [headlinePosition, setHeadlinePosition] = useState<Position>({ x: 0, y: 0 });
+  const [descriptionPosition, setDescriptionPosition] = useState<Position>({ x: 0, y: 0 });
+  const [ctaPosition, setCtaPosition] = useState<Position>({ x: 0, y: 0 });
+  const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   
   // Ensure all callbacks are defined after state
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -56,9 +67,34 @@ export const useAdForm = () => {
   const handleDescriptionColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, description_color: value }));
   }, []);
+  
+  const handleOpacityChange = useCallback((value: number) => {
+    setOverlayOpacity(value);
+  }, []);
+  
+  const handleImagePositionChange = useCallback((position: Position) => {
+    setImagePosition(position);
+  }, []);
+  
+  const handleHeadlinePositionChange = useCallback((position: Position) => {
+    setHeadlinePosition(position);
+  }, []);
+  
+  const handleDescriptionPositionChange = useCallback((position: Position) => {
+    setDescriptionPosition(position);
+  }, []);
+  
+  const handleCtaPositionChange = useCallback((position: Position) => {
+    setCtaPosition(position);
+  }, []);
 
   return {
     adData,
+    imagePosition,
+    headlinePosition,
+    descriptionPosition,
+    ctaPosition,
+    overlayOpacity,
     handleInputChange,
     handleFontChange,
     handlePlatformChange,
@@ -67,6 +103,11 @@ export const useAdForm = () => {
     handleCtaColorChange,
     handleOverlayColorChange,
     handleTextColorChange,
-    handleDescriptionColorChange
+    handleDescriptionColorChange,
+    handleOpacityChange,
+    handleImagePositionChange,
+    handleHeadlinePositionChange,
+    handleDescriptionPositionChange,
+    handleCtaPositionChange
   };
 };

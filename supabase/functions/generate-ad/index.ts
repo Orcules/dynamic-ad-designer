@@ -46,10 +46,11 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
+    // Load the image and maintain its aspect ratio
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
-    // שיפור חדש לטיפול בתמונה
+    // Calculate the proper dimensions to maintain aspect ratio
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
@@ -58,33 +59,38 @@ serve(async (req) => {
     let offsetX = 0;
     let offsetY = 0;
 
+    // Calculate dimensions that preserve aspect ratio
     if (imageAspect > canvasAspect) {
-      renderWidth = data.height * imageAspect;
+      // Image is wider than canvas (relative to heights)
+      renderHeight = data.height;
+      renderWidth = renderHeight * imageAspect;
       offsetX = -(renderWidth - data.width) / 2;
     } else {
-      renderHeight = data.width / imageAspect;
+      // Image is taller than canvas (relative to widths)
+      renderWidth = data.width;
+      renderHeight = renderWidth / imageAspect;
       offsetY = -(renderHeight - data.height) / 2;
     }
 
-    // מיקום התמונה עם התחשבות בהזזה של המשתמש
+    // Apply user positioning adjustments
     const x = offsetX + (data.imagePosition?.x || 0);
     const y = offsetY + (data.imagePosition?.y || 0);
 
-    // ציור התמונה
+    // Draw the image maintaining aspect ratio
     ctx.drawImage(backgroundImage, x, y, renderWidth, renderHeight);
 
-    // הוספת השכבה השקופה
+    // Add overlay
     ctx.save();
     ctx.globalAlpha = data.overlayOpacity || 0.4;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
     ctx.restore();
 
-    // הגדרות טקסט
+    // Text settings
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // כותרת
+    // Headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -94,7 +100,7 @@ serve(async (req) => {
       ctx.fillText(data.headline, headlineX, headlineY);
     }
 
-    // תיאור
+    // Description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
@@ -104,14 +110,14 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, descY);
     }
 
-    // כפתור CTA
+    // CTA Button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = (data.width - buttonWidth) / 2 + (data.ctaPosition?.x || 0);
       const ctaY = data.height * 0.65 + (data.ctaPosition?.y || 0);
 
-      // רקע הכפתור
+      // Button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
@@ -123,7 +129,7 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
-      // טקסט הכפתור וחץ
+      // Button text and arrow
       ctx.fillStyle = '#FFFFFF';
       const fontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -132,14 +138,14 @@ serve(async (req) => {
       const arrowWidth = fontSize * 0.3;
       const spacing = fontSize * 0.3;
       
-      // מיקום מדויק של הטקסט והחץ
+      // Position text and arrow
       const contentWidth = data.showArrow !== false ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - contentWidth) / 2;
       
-      // ציור הטקסט
+      // Draw text
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
-      // ציור החץ
+      // Draw arrow
       if (data.showArrow !== false) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2;
@@ -149,16 +155,16 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        // קו אנכי של החץ
+        // Vertical arrow line
         ctx.moveTo(arrowX, arrowY - arrowSize/2);
         ctx.lineTo(arrowX, arrowY + arrowSize/2);
         
-        // חץ העליון
+        // Upper arrow
         ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
         ctx.lineTo(arrowX, arrowY - arrowSize/2);
         ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
         
-        // חץ התחתון
+        // Lower arrow
         ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
         ctx.lineTo(arrowX, arrowY + arrowSize/2);
         ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
@@ -167,10 +173,10 @@ serve(async (req) => {
       }
     }
 
-    // המרה והעלאה
+    // Convert and upload
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
-    const filePath = `full-ads/${timestamp}_ad.png`;  // Changed path to full-ads directory
+    const filePath = `full-ads/${timestamp}_ad.png`;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

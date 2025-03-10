@@ -19,6 +19,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     if (imageUrl) {
@@ -27,6 +28,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl]);
 
+  // Handle image load to get natural dimensions
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = e.target as HTMLImageElement;
+    setNaturalSize({
+      width: img.naturalWidth,
+      height: img.naturalHeight
+    });
+    setLoaded(true);
+  };
+
   if (!imageUrl) return null;
 
   return (
@@ -34,13 +45,17 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       <img
         src={imageUrl}
         alt="Ad preview"
-        className={`absolute object-cover w-full h-full transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
-          transition: 'transform 0.1s ease-out'
+          transition: 'transform 0.1s ease-out',
+          // Preserve aspect ratio and prevent stretching
+          objectFit: 'contain',
+          width: '100%',
+          height: '100%'
         }}
         crossOrigin="anonymous"
-        onLoad={() => setLoaded(true)}
+        onLoad={handleImageLoad}
         onError={(e) => {
           console.error('Error loading image:', e);
           setError(true);
