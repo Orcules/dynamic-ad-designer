@@ -27,17 +27,20 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
 
   // Use safe event handlers with useCallback for better performance
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     onButtonHover(true);
   }, [onButtonHover]);
   
   const handleMouseLeave = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     onButtonHover(false);
   }, [onButtonHover]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     // Prevent event bubbling which could cause issues with parent elements
+    e.preventDefault();
     e.stopPropagation();
     console.log("Button clicked!");
   }, []);
@@ -59,7 +62,8 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
           lineHeight: '1.2',
           backdropFilter: 'blur(5px)',
           WebkitBackdropFilter: 'blur(5px)',
-          zIndex: 30
+          zIndex: 30,
+          pointerEvents: 'auto'
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}

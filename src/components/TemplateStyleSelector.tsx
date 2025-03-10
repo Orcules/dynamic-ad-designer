@@ -1,8 +1,9 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback } from "react";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -37,12 +38,6 @@ export function TemplateStyleSelector({
   descriptionColor,
   onDescriptionColorChange,
 }: TemplateStyleSelectorProps) {
-  const [selected, setSelected] = useState(value || "modern");
-  
-  useEffect(() => {
-    setSelected(value || "modern");
-  }, [value]);
-  
   const templates = [
     { id: "modern", label: "Modern" },
     { id: "elegant", label: "Elegant" },
@@ -76,11 +71,9 @@ export function TemplateStyleSelector({
   ];
 
   const handleStyleChange = useCallback((newValue: string) => {
-    if (newValue === selected) return;
-    
-    setSelected(newValue);
+    if (newValue === value) return;
     onChange(newValue);
-  }, [onChange, selected]);
+  }, [onChange, value]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
     handler(value);
@@ -91,7 +84,7 @@ export function TemplateStyleSelector({
       <div className="space-y-2">
         <Label>Template Style</Label>
         <Select 
-          value={selected} 
+          value={value} 
           onValueChange={handleStyleChange}
         >
           <SelectTrigger className="bg-card">

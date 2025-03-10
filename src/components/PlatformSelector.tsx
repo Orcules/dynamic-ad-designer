@@ -1,6 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useCallback } from "react";
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
@@ -16,27 +16,15 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
-  const [selected, setSelected] = useState(value);
-  
-  // Update local state when parent value changes
-  useEffect(() => {
-    setSelected(value);
-  }, [value]);
-
-  const handleValueChange = (newValue: string) => {
-    if (newValue === selected) return;
-    
-    // Set local state
-    setSelected(newValue);
-    
-    // Update parent component
+  const handleValueChange = useCallback((newValue: string) => {
+    if (newValue === value) return;
     onChange(newValue);
-  };
+  }, [value, onChange]);
   
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">Platform</label>
-      <Select value={selected} onValueChange={handleValueChange}>
+      <Select value={value} onValueChange={handleValueChange}>
         <SelectTrigger className="bg-card">
           <SelectValue placeholder="Select platform" />
         </SelectTrigger>

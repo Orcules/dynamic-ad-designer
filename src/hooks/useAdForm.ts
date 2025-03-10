@@ -2,6 +2,10 @@
 import { useState, useCallback, useRef } from "react";
 
 export const useAdForm = () => {
+  // Store previous values for reference
+  const prevPlatformRef = useRef("");
+  const prevTemplateStyleRef = useRef("");
+  
   const [adData, setAdData] = useState({
     name: "",
     headline: "",
@@ -17,10 +21,7 @@ export const useAdForm = () => {
     description_color: "#333333"
   });
   
-  // Store previous values for reference
-  const prevPlatformRef = useRef(adData.platform);
-  const prevTemplateStyleRef = useRef(adData.template_style);
-  
+  // Ensure all callbacks are defined after state
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAdData(prev => ({ ...prev, [name]: value }));
@@ -33,10 +34,10 @@ export const useAdForm = () => {
   const handlePlatformChange = useCallback((value: string) => {
     if (value === adData.platform) return;
     
-    // Store the previous value
+    // Update the ref first
     prevPlatformRef.current = adData.platform;
     
-    // Update immediately
+    // Then update state normally
     setAdData(prev => ({ ...prev, platform: value }));
   }, [adData.platform]);
 
@@ -44,10 +45,10 @@ export const useAdForm = () => {
     if (!value || value.trim() === "") return;
     if (value === adData.template_style) return;
     
-    // Store the previous value
+    // Update the ref first
     prevTemplateStyleRef.current = adData.template_style;
     
-    // Update immediately
+    // Then update state normally
     setAdData(prev => ({
       ...prev,
       template_style: value.trim()
