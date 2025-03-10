@@ -82,8 +82,8 @@ export class ImageGenerator {
         const svgElement = arrowElement as SVGElement;
         const originalTransform = svgElement.style.transform;
         originalPositions.set(svgElement, originalTransform);
-        // Adjusting arrow position - moving it up by 4 pixels
-        svgElement.style.transform = 'translateY(-4px)';
+        // Adjusting arrow position - moving it up by 1 pixel instead of 4
+        svgElement.style.transform = 'translateY(-1px)';
       } else {
         // If no arrow found, try mouseenter event as fallback
         console.log('Using mouseenter event as fallback');
