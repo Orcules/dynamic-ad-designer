@@ -115,12 +115,17 @@ export const useAdSubmission = () => {
   };
 
   // Upload a file when we know the bucket exists
-  const uploadFile = async (file: File, path: string): Promise<string | null> => {
+  const uploadFile = async (file: File, path: string, adName?: string): Promise<string | null> => {
     try {
       Logger.info(`Uploading file ${file.name} (${file.size} bytes) to ${path}`);
       
+      // Use the ad name for the filename if provided
+      const fileName = adName ? 
+        `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${Date.now()}.${file.name.split('.').pop() || 'jpg'}` :
+        path;
+        
       // Upload to the full-ads directory
-      const fullPath = `full-ads/${path}`;
+      const fullPath = `full-ads/${fileName}`;
       
       const { data, error: uploadError } = await supabase.storage
         .from('ad-images')
@@ -181,7 +186,7 @@ export const useAdSubmission = () => {
   };
 
   // Main function to handle the entire upload process
-  const handleSubmission = async (file: File, renderedPreviewUrl?: string): Promise<string | null> => {
+  const handleSubmission = async (file: File, renderedPreviewUrl?: string, adName?: string): Promise<string | null> => {
     setIsSubmitting(true);
     setLastError(null);
     
@@ -213,7 +218,8 @@ export const useAdSubmission = () => {
           formData.append('data', JSON.stringify({
             width: 1200,
             height: 628,
-            fastMode: true
+            fastMode: true,
+            headline: adName // Pass the ad name for file naming
           }));
           
           const { data, error } = await supabase.functions.invoke('generate-ad', {
@@ -243,7 +249,7 @@ export const useAdSubmission = () => {
               const previewFile = await dataUrlToFile(renderedPreviewUrl, `preview-${uploadId}.png`);
               if (previewFile) {
                 const previewPath = `${timestamp}-preview-${randomId}.png`;
-                const previewUrl = await uploadFile(previewFile, previewPath);
+                const previewUrl = await uploadFile(previewFile, previewPath, adName);
                 
                 if (previewUrl) {
                   Logger.info(`Successfully uploaded rendered preview directly: ${previewUrl}`);
@@ -266,7 +272,8 @@ export const useAdSubmission = () => {
           formData.append('data', JSON.stringify({
             width: 1200,
             height: 628,
-            fastMode: true
+            fastMode: true,
+            headline: adName // Pass the ad name for file naming
           }));
           
           const { data, error } = await supabase.functions.invoke('generate-ad', {
@@ -288,7 +295,7 @@ export const useAdSubmission = () => {
       
       // 5. If all else fails, try direct upload
       const filePath = `${timestamp}-direct-${randomId}.${file.name.split('.').pop() || 'jpg'}`;
-      const uploadedUrl = await uploadFile(file, filePath);
+      const uploadedUrl = await uploadFile(file, filePath, adName);
       
       if (uploadedUrl) {
         Logger.info(`Successfully uploaded file directly: ${uploadedUrl}`);

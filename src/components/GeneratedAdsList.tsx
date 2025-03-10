@@ -1,3 +1,4 @@
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Download, Eye } from "lucide-react";
@@ -20,31 +21,99 @@ interface GeneratedAdsListProps {
 }
 
 export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: GeneratedAdsListProps) => {
-  const [validatedAds, setValidatedAds] = useState<GeneratedAd[]>([]);
+  const [displayAds, setDisplayAds] = useState<GeneratedAd[]>([]);
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [storageImages, setStorageImages] = useState<GeneratedAd[]>([]);
 
   useEffect(() => {
-    Logger.info(`Processing ${ads.length} ads for display`);
-    
-    const validAds = ads.filter(ad => 
-      ad && ad.id && ad.name && (ad.image_url || ad.preview_url)
-    );
+    // Load all images from storage bucket directly
+    const fetchStorageImages = async () => {
+      try {
+        Logger.info("Fetching all images from storage bucket");
+        const { data: storageFiles, error: storageError } = await supabase.storage
+          .from('ad-images')
+          .list('full-ads', {
+            limit: 100,
+            sortBy: { column: 'created_at', order: 'desc' }
+          });
+          
+        if (storageError) {
+          Logger.error(`Storage list error: ${storageError.message}`);
+          return;
+        }
+        
+        if (storageFiles && storageFiles.length > 0) {
+          // Convert storage files to ad objects
+          const storageBasedAds = storageFiles
+            .filter(file => file.name && !file.name.includes('.gitkeep'))
+            .map((file, index) => {
+              const { data: { publicUrl } } = supabase.storage
+                .from('ad-images')
+                .getPublicUrl(`full-ads/${file.name}`);
+                
+              // Try to extract a readable name from the filename
+              let displayName = file.name;
+              // Remove timestamp and extension
+              displayName = displayName.replace(/(_\d+)\.(png|jpg|jpeg|gif)$/i, '');
+              // Replace dashes and underscores with spaces
+              displayName = displayName.replace(/[-_]/g, ' ');
+              // Capitalize first letter of each word
+              displayName = displayName.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+              
+              return {
+                id: `storage-${index}-${file.id || Date.now()}`,
+                name: displayName || `Generated Ad ${index + 1}`,
+                image_url: publicUrl,
+                preview_url: publicUrl,
+                platform: 'unknown'
+              };
+            });
+            
+          if (storageBasedAds.length > 0) {
+            Logger.info(`Retrieved ${storageBasedAds.length} ads from storage`);
+            setStorageImages(storageBasedAds);
+          }
+        }
+      } catch (err) {
+        Logger.error(`Error fetching from storage: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    };
 
-    setValidatedAds(validAds);
+    fetchStorageImages();
+  }, []);
+
+  useEffect(() => {
+    // Combine ads from props with ads from storage
+    const allAds = [...ads];
     
+    // Add storage images that aren't already in ads (by URL)
+    const existingUrls = new Set(ads.map(ad => ad.image_url));
+    const uniqueStorageAds = storageImages.filter(ad => !existingUrls.has(ad.image_url));
+    
+    allAds.push(...uniqueStorageAds);
+    
+    Logger.info(`Processing ${allAds.length} ads for display (${ads.length} from props, ${uniqueStorageAds.length} unique from storage)`);
+    
+    // Initialize loading states for all ads
     setLoadingStates(
-      validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
+      allAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
     );
     
+    // Set display ads with minimal validation
+    setDisplayAds(allAds);
+    
+    // Set all images as loaded after a delay
     const timer = setTimeout(() => {
       setLoadingStates(
-        validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: false }), {})
+        allAds.reduce((acc, ad) => ({ ...acc, [ad.id]: false }), {})
       );
     }, 1500);
     
     return () => clearTimeout(timer);
-  }, [ads]);
+  }, [ads, storageImages]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, ad: GeneratedAd) => {
     Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
@@ -74,7 +143,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     );
   }
 
-  if (ads.length === 0) {
+  if (displayAds.length === 0) {
     return (
       <div className="text-center p-8 border border-dashed rounded-lg">
         <p className="text-muted-foreground">No ads created yet</p>
@@ -222,7 +291,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {validatedAds.map((ad) => (
+      {displayAds.map((ad) => (
         <Card key={ad.id} className="overflow-hidden group relative">
           <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
             {loadingStates[ad.id] ? (

@@ -13,9 +13,13 @@ export class StorageManager {
     this.imageCache = new Map();
   }
 
-  async uploadOriginalImage(uploadId: string, image: any) {
+  async uploadOriginalImage(uploadId: string, image: any, adName?: string) {
     const timestamp = Date.now();
-    const originalFileName = `full-ads/${uploadId}_${timestamp}.jpg`;
+    const fileName = adName ? 
+      `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.jpg` : 
+      `full-ads/${uploadId}_${timestamp}.jpg`;
+    
+    const originalFileName = `full-ads/${fileName}`;
     
     // Check cache first
     if (this.imageCache.has(originalFileName)) {
@@ -49,9 +53,13 @@ export class StorageManager {
     return { originalFileName, originalImageUrl };
   }
 
-  async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array) {
+  async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array, adName?: string) {
     const timestamp = Date.now();
-    const generatedFileName = `full-ads/${uploadId}_${timestamp}.png`;
+    const fileName = adName ? 
+      `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.png` : 
+      `full-ads/${uploadId}_${timestamp}.png`;
+    
+    const generatedFileName = `full-ads/${fileName}`;
     
     // Check cache first
     if (this.imageCache.has(generatedFileName)) {
@@ -93,7 +101,7 @@ export class StorageManager {
   }
   
   // Add a method specifically for uploading rendered previews
-  async uploadRenderedPreview(uploadId: string, previewData: string) {
+  async uploadRenderedPreview(uploadId: string, previewData: string, adName?: string) {
     try {
       console.log(`Processing rendered preview for ${uploadId}`);
       
@@ -120,7 +128,11 @@ export class StorageManager {
       
       // Create a unique filename for the rendered preview
       const timestamp = Date.now();
-      const renderedFileName = `full-ads/rendered_${uploadId}_${timestamp}.png`;
+      const fileName = adName ? 
+        `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.png` : 
+        `rendered_${uploadId}_${timestamp}.png`;
+      
+      const renderedFileName = `full-ads/${fileName}`;
       
       console.log(`Uploading rendered preview: ${renderedFileName}, size: ${bytes.length} bytes, type: ${contentType}`);
       
@@ -157,10 +169,12 @@ export class StorageManager {
   }
   
   // Add a faster method for bulk uploads that doesn't wait for each upload to complete
-  async uploadMultipleImages(images: { id: string, buffer: Uint8Array }[]) {
+  async uploadMultipleImages(images: { id: string, buffer: Uint8Array, name?: string }[]) {
     const uploadPromises = images.map(async (image) => {
       const timestamp = Date.now();
-      const fileName = `full-ads/${image.id}_${timestamp}.jpg`;
+      const fileName = image.name ? 
+        `full-ads/${image.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.jpg` : 
+        `full-ads/${image.id}_${timestamp}.jpg`;
       
       // Check cache first
       if (this.imageCache.has(fileName)) {

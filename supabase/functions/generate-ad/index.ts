@@ -32,6 +32,9 @@ serve(async (req) => {
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
+    // Extract ad name for file naming
+    const adName = data.headline ? `${data.headline}` : 'Untitled Ad';
+
     // Create storage manager
     const storageManager = new StorageManager();
     
@@ -42,8 +45,8 @@ serve(async (req) => {
       // Process the rendered preview - it should be a base64 data URL
       if (typeof renderedPreview === 'string' && renderedPreview.startsWith('data:')) {
         try {
-          // Upload the rendered preview directly
-          const { renderedUrl } = await storageManager.uploadRenderedPreview(uploadId, renderedPreview);
+          // Upload the rendered preview directly with the ad name
+          const { renderedUrl } = await storageManager.uploadRenderedPreview(uploadId, renderedPreview, adName);
           
           console.log(`[${uploadId}] Successfully uploaded rendered preview`);
           
@@ -77,7 +80,7 @@ serve(async (req) => {
     
     // First, upload the original image and return its URL if we're in fast mode
     try {
-      const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, imageArrayBuffer);
+      const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, imageArrayBuffer, adName);
       
       // If we're in fast mode, return immediately with the original image URL
       if (fastMode && !renderedPreview) {
@@ -257,8 +260,8 @@ serve(async (req) => {
     // Export the generated image with optimized settings for PNG format
     const imageBuffer = canvas.toBuffer();
     
-    // Upload the generated image using StorageManager with correct content type
-    const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer);
+    // Upload the generated image using StorageManager with correct content type and ad name
+    const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer, adName);
     
     console.log(`[${uploadId}] Generated image URL: ${generatedImageUrl}`);
 
