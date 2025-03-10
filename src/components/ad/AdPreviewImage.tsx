@@ -35,11 +35,14 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const containerWidth = img.parentElement?.clientWidth || 0;
     const containerHeight = img.parentElement?.clientHeight || 0;
     
+    // Calculate aspect ratios
     const imageAspect = img.naturalWidth / img.naturalHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    // Check if image is wider than container (relative to height)
-    setIsWiderThanFrame(imageAspect > containerAspect);
+    // If image is narrower than container (higher aspect ratio),
+    // then fit to width. Otherwise fit to height.
+    const isNarrower = imageAspect < containerAspect;
+    setIsWiderThanFrame(!isNarrower);
     
     setNaturalSize({
       width: img.naturalWidth,
@@ -59,8 +62,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // For wider images, fit to height instead of width
-          width: isWiderThanFrame ? 'auto' : '100%',
+          // For narrower images, fit to width. For wider images, fit to height
+          width: isWiderThanFrame ? 'auto' : '100%', 
           height: isWiderThanFrame ? '100%' : 'auto',
           objectFit: 'contain',
           objectPosition: 'center'

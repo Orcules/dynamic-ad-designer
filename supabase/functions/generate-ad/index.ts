@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -51,21 +52,28 @@ serve(async (req) => {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, data.width, data.height);
     
+    // Calculate aspect ratios
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
     let renderWidth, renderHeight, offsetX, offsetY;
     
-    if (imageAspect > canvasAspect) {
-      renderHeight = data.height;
-      renderWidth = data.height * imageAspect;
-      offsetX = (data.width - renderWidth) / 2;
-      offsetY = 0;
-    } else {
+    // If image is narrower than canvas (has smaller aspect ratio),
+    // then fit to width, otherwise fit to height
+    const isNarrower = imageAspect < canvasAspect;
+    
+    if (isNarrower) {
+      // Narrower image - fit to width
       renderWidth = data.width;
       renderHeight = data.width / imageAspect;
       offsetX = 0;
       offsetY = (data.height - renderHeight) / 2;
+    } else {
+      // Wider image - fit to height
+      renderHeight = data.height;
+      renderWidth = data.height * imageAspect;
+      offsetX = (data.width - renderWidth) / 2;
+      offsetY = 0;
     }
 
     const x = offsetX + (data.imagePosition?.x || 0);
