@@ -50,33 +50,29 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
-    // Calculate dimensions while maintaining aspect ratio
+    // Calculate dimensions to fit the width while preserving aspect ratio
+    // This approach ensures we fill the width and center vertically if needed
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
     let renderWidth = data.width;
-    let renderHeight = data.height;
+    let renderHeight = data.width / imageAspect; // Calculate height based on width
     let offsetX = 0;
-    let offsetY = 0;
+    let offsetY = (data.height - renderHeight) / 2; // Center vertically
 
-    // Calculate dimensions that preserve aspect ratio
-    if (imageAspect > canvasAspect) {
-      // Image is wider than canvas (relative to heights)
+    // If height overflows, fit to height instead and center horizontally
+    if (renderHeight > data.height) {
       renderHeight = data.height;
-      renderWidth = renderHeight * imageAspect;
-      offsetX = -(renderWidth - data.width) / 2;
-    } else {
-      // Image is taller than canvas (relative to widths)
-      renderWidth = data.width;
-      renderHeight = renderWidth / imageAspect;
-      offsetY = -(renderHeight - data.height) / 2;
+      renderWidth = data.height * imageAspect;
+      offsetX = (data.width - renderWidth) / 2; // Center horizontally
+      offsetY = 0;
     }
 
     // Apply user positioning adjustments
     const x = offsetX + (data.imagePosition?.x || 0);
     const y = offsetY + (data.imagePosition?.y || 0);
 
-    // Draw the image maintaining aspect ratio
+    // Draw the image with correct positioning
     ctx.drawImage(backgroundImage, x, y, renderWidth, renderHeight);
 
     // Add overlay

@@ -49,11 +49,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // Maintain natural aspect ratio without stretching
+          // Natural size without distortion, centered by default
           width: 'auto',
           height: 'auto',
           maxWidth: 'none',
-          maxHeight: 'none'
+          maxHeight: 'none',
+          objectFit: 'none', // Don't let the browser resize the image
+          // Position in the center by default
+          left: '50%',
+          top: '50%',
+          transformOrigin: '0 0',
         }}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
