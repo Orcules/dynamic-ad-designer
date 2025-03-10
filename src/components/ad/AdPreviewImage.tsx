@@ -20,6 +20,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
+  const [isWiderThanFrame, setIsWiderThanFrame] = useState(false);
 
   useEffect(() => {
     if (imageUrl) {
@@ -31,6 +32,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   // Handle image load to get natural dimensions
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
+    const containerWidth = img.parentElement?.clientWidth || 0;
+    const containerHeight = img.parentElement?.clientHeight || 0;
+    
+    const imageAspect = img.naturalWidth / img.naturalHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    // Check if image is wider than container (relative to height)
+    setIsWiderThanFrame(imageAspect > containerAspect);
+    
     setNaturalSize({
       width: img.naturalWidth,
       height: img.naturalHeight
@@ -49,9 +59,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // Cover the width while maintaining aspect ratio
-          width: '100%',
-          height: 'auto',
+          // For wider images, fit to height instead of width
+          width: isWiderThanFrame ? 'auto' : '100%',
+          height: isWiderThanFrame ? '100%' : 'auto',
           objectFit: 'contain',
           objectPosition: 'center'
         }}

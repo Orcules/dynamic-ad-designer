@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -46,53 +45,43 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
-    // Load the image
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
-    // Fill canvas with black background (in case image doesn't cover everything)
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, data.width, data.height);
     
-    // Calculate dimensions to properly center the image
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
     let renderWidth, renderHeight, offsetX, offsetY;
     
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas (relative to height)
-      renderWidth = data.width;
-      renderHeight = data.width / imageAspect;
-      offsetX = 0;
-      offsetY = (data.height - renderHeight) / 2;
-    } else {
-      // Image is taller than canvas (relative to width)
       renderHeight = data.height;
       renderWidth = data.height * imageAspect;
       offsetX = (data.width - renderWidth) / 2;
       offsetY = 0;
+    } else {
+      renderWidth = data.width;
+      renderHeight = data.width / imageAspect;
+      offsetX = 0;
+      offsetY = (data.height - renderHeight) / 2;
     }
 
-    // Apply user positioning adjustments
     const x = offsetX + (data.imagePosition?.x || 0);
     const y = offsetY + (data.imagePosition?.y || 0);
 
-    // Draw the image with correct centering
     ctx.drawImage(backgroundImage, x, y, renderWidth, renderHeight);
 
-    // Add overlay
     ctx.save();
     ctx.globalAlpha = data.overlayOpacity || 0.4;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
     ctx.restore();
 
-    // Text settings
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -102,7 +91,6 @@ serve(async (req) => {
       ctx.fillText(data.headline, headlineX, headlineY);
     }
 
-    // Description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
@@ -112,14 +100,12 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, descY);
     }
 
-    // CTA Button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = (data.width - buttonWidth) / 2 + (data.ctaPosition?.x || 0);
       const ctaY = data.height * 0.65 + (data.ctaPosition?.y || 0);
 
-      // Button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
@@ -131,7 +117,6 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
-      // Button text and arrow
       ctx.fillStyle = '#FFFFFF';
       const fontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -140,14 +125,11 @@ serve(async (req) => {
       const arrowWidth = fontSize * 0.3;
       const spacing = fontSize * 0.3;
       
-      // Position text and arrow
       const contentWidth = data.showArrow !== false ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - contentWidth) / 2;
       
-      // Draw text
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
-      // Draw arrow
       if (data.showArrow !== false) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2;
@@ -157,16 +139,13 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        // Vertical arrow line
         ctx.moveTo(arrowX, arrowY - arrowSize/2);
         ctx.lineTo(arrowX, arrowY + arrowSize/2);
         
-        // Upper arrow
         ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
         ctx.lineTo(arrowX, arrowY - arrowSize/2);
         ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
         
-        // Lower arrow
         ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
         ctx.lineTo(arrowX, arrowY + arrowSize/2);
         ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
@@ -175,7 +154,6 @@ serve(async (req) => {
       }
     }
 
-    // Convert and upload
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
     const filePath = `full-ads/${timestamp}_ad.png`;
