@@ -24,13 +24,8 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
 
   const handleValueChange = (newValue: string) => {
     if (newValue === selected) return;
-    
     setSelected(newValue);
-    
-    // Use setTimeout with a very short delay
-    setTimeout(() => {
-      onChange(newValue);
-    }, 10);
+    onChange(newValue);
   };
   
   return (

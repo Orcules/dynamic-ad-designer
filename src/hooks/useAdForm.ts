@@ -31,7 +31,7 @@ export const useAdForm = () => {
   const handlePlatformChange = useCallback((value: string) => {
     if (value === adData.platform) return;
     
-    // Immediately update the state without any delay
+    // Use a synchronous update without any delays
     setAdData(prev => ({ ...prev, platform: value }));
   }, [adData.platform]);
 
@@ -39,7 +39,7 @@ export const useAdForm = () => {
     if (!value || value.trim() === "") return;
     if (value === adData.template_style) return;
     
-    // Immediately update the state without any delay
+    // Use a synchronous update without any delays
     setAdData(prev => ({
       ...prev,
       template_style: value.trim()
