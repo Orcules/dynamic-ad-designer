@@ -21,7 +21,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [error, setError] = useState(false);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [fitStyle, setFitStyle] = useState<'width' | 'height'>('height');
 
   useEffect(() => {
     if (imageUrl) {
@@ -44,19 +43,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       const imgWidth = img.naturalWidth;
       const imgHeight = img.naturalHeight;
       setNaturalSize({ width: imgWidth, height: imgHeight });
-      
-      // Calculate aspect ratios
-      const imageAspectRatio = imgWidth / imgHeight;
-      const containerAspectRatio = containerWidth / containerHeight;
-      
-      // Determine if we should fit to width or height
-      if (imageAspectRatio > containerAspectRatio) {
-        // Image is wider than container (like monkey) - fit to width
-        setFitStyle('width');
-      } else {
-        // Image is taller than container (like motorcycle guy) - fit to height
-        setFitStyle('height');
-      }
     }
     
     setLoaded(true);
@@ -73,9 +59,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // Apply different fitting based on aspect ratio
-          width: fitStyle === 'width' ? '100%' : 'auto',
-          height: fitStyle === 'height' ? '100%' : 'auto',
+          width: '100%',
+          height: '100%',
           objectFit: 'cover',
           objectPosition: 'center'
         }}

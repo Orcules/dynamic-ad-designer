@@ -49,6 +49,7 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
+    // Fill background with black to ensure no transparent areas
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, data.width, data.height);
     
@@ -56,37 +57,59 @@ serve(async (req) => {
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
-    let renderWidth, renderHeight, offsetX, offsetY;
+    // Variables for drawing
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = backgroundImage.width;
+    let sourceHeight = backgroundImage.height;
+    let destX = 0;
+    let destY = 0;
+    let destWidth = data.width;
+    let destHeight = data.height;
+
+    // Apply image position offset
+    const offsetX = data.imagePosition?.x || 0;
+    const offsetY = data.imagePosition?.y || 0;
     
-    // Determine fitting based on aspect ratio comparison
+    // Draw the image using the object-fit: cover approach
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas (like monkey) - fit to width
-      renderWidth = data.width;
-      renderHeight = data.width / imageAspect;
-      offsetX = 0;
-      offsetY = (data.height - renderHeight) / 2;
+      // Image is wider than canvas - maintain height and crop width
+      const scaleFactor = data.height / backgroundImage.height;
+      const scaledWidth = backgroundImage.width * scaleFactor;
+      
+      // Center the image horizontally in the canvas
+      destX = (data.width - scaledWidth) / 2 + offsetX;
+      destY = offsetY;
+      destWidth = scaledWidth;
+      destHeight = data.height;
     } else {
-      // Image is taller than canvas (like motorcycle guy) - fit to height
-      renderHeight = data.height;
-      renderWidth = data.height * imageAspect;
-      offsetX = (data.width - renderWidth) / 2;
-      offsetY = 0;
+      // Image is taller than canvas - maintain width and crop height
+      const scaleFactor = data.width / backgroundImage.width;
+      const scaledHeight = backgroundImage.height * scaleFactor;
+      
+      // Center the image vertically in the canvas
+      destX = offsetX;
+      destY = (data.height - scaledHeight) / 2 + offsetY;
+      destWidth = data.width;
+      destHeight = scaledHeight;
     }
 
-    const x = offsetX + (data.imagePosition?.x || 0);
-    const y = offsetY + (data.imagePosition?.y || 0);
+    // Draw the image with the calculated dimensions
+    ctx.drawImage(backgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 
+                  destX, destY, destWidth, destHeight);
 
-    ctx.drawImage(backgroundImage, x, y, renderWidth, renderHeight);
-
+    // Draw overlay
     ctx.save();
     ctx.globalAlpha = data.overlayOpacity || 0.4;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
     ctx.restore();
 
+    // Draw text elements
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    // Draw headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -96,6 +119,7 @@ serve(async (req) => {
       ctx.fillText(data.headline, headlineX, headlineY);
     }
 
+    // Draw description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
@@ -105,12 +129,14 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, descY);
     }
 
+    // Draw CTA button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = (data.width - buttonWidth) / 2 + (data.ctaPosition?.x || 0);
       const ctaY = data.height * 0.65 + (data.ctaPosition?.y || 0);
 
+      // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
@@ -122,6 +148,7 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
+      // Draw button text
       ctx.fillStyle = '#FFFFFF';
       const fontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -135,6 +162,7 @@ serve(async (req) => {
       
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
+      // Draw arrow if needed
       if (data.showArrow !== false) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2;
@@ -159,6 +187,7 @@ serve(async (req) => {
       }
     }
 
+    // Export and upload the generated image
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
     const filePath = `full-ads/${timestamp}_ad.png`;
