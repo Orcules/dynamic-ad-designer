@@ -1,7 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
@@ -29,19 +28,10 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
     // Set local state immediately
     setSelected(newValue);
     
-    // Show a toast to indicate refreshing
-    toast.info("Refreshing preview...");
-    
-    // Update the parent component with a slight delay to allow React to process the state change
+    // Update the parent component with slight delay to ensure proper rendering
     setTimeout(() => {
       onChange(newValue);
-      
-      // Force a brief UI refresh by toggling a class on the body
-      document.body.classList.add('ui-refresh');
-      setTimeout(() => {
-        document.body.classList.remove('ui-refresh');
-      }, 100);
-    }, 10);
+    }, 50);
   };
   
   return (

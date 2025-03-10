@@ -1,10 +1,8 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useCallback, useState, useEffect } from "react";
-import { toast } from "sonner";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -83,19 +81,10 @@ export function TemplateStyleSelector({
     // Update local state immediately
     setSelected(newValue);
     
-    // Show a toast to indicate refreshing
-    toast.info("Refreshing preview...");
-    
-    // Update parent component with a slight delay to allow React to process the state change
+    // Update parent component with a slight delay to ensure proper state propagation
     setTimeout(() => {
       onChange(newValue);
-      
-      // Force a brief UI refresh by toggling a class on the body
-      document.body.classList.add('ui-refresh');
-      setTimeout(() => {
-        document.body.classList.remove('ui-refresh');
-      }, 100);
-    }, 10);
+    }, 50);
   }, [onChange, selected]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {

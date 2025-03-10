@@ -34,6 +34,12 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
     onButtonHover(false);
   }, [onButtonHover]);
 
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    // Prevent event bubbling which could cause issues with parent elements
+    e.stopPropagation();
+    console.log("Button clicked!");
+  }, []);
+
   return (
     <div 
       className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] flex justify-center items-center pointer-events-auto z-20"
@@ -50,14 +56,12 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
           fontSize: '1.125rem',
           lineHeight: '1.2',
           backdropFilter: 'blur(5px)',
-          WebkitBackdropFilter: 'blur(5px)'
+          WebkitBackdropFilter: 'blur(5px)',
+          zIndex: 30
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={(e) => {
-          // Prevent event bubbling which could cause issues
-          e.stopPropagation();
-        }}
+        onClick={handleClick}
       >
         <span className="inline-flex items-center gap-2">
           <span>{ctaText}</span>

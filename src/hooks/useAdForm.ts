@@ -21,9 +21,6 @@ export const useAdForm = () => {
   const prevPlatformRef = useRef(adData.platform);
   const prevTemplateStyleRef = useRef(adData.template_style);
   
-  // Track if updates are in progress
-  const updateInProgressRef = useRef(false);
-  
   // Effect to handle UI updates after platform or template changes
   useEffect(() => {
     if (prevPlatformRef.current !== adData.platform || 
@@ -32,13 +29,6 @@ export const useAdForm = () => {
       // Update refs
       prevPlatformRef.current = adData.platform;
       prevTemplateStyleRef.current = adData.template_style;
-      
-      // If we're coming from an update, clear the flag
-      if (updateInProgressRef.current) {
-        setTimeout(() => {
-          updateInProgressRef.current = false;
-        }, 300);
-      }
     }
   }, [adData.platform, adData.template_style]);
 
@@ -53,28 +43,24 @@ export const useAdForm = () => {
 
   const handlePlatformChange = useCallback((value: string) => {
     if (value === adData.platform) return;
-    if (updateInProgressRef.current) return;
     
-    // Set update in progress flag
-    updateInProgressRef.current = true;
-    
-    // Update the platform value
-    setAdData(prev => ({ ...prev, platform: value }));
+    // Update the platform value with a slight delay to ensure proper rendering
+    setTimeout(() => {
+      setAdData(prev => ({ ...prev, platform: value }));
+    }, 50);
   }, [adData.platform]);
 
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
     if (value === adData.template_style) return;
-    if (updateInProgressRef.current) return;
     
-    // Set update in progress flag
-    updateInProgressRef.current = true;
-    
-    // Update the template style
-    setAdData(prev => ({
-      ...prev,
-      template_style: value.trim()
-    }));
+    // Update the template style with a slight delay to ensure proper rendering
+    setTimeout(() => {
+      setAdData(prev => ({
+        ...prev,
+        template_style: value.trim()
+      }));
+    }, 50);
   }, [adData.template_style]);
 
   const handleColorChange = useCallback((value: string) => {
