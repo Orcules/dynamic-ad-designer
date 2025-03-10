@@ -1,3 +1,4 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -72,26 +73,27 @@ export function TemplateStyleSelector({
   ];
 
   const handleStyleChange = useCallback((newValue: string) => {
-    if (isChanging) return;
-    if (newValue && newValue.trim() !== "") {
-      setIsChanging(true);
-      // Use requestAnimationFrame to prevent UI blocking
-      requestAnimationFrame(() => {
-        onChange(newValue);
-        setIsChanging(false);
-        
-        // Ensure focus is released to prevent trapping
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-      });
-    }
+    if (isChanging || !newValue || newValue.trim() === "") return;
+    
+    setIsChanging(true);
+    
+    // Use setTimeout instead of requestAnimationFrame to give more time for UI to update
+    setTimeout(() => {
+      onChange(newValue);
+      setIsChanging(false);
+      
+      // Release focus after selection
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    }, 20);
   }, [onChange, isChanging]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
-    requestAnimationFrame(() => {
+    // Simple delay to prevent UI blocking
+    setTimeout(() => {
       handler(value);
-    });
+    }, 10);
   }, []);
 
   return (
@@ -110,10 +112,6 @@ export function TemplateStyleSelector({
             position="popper"
             onCloseAutoFocus={(e) => {
               e.preventDefault();
-            }}
-            onPointerDownOutside={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
             }}
           >
             {templates.map((template) => (
@@ -219,9 +217,9 @@ export function TemplateStyleSelector({
           <Slider
             value={[overlayOpacity * 100]}
             onValueChange={(values) => {
-              requestAnimationFrame(() => {
+              setTimeout(() => {
                 onOpacityChange?.(values[0] / 100);
-              });
+              }, 10);
             }}
             min={0}
             max={100}

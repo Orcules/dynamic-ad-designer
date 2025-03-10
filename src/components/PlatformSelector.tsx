@@ -1,5 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
@@ -15,15 +16,23 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
+  const [isChanging, setIsChanging] = useState(false);
+  
   const handleValueChange = (newValue: string) => {
-    // Use requestAnimationFrame to prevent UI blocking
-    requestAnimationFrame(() => {
+    if (isChanging) return;
+    
+    setIsChanging(true);
+    
+    // Delay the state update slightly to prevent UI freezing
+    setTimeout(() => {
       onChange(newValue);
-      // Ensure focus is released to prevent trapping
+      setIsChanging(false);
+      
+      // Release focus without using blur which can cause issues
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
-    });
+    }, 10);
   };
   
   return (
@@ -37,11 +46,8 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
           className="bg-card border-border z-[100]"
           position="popper"
           onCloseAutoFocus={(e) => {
+            // Just prevent default without affecting other behaviors
             e.preventDefault();
-          }}
-          onPointerDownOutside={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
           }}
         >
           {platforms.map((platform) => (

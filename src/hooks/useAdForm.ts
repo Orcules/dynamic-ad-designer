@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 
 export const useAdForm = () => {
   const [adData, setAdData] = useState({
@@ -17,7 +17,7 @@ export const useAdForm = () => {
     description_color: "#333333"
   });
   
-  const isUpdating = useRef(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -29,35 +29,31 @@ export const useAdForm = () => {
   }, []);
 
   const handlePlatformChange = useCallback((value: string) => {
-    if (isUpdating.current) return;
+    if (isUpdating) return;
     
-    isUpdating.current = true;
-    requestAnimationFrame(() => {
+    setIsUpdating(true);
+    setTimeout(() => {
       setAdData(prev => ({ ...prev, platform: value }));
-      isUpdating.current = false;
-    });
-  }, []);
+      setIsUpdating(false);
+    }, 20);
+  }, [isUpdating]);
 
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
-    if (isUpdating.current) return;
+    if (isUpdating) return;
     
-    isUpdating.current = true;
-    
-    // Use requestAnimationFrame for smoother UI updates
-    requestAnimationFrame(() => {
+    setIsUpdating(true);
+    setTimeout(() => {
       setAdData(prev => {
         const newValue = value.trim();
         if (prev.template_style === newValue) {
-          isUpdating.current = false;
           return prev;
         }
         return { ...prev, template_style: newValue };
       });
-      
-      isUpdating.current = false;
-    });
-  }, []);
+      setIsUpdating(false);
+    }, 20);
+  }, [isUpdating]);
 
   const handleColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, accent_color: value }));
@@ -81,6 +77,7 @@ export const useAdForm = () => {
 
   return {
     adData,
+    isUpdating,
     handleInputChange,
     handleFontChange,
     handlePlatformChange,
