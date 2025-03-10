@@ -64,7 +64,7 @@ export class StorageManager {
     const { error: saveError } = await this.supabase.storage
       .from('ad-images')
       .upload(generatedFileName, screenshotBuffer, {
-        contentType: 'image/jpeg',
+        contentType: 'image/png',
         cacheControl: '3600',
         upsert: true // Use upsert for faster uploads
       });

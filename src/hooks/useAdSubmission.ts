@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -192,7 +193,7 @@ export const useAdSubmission = () => {
       
       const { data: { publicUrl } } = supabase.storage
         .from('ad-images')
-        .getPublicUrl(filePath);
+        .getPublicUrl(`full-ads/${filePath}`);
       
       // 7. Validate if the URL is valid (try to access it)
       try {
