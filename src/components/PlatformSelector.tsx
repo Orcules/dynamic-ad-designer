@@ -1,6 +1,7 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCallback, useState, useRef } from "react";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
@@ -16,53 +17,32 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
-  // Use a ref to track if we're currently processing a change
-  const isChangingRef = useRef(false);
-  
-  const handleValueChange = useCallback((newValue: string) => {
-    // Prevent duplicate or rapid changes
-    if (newValue === value || isChangingRef.current) return;
-    
-    // Set flag to indicate we're processing a change
-    isChangingRef.current = true;
-    
-    // Use requestAnimationFrame to align with the browser's rendering cycle
-    requestAnimationFrame(() => {
-      onChange(newValue);
-      
-      // Reset the flag after the change is processed
-      isChangingRef.current = false;
-    });
-  }, [value, onChange]);
+  // Simple function to handle platform selection
+  const handleSelect = (platformId: string) => {
+    if (platformId !== value) {
+      onChange(platformId);
+    }
+  };
   
   return (
     <div className="space-y-2">
       <label className="text-sm font-medium">Platform</label>
-      <Select 
-        value={value} 
-        onValueChange={handleValueChange}
-      >
-        <SelectTrigger className="bg-card">
-          <SelectValue placeholder="Select platform" />
-        </SelectTrigger>
-        <SelectContent 
-          className="bg-card border-border z-[100]"
-          position="popper"
-          align="center"
-          side="bottom"
-          sideOffset={4}
-        >
-          {platforms.map((platform) => (
-            <SelectItem 
-              key={platform.id} 
-              value={platform.id}
-              className="hover:bg-muted focus:bg-muted cursor-pointer"
-            >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {platforms.map((platform) => (
+          <Button
+            key={platform.id}
+            type="button"
+            variant={platform.id === value ? "default" : "outline"}
+            className="flex justify-between items-center w-full"
+            onClick={() => handleSelect(platform.id)}
+          >
+            <span className="truncate mr-2">
               {platform.name} ({platform.dimensions})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+            </span>
+            {platform.id === value && <Check className="h-4 w-4" />}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
