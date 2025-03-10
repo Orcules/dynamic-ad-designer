@@ -84,12 +84,12 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
         onClick={handleClick}
       >
         <span className="inline-flex items-center gap-2">
-          <span>{ctaText}</span>
+          <span className="cta-text">{ctaText}</span>
           {showArrow && (
             <svg
-              className="transition-transform duration-300 inline-block"
+              className="cta-arrow transition-transform duration-300 inline-block"
               style={{
-                transform: isButtonHovered ? 'translateY(0px)' : 'translateY(-1px)' // Changed from 0px/-4px to 0px/-1px for subtle arrow movement
+                transform: isButtonHovered ? 'translateY(0px)' : 'translateY(-1px)'
               }}
               width="24"
               height="24"

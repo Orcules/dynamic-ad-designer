@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -43,10 +42,13 @@ export class ImageGenerator {
     const ctaButton = this.previewElement.querySelector('button');
     console.log('CTA Button found:', ctaButton !== null);
     
-    // Find all text elements and move them up by 7px
+    // Find text elements - now using the class names we added
     const headlineElement = this.previewElement.querySelector('h2');
     const descriptionElement = this.previewElement.querySelector('p');
-    const buttonTextElement = ctaButton?.querySelector('span');
+    const buttonTextElement = ctaButton?.querySelector('.cta-text');
+    
+    // Find arrow element separately
+    const arrowElement = ctaButton?.querySelector('.cta-arrow');
     
     // Store original positions to restore later
     const originalPositions = new Map<Element, string>();
@@ -68,27 +70,17 @@ export class ImageGenerator {
       console.log(`Moved element up by ${pixels}px:`, element);
     };
     
-    // Move text elements up
+    // Move text elements up but NOT the arrow
     moveElementUp(headlineElement);
     moveElementUp(descriptionElement);
     moveElementUp(buttonTextElement);
     
-    if (ctaButton) {
-      // Apply hover effect to the arrow if exists
-      const arrowElement = ctaButton.querySelector('svg');
-      if (arrowElement) {
-        console.log('Arrow element found, applying transform');
-        // Type-safe version
-        const svgElement = arrowElement as SVGElement;
-        const originalTransform = svgElement.style.transform;
-        originalPositions.set(svgElement, originalTransform);
-        // Adjusting arrow position - moving it up by 1 pixel instead of 4
-        svgElement.style.transform = 'translateY(-1px)';
-      } else {
-        // If no arrow found, try mouseenter event as fallback
-        console.log('Using mouseenter event as fallback');
-        ctaButton.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-      }
+    // We do NOT modify the arrow position here to keep it static
+    if (arrowElement) {
+      console.log('Arrow found, keeping it static during rendering');
+      // Just store the original transform to restore later
+      const svgElement = arrowElement as SVGElement;
+      originalPositions.set(svgElement, svgElement.style.transform);
     }
     
     return () => {
@@ -98,11 +90,6 @@ export class ImageGenerator {
           element.style.transform = originalTransform;
         }
       });
-      
-      // Restore button state if needed
-      if (ctaButton && !ctaButton.querySelector('svg')) {
-        ctaButton.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
-      }
     };
   }
 

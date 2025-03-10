@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -149,7 +148,7 @@ serve(async (req) => {
       ctx.font = `bold ${fontSize}px Arial`;
       ctx.fillStyle = data.text_color || '#FFFFFF';
       const headlineX = data.width / 2 + (data.headlinePosition?.x || 0);
-      const headlineY = data.height * 0.4 + (data.headlinePosition?.y || 0);
+      const headlineY = data.height * 0.4 + (data.headlinePosition?.y || 0) - 7;
       ctx.fillText(data.headline, headlineX, headlineY);
     }
 
@@ -159,7 +158,7 @@ serve(async (req) => {
       ctx.font = `${descFontSize}px Arial`;
       ctx.fillStyle = data.description_color || '#FFFFFF';
       const descX = data.width / 2 + (data.descriptionPosition?.x || 0);
-      const descY = data.height * 0.5 + (data.descriptionPosition?.y || 0);
+      const descY = data.height * 0.5 + (data.descriptionPosition?.y || 0) - 7;
       ctx.fillText(data.description, descX, descY);
     }
 
@@ -182,7 +181,7 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
-      // Draw button text
+      // Draw button text - adjusted to move the text up by 7px but NOT the arrow
       ctx.fillStyle = '#FFFFFF';
       const fontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -194,29 +193,30 @@ serve(async (req) => {
       const contentWidth = data.showArrow !== false ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - contentWidth) / 2;
       
-      ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
+      // Move the text up, but not the arrow
+      ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2 - 7);
 
-      // Draw arrow if needed
+      // Draw arrow if needed - keep it in the original position (not adjusted)
       if (data.showArrow !== false) {
         const arrowX = startX + textWidth + spacing;
-        const arrowY = ctaY + buttonHeight/2;
+        const arrowY = ctaY + buttonHeight/2; // No adjustment for the arrow (keep it static)
         const arrowSize = fontSize * 0.4;
 
         ctx.beginPath();
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        // Adjusted y positions by -1 pixel to move the arrow up slightly
-        ctx.moveTo(arrowX, arrowY - arrowSize/2 - 1);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2 - 1);
+        // Static arrow (no -1 pixel adjustment)
+        ctx.moveTo(arrowX, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2);
         
-        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4 - 1);
-        ctx.lineTo(arrowX, arrowY - arrowSize/2 - 1);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4 - 1);
+        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
+        ctx.lineTo(arrowX, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
         
-        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4 - 1);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2 - 1);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4 - 1);
+        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
         
         ctx.stroke();
       }
