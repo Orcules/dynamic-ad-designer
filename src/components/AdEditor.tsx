@@ -157,6 +157,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const processImage = async (imageIndex: number, allImages: Array<File | string>): Promise<string | null> => {
     try {
       setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'processing' }));
+      setCurrentProcessingIndex(imageIndex);
       
       const currentImage = allImages[imageIndex];
       if (!currentImage) {
@@ -417,6 +418,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           isGenerating={isGenerating}
           onClick={handleSubmit}
           imageCount={imageUrls.length}
+          currentProcessingIndex={currentProcessingIndex}
         />
       </div>
     </div>

@@ -49,10 +49,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // Preserve aspect ratio and prevent stretching
-          objectFit: 'contain',
-          width: '100%',
-          height: '100%'
+          // Do not use object-fit: contain as it can cause scaling issues
+          // Instead use width/height auto to maintain aspect ratio
+          width: 'auto',
+          height: 'auto',
+          maxWidth: 'none',
+          maxHeight: 'none'
         }}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
