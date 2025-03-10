@@ -1,6 +1,8 @@
 
-import React, { useEffect } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLanguageFonts } from './LanguageSelector';
 
 const getFontUrl = (fontName: string) => {
@@ -14,6 +16,7 @@ interface FontSelectorProps {
 }
 
 export function FontSelector({ value, onChange, language }: FontSelectorProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const fonts = getLanguageFonts(language).map(fontName => ({
     name: fontName,
     url: getFontUrl(fontName)
@@ -30,34 +33,53 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
 
   return (
     <div className="space-y-2 pointer-events-auto">
-      <label className="text-sm font-medium">Font</label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="bg-card pointer-events-auto" dir={isRTL ? "rtl" : "ltr"}>
-          <SelectValue placeholder="Select font" />
-        </SelectTrigger>
-        <SelectContent 
-          className="bg-card border-border z-[100] pointer-events-auto"
-          position="popper"
-          onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onPointerDownOutside={(e) => {
-            e.preventDefault();
-          }}
-        >
-          {fonts.map((font) => (
-            <SelectItem 
-              key={font.name} 
-              value={font.url}
-              className="hover:bg-muted focus:bg-muted pointer-events-auto"
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">Font</Label>
+        {fonts.length > 4 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="text-xs px-2 h-6"
+          >
+            {isExpanded ? "Show less" : "Show all"}
+          </Button>
+        )}
+      </div>
+
+      {isExpanded ? (
+        <ScrollArea className="h-48 rounded-md border">
+          <div className="grid grid-cols-2 gap-2 p-2">
+            {fonts.map((font) => (
+              <Button
+                key={font.name}
+                variant={font.url === value ? "default" : "outline"}
+                className="w-full justify-start px-3 py-1 h-auto"
+                onClick={() => onChange(font.url)}
+                dir={isRTL ? "rtl" : "ltr"}
+                style={{ fontFamily: `"${font.name}", ${isRTL ? 'sans-serif' : 'serif'}` }}
+              >
+                {font.name}
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {fonts.slice(0, 4).map((font) => (
+            <Button
+              key={font.name}
+              variant={font.url === value ? "default" : "outline"}
+              className="w-full justify-start px-3 py-1 h-auto"
+              onClick={() => onChange(font.url)}
               dir={isRTL ? "rtl" : "ltr"}
+              style={{ fontFamily: `"${font.name}", ${isRTL ? 'sans-serif' : 'serif'}` }}
             >
               {font.name}
-            </SelectItem>
+            </Button>
           ))}
-        </SelectContent>
-      </Select>
+        </div>
+      )}
     </div>
   );
 }
