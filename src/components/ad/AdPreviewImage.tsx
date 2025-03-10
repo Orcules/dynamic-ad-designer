@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 interface Position {
   x: number;
@@ -27,8 +27,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
   const [imageKey, setImageKey] = useState(0);
-  const imageRef = useRef<HTMLImageElement>(null);
-  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
     if (imageUrl && imageUrl !== currentImageUrl) {
@@ -37,16 +35,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       setError(false);
       setCurrentImageUrl(imageUrl);
       setImageKey(prev => prev + 1); // Force image reload
-
-      // Preload the image in cache if not already there
-      if (!imageCache.current.has(imageUrl)) {
-        const img = new Image();
-        img.src = imageUrl;
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          imageCache.current.set(imageUrl, img);
-        };
-      }
     }
   }, [imageUrl, currentImageUrl]);
 
@@ -74,7 +62,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     if (fastMode) {
       // In fast mode, trigger the callback immediately
       if (onImageLoaded) {
-        setTimeout(onImageLoaded, 50); // Small delay for smoother transitions
+        onImageLoaded();
       }
     } else {
       console.log('Image loaded successfully:', imageUrl);
@@ -100,7 +88,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center">
       <img
-        ref={imageRef}
         key={`img-${imageKey}`} // Force re-render of image when URL changes
         src={imageUrl}
         alt="Ad preview"

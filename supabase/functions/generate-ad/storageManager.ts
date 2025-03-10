@@ -3,7 +3,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 export class StorageManager {
   private supabase;
-  private uploadCache = new Map<string, string>();
   
   constructor() {
     this.supabase = createClient(
@@ -13,12 +12,6 @@ export class StorageManager {
   }
 
   async uploadOriginalImage(uploadId: string, image: any) {
-    // Check if we've already uploaded this image (based on content hash)
-    const contentHash = await this.calculateContentHash(image);
-    if (this.uploadCache.has(contentHash)) {
-      return { originalFileName: '', originalImageUrl: this.uploadCache.get(contentHash)! };
-    }
-    
     const timestamp = Date.now();
     const originalFileName = `full-ads/original/${uploadId}_${timestamp}.jpg`;
     
@@ -38,15 +31,11 @@ export class StorageManager {
     const { data: { publicUrl: originalImageUrl } } = this.supabase.storage
       .from('ad-images')
       .getPublicUrl(originalFileName);
-    
-    // Cache this upload for future reference
-    this.uploadCache.set(contentHash, originalImageUrl);
 
     return { originalFileName, originalImageUrl };
   }
 
   async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array) {
-    // We don't cache generated images as they should be unique
     const timestamp = Date.now();
     const generatedFileName = `full-ads/generated/${uploadId}_${timestamp}.jpg`;
     
@@ -96,9 +85,9 @@ export class StorageManager {
       }
     });
     
-    // Process uploads in parallel with increased batch size for faster processing
+    // Process uploads in parallel but limit concurrency
     const results = [];
-    const batchSize = 5; // Process 5 uploads at a time (increased from 3)
+    const batchSize = 3; // Process 3 uploads at a time
     
     for (let i = 0; i < uploadPromises.length; i += batchSize) {
       const batch = uploadPromises.slice(i, i + batchSize);
@@ -107,24 +96,5 @@ export class StorageManager {
     }
     
     return results;
-  }
-  
-  // Helper method to calculate a simple content hash for caching
-  private async calculateContentHash(buffer: ArrayBuffer): Promise<string> {
-    try {
-      // Create a simple hash based on the first 100 bytes and the total size
-      const array = new Uint8Array(buffer);
-      const subset = array.slice(0, Math.min(100, array.length));
-      let hash = 0;
-      
-      for (let i = 0; i < subset.length; i++) {
-        hash = ((hash << 5) - hash) + subset[i];
-        hash |= 0; // Convert to 32bit integer
-      }
-      
-      return `${hash}_${buffer.byteLength}`;
-    } catch (e) {
-      return `default_${Date.now()}`;
-    }
   }
 }
