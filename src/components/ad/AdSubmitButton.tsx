@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -22,7 +22,8 @@ export const AdSubmitButton: React.FC<AdSubmitButtonProps> = ({
     }
     
     if (imageCount > 1) {
-      return `Generating Ad ${currentProcessingIndex + 1}/${imageCount}...`;
+      const displayIndex = Math.min(currentProcessingIndex + 1, imageCount);
+      return `Generating Ad ${displayIndex}/${imageCount}...`;
     }
     
     return 'Generating Ad...';

@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 
 interface Position {
@@ -19,7 +18,7 @@ export const useAdForm = () => {
     cta_color: "#4A90E2",
     overlay_color: "#000000",
     text_color: "#FFFFFF",
-    description_color: "#333333"
+    description_color: "#FFFFFF"
   });
   
   const [imagePosition, setImagePosition] = useState<Position>({ x: 0, y: 0 });
@@ -28,7 +27,6 @@ export const useAdForm = () => {
   const [ctaPosition, setCtaPosition] = useState<Position>({ x: 0, y: 0 });
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   
-  // Ensure all callbacks are defined after state
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAdData(prev => ({ ...prev, [name]: value }));
@@ -39,12 +37,10 @@ export const useAdForm = () => {
   }, []);
 
   const handlePlatformChange = useCallback((value: string) => {
-    // Simple platform change without extra logic
     setAdData(prev => ({ ...prev, platform: value }));
   }, []);
 
   const handleStyleChange = useCallback((value: string) => {
-    // Simple style change without extra logic
     setAdData(prev => ({ ...prev, template_style: value }));
   }, []);
 
