@@ -15,7 +15,7 @@ export class StorageManager {
 
   async uploadOriginalImage(uploadId: string, image: any) {
     const timestamp = Date.now();
-    const originalFileName = `full-ads/original/${uploadId}_${timestamp}.jpg`;
+    const originalFileName = `full-ads/${uploadId}_${timestamp}.jpg`;
     
     // Check cache first
     if (this.imageCache.has(originalFileName)) {
@@ -50,7 +50,7 @@ export class StorageManager {
 
   async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array) {
     const timestamp = Date.now();
-    const generatedFileName = `full-ads/generated/${uploadId}_${timestamp}.jpg`;
+    const generatedFileName = `full-ads/${uploadId}_${timestamp}.png`;
     
     // Check cache first
     if (this.imageCache.has(generatedFileName)) {
@@ -87,7 +87,7 @@ export class StorageManager {
   async uploadMultipleImages(images: { id: string, buffer: Uint8Array }[]) {
     const uploadPromises = images.map(async (image) => {
       const timestamp = Date.now();
-      const fileName = `full-ads/bulk/${image.id}_${timestamp}.jpg`;
+      const fileName = `full-ads/${image.id}_${timestamp}.jpg`;
       
       // Check cache first
       if (this.imageCache.has(fileName)) {
