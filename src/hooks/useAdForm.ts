@@ -33,13 +33,8 @@ export const useAdForm = () => {
   }, []);
 
   const handleStyleChange = useCallback((value: string) => {
-    if (!value || value.trim() === "") return;
-    
     // Simple style change without extra logic
-    setAdData(prev => ({
-      ...prev,
-      template_style: value.trim()
-    }));
+    setAdData(prev => ({ ...prev, template_style: value }));
   }, []);
 
   const handleColorChange = useCallback((value: string) => {

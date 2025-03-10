@@ -2,8 +2,42 @@
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Button } from "./ui/button";
+import { Check } from "lucide-react";
 import { useCallback } from "react";
+
+// Define all available template styles
+const templates = [
+  { id: "modern", label: "Modern" },
+  { id: "elegant", label: "Elegant" },
+  { id: "dynamic", label: "Dynamic" },
+  { id: "spotlight", label: "Spotlight" },
+  { id: "wave", label: "Wave" },
+  { id: "cinematic", label: "Cinematic" },
+  { id: "minimal-fade", label: "Minimal Fade" },
+  { id: "duotone", label: "Duotone" },
+  { id: "vignette", label: "Vignette" },
+  { id: "luxury", label: "Luxury" },
+  { id: "overlay-bottom-clean", label: "Bottom Clean" },
+  { id: "overlay-bottom-gradient", label: "Bottom Gradient" },
+  { id: "overlay-bottom-glass", label: "Bottom Glass" },
+  { id: "overlay-bottom-neon", label: "Bottom Neon" },
+  { id: "overlay-bottom-minimal", label: "Bottom Minimal" },
+  { id: "neon", label: "Neon Glow" },
+  { id: "split", label: "Split Design" },
+  { id: "gradient", label: "Gradient Flow" },
+  { id: "outline", label: "Outline Text" },
+  { id: "stacked", label: "Stacked Layout" },
+  { id: "minimal", label: "Minimal Clean" },
+  { id: "retro", label: "Retro Style" },
+  { id: "glassmorphism", label: "Glass Effect" },
+  { id: "3d", label: "3D Text" },
+  { id: "vintage", label: "Vintage Look" },
+  { id: "tech", label: "Tech Theme" },
+  { id: "nature", label: "Nature Theme" },
+  { id: "urban", label: "Urban Style" },
+  { id: "artistic", label: "Artistic" }
+];
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -38,42 +72,13 @@ export function TemplateStyleSelector({
   descriptionColor,
   onDescriptionColorChange,
 }: TemplateStyleSelectorProps) {
-  const templates = [
-    { id: "modern", label: "Modern" },
-    { id: "elegant", label: "Elegant" },
-    { id: "dynamic", label: "Dynamic" },
-    { id: "spotlight", label: "Spotlight" },
-    { id: "wave", label: "Wave" },
-    { id: "cinematic", label: "Cinematic" },
-    { id: "minimal-fade", label: "Minimal Fade" },
-    { id: "duotone", label: "Duotone" },
-    { id: "vignette", label: "Vignette" },
-    { id: "luxury", label: "Luxury" },
-    { id: "overlay-bottom-clean", label: "Bottom Clean" },
-    { id: "overlay-bottom-gradient", label: "Bottom Gradient" },
-    { id: "overlay-bottom-glass", label: "Bottom Glass" },
-    { id: "overlay-bottom-neon", label: "Bottom Neon" },
-    { id: "overlay-bottom-minimal", label: "Bottom Minimal" },
-    { id: "neon", label: "Neon Glow" },
-    { id: "split", label: "Split Design" },
-    { id: "gradient", label: "Gradient Flow" },
-    { id: "outline", label: "Outline Text" },
-    { id: "stacked", label: "Stacked Layout" },
-    { id: "minimal", label: "Minimal Clean" },
-    { id: "retro", label: "Retro Style" },
-    { id: "glassmorphism", label: "Glass Effect" },
-    { id: "3d", label: "3D Text" },
-    { id: "vintage", label: "Vintage Look" },
-    { id: "tech", label: "Tech Theme" },
-    { id: "nature", label: "Nature Theme" },
-    { id: "urban", label: "Urban Style" },
-    { id: "artistic", label: "Artistic" }
-  ];
-
-  const handleStyleChange = useCallback((newValue: string) => {
-    if (newValue === value) return;
-    onChange(newValue);
-  }, [onChange, value]);
+  
+  // Simple function to handle template style selection
+  const handleSelect = (templateId: string) => {
+    if (templateId !== value) {
+      onChange(templateId);
+    }
+  };
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
     handler(value);
@@ -83,31 +88,22 @@ export function TemplateStyleSelector({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
-        <Select 
-          value={value} 
-          onValueChange={handleStyleChange}
-        >
-          <SelectTrigger className="bg-card">
-            <SelectValue placeholder="Select a template style" />
-          </SelectTrigger>
-          <SelectContent 
-            className="bg-card border-border z-[100]"
-            position="popper"
-            align="center"
-            side="bottom"
-            sideOffset={4}
-          >
-            {templates.map((template) => (
-              <SelectItem 
-                key={template.id} 
-                value={template.id}
-                className="hover:bg-muted focus:bg-muted cursor-pointer"
-              >
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
+          {templates.map((template) => (
+            <Button
+              key={template.id}
+              type="button"
+              variant={template.id === value ? "default" : "outline"}
+              className="flex justify-between items-center w-full"
+              onClick={() => handleSelect(template.id)}
+            >
+              <span className="truncate mr-2">
                 {template.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+              </span>
+              {template.id === value && <Check className="h-4 w-4" />}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2">
