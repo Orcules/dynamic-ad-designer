@@ -89,7 +89,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
             <svg
               className="transition-transform duration-300 inline-block"
               style={{
-                transform: isButtonHovered ? 'translateY(4px)' : 'translateY(2px)'
+                transform: isButtonHovered ? 'translateY(0px)' : 'translateY(-4px)' // Changed from 4px/2px to 0px/-4px to move arrow up
               }}
               width="24"
               height="24"

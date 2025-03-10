@@ -206,16 +206,17 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        ctx.moveTo(arrowX, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2);
+        // Adjusted y positions by -4 pixels to move the arrow up
+        ctx.moveTo(arrowX, arrowY - arrowSize/2 - 4);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2 - 4);
         
-        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
-        ctx.lineTo(arrowX, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
+        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4 - 4);
+        ctx.lineTo(arrowX, arrowY - arrowSize/2 - 4);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4 - 4);
         
-        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
+        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4 - 4);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2 - 4);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4 - 4);
         
         ctx.stroke();
       }
