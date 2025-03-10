@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Position {
   x: number;
@@ -28,37 +28,68 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
   const [imageKey, setImageKey] = useState(0);
   const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
+  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
 
   useEffect(() => {
     if (imageUrl && imageUrl !== currentImageUrl) {
       console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
-      setLoaded(false);
-      setError(false);
-      setCurrentImageUrl(imageUrl);
-      setImageKey(prev => prev + 1); // Force image reload
+      
+      // Check if the image is already cached
+      if (imageCache.current.has(imageUrl)) {
+        console.log('Using cached image for faster rendering');
+        setLoaded(true);
+        const cachedImg = imageCache.current.get(imageUrl)!;
+        setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
+        
+        // Calculate style for cached image immediately
+        const containerElement = document.querySelector('.ad-content');
+        if (containerElement) {
+          const containerRect = containerElement.getBoundingClientRect();
+          setContainerSize({ width: containerRect.width, height: containerRect.height });
+          
+          // Apply cached dimensions to calculate style
+          const newStyle = calculateStyleFromDimensions(
+            cachedImg.naturalWidth, 
+            cachedImg.naturalHeight,
+            containerRect.width,
+            containerRect.height,
+            position,
+            fastMode
+          );
+          setImageStyle(newStyle);
+        }
+        
+        // Notify parent immediately if using cached image
+        if (onImageLoaded) {
+          setTimeout(onImageLoaded, 50); // Small delay to ensure UI is updated
+        }
+      } else {
+        // Standard loading for new image
+        setLoaded(false);
+        setError(false);
+        setCurrentImageUrl(imageUrl);
+        setImageKey(prev => prev + 1); // Force image reload
+      }
     }
-  }, [imageUrl, currentImageUrl]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode]);
 
-  const calculateImageStyle = useCallback((img: HTMLImageElement) => {
-    const container = img.parentElement;
-    if (!container) return {};
-
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    const imgWidth = img.naturalWidth;
-    const imgHeight = img.naturalHeight;
-    
+  // Function to calculate style that can be reused
+  const calculateStyleFromDimensions = useCallback((
+    imgWidth: number,
+    imgHeight: number,
+    containerWidth: number,
+    containerHeight: number,
+    pos: Position,
+    useFastMode: boolean
+  ): React.CSSProperties => {
     // Store these measurements for potential use
-    setNaturalSize({ width: imgWidth, height: imgHeight });
-    setContainerSize({ width: containerWidth, height: containerHeight });
-    
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
     // Calculate the exact positioning to match the preview
     const newStyle: React.CSSProperties = {
-      transform: `translate(${position.x}px, ${position.y}px)`,
-      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      transform: `translate(${pos.x}px, ${pos.y}px)`,
+      transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover',
     };
@@ -78,11 +109,47 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
     
     return newStyle;
-  }, [position, fastMode]);
+  }, []);
+
+  const calculateImageStyle = useCallback((img: HTMLImageElement) => {
+    const container = img.parentElement;
+    if (!container) return {};
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    
+    // Store these measurements for potential use
+    setNaturalSize({ width: imgWidth, height: imgHeight });
+    setContainerSize({ width: containerWidth, height: containerHeight });
+    
+    return calculateStyleFromDimensions(
+      imgWidth, imgHeight, containerWidth, containerHeight, position, fastMode
+    );
+  }, [position, fastMode, calculateStyleFromDimensions]);
+
+  // Preload next image to improve navigation speed
+  const preloadImage = useCallback((url: string) => {
+    if (!url || imageCache.current.has(url)) return;
+    
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      imageCache.current.set(url, img);
+      console.log(`Preloaded image: ${url.substring(0, 50)}...`);
+    };
+    img.src = url;
+  }, []);
 
   // Handle image load to get natural dimensions
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
+    
+    // Cache the loaded image for future use
+    if (imageUrl && !imageCache.current.has(imageUrl)) {
+      imageCache.current.set(imageUrl, img);
+    }
     
     // In fast mode, we skip some of the detailed measurements
     if (!fastMode) {

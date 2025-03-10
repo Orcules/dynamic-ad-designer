@@ -123,7 +123,7 @@ export class StorageManager {
     
     // Process uploads in parallel with increased batch size for better performance
     const results = [];
-    const batchSize = 5; // Increased from 3 to 5 for better parallelism
+    const batchSize = 8; // Increased batch size for better performance
     
     for (let i = 0; i < uploadPromises.length; i += batchSize) {
       const batch = uploadPromises.slice(i, i + batchSize);

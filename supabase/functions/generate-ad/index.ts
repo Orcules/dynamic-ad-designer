@@ -105,37 +105,32 @@ serve(async (req) => {
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
-    // Variables for drawing
+    // Define source and destination parameters for drawing
     let sourceX = 0;
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = imagePosition.x || 0;
-    let destY = imagePosition.y || 0;
+    let destX = imagePosition.x;
+    let destY = imagePosition.y;
     let destWidth, destHeight;
 
-    // Use precise object-fit: cover approach with exact positioning from preview
+    // Match the exact positioning and scaling from the AdPreviewImage component
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to match height and crop sides
-      const scaleFactor = data.height / backgroundImage.height;
-      destWidth = backgroundImage.width * scaleFactor;
+      // Image is wider than canvas - scale to match height and position horizontally
       destHeight = data.height;
-      
-      // Apply exact positioning from preview
-      destX += (data.width - destWidth) / 2;
+      destWidth = data.height * imageAspect;
     } else {
-      // Image is taller than canvas - scale to match width and crop top/bottom
-      const scaleFactor = data.width / backgroundImage.width;
+      // Image is taller than canvas - scale to match width and position vertically
       destWidth = data.width;
-      destHeight = backgroundImage.height * scaleFactor;
-      
-      // Apply exact positioning from preview
-      destY += (data.height - destHeight) / 2;
+      destHeight = data.width / imageAspect;
     }
-
+    
     // Draw the image with exact positioning to match the preview
-    ctx.drawImage(backgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 
-                  destX, destY, destWidth, destHeight);
+    ctx.drawImage(
+      backgroundImage, 
+      sourceX, sourceY, sourceWidth, sourceHeight, 
+      destX, destY, destWidth, destHeight
+    );
 
     // Draw overlay
     ctx.save();

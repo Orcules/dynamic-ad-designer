@@ -80,6 +80,7 @@ export function AdPreview({
   const isRTL = language === 'he' || language === 'ar';
   const currentImageUrl = useRef<string | undefined>(imageUrl);
   const fontLoaded = useRef<boolean>(false);
+  const preloadedImages = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!imageGenerator.current) {
@@ -93,6 +94,39 @@ export function AdPreview({
       currentImageUrl.current = imageUrl;
     }
   }, [imageUrl]);
+
+  // Preload images for faster navigation
+  useEffect(() => {
+    // Preload current image and adjacent images
+    if (imageUrls.length > 0) {
+      const imagesToPreload = [];
+      
+      // Current image
+      if (currentIndex >= 0 && currentIndex < imageUrls.length) {
+        imagesToPreload.push(imageUrls[currentIndex]);
+      }
+      
+      // Next image
+      if (currentIndex + 1 < imageUrls.length) {
+        imagesToPreload.push(imageUrls[currentIndex + 1]);
+      }
+      
+      // Previous image
+      if (currentIndex - 1 >= 0) {
+        imagesToPreload.push(imageUrls[currentIndex - 1]);
+      }
+      
+      // Preload images we haven't loaded yet
+      imagesToPreload.forEach(url => {
+        if (url && !preloadedImages.current.has(url)) {
+          const img = new Image();
+          img.src = url;
+          img.crossOrigin = "anonymous";
+          preloadedImages.current.add(url);
+        }
+      });
+    }
+  }, [imageUrls, currentIndex]);
 
   useEffect(() => {
     if (fontUrl && !fontLoaded.current) {
@@ -120,7 +154,7 @@ export function AdPreview({
       // Reduce delay in fast mode
       setTimeout(() => {
         if (onImageLoaded) onImageLoaded();
-      }, 200);
+      }, 50);
     } else {
       console.log('Image loaded callback in AdPreview');
       if (onImageLoaded) {
@@ -258,6 +292,7 @@ export function AdPreview({
               position={imagePosition}
               onPositionChange={() => {}}
               onImageLoaded={handleImageLoaded}
+              fastMode={fastRenderMode}
             />
             <div
               className="absolute inset-0 flex flex-col justify-between"
