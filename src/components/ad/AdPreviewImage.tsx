@@ -49,8 +49,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={{
           transform: `translate(${position.x}px, ${position.y}px)`,
           transition: 'transform 0.1s ease-out',
-          // Do not use object-fit: contain as it can cause scaling issues
-          // Instead use width/height auto to maintain aspect ratio
+          // Maintain natural aspect ratio without stretching
           width: 'auto',
           height: 'auto',
           maxWidth: 'none',

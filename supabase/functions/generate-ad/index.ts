@@ -46,11 +46,11 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
-    // Load the image and maintain its aspect ratio
+    // Load the image
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
-    // Calculate the proper dimensions to maintain aspect ratio
+    // Calculate dimensions while maintaining aspect ratio
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
