@@ -1,21 +1,41 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 
 interface AdImageHandlerProps {
   onImageChange: (urls: string[]) => void;
   onCurrentIndexChange: (index: number) => void;
+  onImageChangeConfirmed?: () => void;
 }
 
 export function useAdImageHandler({ 
   onImageChange, 
-  onCurrentIndexChange 
+  onCurrentIndexChange,
+  onImageChangeConfirmed
 }: AdImageHandlerProps) {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const processedIndexes = useRef<Set<number>>(new Set());
   const isChangingIndex = useRef<boolean>(false);
+  const previousIndex = useRef<number>(0);
+  const lastImageLoadTime = useRef<number>(0);
+
+  useEffect(() => {
+    // Track when the preview index changes to allow detection of actual image changes
+    if (previousIndex.current !== currentPreviewIndex) {
+      previousIndex.current = currentPreviewIndex;
+      Logger.info(`Index changed from effect: ${currentPreviewIndex}`);
+    }
+  }, [currentPreviewIndex]);
+
+  const confirmImageChanged = () => {
+    if (onImageChangeConfirmed) {
+      onImageChangeConfirmed();
+    }
+    lastImageLoadTime.current = Date.now();
+    Logger.info(`Image change confirmed at ${lastImageLoadTime.current}`);
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -30,18 +50,18 @@ export function useAdImageHandler({
       
       setSelectedImages(prev => [...prev, ...files]);
       
-      // יצירת URLs זמניים לתצוגה מקדימה
+      // Create temporary URLs for preview
       const urls = files.map(file => URL.createObjectURL(file));
       
-      // עדכון state באופן בטוח
+      // Safely update state
       setImageUrls(prevUrls => {
         const newUrls = [...prevUrls, ...urls];
-        // קריאה לקולבק אחרי עדכון
+        // Call callback after update
         setTimeout(() => onImageChange(newUrls), 0);
         return newUrls;
       });
       
-      // עדכון האינדקס הנוכחי לתמונה הראשונה החדשה
+      // Update current index to first new image
       if (imageUrls.length === 0) {
         setCurrentPreviewIndex(0);
         onCurrentIndexChange(0);
@@ -54,7 +74,7 @@ export function useAdImageHandler({
 
   const handleImageUrlsChange = (urls: string[]) => {
     try {
-      // סינון URLs ריקים או לא תקינים
+      // Filter out empty or invalid URLs
       const validUrls = urls.filter(url => url && url.trim() !== '' && url !== 'undefined');
       
       if (validUrls.length === 0) {
@@ -62,7 +82,7 @@ export function useAdImageHandler({
         return;
       }
       
-      // וידוא שכל הURLs הם HTTPS (אם לא ספציפית נדרש HTTP)
+      // Ensure all URLs are HTTPS (if not specifically required HTTP)
       const secureUrls = validUrls.map(url => {
         if (url.startsWith('http:') && !url.includes('localhost')) {
           return url.replace(/^http:/, 'https:');
@@ -72,6 +92,7 @@ export function useAdImageHandler({
       
       setImageUrls(secureUrls);
       setCurrentPreviewIndex(0);
+      previousIndex.current = 0;
       onImageChange(secureUrls);
       onCurrentIndexChange(0);
       
@@ -89,12 +110,13 @@ export function useAdImageHandler({
     const newIndex = currentPreviewIndex > 0 ? currentPreviewIndex - 1 : imageUrls.length - 1;
     
     setCurrentPreviewIndex(newIndex);
+    previousIndex.current = newIndex;
     onCurrentIndexChange(newIndex);
     
     // Use a timeout to prevent rapid index changes
     setTimeout(() => {
       isChangingIndex.current = false;
-    }, 300);
+    }, 500);
   };
 
   const handleNextPreview = () => {
@@ -104,26 +126,35 @@ export function useAdImageHandler({
     const newIndex = currentPreviewIndex < imageUrls.length - 1 ? currentPreviewIndex + 1 : 0;
     
     setCurrentPreviewIndex(newIndex);
+    previousIndex.current = newIndex;
     onCurrentIndexChange(newIndex);
     
     // Use a timeout to prevent rapid index changes
     setTimeout(() => {
       isChangingIndex.current = false;
-    }, 300);
+    }, 500);
   };
 
-  // New method to safely set current preview index with confirmation
+  // Method to safely set current preview index with confirmation
   const setCurrentPreviewIndexSafely = async (index: number): Promise<boolean> => {
     if (index < 0 || index >= imageUrls.length) {
       Logger.error(`Invalid index ${index}, must be between 0 and ${imageUrls.length - 1}`);
       return false;
     }
     
+    // Don't change if we're already at that index and not currently changing
+    if (currentPreviewIndex === index && !isChangingIndex.current) {
+      Logger.info(`Already at index ${index}, no change needed`);
+      return true;
+    }
+    
     // Track that we're changing the index to prevent other changes
     isChangingIndex.current = true;
     
     // Set the new index
+    Logger.info(`Setting index to ${index} from ${currentPreviewIndex}`);
     setCurrentPreviewIndex(index);
+    previousIndex.current = index;
     onCurrentIndexChange(index);
     
     // Wait for the state to update
@@ -132,7 +163,7 @@ export function useAdImageHandler({
         Logger.info(`Index safely changed to ${index}`);
         isChangingIndex.current = false;
         resolve(true);
-      }, 500); // Longer delay for reliable state updates
+      }, 800); // Longer delay for reliable state updates
     });
   };
 
@@ -173,6 +204,7 @@ export function useAdImageHandler({
     isIndexProcessed,
     resetProcessedIndexes,
     getUnprocessedIndexes,
-    isChangingIndex: () => isChangingIndex.current
+    isChangingIndex: () => isChangingIndex.current,
+    confirmImageChanged
   };
 }

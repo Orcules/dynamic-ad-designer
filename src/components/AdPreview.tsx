@@ -41,6 +41,7 @@ interface AdPreviewProps {
   imagePosition: Position;
   showCtaArrow?: boolean;
   language?: string;
+  onImageLoaded?: () => void;
 }
 
 export function AdPreview({ 
@@ -68,16 +69,25 @@ export function AdPreview({
   imagePosition,
   showCtaArrow = true,
   language = "en",
+  onImageLoaded,
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
   const imageGenerator = useRef<ImageGenerator>();
   const isRTL = language === 'he' || language === 'ar';
+  const currentImageUrl = useRef<string | undefined>(imageUrl);
 
   useEffect(() => {
     imageGenerator.current = new ImageGenerator('.ad-content');
   }, []);
+
+  useEffect(() => {
+    if (imageUrl !== currentImageUrl.current) {
+      console.log(`AdPreview detected image URL change: ${currentImageUrl.current} → ${imageUrl}`);
+      currentImageUrl.current = imageUrl;
+    }
+  }, [imageUrl]);
 
   useEffect(() => {
     if (fontUrl) {
@@ -97,6 +107,13 @@ export function AdPreview({
       }
     }
   }, [fontUrl]);
+
+  const handleImageLoaded = () => {
+    console.log('Image loaded callback in AdPreview');
+    if (onImageLoaded) {
+      onImageLoaded();
+    }
+  };
 
   const handleDownload = async () => {
     if (!imageGenerator.current) return;
@@ -183,6 +200,7 @@ export function AdPreview({
               imageUrl={imageUrl}
               position={imagePosition}
               onPositionChange={() => {}}
+              onImageLoaded={handleImageLoaded}
             />
             <div
               className="absolute inset-0 flex flex-col justify-between"

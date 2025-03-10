@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 interface Position {
   x: number;
@@ -10,27 +10,34 @@ interface AdPreviewImageProps {
   imageUrl?: string;
   position: Position;
   onPositionChange: (position: Position) => void;
+  onImageLoaded?: () => void;
 }
 
 export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   imageUrl,
   position,
-  onPositionChange
+  onPositionChange,
+  onImageLoaded
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
+  const [imageKey, setImageKey] = useState(0);
 
   useEffect(() => {
-    if (imageUrl) {
+    if (imageUrl && imageUrl !== currentImageUrl) {
+      console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
       setLoaded(false);
       setError(false);
+      setCurrentImageUrl(imageUrl);
+      setImageKey(prev => prev + 1); // Force image reload
     }
-  }, [imageUrl]);
+  }, [imageUrl, currentImageUrl]);
 
   // Handle image load to get natural dimensions
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     const container = img.parentElement;
     
@@ -46,13 +53,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
     
     setLoaded(true);
-  };
+    console.log('Image loaded successfully:', imageUrl);
+    
+    if (onImageLoaded) {
+      onImageLoaded();
+    }
+  }, [imageUrl, onImageLoaded]);
 
   if (!imageUrl) return null;
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center">
       <img
+        key={`img-${imageKey}`} // Force re-render of image when URL changes
         src={imageUrl}
         alt="Ad preview"
         className={`absolute transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
