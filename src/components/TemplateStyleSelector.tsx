@@ -3,7 +3,7 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -38,7 +38,12 @@ export function TemplateStyleSelector({
   descriptionColor,
   onDescriptionColorChange,
 }: TemplateStyleSelectorProps) {
+  const [selected, setSelected] = useState(value || "modern");
   const [isChanging, setIsChanging] = useState(false);
+  
+  useEffect(() => {
+    setSelected(value || "modern");
+  }, [value]);
   
   const templates = [
     { id: "modern", label: "Modern" },
@@ -73,27 +78,23 @@ export function TemplateStyleSelector({
   ];
 
   const handleStyleChange = useCallback((newValue: string) => {
-    if (isChanging || !newValue || newValue.trim() === "") return;
+    if (isChanging) return;
+    if (newValue === selected) return;
     
     setIsChanging(true);
+    setSelected(newValue);
     
-    // Use setTimeout instead of requestAnimationFrame to give more time for UI to update
-    setTimeout(() => {
+    // Use a longer timeout to ensure the UI has time to update
+    const timer = setTimeout(() => {
       onChange(newValue);
       setIsChanging(false);
-      
-      // Release focus after selection
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-    }, 20);
-  }, [onChange, isChanging]);
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [onChange, isChanging, selected]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
-    // Simple delay to prevent UI blocking
-    setTimeout(() => {
-      handler(value);
-    }, 10);
+    handler(value);
   }, []);
 
   return (
@@ -101,7 +102,7 @@ export function TemplateStyleSelector({
       <div className="space-y-2">
         <Label>Template Style</Label>
         <Select 
-          value={value || "modern"} 
+          value={selected} 
           onValueChange={handleStyleChange}
         >
           <SelectTrigger className="bg-card pointer-events-auto">

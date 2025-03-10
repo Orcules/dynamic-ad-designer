@@ -1,6 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
@@ -16,29 +16,33 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
+  const [selected, setSelected] = useState(value);
   const [isChanging, setIsChanging] = useState(false);
   
+  useEffect(() => {
+    setSelected(value);
+  }, [value]);
+
   const handleValueChange = (newValue: string) => {
     if (isChanging) return;
+    if (newValue === selected) return;
     
     setIsChanging(true);
+    setSelected(newValue);
     
-    // Delay the state update slightly to prevent UI freezing
-    setTimeout(() => {
+    // Use a longer timeout to ensure the UI has time to update
+    const timer = setTimeout(() => {
       onChange(newValue);
       setIsChanging(false);
-      
-      // Release focus without using blur which can cause issues
-      if (document.activeElement instanceof HTMLElement) {
-        document.activeElement.blur();
-      }
-    }, 10);
+    }, 50);
+    
+    return () => clearTimeout(timer);
   };
   
   return (
     <div className="space-y-2 pointer-events-auto">
       <label className="text-sm font-medium">Platform</label>
-      <Select value={value} onValueChange={handleValueChange}>
+      <Select value={selected} onValueChange={handleValueChange}>
         <SelectTrigger className="bg-card pointer-events-auto">
           <SelectValue placeholder="Select platform" />
         </SelectTrigger>
@@ -46,7 +50,6 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
           className="bg-card border-border z-[100]"
           position="popper"
           onCloseAutoFocus={(e) => {
-            // Just prevent default without affecting other behaviors
             e.preventDefault();
           }}
         >
