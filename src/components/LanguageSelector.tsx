@@ -1,5 +1,8 @@
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const languages = [
   { code: "en", name: "English", fonts: ["Inter", "Roboto", "Poppins", "Montserrat"] },
@@ -22,36 +25,53 @@ interface LanguageSelectorProps {
 }
 
 export function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
     <div className="space-y-2 pointer-events-auto">
-      <label className="text-sm font-medium">Language</label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="bg-card pointer-events-auto">
-          <SelectValue placeholder="Select language" />
-        </SelectTrigger>
-        <SelectContent 
-          className="bg-card border-border z-[100] pointer-events-auto"
-          position="popper"
-          onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          onPointerDownOutside={(e) => {
-            e.preventDefault();
-          }}
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium">Language</Label>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-xs px-2 h-6"
         >
-          {languages.map((lang) => (
-            <SelectItem 
-              key={lang.code} 
-              value={lang.code}
-              className="hover:bg-muted focus:bg-muted pointer-events-auto"
+          {isExpanded ? "Show less" : "Show all"}
+        </Button>
+      </div>
+
+      {isExpanded ? (
+        <ScrollArea className="h-48 rounded-md border">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2">
+            {languages.map((lang) => (
+              <Button
+                key={lang.code}
+                variant={lang.code === value ? "default" : "outline"}
+                className="w-full justify-start px-3 py-1 h-auto"
+                onClick={() => onChange(lang.code)}
+                dir={lang.code === "he" || lang.code === "ar" ? "rtl" : "ltr"}
+              >
+                {lang.name}
+              </Button>
+            ))}
+          </div>
+        </ScrollArea>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {languages.slice(0, 6).map((lang) => (
+            <Button
+              key={lang.code}
+              variant={lang.code === value ? "default" : "outline"}
+              className="w-full justify-start px-3 py-1 h-auto"
+              onClick={() => onChange(lang.code)}
               dir={lang.code === "he" || lang.code === "ar" ? "rtl" : "ltr"}
             >
               {lang.name}
-            </SelectItem>
+            </Button>
           ))}
-        </SelectContent>
-      </Select>
+        </div>
+      )}
     </div>
   );
 }
