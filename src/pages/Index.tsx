@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useLayoutEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -24,6 +24,8 @@ const Index = () => {
   const [generatedAds, setGeneratedAds] = useState<GeneratedAd[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [hasFetchedInitial, setHasFetchedInitial] = useState(false);
 
   // Apply suppressDialogWarnings with useLayoutEffect, before rendering
   useLayoutEffect(() => {
@@ -87,6 +89,13 @@ const Index = () => {
     }
   }, []);
 
+  // Refetch when retry count changes
+  useEffect(() => {
+    if (retryCount > 0) {
+      fetchGeneratedAds();
+    }
+  }, [retryCount]);
+
   // Function to fetch data with timeout
   const fetchWithTimeout = async (timeoutMs: number, fetchFn: () => Promise<any>) => {
     return new Promise<any>(async (resolve, reject) => {
@@ -107,115 +116,87 @@ const Index = () => {
     });
   };
 
-  const fetchGeneratedAds = async () => {
+  const fetchGeneratedAds = useCallback(async () => {
+    if (isUpdating) return;
+    
     try {
       setIsUpdating(true);
       setLoadError(null);
       
-      Logger.info("Starting to fetch generated ads with smaller batch size...");
+      Logger.info("Starting to fetch generated ads with faster strategy...");
       
-      // Use a smaller limit to reduce the chance of timeout
-      const limit = 5;
-      
+      // Try to get a minimal number of ads first for quick display
       try {
-        // We'll request a smaller batch first to get something showing quickly
-        const { data, error } = await fetchWithTimeout(5000, async () => {
+        const { data: minimalData, error: minimalError } = await fetchWithTimeout(3000, async () => {
+          return await supabase
+            .from('generated_ads')
+            .select('id, name, image_url, preview_url, platform')
+            .limit(3)
+            .order('created_at', { ascending: false });
+        });
+          
+        if (minimalError) {
+          Logger.warn(`Minimal query error: ${minimalError.message}, trying alternate approach`);
+        } else if (minimalData && minimalData.length > 0) {
+          // We got at least some data to show quickly
+          Logger.info(`Got ${minimalData.length} ads with minimal query`);
+          setGeneratedAds(minimalData);
+          setHasFetchedInitial(true);
+        }
+      } catch (minimalErr) {
+        Logger.warn(`Minimal fetch failed: ${minimalErr instanceof Error ? minimalErr.message : String(minimalErr)}`);
+      }
+      
+      // Try a more detailed fetch if we haven't already succeeded
+      try {
+        const { data: fullData, error: fullError } = await fetchWithTimeout(5000, async () => {
           return await supabase
             .from('generated_ads')
             .select('id, name, image_url, preview_url, platform')
             .order('created_at', { ascending: false })
-            .limit(limit);
+            .limit(10);
         });
+          
+        if (fullError) {
+          throw fullError;
+        }
         
-        // Handle any errors from the first query
-        if (error) {
-          Logger.error(`Error in initial fetch: ${error.message}`);
-          throw error; // Let the catch block handle this
-        }
-
-        // If we got data from the first query, use it
-        if (data) {
-          Logger.info(`Successfully fetched initial ${data.length} ads`);
-          setGeneratedAds(data);
-          
-          // Only try to fetch more if we actually got some data
-          if (data.length > 0) {
-            try {
-              // If first batch succeeded, try to get more in the background
-              Logger.info("Fetching additional ads in background...");
-              
-              const { data: moreData, error: moreError } = await fetchWithTimeout(8000, async () => {
-                return await supabase
-                  .from('generated_ads')
-                  .select('id, name, image_url, preview_url, platform')
-                  .order('created_at', { ascending: false })
-                  .range(limit, limit + 10);
-              });
-                
-              if (!moreError && moreData && moreData.length > 0) {
-                Logger.info(`Fetched ${moreData.length} additional ads`);
-                // Combine without duplicates
-                setGeneratedAds(prev => {
-                  const existingIds = new Set(prev.map(ad => ad.id));
-                  const newAds = moreData.filter(ad => !existingIds.has(ad.id));
-                  return [...prev, ...newAds];
-                });
-              }
-            } catch (moreErr) {
-              // We already have some data, so just log this error
-              Logger.warn(`Error fetching additional ads: ${moreErr instanceof Error ? moreErr.message : String(moreErr)}`);
-              // Don't show an error to the user since we have some data
-            }
-          }
+        if (fullData) {
+          Logger.info(`Successfully fetched ${fullData.length} ads`);
+          setGeneratedAds(fullData);
+          setHasFetchedInitial(true);
         } else {
-          Logger.warn("No ads data returned from initial query");
-          setGeneratedAds([]);
-        }
-      } catch (initialErr) {
-        // Try a simpler fallback query if the initial one fails
-        try {
-          Logger.info("Trying fallback simple query...");
-          
-          const { data: fallbackData, error: fallbackError } = await fetchWithTimeout(3000, async () => {
-            return await supabase
-              .from('generated_ads')
-              .select('id, name, image_url')
-              .limit(3);
-          });
-            
-          if (fallbackError) {
-            // If even the fallback fails, show the error
-            Logger.error(`Fallback query also failed: ${fallbackError.message}`);
-            throw fallbackError;
-          }
-          
-          if (fallbackData) {
-            // Use fallback data if available
-            Logger.info(`Fallback query succeeded with ${fallbackData.length} results`);
-            setGeneratedAds(fallbackData);
-          } else {
-            // No data in fallback query
+          Logger.warn("No ads data returned from full query");
+          if (!hasFetchedInitial) {
             setGeneratedAds([]);
           }
-        } catch (fallbackErr) {
-          const errorMessage = initialErr instanceof Error ? initialErr.message : String(initialErr);
-          Logger.error(`Fallback attempt failed: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}`);
+        }
+      } catch (fullErr) {
+        Logger.error(`Full fetch error: ${fullErr instanceof Error ? fullErr.message : String(fullErr)}`);
+        
+        // If we haven't already shown some ads, show error state
+        if (!hasFetchedInitial) {
+          const errorMessage = fullErr instanceof Error ? fullErr.message : String(fullErr);
           setLoadError(`Failed to load ads: ${errorMessage}`);
-          toast.error("Error loading ads");
-          setGeneratedAds([]);
+          toast.error("Error loading ads", {
+            description: "Please try again or check your connection"
+          });
         }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       Logger.error(`Unexpected error during fetch: ${errorMessage}`);
-      setLoadError(`Failed to load ads: ${errorMessage}`);
-      toast.error("Unexpected error occurred");
-      // If there was an error, we'll show an empty list
-      setGeneratedAds([]);
+      
+      if (!hasFetchedInitial) {
+        setLoadError(`Failed to load ads: ${errorMessage}`);
+        toast.error("Unexpected error occurred", {
+          description: "There was a problem loading your ads"
+        });
+      }
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [isUpdating, hasFetchedInitial]);
 
   const handleAdGenerated = async (adData: any) => {
     Logger.info(`Ad generated with ID: ${adData.id}`);
@@ -282,11 +263,6 @@ const Index = () => {
           return updatedAds;
         });
       }
-      
-      // Also refresh the list to ensure consistency, but don't wait for it
-      fetchGeneratedAds().catch(err => {
-        Logger.warn(`Error refreshing ads list: ${err instanceof Error ? err.message : String(err)}`);
-      });
     } catch (err) {
       Logger.error(`Error saving ad to database: ${err instanceof Error ? err.message : String(err)}`);
       toast.error("Error saving ad to database, but it's available in your local session");
@@ -294,16 +270,16 @@ const Index = () => {
   };
 
   const handleRetryLoad = () => {
-    fetchGeneratedAds();
+    setRetryCount(prev => prev + 1);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-accent/10 text-foreground p-8">
-      <div className="max-w-7xl mx-auto space-y-12">
+    <div className="min-h-screen bg-gradient-to-b from-background to-accent/10 text-foreground p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
         <div className="space-y-4 text-center">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full animate-fade-in">
             <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+            <h1 className="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
               Dynamic Ad Designer {isUpdating ? '(Updating...)' : ''}
             </h1>
             <div className="ml-4">
@@ -320,7 +296,7 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-6 animate-scale-in">
+        <div className="w-full backdrop-blur-sm bg-background/50 rounded-xl shadow-xl p-4 md:p-6 animate-scale-in">
           <AdEditor 
             template={{ 
               id: "default", 
@@ -341,7 +317,7 @@ const Index = () => {
           
           <Separator className="my-4" />
 
-          {loadError && (
+          {loadError && !hasFetchedInitial && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error Loading Ads</AlertTitle>
@@ -360,7 +336,8 @@ const Index = () => {
           
           <GeneratedAdsList 
             ads={generatedAds} 
-            isLoading={isUpdating} 
+            isLoading={isUpdating && !hasFetchedInitial} 
+            onRetryLoad={handleRetryLoad}
           />
         </div>
       </div>

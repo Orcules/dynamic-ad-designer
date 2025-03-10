@@ -16,17 +16,21 @@ interface GeneratedAd {
 interface GeneratedAdsListProps {
   ads: GeneratedAd[];
   isLoading?: boolean;
+  onRetryLoad?: () => void;
 }
 
-export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListProps) => {
+export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: GeneratedAdsListProps) => {
   const [expandedAdId, setExpandedAdId] = useState<string | null>(null);
   const [validatedAds, setValidatedAds] = useState<GeneratedAd[]>([]);
   
   useEffect(() => {
-    // Validate image URLs and create a new array with only valid images
+    // Basic validation to ensure only valid ads are displayed
     const validateImageUrls = async () => {
       Logger.info(`Validating ${ads.length} ads`);
-      const validatedAdsList = [...ads];
+      const validatedAdsList = [...ads].filter(ad => 
+        ad.image_url && ad.image_url !== 'undefined' && 
+        ad.name && ad.id
+      );
       setValidatedAds(validatedAdsList);
     };
     
@@ -50,6 +54,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
         <p className="text-sm text-muted-foreground mt-2">
           Ads you create will appear here
         </p>
+        {onRetryLoad && (
+          <Button variant="outline" className="mt-4" onClick={onRetryLoad}>
+            Refresh Ads
+          </Button>
+        )}
       </div>
     );
   }
@@ -154,9 +163,12 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
       const isExternalUrl = imageUrl.startsWith('http') && !imageUrl.includes(window.location.hostname);
       
       if (isExternalUrl) {
-        // For external images, we'll use a different approach: download the image and serve it locally
-        fetch(imageUrl)
-          .then(response => response.blob())
+        // For external images, use a different approach: download the image and serve it locally
+        fetch(imageUrl, { mode: 'cors', cache: 'no-store' })
+          .then(response => {
+            if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+            return response.blob();
+          })
           .then(blob => {
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -196,7 +208,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {ads.map((ad) => (
+      {validatedAds.map((ad) => (
         <Card key={ad.id} className="overflow-hidden group relative">
           <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
             {ad.preview_url || ad.image_url ? (
@@ -248,7 +260,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 flex-shrink-0"
                 onClick={() => {
                   if (ad.preview_url || ad.image_url) {
                     handlePreviewClick(ad.preview_url || ad.image_url);
@@ -261,6 +273,13 @@ export const GeneratedAdsList = ({ ads, isLoading = false }: GeneratedAdsListPro
           </CardContent>
         </Card>
       ))}
+      {onRetryLoad && (
+        <div className="col-span-full flex justify-center mt-4">
+          <Button variant="outline" onClick={onRetryLoad}>
+            Load More Ads
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
