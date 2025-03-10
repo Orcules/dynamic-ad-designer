@@ -1,5 +1,5 @@
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef } from 'react';
 
 interface Position {
   x: number;
@@ -25,35 +25,32 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
 }) => {
   if (!ctaText) return null;
   
-  // Local state to manage hover interactions
-  const [isHovering, setIsHovering] = useState(false);
+  // Use a ref to track if we're currently processing a hover state change
+  const isChangingHoverRef = useRef(false);
 
-  // Use safe event handlers with useCallback for better performance
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+  // Safe hover state changer
+  const safeUpdateHoverState = useCallback((isHovered: boolean, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Use local state first
-    setIsHovering(true);
+    // Prevent rapid changes
+    if (isChangingHoverRef.current) return;
+    isChangingHoverRef.current = true;
     
-    // Then use setTimeout to defer the parent state update
-    setTimeout(() => {
-      onButtonHover(true);
-    }, 50);
+    // Use requestAnimationFrame to align with browser rendering
+    requestAnimationFrame(() => {
+      onButtonHover(isHovered);
+      isChangingHoverRef.current = false;
+    });
   }, [onButtonHover]);
   
+  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
+    safeUpdateHoverState(true, e);
+  }, [safeUpdateHoverState]);
+  
   const handleMouseLeave = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Use local state first
-    setIsHovering(false);
-    
-    // Then use setTimeout to defer the parent state update
-    setTimeout(() => {
-      onButtonHover(false);
-    }, 50);
-  }, [onButtonHover]);
+    safeUpdateHoverState(false, e);
+  }, [safeUpdateHoverState]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     // Prevent event bubbling which could cause issues with parent elements
@@ -61,9 +58,6 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
     e.stopPropagation();
     console.log("Button clicked!");
   }, []);
-
-  // Use the local state for immediate visual feedback
-  const hoverState = isHovering || isButtonHovered;
 
   return (
     <div 
@@ -95,7 +89,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
             <svg
               className="transition-transform duration-300 inline-block"
               style={{
-                transform: hoverState ? 'translateY(4px)' : 'translateY(2px)'
+                transform: isButtonHovered ? 'translateY(4px)' : 'translateY(2px)'
               }}
               width="24"
               height="24"
@@ -114,4 +108,4 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       </button>
     </div>
   );
-}
+};

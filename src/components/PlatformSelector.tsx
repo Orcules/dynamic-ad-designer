@@ -1,6 +1,6 @@
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 
 const platforms = [
   { id: "facebook", name: "Facebook", dimensions: "1200 x 628" },
@@ -16,19 +16,23 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
-  // Track open state locally to prevent the issue with open/close conflicts
-  const [open, setOpen] = useState(false);
+  // Use a ref to track if we're currently processing a change
+  const isChangingRef = useRef(false);
   
   const handleValueChange = useCallback((newValue: string) => {
-    if (newValue === value) return;
+    // Prevent duplicate or rapid changes
+    if (newValue === value || isChangingRef.current) return;
     
-    // First close the dropdown
-    setOpen(false);
+    // Set flag to indicate we're processing a change
+    isChangingRef.current = true;
     
-    // Then use setTimeout with a slightly longer delay to ensure UI doesn't freeze
-    setTimeout(() => {
+    // Use requestAnimationFrame to align with the browser's rendering cycle
+    requestAnimationFrame(() => {
       onChange(newValue);
-    }, 50);
+      
+      // Reset the flag after the change is processed
+      isChangingRef.current = false;
+    });
   }, [value, onChange]);
   
   return (
@@ -37,8 +41,6 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
       <Select 
         value={value} 
         onValueChange={handleValueChange}
-        open={open}
-        onOpenChange={setOpen}
       >
         <SelectTrigger className="bg-card">
           <SelectValue placeholder="Select platform" />
