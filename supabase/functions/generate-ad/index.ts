@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -36,29 +35,20 @@ serve(async (req) => {
     const storageManager = new StorageManager();
     
     // If we have a rendered preview and are in fast mode, use it directly
-    if (fastMode && renderedPreview) {
-      console.log(`[${uploadId}] Fast mode with provided rendered preview`);
+    if (renderedPreview) {
+      console.log(`[${uploadId}] Using provided rendered preview`);
       
       // Process the rendered preview - it should be a base64 data URL
       if (typeof renderedPreview === 'string' && renderedPreview.startsWith('data:')) {
         try {
-          // Convert base64 data URL to buffer
-          const base64Data = renderedPreview.split(',')[1];
-          const binaryData = atob(base64Data);
-          const bytes = new Uint8Array(binaryData.length);
+          // Upload the rendered preview directly
+          const { renderedUrl } = await storageManager.uploadRenderedPreview(uploadId, renderedPreview);
           
-          for (let i = 0; i < binaryData.length; i++) {
-            bytes[i] = binaryData.charCodeAt(i);
-          }
-          
-          console.log(`[${uploadId}] Successfully converted rendered preview to binary data`);
-          
-          // Upload the rendered preview as the final image
-          const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, bytes);
+          console.log(`[${uploadId}] Successfully uploaded rendered preview`);
           
           return new Response(
             JSON.stringify({ 
-              imageUrl: generatedImageUrl, 
+              imageUrl: renderedUrl, 
               success: true, 
               fastMode: true,
               renderedPreview: true

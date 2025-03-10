@@ -92,6 +92,70 @@ export class StorageManager {
     return { generatedFileName, generatedImageUrl };
   }
   
+  // Add a method specifically for uploading rendered previews
+  async uploadRenderedPreview(uploadId: string, previewData: string) {
+    try {
+      console.log(`Processing rendered preview for ${uploadId}`);
+      
+      if (!previewData || !previewData.startsWith('data:')) {
+        throw new Error('Invalid preview data format');
+      }
+      
+      // Extract the base64 data
+      const base64Data = previewData.split(',')[1];
+      if (!base64Data) {
+        throw new Error('No base64 data found in preview');
+      }
+      
+      // Convert to binary
+      const binaryData = atob(base64Data);
+      const bytes = new Uint8Array(binaryData.length);
+      for (let i = 0; i < binaryData.length; i++) {
+        bytes[i] = binaryData.charCodeAt(i);
+      }
+      
+      // Determine proper content type from the data URL
+      const contentTypeMatch = previewData.match(/data:(.*?);/);
+      const contentType = contentTypeMatch ? contentTypeMatch[1] : 'image/png';
+      
+      // Create a unique filename for the rendered preview
+      const timestamp = Date.now();
+      const renderedFileName = `full-ads/rendered_${uploadId}_${timestamp}.png`;
+      
+      console.log(`Uploading rendered preview: ${renderedFileName}, size: ${bytes.length} bytes, type: ${contentType}`);
+      
+      // Upload the rendered preview
+      const { error: uploadError } = await this.supabase.storage
+        .from('ad-images')
+        .upload(renderedFileName, bytes, {
+          contentType: contentType,
+          cacheControl: '3600',
+          upsert: true
+        });
+      
+      if (uploadError) {
+        throw new Error(`Failed to upload rendered preview: ${uploadError.message}`);
+      }
+      
+      const { data: { publicUrl: renderedUrl } } = this.supabase.storage
+        .from('ad-images')
+        .getPublicUrl(renderedFileName);
+      
+      console.log(`Rendered preview uploaded successfully: ${renderedUrl}`);
+      
+      // Cache the URL
+      this.imageCache.set(renderedFileName, renderedUrl);
+      
+      return { 
+        renderedFileName, 
+        renderedUrl 
+      };
+    } catch (error) {
+      console.error(`Error uploading rendered preview: ${error instanceof Error ? error.message : String(error)}`);
+      throw error;
+    }
+  }
+  
   // Add a faster method for bulk uploads that doesn't wait for each upload to complete
   async uploadMultipleImages(images: { id: string, buffer: Uint8Array }[]) {
     const uploadPromises = images.map(async (image) => {
