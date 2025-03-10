@@ -9,41 +9,17 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ads: {
-        Row: {
-          created_at: string
-          id: string
-          image_url: string | null
-          platform: string | null
-          title: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          platform?: string | null
-          title?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          platform?: string | null
-          title?: string | null
-        }
-        Relationships: []
-      }
       generated_ads: {
         Row: {
           accent_color: string | null
-          created_at: string | null
+          created_at: string
           cta_color: string | null
           cta_text: string | null
           description: string | null
           description_color: string | null
           font_url: string | null
           headline: string | null
-          height: number
+          height: number | null
           id: string
           image_url: string | null
           name: string
@@ -53,18 +29,18 @@ export type Database = {
           status: string | null
           template_style: string | null
           text_color: string | null
-          width: number
+          width: number | null
         }
         Insert: {
           accent_color?: string | null
-          created_at?: string | null
+          created_at?: string
           cta_color?: string | null
           cta_text?: string | null
           description?: string | null
           description_color?: string | null
           font_url?: string | null
           headline?: string | null
-          height: number
+          height?: number | null
           id?: string
           image_url?: string | null
           name: string
@@ -74,18 +50,18 @@ export type Database = {
           status?: string | null
           template_style?: string | null
           text_color?: string | null
-          width: number
+          width?: number | null
         }
         Update: {
           accent_color?: string | null
-          created_at?: string | null
+          created_at?: string
           cta_color?: string | null
           cta_text?: string | null
           description?: string | null
           description_color?: string | null
           font_url?: string | null
           headline?: string | null
-          height?: number
+          height?: number | null
           id?: string
           image_url?: string | null
           name?: string
@@ -95,7 +71,7 @@ export type Database = {
           status?: string | null
           template_style?: string | null
           text_color?: string | null
-          width?: number
+          width?: number | null
         }
         Relationships: []
       }
@@ -104,12 +80,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_storage_policy: {
-        Args: {
-          bucket_name: string
-        }
-        Returns: undefined
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
