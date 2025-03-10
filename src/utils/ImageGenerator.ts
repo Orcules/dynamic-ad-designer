@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -74,16 +73,14 @@ export class ImageGenerator {
     moveElementUp(buttonTextElement);
     
     if (ctaButton) {
-      // Apply hover effect to the arrow if exists
+      // Find the arrow if exists, but DON'T move it
       const arrowElement = ctaButton.querySelector('svg');
       if (arrowElement) {
-        console.log('Arrow element found, applying transform');
-        // Type-safe version
+        console.log('Arrow element found, but keeping it static');
+        // Store original transform to restore later, but don't modify it
         const svgElement = arrowElement as SVGElement;
-        const originalTransform = svgElement.style.transform;
-        originalPositions.set(svgElement, originalTransform);
-        // Adjusting arrow position - moving it up by 1 pixel instead of 4
-        svgElement.style.transform = 'translateY(-1px)';
+        originalPositions.set(svgElement, svgElement.style.transform);
+        // We don't change the transform here, keeping the arrow static
       } else {
         // If no arrow found, try mouseenter event as fallback
         console.log('Using mouseenter event as fallback');
