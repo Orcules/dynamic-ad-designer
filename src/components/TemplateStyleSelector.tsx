@@ -1,3 +1,4 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -72,41 +73,33 @@ export function TemplateStyleSelector({
   const handleStyleChange = useCallback((newValue: string) => {
     if (newValue && newValue.trim() !== "") {
       onChange(newValue);
-      
-      requestAnimationFrame(() => {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-      });
     }
   }, [onChange]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
-    requestAnimationFrame(() => {
-      handler(value);
-    });
+    handler(value);
   }, []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pointer-events-auto">
       <div className="space-y-2">
         <Label>Template Style</Label>
         <Select 
           value={value || "modern"} 
           onValueChange={handleStyleChange}
         >
-          <SelectTrigger className="bg-card">
+          <SelectTrigger className="bg-card pointer-events-auto">
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>
           <SelectContent 
-            className="bg-card border-border z-[100]"
+            className="bg-card border-border z-[100] pointer-events-auto"
+            position="popper"
             onCloseAutoFocus={(e) => {
               e.preventDefault();
+              e.stopPropagation();
             }}
-            onEscapeKeyDown={() => {
-              if (document.activeElement instanceof HTMLElement) {
-                document.activeElement.blur();
-              }
+            onPointerDownOutside={(e) => {
+              e.preventDefault();
             }}
           >
             {templates.map((template) => (
@@ -131,14 +124,14 @@ export function TemplateStyleSelector({
             name="text_color"
             value={textColor}
             onChange={(e) => handleInputChange(onTextColorChange, e.target.value)}
-            className="w-16 h-10 p-1"
+            className="w-16 h-10 p-1 pointer-events-auto"
           />
           <Input
             type="text"
             value={textColor}
             onChange={(e) => handleInputChange(onTextColorChange, e.target.value)}
             placeholder="#FFFFFF"
-            className="flex-1"
+            className="flex-1 pointer-events-auto"
           />
         </div>
       </div>
@@ -152,14 +145,14 @@ export function TemplateStyleSelector({
             name="description_color"
             value={descriptionColor}
             onChange={(e) => handleInputChange(onDescriptionColorChange, e.target.value)}
-            className="w-16 h-10 p-1"
+            className="w-16 h-10 p-1 pointer-events-auto"
           />
           <Input
             type="text"
             value={descriptionColor}
             onChange={(e) => handleInputChange(onDescriptionColorChange, e.target.value)}
             placeholder="#333333"
-            className="flex-1"
+            className="flex-1 pointer-events-auto"
           />
         </div>
       </div>
@@ -173,14 +166,14 @@ export function TemplateStyleSelector({
             name="overlay_color"
             value={overlayColor}
             onChange={(e) => handleInputChange(onOverlayColorChange, e.target.value)}
-            className="w-16 h-10 p-1"
+            className="w-16 h-10 p-1 pointer-events-auto"
           />
           <Input
             type="text"
             value={overlayColor}
             onChange={(e) => handleInputChange(onOverlayColorChange, e.target.value)}
             placeholder="#000000"
-            className="flex-1"
+            className="flex-1 pointer-events-auto"
           />
         </div>
       </div>
@@ -194,14 +187,14 @@ export function TemplateStyleSelector({
             name="cta_color"
             value={ctaColor}
             onChange={(e) => handleInputChange(onCtaColorChange, e.target.value)}
-            className="w-16 h-10 p-1"
+            className="w-16 h-10 p-1 pointer-events-auto"
           />
           <Input
             type="text"
             value={ctaColor}
             onChange={(e) => handleInputChange(onCtaColorChange, e.target.value)}
             placeholder="#000000"
-            className="flex-1"
+            className="flex-1 pointer-events-auto"
           />
         </div>
       </div>
@@ -212,14 +205,12 @@ export function TemplateStyleSelector({
           <Slider
             value={[overlayOpacity * 100]}
             onValueChange={(values) => {
-              requestAnimationFrame(() => {
-                onOpacityChange?.(values[0] / 100);
-              });
+              onOpacityChange?.(values[0] / 100);
             }}
             min={0}
             max={100}
             step={1}
-            className="flex-1"
+            className="flex-1 pointer-events-auto"
           />
           <span className="text-sm text-muted-foreground w-12 text-right">
             {Math.round(overlayOpacity * 100)}%

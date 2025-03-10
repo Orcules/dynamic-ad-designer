@@ -23,18 +23,28 @@ interface LanguageSelectorProps {
 
 export function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pointer-events-auto">
       <label className="text-sm font-medium">Language</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="bg-card">
+        <SelectTrigger className="bg-card pointer-events-auto">
           <SelectValue placeholder="Select language" />
         </SelectTrigger>
-        <SelectContent className="bg-card border-border">
+        <SelectContent 
+          className="bg-card border-border z-[100] pointer-events-auto"
+          position="popper"
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           {languages.map((lang) => (
             <SelectItem 
               key={lang.code} 
               value={lang.code}
-              className="hover:bg-muted focus:bg-muted"
+              className="hover:bg-muted focus:bg-muted pointer-events-auto"
               dir={lang.code === "he" || lang.code === "ar" ? "rtl" : "ltr"}
             >
               {lang.name}

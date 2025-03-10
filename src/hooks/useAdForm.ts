@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 
 export const useAdForm = () => {
@@ -32,13 +33,17 @@ export const useAdForm = () => {
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
     
-    requestAnimationFrame(() => {
-      setAdData(prev => {
-        const newValue = value.trim();
-        if (prev.template_style === newValue) return prev;
-        return { ...prev, template_style: newValue };
-      });
+    // Use immediate state update instead of wrapping in requestAnimationFrame
+    setAdData(prev => {
+      const newValue = value.trim();
+      if (prev.template_style === newValue) return prev;
+      return { ...prev, template_style: newValue };
     });
+    
+    // Ensure focus is released immediately after state update
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
   }, []);
 
   const handleColorChange = useCallback((value: string) => {

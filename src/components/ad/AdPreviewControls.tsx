@@ -12,9 +12,7 @@ export const AdPreviewControls: React.FC<AdPreviewControlsProps> = ({
   onShowCtaArrowChange
 }) => {
   const handleCheckedChange = useCallback((checked: boolean) => {
-    requestAnimationFrame(() => {
-      onShowCtaArrowChange(checked);
-    });
+    onShowCtaArrowChange(checked);
   }, [onShowCtaArrowChange]);
 
   return (

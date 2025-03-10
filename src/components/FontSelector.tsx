@@ -29,18 +29,28 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
   const isRTL = language === 'he' || language === 'ar';
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pointer-events-auto">
       <label className="text-sm font-medium">Font</label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="bg-card" dir={isRTL ? "rtl" : "ltr"}>
+        <SelectTrigger className="bg-card pointer-events-auto" dir={isRTL ? "rtl" : "ltr"}>
           <SelectValue placeholder="Select font" />
         </SelectTrigger>
-        <SelectContent className="bg-card border-border">
+        <SelectContent 
+          className="bg-card border-border z-[100] pointer-events-auto"
+          position="popper"
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onPointerDownOutside={(e) => {
+            e.preventDefault();
+          }}
+        >
           {fonts.map((font) => (
             <SelectItem 
               key={font.name} 
               value={font.url}
-              className="hover:bg-muted focus:bg-muted"
+              className="hover:bg-muted focus:bg-muted pointer-events-auto"
               dir={isRTL ? "rtl" : "ltr"}
             >
               {font.name}
