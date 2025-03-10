@@ -107,37 +107,15 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = 0;
-    let destY = 0;
+    
+    // IMPORTANT: Use the EXACT same positioning logic as the AdPreviewImage component
+    // This ensures consistency between preview and final render
+    let destX = data.imagePosition?.x || 0;
+    let destY = data.imagePosition?.y || 0;
     let destWidth = data.width;
     let destHeight = data.height;
 
-    // Apply object-fit: cover approach based on aspect ratio comparison
-    if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - maintain height
-      // Scale to match height and crop sides
-      const scaleFactor = data.height / backgroundImage.height;
-      const scaledWidth = backgroundImage.width * scaleFactor;
-      
-      // Center horizontally
-      destX = (data.width - scaledWidth) / 2 + (data.imagePosition?.x || 0);
-      destY = (data.imagePosition?.y || 0);
-      destWidth = scaledWidth;
-      destHeight = data.height;
-    } else {
-      // Image is taller than canvas - maintain width
-      // Scale to match width and crop top/bottom
-      const scaleFactor = data.width / backgroundImage.width;
-      const scaledHeight = backgroundImage.height * scaleFactor;
-      
-      // Center vertically
-      destX = (data.imagePosition?.x || 0);
-      destY = (data.height - scaledHeight) / 2 + (data.imagePosition?.y || 0);
-      destWidth = data.width;
-      destHeight = scaledHeight;
-    }
-
-    // Draw the image with the calculated dimensions
+    // Draw the image with exactly the same positioning as in the preview
     ctx.drawImage(backgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 
                   destX, destY, destWidth, destHeight);
 
