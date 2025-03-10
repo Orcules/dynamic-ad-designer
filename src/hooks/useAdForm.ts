@@ -29,42 +29,22 @@ export const useAdForm = () => {
   }, []);
 
   const handlePlatformChange = useCallback((value: string) => {
-    if (isUpdating) return;
     if (value === adData.platform) return;
     
-    setIsUpdating(true);
-    
-    // Use requestAnimationFrame for smoother UI updates
-    requestAnimationFrame(() => {
-      setAdData(prev => ({ ...prev, platform: value }));
-      
-      // Add a delay before allowing new updates
-      setTimeout(() => {
-        setIsUpdating(false);
-      }, 100);
-    });
-  }, [isUpdating, adData.platform]);
+    // Immediately update the state without any delay
+    setAdData(prev => ({ ...prev, platform: value }));
+  }, [adData.platform]);
 
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
-    if (isUpdating) return;
     if (value === adData.template_style) return;
     
-    setIsUpdating(true);
-    
-    // Use requestAnimationFrame for smoother UI updates
-    requestAnimationFrame(() => {
-      setAdData(prev => ({
-        ...prev,
-        template_style: value.trim()
-      }));
-      
-      // Add a delay before allowing new updates
-      setTimeout(() => {
-        setIsUpdating(false);
-      }, 100);
-    });
-  }, [isUpdating, adData.template_style]);
+    // Immediately update the state without any delay
+    setAdData(prev => ({
+      ...prev,
+      template_style: value.trim()
+    }));
+  }, [adData.template_style]);
 
   const handleColorChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, accent_color: value }));

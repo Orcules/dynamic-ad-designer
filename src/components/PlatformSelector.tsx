@@ -17,26 +17,20 @@ interface PlatformSelectorProps {
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   const [selected, setSelected] = useState(value);
-  const [isChanging, setIsChanging] = useState(false);
   
   useEffect(() => {
     setSelected(value);
   }, [value]);
 
   const handleValueChange = (newValue: string) => {
-    if (isChanging) return;
     if (newValue === selected) return;
     
-    setIsChanging(true);
     setSelected(newValue);
     
-    // Use a longer timeout to ensure the UI has time to update
-    const timer = setTimeout(() => {
+    // Use setTimeout with a very short delay
+    setTimeout(() => {
       onChange(newValue);
-      setIsChanging(false);
-    }, 50);
-    
-    return () => clearTimeout(timer);
+    }, 10);
   };
   
   return (
