@@ -22,243 +22,45 @@ interface GeneratedAdsListProps {
 export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: GeneratedAdsListProps) => {
   const [validatedAds, setValidatedAds] = useState<GeneratedAd[]>([]);
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const validateAndLoadAds = async () => {
-      Logger.info(`Validating ${ads.length} ads`);
-      
-      // Filter out ads without required fields
-      const validAds = ads.filter(ad => 
-        ad && ad.id && ad.name && (ad.image_url || ad.preview_url)
-      );
+    Logger.info(`Processing ${ads.length} ads for display`);
+    
+    const validAds = ads.filter(ad => 
+      ad && ad.id && ad.name && (ad.image_url || ad.preview_url)
+    );
 
-      // Initialize all ads as visible initially to prevent them from disappearing
-      setValidatedAds(validAds);
-      
-      // Initialize loading states
+    setValidatedAds(validAds);
+    
+    setLoadingStates(
+      validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
+    );
+    
+    const timer = setTimeout(() => {
       setLoadingStates(
-        validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
+        validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: false }), {})
       );
-
-      // Function to check if an image URL is valid with improved reliability
-      const checkImageUrl = async (url: string): Promise<boolean> => {
-        try {
-          // Extract the filename from the URL
-          const urlParts = url.split('/');
-          const filename = urlParts[urlParts.length - 1];
-          
-          // First try to check if this is a Supabase storage URL
-          if (url.includes('storage.googleapis.com') || url.includes('supabase.co/storage')) {
-            try {
-              // Try to fetch metadata about the file to see if it exists
-              const bucketName = 'ad-images';
-              const { data: fileData, error: fileError } = await supabase.storage
-                .from(bucketName)
-                .download(`full-ads/${filename}`);
-                
-              if (!fileError && fileData) {
-                return true;
-              }
-            } catch (storageErr) {
-              Logger.warn(`Storage check failed for ${filename}: ${storageErr}`);
-              // Continue to other checks if storage check fails
-            }
-          }
-
-          // If not in storage or storage check failed, try to load the image directly
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            
-            // Set a reasonable timeout (3 seconds)
-            const timeoutId = setTimeout(() => {
-              Logger.warn(`Image load timeout for ${url}`);
-              resolve(true); // Assume it's valid on timeout to prevent disappearance
-            }, 3000);
-            
-            img.onload = () => {
-              clearTimeout(timeoutId);
-              resolve(true);
-            };
-            
-            img.onerror = () => {
-              clearTimeout(timeoutId);
-              Logger.warn(`Image load error for ${url}`);
-              resolve(true); // Still consider it valid to prevent disappearing ads
-            };
-            
-            img.src = url;
-          });
-        } catch (error) {
-          Logger.error(`Error checking image URL ${url}: ${error}`);
-          return true; // Return true on error to prevent ads from disappearing
-        }
-      };
-
-      // Validate each ad's images but keep them visible regardless of validation result
-      for (const ad of validAds) {
-        try {
-          const imageUrl = ad.preview_url || ad.image_url;
-          // Start validation but don't wait for it to complete
-          checkImageUrl(imageUrl).finally(() => {
-            setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
-          });
-        } catch (error) {
-          Logger.error(`Error validating ad ${ad.id}: ${error}`);
-          setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
-        }
-      }
-    };
-
-    validateAndLoadAds();
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, [ads]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, ad: GeneratedAd) => {
     Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
-    // Instead of hiding the ad, show placeholder but keep it visible
+    
+    setFailedImages(prev => {
+      const newSet = new Set(prev);
+      newSet.add(ad.preview_url || ad.image_url);
+      return newSet;
+    });
+    
+    setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
+    
     if (e.currentTarget) {
       e.currentTarget.src = "/placeholder.svg";
       e.currentTarget.style.opacity = "0.7";
       e.currentTarget.style.objectFit = "contain";
-    }
-  };
-
-  const handlePreviewClick = (imageUrl: string) => {
-    if (!imageUrl) return;
-    
-    Logger.info(`Previewing image: ${imageUrl.substring(0, 50)}...`);
-    
-    // Create an overlay with the image and a close button instead of opening a new window
-    try {
-      // Create a div element with image and close button
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.top = '0';
-      overlay.style.left = '0';
-      overlay.style.width = '100%';
-      overlay.style.height = '100%';
-      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-      overlay.style.display = 'flex';
-      overlay.style.flexDirection = 'column';
-      overlay.style.alignItems = 'center';
-      overlay.style.justifyContent = 'center';
-      overlay.style.zIndex = '9999';
-      overlay.style.padding = '20px';
-      
-      const img = document.createElement('img');
-      img.src = imageUrl;
-      img.style.maxWidth = '90%';
-      img.style.maxHeight = '80%';
-      img.style.objectFit = 'contain';
-      img.style.border = '1px solid #333';
-      img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
-      
-      // Add error handling for the image
-      img.onerror = () => {
-        Logger.error(`Failed to load preview image: ${imageUrl}`);
-        img.src = "/placeholder.svg";
-        img.style.maxWidth = '300px';
-        img.style.maxHeight = '300px';
-      };
-      
-      const closeButton = document.createElement('button');
-      closeButton.innerText = 'Close';
-      closeButton.style.marginTop = '20px';
-      closeButton.style.padding = '8px 16px';
-      closeButton.style.backgroundColor = '#333';
-      closeButton.style.color = 'white';
-      closeButton.style.border = 'none';
-      closeButton.style.borderRadius = '4px';
-      closeButton.style.cursor = 'pointer';
-      
-      closeButton.onclick = () => {
-        document.body.removeChild(overlay);
-      };
-      
-      overlay.appendChild(img);
-      overlay.appendChild(closeButton);
-      
-      // Close on background click
-      overlay.onclick = (e) => {
-        if (e.target === overlay) {
-          document.body.removeChild(overlay);
-        }
-      };
-      
-      document.body.appendChild(overlay);
-      
-    } catch (error) {
-      Logger.error(`Error showing preview: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  };
-
-  const handleDownloadClick = (ad: GeneratedAd) => {
-    if (!ad.preview_url && !ad.image_url) return;
-    
-    const imageUrl = ad.preview_url || ad.image_url;
-    Logger.info(`Attempting to download image: ${imageUrl.substring(0, 50)}...`);
-    
-    // Special handling for blob URLs
-    if (imageUrl.startsWith('blob:')) {
-      try {
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        Logger.info(`Downloaded blob image: ${imageUrl.substring(0, 30)}...`);
-        return;
-      } catch (err) {
-        Logger.error(`Error downloading blob image: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-    
-    try {
-      // Check if it's an external URL or a local one
-      const isExternalUrl = imageUrl.startsWith('http') && !imageUrl.includes(window.location.hostname);
-      
-      if (isExternalUrl) {
-        // For external images, use a different approach: download the image and serve it locally
-        fetch(imageUrl, { mode: 'cors', cache: 'no-store' })
-          .then(response => {
-            if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
-            return response.blob();
-          })
-          .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(blobUrl); // Release resources
-            Logger.info(`Downloaded image from external URL: ${imageUrl.substring(0, 30)}...`);
-          })
-          .catch(error => {
-            Logger.error(`Failed to download from external URL: ${error.message}`);
-            // If failed, try alternative approach
-            const a = document.createElement('a');
-            a.href = imageUrl;
-            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-            a.target = '_self'; // Important: don't open new window
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          });
-      } else {
-        // For local images, use the regular approach
-        const a = document.createElement('a');
-        a.href = imageUrl;
-        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        Logger.info(`Downloaded image: ${imageUrl.substring(0, 30)}...`);
-      }
-    } catch (err) {
-      Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -288,6 +90,136 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     );
   }
 
+  const handlePreviewClick = (imageUrl: string) => {
+    if (!imageUrl) return;
+    
+    Logger.info(`Previewing image: ${imageUrl.substring(0, 50)}...`);
+    
+    try {
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.top = '0';
+      overlay.style.left = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+      overlay.style.display = 'flex';
+      overlay.style.flexDirection = 'column';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '9999';
+      overlay.style.padding = '20px';
+      
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.style.maxWidth = '90%';
+      img.style.maxHeight = '80%';
+      img.style.objectFit = 'contain';
+      img.style.border = '1px solid #333';
+      img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
+      
+      img.onerror = () => {
+        Logger.error(`Failed to load preview image: ${imageUrl}`);
+        img.src = "/placeholder.svg";
+        img.style.maxWidth = '300px';
+        img.style.maxHeight = '300px';
+      };
+      
+      const closeButton = document.createElement('button');
+      closeButton.innerText = 'Close';
+      closeButton.style.marginTop = '20px';
+      closeButton.style.padding = '8px 16px';
+      closeButton.style.backgroundColor = '#333';
+      closeButton.style.color = 'white';
+      closeButton.style.border = 'none';
+      closeButton.style.borderRadius = '4px';
+      closeButton.style.cursor = 'pointer';
+      
+      closeButton.onclick = () => {
+        document.body.removeChild(overlay);
+      };
+      
+      overlay.appendChild(img);
+      overlay.appendChild(closeButton);
+      
+      overlay.onclick = (e) => {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay);
+        }
+      };
+      
+      document.body.appendChild(overlay);
+      
+    } catch (error) {
+      Logger.error(`Error showing preview: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleDownloadClick = (ad: GeneratedAd) => {
+    if (!ad.preview_url && !ad.image_url) return;
+    
+    const imageUrl = ad.preview_url || ad.image_url;
+    Logger.info(`Attempting to download image: ${imageUrl.substring(0, 50)}...`);
+    
+    if (imageUrl.startsWith('blob:')) {
+      try {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        Logger.info(`Downloaded blob image: ${imageUrl.substring(0, 30)}...`);
+        return;
+      } catch (err) {
+        Logger.error(`Error downloading blob image: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    
+    try {
+      const isExternalUrl = imageUrl.startsWith('http') && !imageUrl.includes(window.location.hostname);
+      
+      if (isExternalUrl) {
+        fetch(imageUrl, { mode: 'cors', cache: 'no-store' })
+          .then(response => {
+            if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`);
+            return response.blob();
+          })
+          .then(blob => {
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+            Logger.info(`Downloaded image from external URL: ${imageUrl.substring(0, 30)}...`);
+          })
+          .catch(error => {
+            Logger.error(`Failed to download from external URL: ${error.message}`);
+            const a = document.createElement('a');
+            a.href = imageUrl;
+            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+            a.target = '_self';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+      } else {
+        const a = document.createElement('a');
+        a.href = imageUrl;
+        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        Logger.info(`Downloaded image: ${imageUrl.substring(0, 30)}...`);
+      }
+    } catch (err) {
+      Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {validatedAds.map((ad) => (
@@ -301,7 +233,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
               <>
                 {(ad.preview_url || ad.image_url) && (
                   <img
-                    src={ad.preview_url || ad.image_url}
+                    src={failedImages.has(ad.preview_url || ad.image_url) ? "/placeholder.svg" : (ad.preview_url || ad.image_url)}
                     alt={ad.name}
                     className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                     onError={(e) => handleImageError(e, ad)}
