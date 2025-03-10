@@ -1,9 +1,9 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Download, Eye } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logger } from "@/utils/logger";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GeneratedAd {
   id: string;
@@ -20,48 +20,75 @@ interface GeneratedAdsListProps {
 }
 
 export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: GeneratedAdsListProps) => {
-  const [expandedAdId, setExpandedAdId] = useState<string | null>(null);
   const [validatedAds, setValidatedAds] = useState<GeneratedAd[]>([]);
-  
+  const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
+
   useEffect(() => {
-    // Basic validation to ensure only valid ads are displayed
-    const validateImageUrls = async () => {
+    const validateAndLoadAds = async () => {
       Logger.info(`Validating ${ads.length} ads`);
-      const validatedAdsList = [...ads].filter(ad => 
-        ad.image_url && ad.image_url !== 'undefined' && 
-        ad.name && ad.id
+      
+      // Filter out ads without required fields
+      const validAds = ads.filter(ad => 
+        ad && ad.id && ad.name && (ad.image_url || ad.preview_url)
       );
-      setValidatedAds(validatedAdsList);
+
+      // Initialize loading states
+      setLoadingStates(
+        validAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
+      );
+
+      // Function to check if an image URL is valid
+      const checkImageUrl = async (url: string): Promise<boolean> => {
+        try {
+          // First try to get the image from Supabase storage
+          const { data: storageData } = await supabase.storage
+            .from('ad-images')
+            .download(url.split('/').pop() || '');
+
+          if (storageData) return true;
+
+          // If not in storage, try to load the image directly
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+          });
+        } catch (error) {
+          Logger.error(`Error checking image URL ${url}: ${error}`);
+          return false;
+        }
+      };
+
+      // Validate each ad's images
+      const validatedAdsList = await Promise.all(
+        validAds.map(async (ad) => {
+          try {
+            const imageUrl = ad.preview_url || ad.image_url;
+            const isValid = await checkImageUrl(imageUrl);
+            
+            setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
+            
+            if (!isValid) {
+              Logger.warn(`Invalid image URL for ad ${ad.id}: ${imageUrl}`);
+              return null;
+            }
+            
+            return ad;
+          } catch (error) {
+            Logger.error(`Error validating ad ${ad.id}: ${error}`);
+            setLoadingStates(prev => ({ ...prev, [ad.id]: false }));
+            return null;
+          }
+        })
+      );
+
+      // Filter out null values and update state
+      setValidatedAds(validatedAdsList.filter((ad): ad is GeneratedAd => ad !== null));
     };
-    
-    validateImageUrls();
+
+    validateAndLoadAds();
   }, [ads]);
-
-  if (isLoading) {
-    return (
-      <div className="animate-pulse flex flex-col gap-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-24 bg-muted rounded-lg"></div>
-        ))}
-      </div>
-    );
-  }
-
-  if (ads.length === 0) {
-    return (
-      <div className="text-center p-8 border border-dashed rounded-lg">
-        <p className="text-muted-foreground">No ads created yet</p>
-        <p className="text-sm text-muted-foreground mt-2">
-          Ads you create will appear here
-        </p>
-        {onRetryLoad && (
-          <Button variant="outline" className="mt-4" onClick={onRetryLoad}>
-            Refresh Ads
-          </Button>
-        )}
-      </div>
-    );
-  }
 
   const handleImageError = (ad: GeneratedAd) => {
     Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
@@ -206,48 +233,75 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="animate-pulse flex flex-col gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-24 bg-muted rounded-lg"></div>
+        ))}
+      </div>
+    );
+  }
+
+  if (ads.length === 0) {
+    return (
+      <div className="text-center p-8 border border-dashed rounded-lg">
+        <p className="text-muted-foreground">No ads created yet</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Ads you create will appear here
+        </p>
+        {onRetryLoad && (
+          <Button variant="outline" className="mt-4" onClick={onRetryLoad}>
+            Refresh Ads
+          </Button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {validatedAds.map((ad) => (
         <Card key={ad.id} className="overflow-hidden group relative">
           <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
-            {ad.preview_url || ad.image_url ? (
-              <img
-                src={ad.preview_url || ad.image_url}
-                alt={ad.name}
-                className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-                onError={(e) => {
-                  handleImageError(ad);
-                  // Replace with placeholder if image fails to load
-                  (e.target as HTMLImageElement).src = "/placeholder.svg";
-                }}
-                crossOrigin="anonymous"
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <span className="text-sm">Image not available</span>
+            {loadingStates[ad.id] ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
               </div>
+            ) : (
+              <>
+                {(ad.preview_url || ad.image_url) && (
+                  <img
+                    src={ad.preview_url || ad.image_url}
+                    alt={ad.name}
+                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                    onError={(e) => {
+                      Logger.error(`Failed to load image for ad ${ad.id}`);
+                      (e.target as HTMLImageElement).src = "/placeholder.svg";
+                    }}
+                    crossOrigin="anonymous"
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="rounded-full bg-white/20 backdrop-blur-sm" 
+                    onClick={() => handlePreviewClick(ad.preview_url || ad.image_url)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="rounded-full bg-white/20 backdrop-blur-sm" 
+                    onClick={() => handleDownloadClick(ad)}
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
+              </>
             )}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="rounded-full bg-white/20 backdrop-blur-sm" 
-                onClick={() => handlePreviewClick(ad.preview_url || ad.image_url)}
-                disabled={!ad.preview_url && !ad.image_url}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="rounded-full bg-white/20 backdrop-blur-sm" 
-                onClick={() => handleDownloadClick(ad)}
-                disabled={!ad.preview_url && !ad.image_url}
-              >
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
