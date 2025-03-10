@@ -1,5 +1,5 @@
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 
 interface Position {
   x: number;
@@ -24,26 +24,35 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
   showArrow = true
 }) => {
   if (!ctaText) return null;
+  
+  // Local state to manage hover interactions
+  const [isHovering, setIsHovering] = useState(false);
 
   // Use safe event handlers with useCallback for better performance
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Use setTimeout to defer the state update
+    // Use local state first
+    setIsHovering(true);
+    
+    // Then use setTimeout to defer the parent state update
     setTimeout(() => {
       onButtonHover(true);
-    }, 0);
+    }, 50);
   }, [onButtonHover]);
   
   const handleMouseLeave = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Use setTimeout to defer the state update
+    // Use local state first
+    setIsHovering(false);
+    
+    // Then use setTimeout to defer the parent state update
     setTimeout(() => {
       onButtonHover(false);
-    }, 0);
+    }, 50);
   }, [onButtonHover]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
@@ -52,6 +61,9 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
     e.stopPropagation();
     console.log("Button clicked!");
   }, []);
+
+  // Use the local state for immediate visual feedback
+  const hoverState = isHovering || isButtonHovered;
 
   return (
     <div 
@@ -83,7 +95,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
             <svg
               className="transition-transform duration-300 inline-block"
               style={{
-                transform: isButtonHovered ? 'translateY(4px)' : 'translateY(2px)'
+                transform: hoverState ? 'translateY(4px)' : 'translateY(2px)'
               }}
               width="24"
               height="24"
@@ -102,4 +114,4 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       </button>
     </div>
   );
-};
+}
