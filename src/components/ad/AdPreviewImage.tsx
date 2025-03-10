@@ -27,6 +27,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
   const [imageKey, setImageKey] = useState(0);
+  const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
 
   useEffect(() => {
     if (imageUrl && imageUrl !== currentImageUrl) {
@@ -38,23 +39,63 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, currentImageUrl]);
 
+  const calculateImageStyle = useCallback((img: HTMLImageElement) => {
+    const container = img.parentElement;
+    if (!container) return {};
+
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    
+    // Store these measurements for potential use
+    setNaturalSize({ width: imgWidth, height: imgHeight });
+    setContainerSize({ width: containerWidth, height: containerHeight });
+    
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    // Calculate the exact positioning to match the preview
+    const newStyle: React.CSSProperties = {
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute',
+      objectFit: 'cover',
+    };
+    
+    if (imageAspect > containerAspect) {
+      // Image is wider - maintain height and adjust width
+      const scaledWidth = containerHeight * imageAspect;
+      newStyle.height = '100%';
+      newStyle.width = `${scaledWidth}px`;
+      newStyle.maxWidth = 'none';
+    } else {
+      // Image is taller - maintain width and adjust height
+      const scaledHeight = containerWidth / imageAspect;
+      newStyle.width = '100%';
+      newStyle.height = `${scaledHeight}px`;
+      newStyle.maxHeight = 'none';
+    }
+    
+    return newStyle;
+  }, [position, fastMode]);
+
   // Handle image load to get natural dimensions
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     
     // In fast mode, we skip some of the detailed measurements
     if (!fastMode) {
-      const container = img.parentElement;
-      if (container) {
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-        setContainerSize({ width: containerWidth, height: containerHeight });
-        
-        // Get image natural dimensions
-        const imgWidth = img.naturalWidth;
-        const imgHeight = img.naturalHeight;
-        setNaturalSize({ width: imgWidth, height: imgHeight });
-      }
+      setImageStyle(calculateImageStyle(img));
+    } else {
+      // Simple style for fast mode
+      setImageStyle({
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        position: 'absolute',
+      });
     }
     
     setLoaded(true);
@@ -70,7 +111,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         onImageLoaded();
       }
     }
-  }, [imageUrl, onImageLoaded, fastMode]);
+  }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
   // Low-quality placeholder for faster initial rendering
   const placeholderStyle = fastMode ? {
@@ -92,14 +133,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         src={imageUrl}
         alt="Ad preview"
         className={`absolute transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-          transition: fastMode ? 'none' : 'transform 0.1s ease-out',
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          objectPosition: 'center'
-        }}
+        style={imageStyle}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
         onError={(e) => {

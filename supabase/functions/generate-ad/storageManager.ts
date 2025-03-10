@@ -3,17 +3,27 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 export class StorageManager {
   private supabase;
+  private imageCache: Map<string, string>;
   
   constructor() {
     this.supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+    this.imageCache = new Map();
   }
 
   async uploadOriginalImage(uploadId: string, image: any) {
     const timestamp = Date.now();
     const originalFileName = `full-ads/original/${uploadId}_${timestamp}.jpg`;
+    
+    // Check cache first
+    if (this.imageCache.has(originalFileName)) {
+      return { 
+        originalFileName, 
+        originalImageUrl: this.imageCache.get(originalFileName) 
+      };
+    }
     
     // Use optimized upload settings
     const { error: uploadError } = await this.supabase.storage
@@ -31,6 +41,9 @@ export class StorageManager {
     const { data: { publicUrl: originalImageUrl } } = this.supabase.storage
       .from('ad-images')
       .getPublicUrl(originalFileName);
+    
+    // Cache the URL
+    this.imageCache.set(originalFileName, originalImageUrl);
 
     return { originalFileName, originalImageUrl };
   }
@@ -39,7 +52,15 @@ export class StorageManager {
     const timestamp = Date.now();
     const generatedFileName = `full-ads/generated/${uploadId}_${timestamp}.jpg`;
     
-    // Use optimized upload settings with higher compression
+    // Check cache first
+    if (this.imageCache.has(generatedFileName)) {
+      return { 
+        generatedFileName, 
+        generatedImageUrl: this.imageCache.get(generatedFileName) 
+      };
+    }
+    
+    // Use optimized upload settings with higher quality preservation
     const { error: saveError } = await this.supabase.storage
       .from('ad-images')
       .upload(generatedFileName, screenshotBuffer, {
@@ -55,6 +76,9 @@ export class StorageManager {
     const { data: { publicUrl: generatedImageUrl } } = this.supabase.storage
       .from('ad-images')
       .getPublicUrl(generatedFileName);
+    
+    // Cache the URL
+    this.imageCache.set(generatedFileName, generatedImageUrl);
 
     return { generatedFileName, generatedImageUrl };
   }
@@ -64,6 +88,15 @@ export class StorageManager {
     const uploadPromises = images.map(async (image) => {
       const timestamp = Date.now();
       const fileName = `full-ads/bulk/${image.id}_${timestamp}.jpg`;
+      
+      // Check cache first
+      if (this.imageCache.has(fileName)) {
+        return { 
+          id: image.id, 
+          url: this.imageCache.get(fileName), 
+          success: true 
+        };
+      }
       
       try {
         await this.supabase.storage
@@ -77,6 +110,9 @@ export class StorageManager {
         const { data: { publicUrl } } = this.supabase.storage
           .from('ad-images')
           .getPublicUrl(fileName);
+        
+        // Cache the URL
+        this.imageCache.set(fileName, publicUrl);
           
         return { id: image.id, url: publicUrl, success: true };
       } catch (error) {
@@ -85,9 +121,9 @@ export class StorageManager {
       }
     });
     
-    // Process uploads in parallel but limit concurrency
+    // Process uploads in parallel with increased batch size for better performance
     const results = [];
-    const batchSize = 3; // Process 3 uploads at a time
+    const batchSize = 5; // Increased from 3 to 5 for better parallelism
     
     for (let i = 0; i < uploadPromises.length; i += batchSize) {
       const batch = uploadPromises.slice(i, i + batchSize);

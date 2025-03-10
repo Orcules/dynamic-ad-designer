@@ -98,7 +98,10 @@ serve(async (req) => {
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, data.width, data.height);
     
-    // Calculate aspect ratios
+    // Use the exact image positioning from the preview to maintain consistency
+    const imagePosition = data.imagePosition || { x: 0, y: 0 };
+    
+    // Calculate dimensions for precise cropping to match the preview
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
@@ -107,37 +110,30 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = 0;
-    let destY = 0;
-    let destWidth = data.width;
-    let destHeight = data.height;
+    let destX = imagePosition.x || 0;
+    let destY = imagePosition.y || 0;
+    let destWidth, destHeight;
 
-    // Apply object-fit: cover approach based on aspect ratio comparison
+    // Use precise object-fit: cover approach with exact positioning from preview
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - maintain height
-      // Scale to match height and crop sides
+      // Image is wider than canvas - scale to match height and crop sides
       const scaleFactor = data.height / backgroundImage.height;
-      const scaledWidth = backgroundImage.width * scaleFactor;
-      
-      // Center horizontally
-      destX = (data.width - scaledWidth) / 2 + (data.imagePosition?.x || 0);
-      destY = (data.imagePosition?.y || 0);
-      destWidth = scaledWidth;
+      destWidth = backgroundImage.width * scaleFactor;
       destHeight = data.height;
-    } else {
-      // Image is taller than canvas - maintain width
-      // Scale to match width and crop top/bottom
-      const scaleFactor = data.width / backgroundImage.width;
-      const scaledHeight = backgroundImage.height * scaleFactor;
       
-      // Center vertically
-      destX = (data.imagePosition?.x || 0);
-      destY = (data.height - scaledHeight) / 2 + (data.imagePosition?.y || 0);
+      // Apply exact positioning from preview
+      destX += (data.width - destWidth) / 2;
+    } else {
+      // Image is taller than canvas - scale to match width and crop top/bottom
+      const scaleFactor = data.width / backgroundImage.width;
       destWidth = data.width;
-      destHeight = scaledHeight;
+      destHeight = backgroundImage.height * scaleFactor;
+      
+      // Apply exact positioning from preview
+      destY += (data.height - destHeight) / 2;
     }
 
-    // Draw the image with the calculated dimensions
+    // Draw the image with exact positioning to match the preview
     ctx.drawImage(backgroundImage, sourceX, sourceY, sourceWidth, sourceHeight, 
                   destX, destY, destWidth, destHeight);
 
