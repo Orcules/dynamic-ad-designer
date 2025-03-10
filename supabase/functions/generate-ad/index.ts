@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -29,6 +30,7 @@ serve(async (req) => {
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
+    // Skip generating the image if we're in fast mode and an image URL is already provided
     if (fastMode && data.existingImageUrl) {
       console.log(`[${uploadId}] Fast mode active with existing URL: ${data.existingImageUrl}`);
       return new Response(
@@ -41,6 +43,7 @@ serve(async (req) => {
       );
     }
 
+    // Process image file
     let imageArrayBuffer: ArrayBuffer;
     
     if (imageFile instanceof File || imageFile instanceof Blob) {
@@ -52,11 +55,14 @@ serve(async (req) => {
       throw new Error('Invalid image data type');
     }
 
+    // Create storage manager
     const storageManager = new StorageManager();
     
+    // First, quickly upload the original image and return its URL
     try {
       const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, imageArrayBuffer);
       
+      // If we're in fast mode, return immediately with the original image URL
       if (fastMode) {
         console.log(`[${uploadId}] Fast mode: returning original image URL`);
         return new Response(
@@ -69,11 +75,14 @@ serve(async (req) => {
         );
       }
       
+      // If not in fast mode, continue with full image processing
       console.log(`[${uploadId}] Standard mode: proceeding with image generation`);
     } catch (uploadError) {
       console.error(`[${uploadId}] Error uploading original:`, uploadError);
+      // Continue with processing even if original upload fails
     }
 
+    // Create canvas with optimized settings
     const canvas = createCanvas(data.width, data.height);
     const ctx = canvas.getContext('2d');
 
@@ -81,17 +90,22 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
+    // Optimize image loading
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
 
+    // Fill background with black to ensure no transparent areas
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, data.width, data.height);
     
+    // Use the exact image positioning from the preview to maintain consistency
     const imagePosition = data.imagePosition || { x: 0, y: 0 };
     
+    // Calculate dimensions for precise cropping to match the preview
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
+    // Define source and destination parameters for drawing
     let sourceX = 0;
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
@@ -100,29 +114,36 @@ serve(async (req) => {
     let destY = imagePosition.y;
     let destWidth, destHeight;
 
+    // Match the exact positioning and scaling from the AdPreviewImage component
     if (imageAspect > canvasAspect) {
+      // Image is wider than canvas - scale to match height and position horizontally
       destHeight = data.height;
       destWidth = data.height * imageAspect;
     } else {
+      // Image is taller than canvas - scale to match width and position vertically
       destWidth = data.width;
       destHeight = data.width / imageAspect;
     }
     
+    // Draw the image with exact positioning to match the preview
     ctx.drawImage(
       backgroundImage, 
       sourceX, sourceY, sourceWidth, sourceHeight, 
       destX, destY, destWidth, destHeight
     );
 
+    // Draw overlay
     ctx.save();
     ctx.globalAlpha = data.overlayOpacity || 0.4;
     ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
     ctx.fillRect(0, 0, data.width, data.height);
     ctx.restore();
 
+    // Draw text elements
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    // Draw headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -132,6 +153,7 @@ serve(async (req) => {
       ctx.fillText(data.headline, headlineX, headlineY);
     }
 
+    // Draw description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
       ctx.font = `${descFontSize}px Arial`;
@@ -141,12 +163,14 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, descY);
     }
 
+    // Draw CTA button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
       const ctaX = (data.width - buttonWidth) / 2 + (data.ctaPosition?.x || 0);
       const ctaY = data.height * 0.65 + (data.ctaPosition?.y || 0);
 
+      // Draw button background
       ctx.fillStyle = data.cta_color || '#4A90E2';
       ctx.beginPath();
       const radius = buttonHeight / 2;
@@ -158,6 +182,7 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
 
+      // Draw button text
       ctx.fillStyle = '#FFFFFF';
       const fontSize = Math.floor(buttonHeight * 0.6);
       ctx.font = `bold ${fontSize}px Arial`;
@@ -171,6 +196,7 @@ serve(async (req) => {
       
       ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2);
 
+      // Draw arrow if needed
       if (data.showArrow !== false) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2;
@@ -180,25 +206,29 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        ctx.moveTo(arrowX, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2);
-          
-        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
-        ctx.lineTo(arrowX, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
-          
-        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
-          
+        // Adjusted y positions by -1 pixel to move the arrow up slightly
+        ctx.moveTo(arrowX, arrowY - arrowSize/2 - 1);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2 - 1);
+        
+        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4 - 1);
+        ctx.lineTo(arrowX, arrowY - arrowSize/2 - 1);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4 - 1);
+        
+        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4 - 1);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2 - 1);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4 - 1);
+        
         ctx.stroke();
       }
     }
 
+    // Export the generated image with optimized settings
     const imageBuffer = canvas.toBuffer();
     
+    // Upload the generated image using StorageManager
     const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer);
 
+    // Return the response immediately
     return new Response(
       JSON.stringify({ imageUrl: generatedImageUrl, success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -1,3 +1,4 @@
+
 import React, { useCallback, useRef } from 'react';
 
 interface Position {
@@ -88,7 +89,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
             <svg
               className="transition-transform duration-300 inline-block"
               style={{
-                transform: 'translateY(0px)'
+                transform: isButtonHovered ? 'translateY(0px)' : 'translateY(-1px)' // Changed from 0px/-4px to 0px/-1px for subtle arrow movement
               }}
               width="24"
               height="24"
