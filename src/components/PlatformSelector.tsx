@@ -15,29 +15,44 @@ interface PlatformSelectorProps {
 }
 
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
+  const handleValueChange = (newValue: string) => {
+    // Use requestAnimationFrame to prevent UI blocking
+    requestAnimationFrame(() => {
+      onChange(newValue);
+      // Ensure focus is released to prevent trapping
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+    });
+  };
+  
   return (
     <div className="space-y-2 pointer-events-auto">
       <label className="text-sm font-medium">Platform</label>
-      <Select value={value} onValueChange={onChange}>
+      <Select value={value} onValueChange={handleValueChange}>
         <SelectTrigger className="bg-card pointer-events-auto">
           <SelectValue placeholder="Select platform" />
         </SelectTrigger>
         <SelectContent 
-          className="bg-card border-border z-[100] pointer-events-auto"
+          className="bg-card border-border z-[100]"
           position="popper"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
-            e.stopPropagation();
           }}
           onPointerDownOutside={(e) => {
             e.preventDefault();
+            e.stopPropagation();
+          }}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
           }}
         >
           {platforms.map((platform) => (
             <SelectItem 
               key={platform.id} 
               value={platform.id}
-              className="hover:bg-muted focus:bg-muted"
+              className="hover:bg-muted focus:bg-muted pointer-events-auto"
             >
               {platform.name} ({platform.dimensions})
             </SelectItem>

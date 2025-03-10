@@ -12,7 +12,10 @@ export const AdPreviewControls: React.FC<AdPreviewControlsProps> = ({
   onShowCtaArrowChange
 }) => {
   const handleCheckedChange = useCallback((checked: boolean) => {
-    onShowCtaArrowChange(checked);
+    // Use requestAnimationFrame to prevent UI blocking
+    requestAnimationFrame(() => {
+      onShowCtaArrowChange(checked);
+    });
   }, [onShowCtaArrowChange]);
 
   return (

@@ -3,7 +3,7 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 interface TemplateStyleSelectorProps {
   value: string;
@@ -38,6 +38,8 @@ export function TemplateStyleSelector({
   descriptionColor,
   onDescriptionColorChange,
 }: TemplateStyleSelectorProps) {
+  const [isChanging, setIsChanging] = useState(false);
+  
   const templates = [
     { id: "modern", label: "Modern" },
     { id: "elegant", label: "Elegant" },
@@ -71,13 +73,26 @@ export function TemplateStyleSelector({
   ];
 
   const handleStyleChange = useCallback((newValue: string) => {
+    if (isChanging) return;
     if (newValue && newValue.trim() !== "") {
-      onChange(newValue);
+      setIsChanging(true);
+      // Use requestAnimationFrame to prevent UI blocking
+      requestAnimationFrame(() => {
+        onChange(newValue);
+        setIsChanging(false);
+        
+        // Ensure focus is released to prevent trapping
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
     }
-  }, [onChange]);
+  }, [onChange, isChanging]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
-    handler(value);
+    requestAnimationFrame(() => {
+      handler(value);
+    });
   }, []);
 
   return (
@@ -92,21 +107,25 @@ export function TemplateStyleSelector({
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>
           <SelectContent 
-            className="bg-card border-border z-[100] pointer-events-auto"
+            className="bg-card border-border z-[100]"
             position="popper"
             onCloseAutoFocus={(e) => {
               e.preventDefault();
-              e.stopPropagation();
             }}
             onPointerDownOutside={(e) => {
               e.preventDefault();
+              e.stopPropagation();
+            }}
+            onInteractOutside={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
             }}
           >
             {templates.map((template) => (
               <SelectItem 
                 key={template.id} 
                 value={template.id}
-                className="hover:bg-muted focus:bg-muted"
+                className="hover:bg-muted focus:bg-muted pointer-events-auto"
               >
                 {template.label}
               </SelectItem>
@@ -205,7 +224,9 @@ export function TemplateStyleSelector({
           <Slider
             value={[overlayOpacity * 100]}
             onValueChange={(values) => {
-              onOpacityChange?.(values[0] / 100);
+              requestAnimationFrame(() => {
+                onOpacityChange?.(values[0] / 100);
+              });
             }}
             min={0}
             max={100}

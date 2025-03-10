@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export const useAdForm = () => {
   const [adData, setAdData] = useState({
@@ -16,6 +16,8 @@ export const useAdForm = () => {
     text_color: "#FFFFFF",
     description_color: "#333333"
   });
+  
+  const isUpdating = useRef(false);
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -27,23 +29,34 @@ export const useAdForm = () => {
   }, []);
 
   const handlePlatformChange = useCallback((value: string) => {
-    setAdData(prev => ({ ...prev, platform: value }));
+    if (isUpdating.current) return;
+    
+    isUpdating.current = true;
+    requestAnimationFrame(() => {
+      setAdData(prev => ({ ...prev, platform: value }));
+      isUpdating.current = false;
+    });
   }, []);
 
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
+    if (isUpdating.current) return;
     
-    // Use immediate state update instead of wrapping in requestAnimationFrame
-    setAdData(prev => {
-      const newValue = value.trim();
-      if (prev.template_style === newValue) return prev;
-      return { ...prev, template_style: newValue };
+    isUpdating.current = true;
+    
+    // Use requestAnimationFrame for smoother UI updates
+    requestAnimationFrame(() => {
+      setAdData(prev => {
+        const newValue = value.trim();
+        if (prev.template_style === newValue) {
+          isUpdating.current = false;
+          return prev;
+        }
+        return { ...prev, template_style: newValue };
+      });
+      
+      isUpdating.current = false;
     });
-    
-    // Ensure focus is released immediately after state update
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
   }, []);
 
   const handleColorChange = useCallback((value: string) => {
