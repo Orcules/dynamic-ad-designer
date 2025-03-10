@@ -29,6 +29,22 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [imageKey, setImageKey] = useState(0);
   const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Update container size on mount and window resize
+    const updateContainerSize = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    updateContainerSize();
+    window.addEventListener('resize', updateContainerSize);
+
+    return () => window.removeEventListener('resize', updateContainerSize);
+  }, []);
 
   useEffect(() => {
     if (imageUrl && imageUrl !== currentImageUrl) {
@@ -42,9 +58,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
         
         // Calculate style for cached image immediately
-        const containerElement = document.querySelector('.ad-content');
-        if (containerElement) {
-          const containerRect = containerElement.getBoundingClientRect();
+        if (containerRef.current) {
+          const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
           // Apply cached dimensions to calculate style
@@ -112,11 +127,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   }, []);
 
   const calculateImageStyle = useCallback((img: HTMLImageElement) => {
-    const container = img.parentElement;
-    if (!container) return {};
-
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
+    if (!containerRef.current) return {};
+    
+    const containerWidth = containerRef.current.clientWidth;
+    const containerHeight = containerRef.current.clientHeight;
     const imgWidth = img.naturalWidth;
     const imgHeight = img.naturalHeight;
     
@@ -194,7 +208,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   if (!imageUrl) return null;
 
   return (
-    <div className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center">
+    <div 
+      ref={containerRef} 
+      className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center"
+    >
       <img
         key={`img-${imageKey}`} // Force re-render of image when URL changes
         src={imageUrl}

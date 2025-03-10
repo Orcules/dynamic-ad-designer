@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -124,7 +125,22 @@ serve(async (req) => {
       destHeight = data.width / imageAspect;
     }
     
+    // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
+    ctx.imageSmoothingEnabled = true;
+    if ('imageSmoothingQuality' in ctx) {
+      // @ts-ignore: Property exists but TypeScript doesn't recognize it
+      ctx.imageSmoothingQuality = 'high';
+    }
+    
+    // Log positioning information for debugging
+    console.log(`[${uploadId}] Image dimensions:`, {
+      source: { width: sourceWidth, height: sourceHeight },
+      dest: { width: destWidth, height: destHeight, x: destX, y: destY },
+      aspect: { image: imageAspect, canvas: canvasAspect }
+    });
+    
     // Draw the image with exact positioning to match the preview
+    // Use proper image drawing to maintain aspect ratio
     ctx.drawImage(
       backgroundImage, 
       sourceX, sourceY, sourceWidth, sourceHeight, 
@@ -222,11 +238,13 @@ serve(async (req) => {
       }
     }
 
-    // Export the generated image with optimized settings
+    // Export the generated image with optimized settings for PNG format
     const imageBuffer = canvas.toBuffer();
     
-    // Upload the generated image using StorageManager
+    // Upload the generated image using StorageManager with correct content type
     const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, imageBuffer);
+    
+    console.log(`[${uploadId}] Generated image URL: ${generatedImageUrl}`);
 
     // Return the response immediately
     return new Response(

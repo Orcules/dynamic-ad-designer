@@ -44,6 +44,7 @@ export class StorageManager {
     
     // Cache the URL
     this.imageCache.set(originalFileName, originalImageUrl);
+    console.log(`Original image uploaded to: ${originalFileName}, URL: ${originalImageUrl}`);
 
     return { originalFileName, originalImageUrl };
   }
@@ -60,7 +61,7 @@ export class StorageManager {
       };
     }
     
-    // Use optimized upload settings with higher quality preservation
+    // Upload as PNG for better quality of generated ads with text
     const { error: saveError } = await this.supabase.storage
       .from('ad-images')
       .upload(generatedFileName, screenshotBuffer, {
@@ -79,6 +80,7 @@ export class StorageManager {
     
     // Cache the URL
     this.imageCache.set(generatedFileName, generatedImageUrl);
+    console.log(`Generated image uploaded to: ${generatedFileName}, URL: ${generatedImageUrl}`);
 
     return { generatedFileName, generatedImageUrl };
   }
@@ -113,6 +115,7 @@ export class StorageManager {
         
         // Cache the URL
         this.imageCache.set(fileName, publicUrl);
+        console.log(`Bulk image uploaded to: ${fileName}, URL: ${publicUrl}`);
           
         return { id: image.id, url: publicUrl, success: true };
       } catch (error) {
