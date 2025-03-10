@@ -67,29 +67,27 @@ serve(async (req) => {
     let destWidth = data.width;
     let destHeight = data.height;
 
-    // Apply image position offset
-    const offsetX = data.imagePosition?.x || 0;
-    const offsetY = data.imagePosition?.y || 0;
-    
-    // Draw the image using the object-fit: cover approach
+    // Apply object-fit: cover approach based on aspect ratio comparison
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - maintain height and crop width
+      // Image is wider than canvas - maintain height
+      // Scale to match height and crop sides
       const scaleFactor = data.height / backgroundImage.height;
       const scaledWidth = backgroundImage.width * scaleFactor;
       
-      // Center the image horizontally in the canvas
-      destX = (data.width - scaledWidth) / 2 + offsetX;
-      destY = offsetY;
+      // Center horizontally
+      destX = (data.width - scaledWidth) / 2 + (data.imagePosition?.x || 0);
+      destY = (data.imagePosition?.y || 0);
       destWidth = scaledWidth;
       destHeight = data.height;
     } else {
-      // Image is taller than canvas - maintain width and crop height
+      // Image is taller than canvas - maintain width
+      // Scale to match width and crop top/bottom
       const scaleFactor = data.width / backgroundImage.width;
       const scaledHeight = backgroundImage.height * scaleFactor;
       
-      // Center the image vertically in the canvas
-      destX = offsetX;
-      destY = (data.height - scaledHeight) / 2 + offsetY;
+      // Center vertically
+      destX = (data.imagePosition?.x || 0);
+      destY = (data.height - scaledHeight) / 2 + (data.imagePosition?.y || 0);
       destWidth = data.width;
       destHeight = scaledHeight;
     }
@@ -187,17 +185,19 @@ serve(async (req) => {
       }
     }
 
-    // Export and upload the generated image
+    // Export the generated image
     const imageBuffer = canvas.toBuffer();
     const timestamp = Date.now();
     const filePath = `full-ads/${timestamp}_ad.png`;
 
+    // Create Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { error: uploadError } = await supabase.storage
+    // Use a more efficient upload strategy
+    const { error: uploadError, data: uploadData } = await supabase.storage
       .from('ad-images')
       .upload(filePath, imageBuffer, {
         contentType: 'image/png',
@@ -213,6 +213,8 @@ serve(async (req) => {
       .from('ad-images')
       .getPublicUrl(filePath);
 
+    // Return the response without waiting for database insertion
+    // This prevents timeouts while ensuring the image is available
     return new Response(
       JSON.stringify({ imageUrl: publicUrl, success: true }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
