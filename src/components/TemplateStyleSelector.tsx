@@ -78,13 +78,8 @@ export function TemplateStyleSelector({
   const handleStyleChange = useCallback((newValue: string) => {
     if (newValue === selected) return;
     
-    // Update local state immediately
     setSelected(newValue);
-    
-    // Update parent component with a slight delay to ensure proper state propagation
-    setTimeout(() => {
-      onChange(newValue);
-    }, 50);
+    onChange(newValue);
   }, [onChange, selected]);
 
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
@@ -108,10 +103,6 @@ export function TemplateStyleSelector({
             align="center"
             side="bottom"
             sideOffset={4}
-            onCloseAutoFocus={(e) => {
-              // Prevent default focus behavior that might cause issues
-              e.preventDefault();
-            }}
           >
             {templates.map((template) => (
               <SelectItem 

@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export const useAdForm = () => {
   const [adData, setAdData] = useState({
@@ -17,21 +17,10 @@ export const useAdForm = () => {
     description_color: "#333333"
   });
   
-  // Refs to store previous values for platform and template style
+  // Store previous values for reference
   const prevPlatformRef = useRef(adData.platform);
   const prevTemplateStyleRef = useRef(adData.template_style);
   
-  // Effect to handle UI updates after platform or template changes
-  useEffect(() => {
-    if (prevPlatformRef.current !== adData.platform || 
-        prevTemplateStyleRef.current !== adData.template_style) {
-      
-      // Update refs
-      prevPlatformRef.current = adData.platform;
-      prevTemplateStyleRef.current = adData.template_style;
-    }
-  }, [adData.platform, adData.template_style]);
-
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAdData(prev => ({ ...prev, [name]: value }));
@@ -44,23 +33,25 @@ export const useAdForm = () => {
   const handlePlatformChange = useCallback((value: string) => {
     if (value === adData.platform) return;
     
-    // Update the platform value with a slight delay to ensure proper rendering
-    setTimeout(() => {
-      setAdData(prev => ({ ...prev, platform: value }));
-    }, 50);
+    // Store the previous value
+    prevPlatformRef.current = adData.platform;
+    
+    // Update immediately
+    setAdData(prev => ({ ...prev, platform: value }));
   }, [adData.platform]);
 
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
     if (value === adData.template_style) return;
     
-    // Update the template style with a slight delay to ensure proper rendering
-    setTimeout(() => {
-      setAdData(prev => ({
-        ...prev,
-        template_style: value.trim()
-      }));
-    }, 50);
+    // Store the previous value
+    prevTemplateStyleRef.current = adData.template_style;
+    
+    // Update immediately
+    setAdData(prev => ({
+      ...prev,
+      template_style: value.trim()
+    }));
   }, [adData.template_style]);
 
   const handleColorChange = useCallback((value: string) => {

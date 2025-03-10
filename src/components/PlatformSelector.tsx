@@ -18,6 +18,7 @@ interface PlatformSelectorProps {
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   const [selected, setSelected] = useState(value);
   
+  // Update local state when parent value changes
   useEffect(() => {
     setSelected(value);
   }, [value]);
@@ -25,13 +26,11 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   const handleValueChange = (newValue: string) => {
     if (newValue === selected) return;
     
-    // Set local state immediately
+    // Set local state
     setSelected(newValue);
     
-    // Update the parent component with slight delay to ensure proper rendering
-    setTimeout(() => {
-      onChange(newValue);
-    }, 50);
+    // Update parent component
+    onChange(newValue);
   };
   
   return (
@@ -47,10 +46,6 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
           align="center"
           side="bottom"
           sideOffset={4}
-          onCloseAutoFocus={(e) => {
-            // Prevent default focus behavior that might cause issues
-            e.preventDefault();
-          }}
         >
           {platforms.map((platform) => (
             <SelectItem 
