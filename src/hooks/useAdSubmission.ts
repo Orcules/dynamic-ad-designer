@@ -54,8 +54,8 @@ export const useAdSubmission = () => {
       // Final approach: Just try to get info about the bucket to check if it exists
       try {
         // Make a minimal request to check if we can access the bucket
-        const { publicURL } = supabase.storage.from('ad-images').getPublicUrl('test.txt');
-        if (publicURL) {
+        const { data: { publicUrl } } = supabase.storage.from('ad-images').getPublicUrl('test.txt');
+        if (publicUrl) {
           Logger.info('Successfully generated public URL for ad-images bucket');
           setBucketStatus('exists');
           return true;
