@@ -58,11 +58,20 @@ serve(async (req) => {
     
     let renderWidth, renderHeight, offsetX, offsetY;
     
-    // For all images, ALWAYS fit to height first regardless of aspect ratio
-    renderHeight = data.height;
-    renderWidth = data.height * imageAspect;
-    offsetX = (data.width - renderWidth) / 2;
-    offsetY = 0;
+    // Determine fitting based on aspect ratio comparison
+    if (imageAspect > canvasAspect) {
+      // Image is wider than canvas (like monkey) - fit to width
+      renderWidth = data.width;
+      renderHeight = data.width / imageAspect;
+      offsetX = 0;
+      offsetY = (data.height - renderHeight) / 2;
+    } else {
+      // Image is taller than canvas (like motorcycle guy) - fit to height
+      renderHeight = data.height;
+      renderWidth = data.height * imageAspect;
+      offsetX = (data.width - renderWidth) / 2;
+      offsetY = 0;
+    }
 
     const x = offsetX + (data.imagePosition?.x || 0);
     const y = offsetY + (data.imagePosition?.y || 0);
