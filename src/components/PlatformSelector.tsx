@@ -18,7 +18,11 @@ interface PlatformSelectorProps {
 export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   const handleValueChange = useCallback((newValue: string) => {
     if (newValue === value) return;
-    onChange(newValue);
+    
+    // Use setTimeout to defer state update, avoiding React scheduling conflicts
+    setTimeout(() => {
+      onChange(newValue);
+    }, 0);
   }, [value, onChange]);
   
   return (

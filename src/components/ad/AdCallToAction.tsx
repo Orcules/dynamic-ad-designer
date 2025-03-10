@@ -29,13 +29,21 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
   const handleMouseEnter = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onButtonHover(true);
+    
+    // Use setTimeout to defer the state update
+    setTimeout(() => {
+      onButtonHover(true);
+    }, 0);
   }, [onButtonHover]);
   
   const handleMouseLeave = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onButtonHover(false);
+    
+    // Use setTimeout to defer the state update
+    setTimeout(() => {
+      onButtonHover(false);
+    }, 0);
   }, [onButtonHover]);
 
   const handleClick = useCallback((e: React.MouseEvent) => {

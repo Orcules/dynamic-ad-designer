@@ -37,8 +37,10 @@ export const useAdForm = () => {
     // Update the ref first
     prevPlatformRef.current = adData.platform;
     
-    // Then update state normally
-    setAdData(prev => ({ ...prev, platform: value }));
+    // Use setTimeout to defer the state update and avoid potential React scheduling conflicts
+    setTimeout(() => {
+      setAdData(prev => ({ ...prev, platform: value }));
+    }, 0);
   }, [adData.platform]);
 
   const handleStyleChange = useCallback((value: string) => {
@@ -48,11 +50,13 @@ export const useAdForm = () => {
     // Update the ref first
     prevTemplateStyleRef.current = adData.template_style;
     
-    // Then update state normally
-    setAdData(prev => ({
-      ...prev,
-      template_style: value.trim()
-    }));
+    // Use setTimeout to defer the state update and avoid potential React scheduling conflicts
+    setTimeout(() => {
+      setAdData(prev => ({
+        ...prev,
+        template_style: value.trim()
+      }));
+    }, 0);
   }, [adData.template_style]);
 
   const handleColorChange = useCallback((value: string) => {
