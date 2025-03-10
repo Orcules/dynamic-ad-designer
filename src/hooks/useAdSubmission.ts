@@ -9,46 +9,64 @@ export const useAdSubmission = () => {
   const [lastError, setLastError] = useState<string | null>(null);
   const [bucketStatus, setBucketStatus] = useState<'unknown' | 'exists' | 'not_exists' | 'error'>('unknown');
 
-  // Check if the bucket exists
+  // Check if the bucket exists with multiple fallbacks
   const checkBucketStatus = async (): Promise<boolean> => {
     try {
       Logger.info('Checking bucket status...');
       
-      // Direct method: list all buckets and check if ad-images exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      // First approach: Try to access bucket directly by listing files
+      try {
+        const { data: files, error: listError } = await supabase.storage
+          .from('ad-images')
+          .list('full-ads', { limit: 1 });
+          
+        if (!listError && files !== null) {
+          Logger.info('Successfully accessed ad-images bucket by listing files');
+          setBucketStatus('exists');
+          return true;
+        }
+      } catch (accessError) {
+        Logger.warn(`Could not list files: ${accessError instanceof Error ? accessError.message : String(accessError)}`);
+      }
       
-      if (bucketsError) {
-        Logger.error(`Error listing buckets: ${bucketsError.message}`);
-        setBucketStatus('error');
-        setLastError(`Bucket listing error: ${bucketsError.message}`);
+      // Second approach: List all buckets and check
+      try {
+        const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
         
-        // Try to access the bucket directly despite the error
-        try {
-          const { data: files } = await supabase.storage.from('ad-images').list();
-          if (files) {
-            Logger.info('Successfully accessed ad-images bucket despite list error');
+        if (bucketsError) {
+          Logger.error(`Error listing buckets: ${bucketsError.message}`);
+        } else {
+          const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
+          
+          if (bucketExists) {
+            Logger.info('ad-images bucket found in bucket list');
             setBucketStatus('exists');
             return true;
+          } else {
+            Logger.warn('ad-images bucket NOT found in bucket list');
+            setBucketStatus('not_exists');
           }
-        } catch (e) {
-          // Access error - bucket probably doesn't exist or no permissions
         }
-        
-        return false;
+      } catch (bucketsError) {
+        Logger.error(`Error getting bucket list: ${bucketsError instanceof Error ? bucketsError.message : String(bucketsError)}`);
       }
       
-      // Check if bucket exists in the list
-      const bucketExists = buckets?.some(bucket => bucket.name === 'ad-images');
-      
-      if (bucketExists) {
-        Logger.info('ad-images bucket found in bucket list');
-        setBucketStatus('exists');
-        return true;
-      } else {
-        Logger.warn('ad-images bucket NOT found in bucket list');
-        setBucketStatus('not_exists');
-        return false;
+      // Final approach: Just try to get info about the bucket to check if it exists
+      try {
+        // Make a minimal request to check if we can access the bucket
+        const { publicURL } = supabase.storage.from('ad-images').getPublicUrl('test.txt');
+        if (publicURL) {
+          Logger.info('Successfully generated public URL for ad-images bucket');
+          setBucketStatus('exists');
+          return true;
+        }
+      } catch (e) {
+        Logger.error(`Error checking public URL: ${e instanceof Error ? e.message : String(e)}`);
       }
+      
+      // All approaches failed, assume bucket doesn't exist
+      setBucketStatus('not_exists');
+      return false;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       Logger.error(`Error checking bucket status: ${errorMsg}`);
@@ -163,7 +181,7 @@ export const useAdSubmission = () => {
   };
 
   // Main function to handle the entire upload process
-  const handleSubmission = async (file: File, renderedPreviewUrl?: string): Promise<string> => {
+  const handleSubmission = async (file: File, renderedPreviewUrl?: string): Promise<string | null> => {
     setIsSubmitting(true);
     setLastError(null);
     
@@ -179,36 +197,12 @@ export const useAdSubmission = () => {
         bucketReady = await createBucket();
       }
       
-      // 3. If still no bucket, try to call Edge Function
-      if (!bucketReady) {
-        Logger.info('Still no bucket, calling Edge Function as last resort');
-        
-        try {
-          const { error } = await supabase.functions.invoke('create_storage_policy', {
-            body: { bucket_name: 'ad-images' }
-          });
-          
-          if (error) {
-            Logger.error(`Edge Function error: ${error.message}`);
-            // Continue anyway, maybe the bucket exists despite the error
-          } else {
-            Logger.info('Edge Function executed successfully');
-            // Check again if the bucket exists after the function call
-            bucketReady = await checkBucketStatus();
-          }
-        } catch (funcError) {
-          Logger.error(`Failed to call Edge Function: ${funcError instanceof Error ? funcError.message : String(funcError)}`);
-          // Continue anyway, maybe the bucket exists
-        }
-      }
-      
-      // 4. Prepare unique filename
+      // 3. Generate unique identifiers for this upload
       const timestamp = Date.now();
       const randomId = Math.random().toString(36).substring(2, 15);
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const filePath = `${timestamp}-${randomId}.${fileExt}`;
+      const uploadId = `${timestamp}-${randomId}`;
       
-      // If we have a rendered preview, send it along with the original image to the edge function
+      // 4. Handle rendered preview if available
       if (renderedPreviewUrl) {
         Logger.info('Using edge function with rendered preview to generate the ad');
         
@@ -219,8 +213,7 @@ export const useAdSubmission = () => {
           formData.append('data', JSON.stringify({
             width: 1200,
             height: 628,
-            fastMode: true,
-            existingImageUrl: null
+            fastMode: true
           }));
           
           const { data, error } = await supabase.functions.invoke('generate-ad', {
@@ -247,7 +240,7 @@ export const useAdSubmission = () => {
           // Try to upload the rendered preview directly if available
           if (renderedPreviewUrl) {
             try {
-              const previewFile = await dataUrlToFile(renderedPreviewUrl, `preview-${timestamp}-${randomId}.png`);
+              const previewFile = await dataUrlToFile(renderedPreviewUrl, `preview-${uploadId}.png`);
               if (previewFile) {
                 const previewPath = `${timestamp}-preview-${randomId}.png`;
                 const previewUrl = await uploadFile(previewFile, previewPath);
@@ -263,41 +256,46 @@ export const useAdSubmission = () => {
             }
           }
         }
+      } else {
+        // No rendered preview, try using the edge function in fast mode
+        try {
+          Logger.info('Using edge function in fast mode');
+          
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('data', JSON.stringify({
+            width: 1200,
+            height: 628,
+            fastMode: true
+          }));
+          
+          const { data, error } = await supabase.functions.invoke('generate-ad', {
+            body: formData
+          });
+          
+          if (error) {
+            Logger.error(`Edge function fast mode error: ${error.message}`);
+            // Fall through to direct upload
+          } else if (data?.imageUrl) {
+            Logger.info(`Successfully generated ad via edge function fast mode: ${data.imageUrl}`);
+            return data.imageUrl;
+          }
+        } catch (fastModeError) {
+          Logger.error(`Fast mode error: ${fastModeError instanceof Error ? fastModeError.message : String(fastModeError)}`);
+          // Fall through to direct upload
+        }
       }
       
-      // 5. Try upload even if bucket not ready (maybe permissions exist anyway)
-      Logger.info(`Attempting to upload file to path: ${filePath}`);
+      // 5. If all else fails, try direct upload
+      const filePath = `${timestamp}-direct-${randomId}.${file.name.split('.').pop() || 'jpg'}`;
       const uploadedUrl = await uploadFile(file, filePath);
       
       if (uploadedUrl) {
-        // Upload successful
+        Logger.info(`Successfully uploaded file directly: ${uploadedUrl}`);
         return uploadedUrl;
       }
       
-      // 6. Upload failed, try to generate URL manually (if file maybe uploaded)
-      Logger.warn('Upload returned null, attempting to generate URL anyway');
-      
-      const { data: { publicUrl } } = supabase.storage
-        .from('ad-images')
-        .getPublicUrl(`full-ads/${filePath}`);
-      
-      // 7. Validate if the URL is valid (try to access it)
-      try {
-        Logger.info(`Testing generated URL: ${publicUrl}`);
-        const response = await fetch(publicUrl, { method: 'HEAD' });
-        
-        if (response.ok) {
-          Logger.info('URL validation succeeded');
-          return publicUrl;
-        }
-        
-        Logger.error(`URL validation failed with status: ${response.status}`);
-      } catch (fetchError) {
-        Logger.error(`URL fetch test failed: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-      }
-      
-      // All attempts failed
-      throw new Error(`Could not upload image. Last error: ${lastError || 'Unknown error'}`);
+      throw new Error(`Could not upload image after multiple attempts. Last error: ${lastError || 'Unknown error'}`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error(`Fatal error in handleSubmission: ${errorMessage}`);

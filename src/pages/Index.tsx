@@ -96,26 +96,7 @@ const Index = () => {
     }
   }, [retryCount]);
 
-  // Function to fetch data with timeout
-  const fetchWithTimeout = async (timeoutMs: number, fetchFn: () => Promise<any>) => {
-    return new Promise<any>(async (resolve, reject) => {
-      // Set up the timeout
-      const timeoutId = setTimeout(() => {
-        reject(new Error(`Request timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
-      
-      try {
-        // Execute the provided function
-        const result = await fetchFn();
-        clearTimeout(timeoutId);
-        resolve(result);
-      } catch (error) {
-        clearTimeout(timeoutId);
-        reject(error);
-      }
-    });
-  };
-
+  // Optimized fetch function - uses a more resilient approach with smaller queries
   const fetchGeneratedAds = useCallback(async () => {
     if (isUpdating) return;
     
@@ -123,66 +104,111 @@ const Index = () => {
       setIsUpdating(true);
       setLoadError(null);
       
-      Logger.info("Starting to fetch generated ads with faster strategy...");
+      Logger.info("Starting to fetch generated ads with optimized strategy...");
       
-      // Try to get a minimal number of ads first for quick display
+      // Try with a reduced limit and shorter timeout first
       try {
-        const { data: minimalData, error: minimalError } = await fetchWithTimeout(3000, async () => {
-          return await supabase
-            .from('generated_ads')
-            .select('id, name, image_url, preview_url, platform')
-            .limit(3)
-            .order('created_at', { ascending: false });
-        });
+        const { data: minimalData, error: minimalError } = await supabase
+          .from('generated_ads')
+          .select('id, name, image_url, preview_url, platform')
+          .limit(3)
+          .order('created_at', { ascending: false })
+          .maybeSingle();
           
         if (minimalError) {
-          Logger.warn(`Minimal query error: ${minimalError.message}, trying alternate approach`);
-        } else if (minimalData && minimalData.length > 0) {
-          // We got at least some data to show quickly
-          Logger.info(`Got ${minimalData.length} ads with minimal query`);
-          setGeneratedAds(minimalData);
-          setHasFetchedInitial(true);
+          Logger.warn(`Minimal query error: ${minimalError.message}`);
+        } else if (minimalData) {
+          // If we get a single result, convert to array
+          const dataArray = Array.isArray(minimalData) ? minimalData : [minimalData];
+          if (dataArray.length > 0) {
+            Logger.info(`Got ${dataArray.length} ads with minimal query`);
+            setGeneratedAds(dataArray);
+            setHasFetchedInitial(true);
+          }
         }
       } catch (minimalErr) {
         Logger.warn(`Minimal fetch failed: ${minimalErr instanceof Error ? minimalErr.message : String(minimalErr)}`);
       }
       
-      // Try a more detailed fetch if we haven't already succeeded
-      try {
-        const { data: fullData, error: fullError } = await fetchWithTimeout(5000, async () => {
-          return await supabase
-            .from('generated_ads')
-            .select('id, name, image_url, preview_url, platform')
-            .order('created_at', { ascending: false })
-            .limit(10);
-        });
+      // Fallback to direct storage query if database is having issues
+      if (!hasFetchedInitial) {
+        try {
+          Logger.info("Trying alternate storage-based approach for retrieving ads");
           
-        if (fullError) {
-          throw fullError;
-        }
-        
-        if (fullData) {
-          Logger.info(`Successfully fetched ${fullData.length} ads`);
-          setGeneratedAds(fullData);
-          setHasFetchedInitial(true);
-        } else {
-          Logger.warn("No ads data returned from full query");
-          if (!hasFetchedInitial) {
-            setGeneratedAds([]);
+          // List files from storage as a backup approach
+          const { data: storageFiles, error: storageError } = await supabase.storage
+            .from('ad-images')
+            .list('full-ads', {
+              limit: 20,
+              sortBy: { column: 'created_at', order: 'desc' }
+            });
+            
+          if (storageError) {
+            Logger.error(`Storage list error: ${storageError.message}`);
+          } else if (storageFiles && storageFiles.length > 0) {
+            // Convert storage files to ad objects
+            const storageBasedAds = storageFiles
+              .filter(file => file.name && !file.name.includes('.gitkeep'))
+              .map((file, index) => {
+                const { data: { publicUrl } } = supabase.storage
+                  .from('ad-images')
+                  .getPublicUrl(`full-ads/${file.name}`);
+                  
+                return {
+                  id: `storage-${index}-${file.id || Date.now()}`,
+                  name: `Generated Ad ${index + 1}`,
+                  image_url: publicUrl,
+                  preview_url: publicUrl,
+                  platform: 'unknown'
+                };
+              });
+              
+            if (storageBasedAds.length > 0) {
+              Logger.info(`Retrieved ${storageBasedAds.length} ads from storage`);
+              setGeneratedAds(storageBasedAds);
+              setHasFetchedInitial(true);
+            }
           }
-        }
-      } catch (fullErr) {
-        Logger.error(`Full fetch error: ${fullErr instanceof Error ? fullErr.message : String(fullErr)}`);
-        
-        // If we haven't already shown some ads, show error state
-        if (!hasFetchedInitial) {
-          const errorMessage = fullErr instanceof Error ? fullErr.message : String(fullErr);
-          setLoadError(`Failed to load ads: ${errorMessage}`);
-          toast.error("Error loading ads", {
-            description: "Please try again or check your connection"
-          });
+        } catch (storageErr) {
+          Logger.error(`Storage approach failed: ${storageErr instanceof Error ? storageErr.message : String(storageErr)}`);
         }
       }
+      
+      // If we still have no data, try a simpler database query with no ordering
+      if (!hasFetchedInitial) {
+        try {
+          const { data: simpleData, error: simpleError } = await supabase
+            .from('generated_ads')
+            .select('id, name, image_url, preview_url, platform')
+            .limit(5);
+            
+          if (simpleError) {
+            throw simpleError;
+          }
+          
+          if (simpleData && simpleData.length > 0) {
+            Logger.info(`Got ${simpleData.length} ads with simple query`);
+            setGeneratedAds(simpleData);
+            setHasFetchedInitial(true);
+          } else {
+            // No data available
+            Logger.info("No ad data found in any system");
+            setGeneratedAds([]);
+            setHasFetchedInitial(true);
+          }
+        } catch (simpleErr) {
+          Logger.error(`Simple fetch error: ${simpleErr instanceof Error ? simpleErr.message : String(simpleErr)}`);
+          
+          if (!hasFetchedInitial) {
+            const errorMessage = simpleErr instanceof Error ? simpleErr.message : String(simpleErr);
+            setLoadError(`Failed to load ads: ${errorMessage}`);
+            toast.error("Error loading ads", {
+              description: "Please try again or check your connection"
+            });
+          }
+        }
+      }
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       Logger.error(`Unexpected error during fetch: ${errorMessage}`);
