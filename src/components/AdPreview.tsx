@@ -80,6 +80,7 @@ export function AdPreview({
   const isRTL = language === 'he' || language === 'ar';
   const currentImageUrl = useRef<string | undefined>(imageUrl);
   const fontLoaded = useRef<boolean>(false);
+  const fontLoadAttempts = useRef<number>(0);
   const preloadedImages = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -128,23 +129,43 @@ export function AdPreview({
     }
   }, [imageUrls, currentIndex]);
 
+  // Font loading and application
   useEffect(() => {
-    if (fontUrl && !fontLoaded.current) {
-      const familyMatch = fontUrl.match(/family=([^:&]+)/);
-      if (familyMatch && familyMatch[1]) {
-        const family = familyMatch[1].replace(/\+/g, ' ');
-        setFontFamily(family);
-
-        // Only load each font once per session
-        if (!document.querySelector(`link[href="${fontUrl}"]`)) {
-          const link = document.createElement('link');
-          link.href = fontUrl;
-          link.rel = 'stylesheet';
-          document.head.appendChild(link);
-          fontLoaded.current = true;
-        } else {
-          fontLoaded.current = true;
-        }
+    if (!fontUrl) return;
+    
+    // Extract font family from Google Fonts URL
+    const familyMatch = fontUrl.match(/family=([^:&]+)/);
+    if (!familyMatch || !familyMatch[1]) return;
+    
+    const family = familyMatch[1].replace(/\+/g, ' ');
+    console.log(`Setting font family to: ${family} from ${fontUrl}`);
+    setFontFamily(family);
+    
+    // Load the font if not already loaded
+    if (!document.querySelector(`link[href="${fontUrl}"]`)) {
+      const link = document.createElement('link');
+      link.href = fontUrl;
+      link.rel = 'stylesheet';
+      link.onload = () => {
+        console.log(`Font loaded in AdPreview: ${family}`);
+        fontLoaded.current = true;
+        
+        // Force re-render to apply the font
+        setFontFamily(prev => prev + ' ');
+        setTimeout(() => setFontFamily(family), 10);
+      };
+      document.head.appendChild(link);
+    } else {
+      console.log(`Font already in DOM: ${family}`);
+      fontLoaded.current = true;
+      
+      // Try to ensure the font is applied by refreshing the fontFamily state
+      if (fontLoadAttempts.current < 3) {
+        fontLoadAttempts.current++;
+        setTimeout(() => {
+          setFontFamily(prev => prev + ' ');
+          setTimeout(() => setFontFamily(family), 10);
+        }, 100);
       }
     }
   }, [fontUrl]);
