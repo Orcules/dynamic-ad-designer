@@ -61,6 +61,13 @@ export class StorageManager {
       };
     }
     
+    // Verify we have valid data
+    if (!screenshotBuffer || screenshotBuffer.length === 0) {
+      throw new Error('Empty screenshot buffer provided');
+    }
+    
+    console.log(`Uploading generated image: ${generatedFileName}, buffer size: ${screenshotBuffer.length} bytes`);
+    
     // Upload as PNG for better quality of generated ads with text
     const { error: saveError } = await this.supabase.storage
       .from('ad-images')

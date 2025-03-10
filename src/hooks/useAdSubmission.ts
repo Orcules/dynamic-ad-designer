@@ -133,8 +133,37 @@ export const useAdSubmission = () => {
     }
   };
 
+  // Convert a data URL to a Blob/File
+  const dataUrlToFile = async (dataUrl: string, filename: string): Promise<File | null> => {
+    try {
+      // Extract the base64 part of the data URL
+      const arr = dataUrl.split(',');
+      if (arr.length < 2) {
+        throw new Error('Invalid data URL format');
+      }
+      
+      // Determine mime type from the data URL
+      const mimeMatch = arr[0].match(/:(.*?);/);
+      const mime = mimeMatch ? mimeMatch[1] : 'image/png';
+      
+      // Convert base64 to binary
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      
+      return new File([u8arr], filename, { type: mime });
+    } catch (error) {
+      Logger.error(`Error converting data URL to file: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
+  };
+
   // Main function to handle the entire upload process
-  const handleSubmission = async (file: File): Promise<string> => {
+  const handleSubmission = async (file: File, renderedPreviewUrl?: string): Promise<string> => {
     setIsSubmitting(true);
     setLastError(null);
     
@@ -178,6 +207,63 @@ export const useAdSubmission = () => {
       const randomId = Math.random().toString(36).substring(2, 15);
       const fileExt = file.name.split('.').pop() || 'jpg';
       const filePath = `${timestamp}-${randomId}.${fileExt}`;
+      
+      // If we have a rendered preview, send it along with the original image to the edge function
+      if (renderedPreviewUrl) {
+        Logger.info('Using edge function with rendered preview to generate the ad');
+        
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          formData.append('renderedPreview', renderedPreviewUrl);
+          formData.append('data', JSON.stringify({
+            width: 1200,
+            height: 628,
+            fastMode: true,
+            existingImageUrl: null
+          }));
+          
+          const { data, error } = await supabase.functions.invoke('generate-ad', {
+            body: formData
+          });
+          
+          if (error) {
+            Logger.error(`Edge function error: ${error.message}`);
+            throw new Error(`Edge function failed: ${error.message}`);
+          }
+          
+          if (data?.imageUrl) {
+            Logger.info(`Successfully generated ad via edge function: ${data.imageUrl}`);
+            return data.imageUrl;
+          } else {
+            throw new Error('No image URL returned from edge function');
+          }
+        } catch (edgeError) {
+          Logger.error(`Edge function processing failed: ${edgeError instanceof Error ? edgeError.message : String(edgeError)}`);
+          
+          // Fall back to direct upload if edge function fails
+          Logger.info('Falling back to direct upload after edge function failure');
+          
+          // Try to upload the rendered preview directly if available
+          if (renderedPreviewUrl) {
+            try {
+              const previewFile = await dataUrlToFile(renderedPreviewUrl, `preview-${timestamp}-${randomId}.png`);
+              if (previewFile) {
+                const previewPath = `${timestamp}-preview-${randomId}.png`;
+                const previewUrl = await uploadFile(previewFile, previewPath);
+                
+                if (previewUrl) {
+                  Logger.info(`Successfully uploaded rendered preview directly: ${previewUrl}`);
+                  return previewUrl;
+                }
+              }
+            } catch (previewError) {
+              Logger.error(`Failed to upload preview directly: ${previewError instanceof Error ? previewError.message : String(previewError)}`);
+              // Continue with original file upload
+            }
+          }
+        }
+      }
       
       // 5. Try upload even if bucket not ready (maybe permissions exist anyway)
       Logger.info(`Attempting to upload file to path: ${filePath}`);

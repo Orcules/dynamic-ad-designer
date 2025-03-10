@@ -22,6 +22,8 @@ serve(async (req) => {
     const imageFile = formData.get('image');
     const dataString = formData.get('data');
     const fastMode = formData.get('fastMode') === 'true';
+    // Check if we already have a rendered preview to use
+    const renderedPreview = formData.get('renderedPreview');
     
     if (!imageFile || !dataString) {
       throw new Error('Missing required fields');
@@ -30,20 +32,47 @@ serve(async (req) => {
     const data = JSON.parse(dataString);
     console.log(`[${uploadId}] Parsed data:`, data);
 
-    // Skip generating the image if we're in fast mode and an image URL is already provided
-    if (fastMode && data.existingImageUrl) {
-      console.log(`[${uploadId}] Fast mode active with existing URL: ${data.existingImageUrl}`);
-      return new Response(
-        JSON.stringify({ 
-          imageUrl: data.existingImageUrl, 
-          success: true, 
-          fastMode: true 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Create storage manager
+    const storageManager = new StorageManager();
+    
+    // If we have a rendered preview and are in fast mode, use it directly
+    if (fastMode && renderedPreview) {
+      console.log(`[${uploadId}] Fast mode with provided rendered preview`);
+      
+      // Process the rendered preview - it should be a base64 data URL
+      if (typeof renderedPreview === 'string' && renderedPreview.startsWith('data:')) {
+        try {
+          // Convert base64 data URL to buffer
+          const base64Data = renderedPreview.split(',')[1];
+          const binaryData = atob(base64Data);
+          const bytes = new Uint8Array(binaryData.length);
+          
+          for (let i = 0; i < binaryData.length; i++) {
+            bytes[i] = binaryData.charCodeAt(i);
+          }
+          
+          console.log(`[${uploadId}] Successfully converted rendered preview to binary data`);
+          
+          // Upload the rendered preview as the final image
+          const { generatedImageUrl } = await storageManager.uploadGeneratedImage(uploadId, bytes);
+          
+          return new Response(
+            JSON.stringify({ 
+              imageUrl: generatedImageUrl, 
+              success: true, 
+              fastMode: true,
+              renderedPreview: true
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        } catch (previewError) {
+          console.error(`[${uploadId}] Error processing rendered preview:`, previewError);
+          // Continue with normal processing if preview processing fails
+        }
+      }
     }
 
-    // Process image file
+    // Process image file for standard processing
     let imageArrayBuffer: ArrayBuffer;
     
     if (imageFile instanceof File || imageFile instanceof Blob) {
@@ -54,16 +83,13 @@ serve(async (req) => {
     } else {
       throw new Error('Invalid image data type');
     }
-
-    // Create storage manager
-    const storageManager = new StorageManager();
     
-    // First, quickly upload the original image and return its URL
+    // First, upload the original image and return its URL if we're in fast mode
     try {
       const { originalImageUrl } = await storageManager.uploadOriginalImage(uploadId, imageArrayBuffer);
       
       // If we're in fast mode, return immediately with the original image URL
-      if (fastMode) {
+      if (fastMode && !renderedPreview) {
         console.log(`[${uploadId}] Fast mode: returning original image URL`);
         return new Response(
           JSON.stringify({ 
@@ -75,7 +101,6 @@ serve(async (req) => {
         );
       }
       
-      // If not in fast mode, continue with full image processing
       console.log(`[${uploadId}] Standard mode: proceeding with image generation`);
     } catch (uploadError) {
       console.error(`[${uploadId}] Error uploading original:`, uploadError);

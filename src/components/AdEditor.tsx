@@ -271,7 +271,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         throw new Error(`Skipping zero-size image: ${imageToUpload.name}`);
       }
       
-      let uploadedUrl = await handleSubmission(imageToUpload);
+      let uploadedUrl = await handleSubmission(imageToUpload, previewUrl);
       if (!uploadedUrl) {
         throw new Error('No URL returned from upload');
       }
