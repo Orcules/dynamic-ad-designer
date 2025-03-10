@@ -1,3 +1,4 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -85,9 +86,6 @@ export function TemplateStyleSelector({
     // Show a toast to indicate refreshing
     toast.info("Refreshing preview...");
     
-    // Force a small browser reflow to prevent UI freeze
-    document.body.clientWidth;
-    
     // Update parent component
     onChange(newValue);
     
@@ -103,14 +101,14 @@ export function TemplateStyleSelector({
   }, []);
 
   return (
-    <div className="space-y-4 pointer-events-auto">
+    <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
         <Select 
           value={selected} 
           onValueChange={handleStyleChange}
         >
-          <SelectTrigger className="bg-card pointer-events-auto">
+          <SelectTrigger className="bg-card">
             <SelectValue placeholder="Select a template style" />
           </SelectTrigger>
           <SelectContent 
@@ -124,7 +122,7 @@ export function TemplateStyleSelector({
               <SelectItem 
                 key={template.id} 
                 value={template.id}
-                className="hover:bg-muted focus:bg-muted pointer-events-auto"
+                className="hover:bg-muted focus:bg-muted"
               >
                 {template.label}
               </SelectItem>
@@ -142,14 +140,14 @@ export function TemplateStyleSelector({
             name="text_color"
             value={textColor}
             onChange={(e) => handleInputChange(onTextColorChange, e.target.value)}
-            className="w-16 h-10 p-1 pointer-events-auto"
+            className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={textColor}
             onChange={(e) => handleInputChange(onTextColorChange, e.target.value)}
             placeholder="#FFFFFF"
-            className="flex-1 pointer-events-auto"
+            className="flex-1"
           />
         </div>
       </div>
@@ -163,14 +161,14 @@ export function TemplateStyleSelector({
             name="description_color"
             value={descriptionColor}
             onChange={(e) => handleInputChange(onDescriptionColorChange, e.target.value)}
-            className="w-16 h-10 p-1 pointer-events-auto"
+            className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={descriptionColor}
             onChange={(e) => handleInputChange(onDescriptionColorChange, e.target.value)}
             placeholder="#333333"
-            className="flex-1 pointer-events-auto"
+            className="flex-1"
           />
         </div>
       </div>
@@ -184,14 +182,14 @@ export function TemplateStyleSelector({
             name="overlay_color"
             value={overlayColor}
             onChange={(e) => handleInputChange(onOverlayColorChange, e.target.value)}
-            className="w-16 h-10 p-1 pointer-events-auto"
+            className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={overlayColor}
             onChange={(e) => handleInputChange(onOverlayColorChange, e.target.value)}
             placeholder="#000000"
-            className="flex-1 pointer-events-auto"
+            className="flex-1"
           />
         </div>
       </div>
@@ -205,14 +203,14 @@ export function TemplateStyleSelector({
             name="cta_color"
             value={ctaColor}
             onChange={(e) => handleInputChange(onCtaColorChange, e.target.value)}
-            className="w-16 h-10 p-1 pointer-events-auto"
+            className="w-16 h-10 p-1"
           />
           <Input
             type="text"
             value={ctaColor}
             onChange={(e) => handleInputChange(onCtaColorChange, e.target.value)}
             placeholder="#000000"
-            className="flex-1 pointer-events-auto"
+            className="flex-1"
           />
         </div>
       </div>
@@ -228,7 +226,7 @@ export function TemplateStyleSelector({
             min={0}
             max={100}
             step={1}
-            className="flex-1 pointer-events-auto"
+            className="flex-1"
           />
           <span className="text-sm text-muted-foreground w-12 text-right">
             {Math.round(overlayOpacity * 100)}%

@@ -21,9 +21,6 @@ export const useAdForm = () => {
   const prevPlatformRef = useRef(adData.platform);
   const prevTemplateStyleRef = useRef(adData.template_style);
   
-  // Track whether a reset is in progress
-  const [isUpdating, setIsUpdating] = useState(false);
-  
   // Effect to handle UI updates after platform or template changes
   useEffect(() => {
     if (prevPlatformRef.current !== adData.platform || 
@@ -31,13 +28,6 @@ export const useAdForm = () => {
       // Update refs
       prevPlatformRef.current = adData.platform;
       prevTemplateStyleRef.current = adData.template_style;
-      
-      // Use a minimal timeout to ensure UI responsiveness
-      const timeoutId = setTimeout(() => {
-        document.body.style.pointerEvents = 'auto';
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
     }
   }, [adData.platform, adData.template_style]);
 
@@ -53,9 +43,6 @@ export const useAdForm = () => {
   const handlePlatformChange = useCallback((value: string) => {
     if (value === adData.platform) return;
     
-    // Briefly disable pointer events to prevent UI interactions during refresh
-    document.body.style.pointerEvents = 'none';
-    
     // Update the platform value
     setAdData(prev => ({ ...prev, platform: value }));
   }, [adData.platform]);
@@ -63,9 +50,6 @@ export const useAdForm = () => {
   const handleStyleChange = useCallback((value: string) => {
     if (!value || value.trim() === "") return;
     if (value === adData.template_style) return;
-    
-    // Briefly disable pointer events to prevent UI interactions during refresh
-    document.body.style.pointerEvents = 'none';
     
     // Update the template style
     setAdData(prev => ({
@@ -96,7 +80,6 @@ export const useAdForm = () => {
 
   return {
     adData,
-    isUpdating,
     handleInputChange,
     handleFontChange,
     handlePlatformChange,

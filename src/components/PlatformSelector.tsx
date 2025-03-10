@@ -32,9 +32,6 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
     // Show a toast to indicate refreshing
     toast.info("Refreshing preview...");
     
-    // Force a small browser reflow to prevent UI freeze
-    document.body.clientWidth;
-    
     // Update the parent component
     onChange(newValue);
     
@@ -46,10 +43,10 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
   };
   
   return (
-    <div className="space-y-2 pointer-events-auto">
+    <div className="space-y-2">
       <label className="text-sm font-medium">Platform</label>
       <Select value={selected} onValueChange={handleValueChange}>
-        <SelectTrigger className="bg-card pointer-events-auto">
+        <SelectTrigger className="bg-card">
           <SelectValue placeholder="Select platform" />
         </SelectTrigger>
         <SelectContent 
@@ -63,7 +60,7 @@ export function PlatformSelector({ value, onChange }: PlatformSelectorProps) {
             <SelectItem 
               key={platform.id} 
               value={platform.id}
-              className="hover:bg-muted focus:bg-muted pointer-events-auto"
+              className="hover:bg-muted focus:bg-muted"
             >
               {platform.name} ({platform.dimensions})
             </SelectItem>
