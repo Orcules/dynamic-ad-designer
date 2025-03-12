@@ -20,7 +20,7 @@ export class StorageManager {
     // Format the file name according to the required structure
     const sanitizedName = adName ? this.sanitizeFileName(adName) : `ad_${uploadId}`;
     const lang = language ? this.sanitizeFileName(language) : 'unknown';
-    const font = fontName ? this.sanitizeFileName(fontName) : 'default';
+    const font = this.simplifyFontName(fontName); // Simplify the font name
     const ratio = aspectRatio ? this.sanitizeFileName(aspectRatio) : '1-1';
     const style = templateStyle ? this.sanitizeFileName(templateStyle) : 'standard';
     
@@ -65,7 +65,7 @@ export class StorageManager {
     // Format the file name according to the required structure
     const sanitizedName = adName ? this.sanitizeFileName(adName) : `ad_${uploadId}`;
     const lang = language ? this.sanitizeFileName(language) : 'unknown';
-    const font = fontName ? this.sanitizeFileName(fontName) : 'default';
+    const font = this.simplifyFontName(fontName); // Simplify the font name
     const ratio = aspectRatio ? this.sanitizeFileName(aspectRatio) : '1-1';
     const style = templateStyle ? this.sanitizeFileName(templateStyle) : 'standard';
     
@@ -142,7 +142,7 @@ export class StorageManager {
       // Format the file name according to the required structure
       const sanitizedName = adName ? this.sanitizeFileName(adName) : `ad_${uploadId}`;
       const lang = language ? this.sanitizeFileName(language) : 'unknown';
-      const font = fontName ? this.sanitizeFileName(fontName) : 'default';
+      const font = this.simplifyFontName(fontName); // Simplify the font name
       const ratio = aspectRatio ? this.sanitizeFileName(aspectRatio) : '1-1';
       const style = templateStyle ? this.sanitizeFileName(templateStyle) : 'standard';
       
@@ -194,6 +194,23 @@ export class StorageManager {
       .substring(0, 50);
   }
   
+  // Extract just the font name from Google Fonts URL or CSS string
+  private simplifyFontName(fontName?: string): string {
+    if (!fontName) return 'default';
+    
+    // If it's a Google Fonts URL or CSS family string, extract just the font name
+    if (fontName.includes('family=') || fontName.includes('css2?family=')) {
+      const fontMatch = fontName.match(/family=([^:&+]+)/i);
+      if (fontMatch && fontMatch[1]) {
+        return this.sanitizeFileName(fontMatch[1]);
+      }
+    }
+    
+    // For Inter, Roboto, etc. just return the name
+    const simpleName = fontName.split(',')[0]?.trim();
+    return this.sanitizeFileName(simpleName || fontName);
+  }
+  
   // Add a faster method for bulk uploads that doesn't wait for each upload to complete
   async uploadMultipleImages(images: { id: string, buffer: Uint8Array, name?: string, language?: string, fontName?: string, aspectRatio?: string, templateStyle?: string, version?: number }[]) {
     const uploadPromises = images.map(async (image) => {
@@ -203,7 +220,7 @@ export class StorageManager {
       // Format the file name according to the required structure
       const sanitizedName = image.name ? this.sanitizeFileName(image.name) : `ad_${image.id}`;
       const lang = image.language ? this.sanitizeFileName(image.language) : 'unknown';
-      const font = image.fontName ? this.sanitizeFileName(image.fontName) : 'default';
+      const font = this.simplifyFontName(image.fontName); // Simplify the font name
       const ratio = image.aspectRatio ? this.sanitizeFileName(image.aspectRatio) : '1-1';
       const style = image.templateStyle ? this.sanitizeFileName(image.templateStyle) : 'standard';
       const version = image.version || 1;

@@ -1,10 +1,11 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Download, Eye } from "lucide-react";
+import { ExternalLink, Download, Eye, Copy, CheckCircle2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface GeneratedAd {
   id: string;
@@ -25,6 +26,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   const [loadingStates, setLoadingStates] = useState<{ [key: string]: boolean }>({});
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [storageImages, setStorageImages] = useState<GeneratedAd[]>([]);
+  const [copiedLinks, setCopiedLinks] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     // Load all images from storage bucket directly
@@ -54,21 +56,25 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                 
               // Try to extract a readable name from the filename
               let displayName = file.name;
-              // Remove timestamp and extension
-              displayName = displayName.replace(/(_\d+)\.(png|jpg|jpeg|gif)$/i, '');
-              // Replace dashes and underscores with spaces
-              displayName = displayName.replace(/[-_]/g, ' ');
-              // Capitalize first letter of each word
-              displayName = displayName.split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
+              // Extract the ad name (should be the first part before the date)
+              const nameParts = displayName.split('-');
+              if (nameParts.length > 1) {
+                // First part is the ad name
+                displayName = nameParts[0];
+                // Capitalize and format
+                displayName = displayName.replace(/-/g, ' ');
+                displayName = displayName.split(' ')
+                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(' ');
+              }
               
               return {
                 id: `storage-${index}-${file.id || Date.now()}`,
                 name: displayName || `Generated Ad ${index + 1}`,
                 image_url: publicUrl,
                 preview_url: publicUrl,
-                platform: 'unknown'
+                platform: 'unknown',
+                originalFilename: file.name // Store the original filename for downloads
               };
             });
             
@@ -130,6 +136,30 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       e.currentTarget.src = "/placeholder.svg";
       e.currentTarget.style.opacity = "0.7";
       e.currentTarget.style.objectFit = "contain";
+    }
+  };
+
+  // Function to copy image URL to clipboard
+  const handleCopyLink = async (ad: GeneratedAd) => {
+    const imageUrl = ad.preview_url || ad.image_url;
+    if (!imageUrl) return;
+    
+    try {
+      await navigator.clipboard.writeText(imageUrl);
+      
+      // Set copied state for this specific ad
+      setCopiedLinks(prev => ({ ...prev, [ad.id]: true }));
+      
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedLinks(prev => ({ ...prev, [ad.id]: false }));
+      }, 2000);
+      
+      toast.success("Image link copied to clipboard");
+      Logger.info(`Copied image URL to clipboard: ${imageUrl.substring(0, 50)}...`);
+    } catch (err) {
+      toast.error("Failed to copy link");
+      Logger.error(`Error copying link: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -230,15 +260,34 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     const imageUrl = ad.preview_url || ad.image_url;
     Logger.info(`Attempting to download image: ${imageUrl.substring(0, 50)}...`);
     
+    // Determine the filename to use for download
+    let filename = 'ad.png';
+    if ((ad as any).originalFilename) {
+      // Use the original filename from storage if available
+      filename = (ad as any).originalFilename;
+    } else if (ad.name) {
+      // Extract filename from URL if possible
+      const urlParts = imageUrl.split('/');
+      const lastPart = urlParts[urlParts.length - 1];
+      
+      if (lastPart && lastPart.includes('.')) {
+        // URL contains a filename with extension
+        filename = lastPart;
+      } else {
+        // Use ad name with .png extension
+        filename = `${ad.name.replace(/\s+/g, '-')}.png`;
+      }
+    }
+    
     if (imageUrl.startsWith('blob:')) {
       try {
         const a = document.createElement('a');
         a.href = imageUrl;
-        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        Logger.info(`Downloaded blob image: ${imageUrl.substring(0, 30)}...`);
+        Logger.info(`Downloaded blob image as: ${filename}`);
         return;
       } catch (err) {
         Logger.error(`Error downloading blob image: ${err instanceof Error ? err.message : String(err)}`);
@@ -258,18 +307,18 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
             const blobUrl = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = blobUrl;
-            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(blobUrl);
-            Logger.info(`Downloaded image from external URL: ${imageUrl.substring(0, 30)}...`);
+            Logger.info(`Downloaded image from external URL as: ${filename}`);
           })
           .catch(error => {
             Logger.error(`Failed to download from external URL: ${error.message}`);
             const a = document.createElement('a');
             a.href = imageUrl;
-            a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+            a.download = filename;
             a.target = '_self';
             document.body.appendChild(a);
             a.click();
@@ -278,11 +327,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       } else {
         const a = document.createElement('a');
         a.href = imageUrl;
-        a.download = `${ad.name.replace(/\s+/g, '-')}.png`;
+        a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        Logger.info(`Downloaded image: ${imageUrl.substring(0, 30)}...`);
+        Logger.info(`Downloaded image as: ${filename}`);
       }
     } catch (err) {
       Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);
@@ -326,6 +375,14 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                   >
                     <Download className="h-4 w-4" />
                   </Button>
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="rounded-full bg-white/20 backdrop-blur-sm" 
+                    onClick={() => handleCopyLink(ad)}
+                  >
+                    {copiedLinks[ad.id] ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                  </Button>
                 </div>
               </>
             )}
@@ -338,18 +395,30 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                   <span className="text-xs text-muted-foreground">{ad.platform}</span>
                 )}
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 flex-shrink-0"
-                onClick={() => {
-                  if (ad.preview_url || ad.image_url) {
-                    handlePreviewClick(ad.preview_url || ad.image_url);
-                  }
-                }}
-              >
-                <ExternalLink className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={() => handleCopyLink(ad)}
+                  title="Copy link to clipboard"
+                >
+                  {copiedLinks[ad.id] ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 flex-shrink-0"
+                  onClick={() => {
+                    if (ad.preview_url || ad.image_url) {
+                      handlePreviewClick(ad.preview_url || ad.image_url);
+                    }
+                  }}
+                  title="Preview image"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

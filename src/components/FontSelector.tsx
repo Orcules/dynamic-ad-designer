@@ -19,6 +19,8 @@ interface FontSelectorProps {
 export function FontSelector({ value, onChange, language }: FontSelectorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [loadedFonts, setLoadedFonts] = useState<Set<string>>(new Set());
+  const [selectedFontName, setSelectedFontName] = useState('');
+  
   const fonts = getLanguageFonts(language).map(fontName => ({
     name: fontName,
     url: getFontUrl(fontName)
@@ -28,6 +30,13 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
   useEffect(() => {
     if (typeof onChange === 'function' && (!value || !fonts.some(font => font.url === value))) {
       onChange(fonts[0].url);
+      setSelectedFontName(fonts[0].name);
+    } else if (value) {
+      // Find the font name from the URL
+      const font = fonts.find(f => f.url === value);
+      if (font) {
+        setSelectedFontName(font.name);
+      }
     }
   }, [language, value, onChange, fonts]);
 
@@ -73,9 +82,11 @@ export function FontSelector({ value, onChange, language }: FontSelectorProps) {
           return updated;
         });
         onChange(fontUrl);
+        setSelectedFontName(fontName);
       });
     } else {
       onChange(fontUrl);
+      setSelectedFontName(fontName);
     }
   };
 
