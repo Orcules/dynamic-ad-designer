@@ -91,7 +91,7 @@ export function AdContent({
         <div className={cn(
           "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
           isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
-          isLuxuryJewelry && "items-center"
+          isLuxuryJewelry && "items-center z-10"
         )}>
           <AdHeadline
             headline={headline}
@@ -111,7 +111,7 @@ export function AdContent({
             position={ctaPosition}
             isButtonHovered={isButtonHovered}
             onButtonHover={handleButtonHover}
-            showArrow={showCtaArrow && !isLuxuryJewelry} // Don't show arrow for luxury jewelry template
+            showArrow={showCtaArrow && !isLuxuryJewelry}
           />
         </div>
       </div>

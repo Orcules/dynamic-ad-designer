@@ -239,8 +239,14 @@ export function AdPreview({
         }}
         dir={isRTL ? "rtl" : "ltr"}
       >
-        <div className={isLuxuryJewelry ? "p-4" : ""}>
-          <div className={isLuxuryJewelry ? "overflow-hidden rounded-[2rem]" : ""}>
+        <div className={cn(
+          "relative w-full h-full",
+          isLuxuryJewelry && "p-4"
+        )}>
+          <div className={cn(
+            "relative w-full h-full",
+            isLuxuryJewelry && "rounded-[2rem] overflow-hidden"
+          )}>
             <AdPreviewImage
               imageUrl={imageUrl}
               position={imagePosition}
@@ -248,28 +254,27 @@ export function AdPreview({
               onImageLoaded={handleImageLoaded}
               fastMode={true}
             />
+            <div
+              className="absolute inset-0"
+              style={gradientStyle}
+            />
+            <AdContent
+              headline={headline}
+              description={description}
+              descriptionStyle={descriptionStyle}
+              ctaText={ctaText}
+              textStyle={textStyle}
+              buttonStyle={buttonStyle}
+              templateStyle={templateStyle}
+              isButtonHovered={isButtonHovered}
+              onButtonHover={setIsButtonHovered}
+              headlinePosition={headlinePosition}
+              descriptionPosition={descriptionPosition}
+              ctaPosition={ctaPosition}
+              showCtaArrow={showCtaArrow}
+              isRTL={isRTL}
+            />
           </div>
-        </div>
-        <div
-          className="absolute inset-0 flex flex-col justify-between"
-          style={gradientStyle}
-        >
-          <AdContent
-            headline={headline}
-            description={description}
-            descriptionStyle={descriptionStyle}
-            ctaText={ctaText}
-            textStyle={textStyle}
-            buttonStyle={buttonStyle}
-            templateStyle={templateStyle}
-            isButtonHovered={isButtonHovered}
-            onButtonHover={setIsButtonHovered}
-            headlinePosition={headlinePosition}
-            descriptionPosition={descriptionPosition}
-            ctaPosition={ctaPosition}
-            showCtaArrow={showCtaArrow}
-            isRTL={isRTL}
-          />
         </div>
       </div>
     );
@@ -300,8 +305,14 @@ export function AdPreview({
             }}
             dir={isRTL ? "rtl" : "ltr"}
           >
-            <div className={isLuxuryJewelry ? "p-4" : ""}>
-              <div className={isLuxuryJewelry ? "overflow-hidden rounded-[2rem]" : ""}>
+            <div className={cn(
+              "relative w-full h-full",
+              isLuxuryJewelry && "p-4"
+            )}>
+              <div className={cn(
+                "relative w-full h-full",
+                isLuxuryJewelry && "rounded-[2rem] overflow-hidden"
+              )}>
                 <AdPreviewImage
                   imageUrl={imageUrl}
                   position={imagePosition}
@@ -309,28 +320,27 @@ export function AdPreview({
                   onImageLoaded={handleImageLoaded}
                   fastMode={fastRenderMode}
                 />
+                <div
+                  className="absolute inset-0"
+                  style={gradientStyle}
+                />
+                <AdContent
+                  headline={headline}
+                  description={description}
+                  descriptionStyle={descriptionStyle}
+                  ctaText={ctaText}
+                  textStyle={textStyle}
+                  buttonStyle={buttonStyle}
+                  templateStyle={templateStyle}
+                  isButtonHovered={isButtonHovered}
+                  onButtonHover={setIsButtonHovered}
+                  headlinePosition={headlinePosition}
+                  descriptionPosition={descriptionPosition}
+                  ctaPosition={ctaPosition}
+                  showCtaArrow={showCtaArrow}
+                  isRTL={isRTL}
+                />
               </div>
-            </div>
-            <div
-              className="absolute inset-0 flex flex-col justify-between"
-              style={gradientStyle}
-            >
-              <AdContent
-                headline={headline}
-                description={description}
-                descriptionStyle={descriptionStyle}
-                ctaText={ctaText}
-                textStyle={textStyle}
-                buttonStyle={buttonStyle}
-                templateStyle={templateStyle}
-                isButtonHovered={isButtonHovered}
-                onButtonHover={setIsButtonHovered}
-                headlinePosition={headlinePosition}
-                descriptionPosition={descriptionPosition}
-                ctaPosition={ctaPosition}
-                showCtaArrow={showCtaArrow}
-                isRTL={isRTL}
-              />
             </div>
           </div>
           {imageUrls.length > 1 && (
