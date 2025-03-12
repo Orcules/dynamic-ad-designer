@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -105,21 +104,17 @@ export function AdPreview({
     }
   }, [imageUrl]);
 
-  // More efficient preloading using intersection observer
   useEffect(() => {
     if (imageUrls.length <= 1) return;
     
-    // Use IntersectionObserver to efficiently preload images
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
-        // Only preload when the component is visible
         const imagesToPreload = [];
         
         if (currentIndex >= 0 && currentIndex < imageUrls.length) {
           imagesToPreload.push(imageUrls[currentIndex]);
         }
         
-        // Preload next and previous images
         if (currentIndex + 1 < imageUrls.length) {
           imagesToPreload.push(imageUrls[currentIndex + 1]);
         }
@@ -128,7 +123,6 @@ export function AdPreview({
           imagesToPreload.push(imageUrls[currentIndex - 1]);
         }
         
-        // Preload images in parallel
         imagesToPreload.forEach(url => {
           if (url && !preloadedImages.current.has(url)) {
             const img = new Image();
@@ -163,7 +157,6 @@ export function AdPreview({
     console.log(`Setting font family to: ${family} from ${fontUrl}`);
     setFontFamily(family);
     
-    // Use link.preload for faster font loading
     if (!document.querySelector(`link[href="${fontUrl}"]`)) {
       const link = document.createElement('link');
       link.href = fontUrl;
@@ -172,7 +165,6 @@ export function AdPreview({
         console.log(`Font loaded in AdPreview: ${family}`);
         fontLoaded.current = true;
         
-        // Force a rerender by slightly modifying state
         setFontFamily(prev => prev + ' ');
         setTimeout(() => setFontFamily(family), 10);
       };
@@ -296,6 +288,14 @@ export function AdPreview({
             showCtaArrow={showCtaArrow}
             isRTL={isRTL}
           />
+          {imageUrls.length > 1 && (
+            <AdNavigationControls
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              currentIndex={currentIndex}
+              totalImages={imageUrls.length}
+            />
+          )}
         </div>
       </div>
     );
@@ -347,6 +347,14 @@ export function AdPreview({
               showCtaArrow={showCtaArrow}
               isRTL={isRTL}
             />
+            {imageUrls.length > 1 && (
+              <AdNavigationControls
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                currentIndex={currentIndex}
+                totalImages={imageUrls.length}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -375,14 +383,6 @@ export function AdPreview({
       <CardContent className="p-0">
         <div className="relative w-full">
           {isLuxuryJewelry ? renderLuxuryJewelryTemplate() : renderStandardTemplate()}
-          {imageUrls.length > 1 && (
-            <AdNavigationControls
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              currentIndex={currentIndex}
-              totalImages={imageUrls.length}
-            />
-          )}
         </div>
       </CardContent>
     </Card>

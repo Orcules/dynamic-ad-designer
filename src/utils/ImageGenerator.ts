@@ -141,7 +141,24 @@ export class ImageGenerator {
     try {
       console.log('Using html2canvas...');
       
-      const canvas = await html2canvas(this.previewElement, {
+      // Save original styles
+      const originalStyles = new Map<Element, string>();
+      const elementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
+      
+      elementsToFixPosition.forEach(el => {
+        originalStyles.set(el, el.getAttribute('style') || '');
+        const computedStyle = window.getComputedStyle(el);
+        const currentLeft = computedStyle.left;
+        const currentTop = computedStyle.top;
+        const currentTransform = computedStyle.transform;
+        
+        // Apply computed position directly
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
+      });
+
+      const canvas = await html2canvas.default(this.previewElement, {
         backgroundColor: null,
         scale: 2,
         useCORS: true,
@@ -169,21 +186,6 @@ export class ImageGenerator {
             }
           });
         }
-      });
-
-      // Save original styles
-      const originalStyles = new Map<Element, string>();
-      const elementsToFixPosition = Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]'));
-      
-      elementsToFixPosition.forEach(el => {
-        originalStyles.set(el, el.getAttribute('style') || '');
-        const computedStyle = window.getComputedStyle(el);
-        const currentLeft = computedStyle.left;
-        const currentTop = computedStyle.top;
-        const currentTransform = computedStyle.transform;
-        
-        // Apply computed position directly
-        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
       const renderTime = performance.now() - startTime;
