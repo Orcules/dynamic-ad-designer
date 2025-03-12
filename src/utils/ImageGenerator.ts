@@ -134,45 +134,25 @@ export class ImageGenerator {
     // Trigger hover effect
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
-    console.log('Text elements moved up, waiting for animation...');
     
-    // Give time for animation to take effect (reduced time)
-    await new Promise(resolve => setTimeout(resolve, 100)); // Reduced from 300ms
-
-    // Save original styles
-    const originalStyles = new Map<Element, string>();
-    const elementsToFixPosition = Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]'));
-    
-    elementsToFixPosition.forEach(el => {
-      originalStyles.set(el, el.getAttribute('style') || '');
-      const computedStyle = window.getComputedStyle(el);
-      const currentLeft = computedStyle.left;
-      const currentTop = computedStyle.top;
-      const currentTransform = computedStyle.transform;
-      
-      // Apply computed position directly
-      el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
-    });
+    // Give time for animation to take effect
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
       console.log('Using html2canvas...');
       
-      // Optimize html2canvas config for speed
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
-        scale: 2, // Higher scale for better quality
+        scale: 2,
         useCORS: true,
         allowTaint: true,
-        logging: false, // Disable logging for performance
+        logging: false,
         x: 0,
         y: 0,
         scrollX: 0,
         scrollY: 0,
-        // Speed optimizations
-        foreignObjectRendering: false,
-        ignoreElements: (element) => element.tagName === 'SCRIPT',
+        imageTimeout: 0,
         onclone: (documentClone) => {
-          // Force synchronous font loading in the clone
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -188,10 +168,24 @@ export class ImageGenerator {
               // Silently fail for cross-origin stylesheets
             }
           });
-          return documentClone;
         }
       });
+
+      // Save original styles
+      const originalStyles = new Map<Element, string>();
+      const elementsToFixPosition = Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]'));
       
+      elementsToFixPosition.forEach(el => {
+        originalStyles.set(el, el.getAttribute('style') || '');
+        const computedStyle = window.getComputedStyle(el);
+        const currentLeft = computedStyle.left;
+        const currentTop = computedStyle.top;
+        const currentTransform = computedStyle.transform;
+        
+        // Apply computed position directly
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
+      });
+
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
       

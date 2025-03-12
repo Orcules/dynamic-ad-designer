@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Position {
@@ -36,7 +35,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
 
-  // Use ResizeObserver for more efficient container size monitoring
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -47,13 +45,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       }
     };
     
-    // Use ResizeObserver instead of window resize event
     const resizeObserver = new ResizeObserver(() => {
       updateContainerSize();
     });
     
     resizeObserver.observe(containerRef.current);
-    updateContainerSize(); // Initial update
+    updateContainerSize();
     
     return () => {
       if (containerRef.current) {
@@ -63,14 +60,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     };
   }, []);
 
-  // Check if image is cached or can use preloaded image
   useEffect(() => {
     renderStartTime.current = performance.now();
     
     if (imageUrl && imageUrl !== currentImageUrl) {
       console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
       
-      // Check if we already have the image cached or preloaded
       const cachedImg = imageCache.current.get(imageUrl) || preloadedImage;
       
       if (cachedImg) {
@@ -94,12 +89,11 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }
         
         if (onImageLoaded) {
-          // Use a shorter timeout for faster feedback
           setTimeout(() => {
             const renderTime = performance.now() - renderStartTime.current;
             console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
             onImageLoaded();
-          }, 20); // Reduced from 50ms
+          }, 20);
         }
       } else {
         setLoaded(false);
@@ -126,7 +120,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover',
-      willChange: 'transform', // Add will-change for better GPU acceleration
+      willChange: 'transform',
     };
     
     if (imageAspect > containerAspect) {
@@ -155,10 +149,29 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    return calculateStyleFromDimensions(
-      imgWidth, imgHeight, containerWidth, containerHeight, position, fastMode
-    );
-  }, [position, fastMode, calculateStyleFromDimensions]);
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    let width, height;
+    
+    if (imageAspect > containerAspect) {
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+    } else {
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+    }
+    
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute' as const,
+      objectFit: 'cover' as const,
+      willChange: 'transform',
+    };
+  }, [position, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -192,7 +205,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
   const placeholderStyle = fastMode ? {
-    filter: 'blur(1px)', // Reduced blur for faster rendering
+    filter: 'blur(1px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
@@ -221,9 +234,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           console.error('Error loading image:', e);
           setError(true);
         }}
-        // Add loading="lazy" for browser lazy loading, improves performance
         loading={fastMode ? 'eager' : 'lazy'}
-        decoding="async" // Use async decoding for better performance
+        decoding="async"
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
