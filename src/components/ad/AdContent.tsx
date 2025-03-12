@@ -88,32 +88,62 @@ export function AdContent({
         "relative flex-1 flex flex-col items-center justify-center gap-4 p-4",
         isBottomOverlay ? "justify-end" : "justify-center"
       )}>
-        <div className={cn(
-          "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
-          isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
-          isLuxuryJewelry && "items-center z-10"
-        )}>
-          <AdHeadline
-            headline={headline}
-            textStyle={headlineTextStyle}
-            position={headlinePosition}
-          />
-          
-          <AdDescription
-            description={description}
-            descriptionStyle={updatedDescriptionStyle}
-            position={descriptionPosition}
-          />
-          
-          <AdCallToAction
-            ctaText={ctaText}
-            buttonStyle={buttonStyle}
-            position={ctaPosition}
-            isButtonHovered={isButtonHovered}
-            onButtonHover={handleButtonHover}
-            showArrow={showCtaArrow && !isLuxuryJewelry}
-          />
-        </div>
+        {isLuxuryJewelry ? (
+          <div className="relative w-full h-full flex flex-col items-center justify-between py-8">
+            {/* Top text section */}
+            <div className="text-center z-10 mt-4">
+              <AdHeadline
+                headline={headline}
+                textStyle={headlineTextStyle}
+                position={headlinePosition}
+              />
+              
+              <AdDescription
+                description={description}
+                descriptionStyle={updatedDescriptionStyle}
+                position={descriptionPosition}
+              />
+            </div>
+            
+            {/* Bottom CTA section */}
+            <div className="z-10 mb-4">
+              <AdCallToAction
+                ctaText={ctaText}
+                buttonStyle={buttonStyle}
+                position={ctaPosition}
+                isButtonHovered={isButtonHovered}
+                onButtonHover={handleButtonHover}
+                showArrow={false}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className={cn(
+            "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
+            isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
+          )}>
+            <AdHeadline
+              headline={headline}
+              textStyle={headlineTextStyle}
+              position={headlinePosition}
+            />
+            
+            <AdDescription
+              description={description}
+              descriptionStyle={updatedDescriptionStyle}
+              position={descriptionPosition}
+            />
+            
+            <AdCallToAction
+              ctaText={ctaText}
+              buttonStyle={buttonStyle}
+              position={ctaPosition}
+              isButtonHovered={isButtonHovered}
+              onButtonHover={handleButtonHover}
+              showArrow={showCtaArrow}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

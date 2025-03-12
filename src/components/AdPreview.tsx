@@ -84,6 +84,7 @@ export function AdPreview({
   const preloadedImages = useRef<Set<string>>(new Set());
   
   const isLuxuryJewelry = templateStyle === 'luxury-jewelry';
+  const luxuryBgColor = "#c5022e";
 
   useEffect(() => {
     if (!imageGenerator.current) {
@@ -230,7 +231,51 @@ export function AdPreview({
     }
   };
 
-  if (fastRenderMode) {
+  const renderLuxuryJewelryTemplate = () => {
+    return (
+      <div 
+        className="ad-content relative overflow-hidden"
+        style={{
+          aspectRatio: `${width} / ${height}`,
+          width: '100%',
+          backgroundColor: luxuryBgColor,
+          backgroundImage: "linear-gradient(135deg, rgba(255,255,255,0.1) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.1) 75%, transparent 75%, transparent)",
+          backgroundSize: "40px 40px",
+        }}
+        dir={isRTL ? "rtl" : "ltr"}
+      >
+        <div className="relative w-full h-full p-6">
+          <div className="absolute inset-0 m-auto w-[80%] h-[50%] rounded-[2rem] overflow-hidden border-4 border-[#f8e9b0] shadow-lg">
+            <AdPreviewImage
+              imageUrl={imageUrl}
+              position={imagePosition}
+              onPositionChange={() => {}}
+              onImageLoaded={handleImageLoaded}
+              fastMode={fastRenderMode}
+            />
+          </div>
+          <AdContent
+            headline={headline}
+            description={description}
+            descriptionStyle={descriptionStyle}
+            ctaText={ctaText}
+            textStyle={textStyle}
+            buttonStyle={buttonStyle}
+            templateStyle={templateStyle}
+            isButtonHovered={isButtonHovered}
+            onButtonHover={setIsButtonHovered}
+            headlinePosition={headlinePosition}
+            descriptionPosition={descriptionPosition}
+            ctaPosition={ctaPosition}
+            showCtaArrow={showCtaArrow}
+            isRTL={isRTL}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderStandardTemplate = () => {
     return (
       <div 
         className="ad-content relative overflow-hidden bg-black"
@@ -253,7 +298,7 @@ export function AdPreview({
               position={imagePosition}
               onPositionChange={() => {}}
               onImageLoaded={handleImageLoaded}
-              fastMode={true}
+              fastMode={fastRenderMode}
             />
             <div
               className="absolute inset-0"
@@ -279,6 +324,10 @@ export function AdPreview({
         </div>
       </div>
     );
+  };
+
+  if (fastRenderMode) {
+    return isLuxuryJewelry ? renderLuxuryJewelryTemplate() : renderStandardTemplate();
   }
 
   return (
@@ -298,52 +347,7 @@ export function AdPreview({
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative w-full">
-          <div
-            className="ad-content relative overflow-hidden bg-black"
-            style={{
-              aspectRatio: `${width} / ${height}`,
-              width: '100%',
-            }}
-            dir={isRTL ? "rtl" : "ltr"}
-          >
-            <div className={cn(
-              "relative w-full h-full",
-              isLuxuryJewelry && "p-4"
-            )}>
-              <div className={cn(
-                "relative w-full h-full",
-                isLuxuryJewelry && "rounded-[2rem] overflow-hidden"
-              )}>
-                <AdPreviewImage
-                  imageUrl={imageUrl}
-                  position={imagePosition}
-                  onPositionChange={() => {}}
-                  onImageLoaded={handleImageLoaded}
-                  fastMode={fastRenderMode}
-                />
-                <div
-                  className="absolute inset-0"
-                  style={gradientStyle}
-                />
-                <AdContent
-                  headline={headline}
-                  description={description}
-                  descriptionStyle={descriptionStyle}
-                  ctaText={ctaText}
-                  textStyle={textStyle}
-                  buttonStyle={buttonStyle}
-                  templateStyle={templateStyle}
-                  isButtonHovered={isButtonHovered}
-                  onButtonHover={setIsButtonHovered}
-                  headlinePosition={headlinePosition}
-                  descriptionPosition={descriptionPosition}
-                  ctaPosition={ctaPosition}
-                  showCtaArrow={showCtaArrow}
-                  isRTL={isRTL}
-                />
-              </div>
-            </div>
-          </div>
+          {isLuxuryJewelry ? renderLuxuryJewelryTemplate() : renderStandardTemplate()}
           {imageUrls.length > 1 && (
             <AdNavigationControls
               onPrevious={handlePrevious}

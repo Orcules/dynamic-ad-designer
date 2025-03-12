@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Position {
@@ -12,6 +11,7 @@ interface AdPreviewImageProps {
   onPositionChange: (position: Position) => void;
   onImageLoaded?: () => void;
   fastMode?: boolean;
+  noBackgroundColor?: boolean;
 }
 
 export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
@@ -19,7 +19,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   position,
   onPositionChange,
   onImageLoaded,
-  fastMode = false
+  fastMode = false,
+  noBackgroundColor = false
 }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
@@ -32,7 +33,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Update container size on mount and window resize
     const updateContainerSize = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -50,19 +50,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     if (imageUrl && imageUrl !== currentImageUrl) {
       console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
       
-      // Check if the image is already cached
       if (imageCache.current.has(imageUrl)) {
         console.log('Using cached image for faster rendering');
         setLoaded(true);
         const cachedImg = imageCache.current.get(imageUrl)!;
         setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
         
-        // Calculate style for cached image immediately
         if (containerRef.current) {
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
-          // Apply cached dimensions to calculate style
           const newStyle = calculateStyleFromDimensions(
             cachedImg.naturalWidth, 
             cachedImg.naturalHeight,
@@ -74,21 +71,18 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           setImageStyle(newStyle);
         }
         
-        // Notify parent immediately if using cached image
         if (onImageLoaded) {
-          setTimeout(onImageLoaded, 50); // Small delay to ensure UI is updated
+          setTimeout(onImageLoaded, 50);
         }
       } else {
-        // Standard loading for new image
         setLoaded(false);
         setError(false);
         setCurrentImageUrl(imageUrl);
-        setImageKey(prev => prev + 1); // Force image reload
+        setImageKey(prev => prev + 1);
       }
     }
   }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode]);
 
-  // Function to calculate style that can be reused
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
     imgHeight: number,
@@ -97,11 +91,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     pos: Position,
     useFastMode: boolean
   ): React.CSSProperties => {
-    // Store these measurements for potential use
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    // Calculate the exact positioning to match the preview
     const newStyle: React.CSSProperties = {
       transform: `translate(${pos.x}px, ${pos.y}px)`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
@@ -110,13 +102,11 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     };
     
     if (imageAspect > containerAspect) {
-      // Image is wider - maintain height and adjust width
       const scaledWidth = containerHeight * imageAspect;
       newStyle.height = '100%';
       newStyle.width = `${scaledWidth}px`;
       newStyle.maxWidth = 'none';
     } else {
-      // Image is taller - maintain width and adjust height
       const scaledHeight = containerWidth / imageAspect;
       newStyle.width = '100%';
       newStyle.height = `${scaledHeight}px`;
@@ -134,7 +124,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imgWidth = img.naturalWidth;
     const imgHeight = img.naturalHeight;
     
-    // Store these measurements for potential use
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
@@ -143,7 +132,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     );
   }, [position, fastMode, calculateStyleFromDimensions]);
 
-  // Preload next image to improve navigation speed
   const preloadImage = useCallback((url: string) => {
     if (!url || imageCache.current.has(url)) return;
     
@@ -156,20 +144,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     img.src = url;
   }, []);
 
-  // Handle image load to get natural dimensions
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     
-    // Cache the loaded image for future use
     if (imageUrl && !imageCache.current.has(imageUrl)) {
       imageCache.current.set(imageUrl, img);
     }
     
-    // In fast mode, we skip some of the detailed measurements
     if (!fastMode) {
       setImageStyle(calculateImageStyle(img));
     } else {
-      // Simple style for fast mode
       setImageStyle({
         transform: `translate(${position.x}px, ${position.y}px)`,
         width: '100%',
@@ -182,7 +166,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setLoaded(true);
     
     if (fastMode) {
-      // In fast mode, trigger the callback immediately
       if (onImageLoaded) {
         onImageLoaded();
       }
@@ -194,7 +177,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
-  // Low-quality placeholder for faster initial rendering
   const placeholderStyle = fastMode ? {
     filter: 'blur(8px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
@@ -210,10 +192,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   return (
     <div 
       ref={containerRef} 
-      className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center"
+      className={`absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center ${!noBackgroundColor ? 'bg-black' : ''}`}
     >
       <img
-        key={`img-${imageKey}`} // Force re-render of image when URL changes
+        key={`img-${imageKey}`}
         src={imageUrl}
         alt="Ad preview"
         className={`absolute transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
