@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -132,13 +131,36 @@ serve(async (req) => {
       throw new Error('Failed to get canvas context');
     }
 
+    // Check if we're using the luxury jewelry template
+    const isLuxuryJewelry = data.template_style === 'luxury-jewelry';
+
+    // Fill background with template-specific color
+    if (isLuxuryJewelry) {
+      ctx.fillStyle = "#C70039"; // Crimson background for luxury jewelry
+      ctx.fillRect(0, 0, data.width, data.height);
+      
+      // Add diamond pattern for luxury jewelry template
+      ctx.save();
+      ctx.strokeStyle = "rgba(0,0,0,0.05)";
+      ctx.lineWidth = 1;
+      
+      for (let i = 0; i < data.width * 2; i += 6) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i - data.height, data.height);
+        ctx.stroke();
+      }
+      
+      ctx.restore();
+    } else {
+      // Default black background for other templates
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, data.width, data.height);
+    }
+    
     // Optimize image loading
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
-
-    // Fill background with black to ensure no transparent areas
-    ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, data.width, data.height);
     
     // Use the exact image positioning from the preview to maintain consistency
     const imagePosition = data.imagePosition || { x: 0, y: 0 };
@@ -181,20 +203,74 @@ serve(async (req) => {
       aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
-    // Draw the image with exact positioning to match the preview
-    // Use proper image drawing to maintain aspect ratio
-    ctx.drawImage(
-      backgroundImage, 
-      sourceX, sourceY, sourceWidth, sourceHeight, 
-      destX, destY, destWidth, destHeight
-    );
+    // For luxury jewelry template, draw with rounded corners
+    if (isLuxuryJewelry) {
+      // Add padding (4% of the canvas width)
+      const padding = Math.round(data.width * 0.04);
+      const cornerRadius = Math.round(data.width * 0.1); // 10% of width for rounded corners
+      
+      // Create a temporary canvas for the image
+      const tempCanvas = createCanvas(destWidth, destHeight);
+      const tempCtx = tempCanvas.getContext('2d');
+      
+      if (tempCtx) {
+        // Draw the image to the temporary canvas
+        tempCtx.drawImage(
+          backgroundImage, 
+          sourceX, sourceY, sourceWidth, sourceHeight, 
+          0, 0, destWidth, destHeight
+        );
+        
+        // Now draw the image with rounded corners to the main canvas
+        ctx.save();
+        
+        // Create rounded rectangle path
+        const drawWidth = data.width - (padding * 2);
+        const drawHeight = (drawWidth / destWidth) * destHeight;
+        const drawX = padding;
+        const drawY = (data.height - drawHeight) / 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(drawX + cornerRadius, drawY);
+        ctx.lineTo(drawX + drawWidth - cornerRadius, drawY);
+        ctx.arcTo(drawX + drawWidth, drawY, drawX + drawWidth, drawY + cornerRadius, cornerRadius);
+        ctx.lineTo(drawX + drawWidth, drawY + drawHeight - cornerRadius);
+        ctx.arcTo(drawX + drawWidth, drawY + drawHeight, drawX + drawWidth - cornerRadius, drawY + drawHeight, cornerRadius);
+        ctx.lineTo(drawX + cornerRadius, drawY + drawHeight);
+        ctx.arcTo(drawX, drawY + drawHeight, drawX, drawY + drawHeight - cornerRadius, cornerRadius);
+        ctx.lineTo(drawX, drawY + cornerRadius);
+        ctx.arcTo(drawX, drawY, drawX + cornerRadius, drawY, cornerRadius);
+        ctx.closePath();
+        
+        // Clip to the rounded rectangle and draw the image
+        ctx.clip();
+        ctx.drawImage(
+          tempCanvas, 
+          0, 0, destWidth, destHeight,
+          drawX, drawY, drawWidth, drawHeight
+        );
+        
+        ctx.restore();
+      } else {
+        throw new Error('Failed to get temporary canvas context');
+      }
+    } else {
+      // Draw the image with exact positioning to match the preview for non-luxury templates
+      ctx.drawImage(
+        backgroundImage, 
+        sourceX, sourceY, sourceWidth, sourceHeight, 
+        destX, destY, destWidth, destHeight
+      );
+    }
 
-    // Draw overlay
-    ctx.save();
-    ctx.globalAlpha = data.overlayOpacity || 0.4;
-    ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
-    ctx.fillRect(0, 0, data.width, data.height);
-    ctx.restore();
+    // Draw overlay (skip for luxury jewelry which handles its own background)
+    if (!isLuxuryJewelry) {
+      ctx.save();
+      ctx.globalAlpha = data.overlayOpacity || 0.4;
+      ctx.fillStyle = data.overlay_color || 'rgba(0, 0, 0, 1)';
+      ctx.fillRect(0, 0, data.width, data.height);
+      ctx.restore();
+    }
 
     // Draw text elements
     ctx.textAlign = 'center';
@@ -203,18 +279,38 @@ serve(async (req) => {
     // Draw headline
     if (data.headline) {
       const fontSize = Math.floor(data.width * 0.06);
-      ctx.font = `bold ${fontSize}px Arial`;
-      ctx.fillStyle = data.text_color || '#FFFFFF';
+      
+      if (isLuxuryJewelry) {
+        // Gold color and uppercase for luxury jewelry
+        ctx.fillStyle = '#F4D03F';
+        ctx.font = `bold ${fontSize * 1.2}px Arial`;
+        ctx.textTransform = 'uppercase'; // Note: This doesn't work in canvas directly, we'd need to transform the text
+      } else {
+        ctx.fillStyle = data.text_color || '#FFFFFF';
+        ctx.font = `bold ${fontSize}px Arial`;
+      }
+      
       const headlineX = data.width / 2 + (data.headlinePosition?.x || 0);
       const headlineY = data.height * 0.4 + (data.headlinePosition?.y || 0) - 7;
-      ctx.fillText(data.headline, headlineX, headlineY);
+      
+      // For luxury jewelry, draw text in uppercase
+      const headlineText = isLuxuryJewelry ? data.headline.toUpperCase() : data.headline;
+      ctx.fillText(headlineText, headlineX, headlineY);
     }
 
     // Draw description
     if (data.description) {
       const descFontSize = Math.floor(data.width * 0.04);
-      ctx.font = `${descFontSize}px Arial`;
-      ctx.fillStyle = data.description_color || '#FFFFFF';
+      
+      if (isLuxuryJewelry) {
+        // Gold color for luxury jewelry
+        ctx.fillStyle = '#F4D03F';
+        ctx.font = `500 ${descFontSize}px Arial`;
+      } else {
+        ctx.fillStyle = data.description_color || '#FFFFFF';
+        ctx.font = `${descFontSize}px Arial`;
+      }
+      
       const descX = data.width / 2 + (data.descriptionPosition?.x || 0);
       const descY = data.height * 0.5 + (data.descriptionPosition?.y || 0) - 7;
       ctx.fillText(data.description, descX, descY);
@@ -228,34 +324,60 @@ serve(async (req) => {
       const ctaY = data.height * 0.65 + (data.ctaPosition?.y || 0);
 
       // Draw button background
-      ctx.fillStyle = data.cta_color || '#4A90E2';
-      ctx.beginPath();
-      const radius = buttonHeight / 2;
-      ctx.moveTo(ctaX + radius, ctaY);
-      ctx.lineTo(ctaX + buttonWidth - radius, ctaY);
-      ctx.arc(ctaX + buttonWidth - radius, ctaY + radius, radius, -Math.PI/2, Math.PI/2);
-      ctx.lineTo(ctaX + radius, ctaY + buttonHeight);
-      ctx.arc(ctaX + radius, ctaY + radius, radius, Math.PI/2, -Math.PI/2);
-      ctx.closePath();
-      ctx.fill();
+      if (isLuxuryJewelry) {
+        // Black background with gold border for luxury jewelry
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        const borderRadius = buttonHeight;
+        
+        // Draw button with circular ends
+        ctx.beginPath();
+        ctx.moveTo(ctaX + borderRadius, ctaY);
+        ctx.lineTo(ctaX + buttonWidth - borderRadius, ctaY);
+        ctx.arc(ctaX + buttonWidth - borderRadius, ctaY + borderRadius, borderRadius, -Math.PI/2, Math.PI/2);
+        ctx.lineTo(ctaX + borderRadius, ctaY + buttonHeight);
+        ctx.arc(ctaX + borderRadius, ctaY + borderRadius, borderRadius, Math.PI/2, -Math.PI/2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Gold border
+        ctx.strokeStyle = '#F4D03F';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      } else {
+        // Standard button for other templates
+        ctx.fillStyle = data.cta_color || '#4A90E2';
+        ctx.beginPath();
+        const radius = buttonHeight / 2;
+        ctx.moveTo(ctaX + radius, ctaY);
+        ctx.lineTo(ctaX + buttonWidth - radius, ctaY);
+        ctx.arc(ctaX + buttonWidth - radius, ctaY + radius, radius, -Math.PI/2, Math.PI/2);
+        ctx.lineTo(ctaX + radius, ctaY + buttonHeight);
+        ctx.arc(ctaX + radius, ctaY + radius, radius, Math.PI/2, -Math.PI/2);
+        ctx.closePath();
+        ctx.fill();
+      }
 
       // Draw button text - adjusted to move the text up by 7px but NOT the arrow
-      ctx.fillStyle = '#FFFFFF';
+      ctx.fillStyle = isLuxuryJewelry ? '#F4D03F' : '#FFFFFF';
       const fontSize = Math.floor(buttonHeight * 0.6);
-      ctx.font = `bold ${fontSize}px Arial`;
+      ctx.font = isLuxuryJewelry ? `600 ${fontSize}px Arial` : `bold ${fontSize}px Arial`;
       
       const textWidth = ctx.measureText(data.cta_text).width;
       const arrowWidth = fontSize * 0.3;
       const spacing = fontSize * 0.3;
       
-      const contentWidth = data.showArrow !== false ? textWidth + arrowWidth + spacing : textWidth;
+      // For luxury jewelry, don't show arrow and use uppercase text
+      const buttonText = isLuxuryJewelry ? data.cta_text.toUpperCase() : data.cta_text;
+      const showArrow = data.showArrow !== false && !isLuxuryJewelry;
+      
+      const contentWidth = showArrow ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - contentWidth) / 2;
       
       // Move the text up, but not the arrow
-      ctx.fillText(data.cta_text, startX + textWidth/2, ctaY + buttonHeight/2 - 7);
+      ctx.fillText(buttonText, startX + textWidth/2, ctaY + buttonHeight/2 - 7);
 
       // Draw arrow if needed - keep it in the original position (not adjusted)
-      if (data.showArrow !== false) {
+      if (showArrow) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2; // No adjustment for the arrow (keep it static)
         const arrowSize = fontSize * 0.4;
@@ -314,3 +436,4 @@ serve(async (req) => {
     );
   }
 });
+

@@ -52,6 +52,10 @@ export function AdContent({
     return safeTemplateStyle.startsWith('overlay-bottom-');
   }, [safeTemplateStyle]);
 
+  const isLuxuryJewelry = useMemo(() => {
+    return safeTemplateStyle === 'luxury-jewelry';
+  }, [safeTemplateStyle]);
+
   // Use useMemo for style objects to prevent unnecessary re-renders
   const headlineTextStyle = useMemo(() => {
     return {
@@ -86,7 +90,8 @@ export function AdContent({
       )}>
         <div className={cn(
           "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
-          isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent"
+          isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
+          isLuxuryJewelry && "items-center"
         )}>
           <AdHeadline
             headline={headline}
@@ -106,7 +111,7 @@ export function AdContent({
             position={ctaPosition}
             isButtonHovered={isButtonHovered}
             onButtonHover={handleButtonHover}
-            showArrow={showCtaArrow}
+            showArrow={showCtaArrow && !isLuxuryJewelry} // Don't show arrow for luxury jewelry template
           />
         </div>
       </div>

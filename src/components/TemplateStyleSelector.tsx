@@ -1,3 +1,4 @@
+
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -23,6 +24,7 @@ const templates = [
   // Advanced styles
   { id: "tech-glow", label: "Tech Glow" },
   { id: "luxury-frame", label: "Luxury Frame" },
+  { id: "luxury-jewelry", label: "Luxury Jewelry" }, // Add our new template
   
   // Overlay styles
   { id: "overlay-full", label: "Full Overlay" },

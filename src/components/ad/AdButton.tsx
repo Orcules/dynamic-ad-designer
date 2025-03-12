@@ -1,39 +1,36 @@
-
 import { CSSProperties } from "react";
 
 interface AdButtonProps {
   style?: string;
   accentColor: string;
-  isHovered: boolean;
-  fontFamily: string;
+  isHovered?: boolean;
+  fontFamily?: string;
 }
 
-export function getButtonStyle({ style = 'minimal', accentColor, isHovered, fontFamily }: AdButtonProps): CSSProperties {
+export function getButtonStyle({ style = 'minimal', accentColor, isHovered = false, fontFamily }: AdButtonProps): CSSProperties {
   const baseStyle: CSSProperties = {
-    padding: '0.8em 2em',
-    fontSize: 'clamp(0.875rem, 1.5vw, 1.125rem)',
-    fontWeight: '600',
-    cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '0.5em',
-    width: 'auto',
-    minWidth: 'min(140px, 40%)',
-    maxWidth: '80%',
-    minHeight: '2.75em',
-    lineHeight: '1.2',
-    fontFamily: fontFamily || 'inherit',
-    textAlign: 'center',
-    transition: 'all 0.3s ease',
-    marginBottom: '1.5rem',
-    zIndex: 10,
+    padding: '0.75rem 1.5rem',
+    borderRadius: '0.375rem',
+    fontWeight: 'bold',
+    fontSize: 'clamp(0.875rem, 2vw, 1rem)',
+    transition: 'all 0.2s ease-in-out',
+    cursor: 'pointer',
     color: '#FFFFFF',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    backgroundColor: accentColor,
+    border: '1px solid transparent',
+    fontFamily: fontFamily || 'inherit',
+    transform: isHovered ? 'translateY(-2px)' : 'none',
+    boxShadow: isHovered 
+      ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+      : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
   };
 
-  switch (style) {
+  const safeStyle = style && style.trim() ? style : 'minimal';
+
+  switch (safeStyle) {
     case 'modern':
       return {
         ...baseStyle,
@@ -238,7 +235,6 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         padding: '0.9em 2.9em',
       };
 
-    // New styles based on examples
     case 'banner-top':
     case 'banner-bottom':
       return {
@@ -330,17 +326,26 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         transform: isHovered ? 'translateY(-2px)' : 'none',
         fontWeight: 'bold',
       };
-    
-    default:
+
+    case 'luxury-jewelry':
       return {
         ...baseStyle,
-        background: accentColor,
-        borderRadius: '4px',
-        transform: isHovered ? 'translateY(-2px)' : 'none',
-        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.15)' : 'none',
-        fontSize: 'clamp(0.8rem, 1.6vw, 1.1rem)',
-        padding: '0.8em 2.6em',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        color: '#F4D03F',
+        border: '2px solid #F4D03F',
+        borderRadius: '2rem',
+        padding: '0.75rem 2rem',
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+        fontWeight: '600',
+        boxShadow: isHovered 
+          ? '0 0 15px rgba(244, 208, 63, 0.5), 0 0 5px rgba(244, 208, 63, 0.3)'
+          : '0 0 10px rgba(244, 208, 63, 0.3)',
+        transform: isHovered ? 'translateY(-3px) scale(1.03)' : 'none',
       };
+
+    default:
+      return baseStyle;
   }
 }
 
@@ -358,3 +363,4 @@ function adjustColor(color: string, amount: number): string {
   
   return `#${(g | (r << 8) | (b << 16)).toString(16).padStart(6, '0')}`;
 }
+

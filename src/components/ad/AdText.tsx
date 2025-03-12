@@ -1,4 +1,3 @@
-
 import { CSSProperties } from "react";
 
 interface AdTextProps {
@@ -186,7 +185,6 @@ export function getTextStyle({
         letterSpacing: '0.05em',
       };
 
-    // New styles based on examples
     case 'banner-top':
       return {
         ...baseStyle,
@@ -265,6 +263,18 @@ export function getTextStyle({
         ...baseStyle,
         textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
         letterSpacing: '0.05em',
+      };
+
+    case 'luxury-jewelry':
+      return {
+        ...baseStyle,
+        textAlign: 'center',
+        color: '#F4D03F',
+        textTransform: isDescription ? 'none' : 'uppercase',
+        fontWeight: isDescription ? '500' : '800',
+        letterSpacing: isDescription ? '0.02em' : '0.08em',
+        textShadow: isDescription ? 'none' : '1px 1px 1px rgba(0,0,0,0.2)',
+        fontSize: isDescription ? 'clamp(1rem, 2.5vw, 1.4rem)' : 'clamp(1.5rem, 4.5vw, 3rem)',
       };
 
     default:

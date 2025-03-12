@@ -1,58 +1,59 @@
-
 import { CSSProperties } from "react";
 
 interface AdGradientProps {
   style?: string;
-  color: string;
+  color?: string;
   opacity?: number;
 }
 
-export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradientProps): CSSProperties {
-  const alphaValue = Math.round(opacity * 255).toString(16).padStart(2, '0');
-  const baseGradient = `${color}${alphaValue}`;
+export function AdGradient({ style = 'minimal', color = '#000000', opacity = 0.4 }: AdGradientProps): CSSProperties {
+  const safeStyle = style && style.trim() ? style : 'minimal';
+  const baseGradient: CSSProperties = {
+    backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.7))',
+    opacity: opacity,
+  };
 
-  switch (style) {
+  switch (safeStyle) {
     case 'modern':
       return {
-        background: `linear-gradient(180deg, transparent 0%, ${baseGradient} 100%)`,
+        background: `linear-gradient(180deg, transparent 0%, ${color} 100%)`,
       };
     case 'elegant':
       return {
-        background: `linear-gradient(180deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
+        background: `linear-gradient(180deg, ${color} 0%, transparent 50%, ${color} 100%)`,
       };
     case 'dynamic':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 100%)`,
+        background: `linear-gradient(135deg, ${color} 0%, transparent 100%)`,
       };
     case 'spotlight':
       return {
-        background: `radial-gradient(circle at center, transparent 0%, ${baseGradient} 100%)`,
+        background: `radial-gradient(circle at center, transparent 0%, ${color} 100%)`,
       };
     case 'wave':
       return {
-        background: `linear-gradient(45deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
+        background: `linear-gradient(45deg, ${color} 0%, transparent 50%, ${color} 100%)`,
       };
     case 'cinematic':
       return {
-        background: `linear-gradient(to bottom, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
+        background: `linear-gradient(to bottom, ${color} 0%, transparent 50%, ${color} 100%)`,
       };
     case 'minimal-fade':
       return {
-        background: `linear-gradient(to top, ${baseGradient} 0%, transparent 100%)`,
+        background: `linear-gradient(to top, ${color} 0%, transparent 100%)`,
       };
     case 'duotone':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
+        background: `linear-gradient(135deg, ${color} 0%, transparent 50%, ${color} 100%)`,
       };
     case 'vignette':
       return {
-        background: `radial-gradient(circle at center, transparent 0%, ${baseGradient} 120%)`,
+        background: `radial-gradient(circle at center, transparent 0%, ${color} 120%)`,
       };
     case 'luxury':
       return {
-        background: `linear-gradient(135deg, ${baseGradient} 0%, transparent 50%, ${baseGradient} 100%)`,
+        background: `linear-gradient(135deg, ${color} 0%, transparent 50%, ${color} 100%)`,
       };
-    // New styles based on examples
     case 'banner-top':
       return {
         background: `linear-gradient(to bottom, ${color} 0%, ${color} 15%, transparent 15.1%, transparent 100%)`,
@@ -82,7 +83,7 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
       };
     case 'overlay-full':
       return {
-        background: `${baseGradient}`,
+        background: `${color}`,
       };
     case 'overlay-bottom-clean':
       return {
@@ -106,9 +107,13 @@ export function AdGradient({ style = 'minimal', color, opacity = 0.4 }: AdGradie
       return {
         background: `linear-gradient(to top, ${color}DD 0%, ${color}AA 10%, transparent 50%)`,
       };
-    default:
+    case 'luxury-jewelry':
       return {
-        background: baseGradient,
+        backgroundColor: '#C70039',
+        backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 2px, transparent 2px, transparent 6px)',
+        opacity: 1,
       };
+    default:
+      return baseGradient;
   }
 }

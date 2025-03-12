@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -82,6 +81,8 @@ export function AdPreview({
   const fontLoaded = useRef<boolean>(false);
   const fontLoadAttempts = useRef<number>(0);
   const preloadedImages = useRef<Set<string>>(new Set());
+  
+  const isLuxuryJewelry = templateStyle === 'luxury-jewelry';
 
   useEffect(() => {
     if (!imageGenerator.current) {
@@ -96,28 +97,22 @@ export function AdPreview({
     }
   }, [imageUrl]);
 
-  // Preload images for faster navigation
   useEffect(() => {
-    // Preload current image and adjacent images
     if (imageUrls.length > 0) {
       const imagesToPreload = [];
       
-      // Current image
       if (currentIndex >= 0 && currentIndex < imageUrls.length) {
         imagesToPreload.push(imageUrls[currentIndex]);
       }
       
-      // Next image
       if (currentIndex + 1 < imageUrls.length) {
         imagesToPreload.push(imageUrls[currentIndex + 1]);
       }
       
-      // Previous image
       if (currentIndex - 1 >= 0) {
         imagesToPreload.push(imageUrls[currentIndex - 1]);
       }
       
-      // Preload images we haven't loaded yet
       imagesToPreload.forEach(url => {
         if (url && !preloadedImages.current.has(url)) {
           const img = new Image();
@@ -129,11 +124,9 @@ export function AdPreview({
     }
   }, [imageUrls, currentIndex]);
 
-  // Font loading and application
   useEffect(() => {
     if (!fontUrl) return;
     
-    // Extract font family from Google Fonts URL
     const familyMatch = fontUrl.match(/family=([^:&]+)/);
     if (!familyMatch || !familyMatch[1]) return;
     
@@ -141,7 +134,6 @@ export function AdPreview({
     console.log(`Setting font family to: ${family} from ${fontUrl}`);
     setFontFamily(family);
     
-    // Load the font if not already loaded
     if (!document.querySelector(`link[href="${fontUrl}"]`)) {
       const link = document.createElement('link');
       link.href = fontUrl;
@@ -150,7 +142,6 @@ export function AdPreview({
         console.log(`Font loaded in AdPreview: ${family}`);
         fontLoaded.current = true;
         
-        // Force re-render to apply the font
         setFontFamily(prev => prev + ' ');
         setTimeout(() => setFontFamily(family), 10);
       };
@@ -159,7 +150,6 @@ export function AdPreview({
       console.log(`Font already in DOM: ${family}`);
       fontLoaded.current = true;
       
-      // Try to ensure the font is applied by refreshing the fontFamily state
       if (fontLoadAttempts.current < 3) {
         fontLoadAttempts.current++;
         setTimeout(() => {
@@ -172,7 +162,6 @@ export function AdPreview({
 
   const handleImageLoaded = () => {
     if (fastRenderMode) {
-      // Reduce delay in fast mode
       setTimeout(() => {
         if (onImageLoaded) onImageLoaded();
       }, 50);
@@ -240,7 +229,6 @@ export function AdPreview({
     }
   };
 
-  // Use simplified rendering in fast mode
   if (fastRenderMode) {
     return (
       <div 
@@ -251,13 +239,17 @@ export function AdPreview({
         }}
         dir={isRTL ? "rtl" : "ltr"}
       >
-        <AdPreviewImage
-          imageUrl={imageUrl}
-          position={imagePosition}
-          onPositionChange={() => {}}
-          onImageLoaded={handleImageLoaded}
-          fastMode={true}
-        />
+        <div className={isLuxuryJewelry ? "p-4" : ""}>
+          <div className={isLuxuryJewelry ? "overflow-hidden rounded-[2rem]" : ""}>
+            <AdPreviewImage
+              imageUrl={imageUrl}
+              position={imagePosition}
+              onPositionChange={() => {}}
+              onImageLoaded={handleImageLoaded}
+              fastMode={true}
+            />
+          </div>
+        </div>
         <div
           className="absolute inset-0 flex flex-col justify-between"
           style={gradientStyle}
@@ -308,13 +300,17 @@ export function AdPreview({
             }}
             dir={isRTL ? "rtl" : "ltr"}
           >
-            <AdPreviewImage
-              imageUrl={imageUrl}
-              position={imagePosition}
-              onPositionChange={() => {}}
-              onImageLoaded={handleImageLoaded}
-              fastMode={fastRenderMode}
-            />
+            <div className={isLuxuryJewelry ? "p-4" : ""}>
+              <div className={isLuxuryJewelry ? "overflow-hidden rounded-[2rem]" : ""}>
+                <AdPreviewImage
+                  imageUrl={imageUrl}
+                  position={imagePosition}
+                  onPositionChange={() => {}}
+                  onImageLoaded={handleImageLoaded}
+                  fastMode={fastRenderMode}
+                />
+              </div>
+            </div>
             <div
               className="absolute inset-0 flex flex-col justify-between"
               style={gradientStyle}
