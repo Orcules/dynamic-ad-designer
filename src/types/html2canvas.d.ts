@@ -7,14 +7,14 @@ declare module 'html2canvas' {
       useCORS: boolean;
       allowTaint: boolean;
       logging: boolean;
-      width: number;
-      height: number;
+      width?: number;
+      height?: number;
       scrollX: number;
       scrollY: number;
-      windowWidth: number;
-      windowHeight: number;
       x: number;
       y: number;
+      foreignObjectRendering?: boolean;
+      onclone?: (document: Document) => void;
     }
   }
 
