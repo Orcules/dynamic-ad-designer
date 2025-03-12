@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -170,7 +169,6 @@ export class ImageGenerator {
         scrollX: 0,
         scrollY: 0,
         // Speed optimizations
-        removeContainer: true,
         foreignObjectRendering: false,
         ignoreElements: (element) => element.tagName === 'SCRIPT',
         onclone: (documentClone) => {

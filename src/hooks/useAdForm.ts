@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect, useRef } from "react";
 import { templateColorSchemes } from "@/components/TemplateStyleSelector";
 
@@ -63,7 +62,6 @@ export const useAdForm = () => {
 
   const handleStyleChange = useCallback((value: string) => {
     const startTime = performance.now();
-    setAdData(prev => ({ ...prev, template_style: value }));
     
     // Apply the color scheme for the selected template
     if (templateColorSchemes[value]) {
@@ -79,6 +77,8 @@ export const useAdForm = () => {
       }));
       setOverlayOpacity(scheme.overlayOpacity);
       console.log(`Applied template style ${value} in ${performance.now() - startTime}ms`);
+    } else {
+      setAdData(prev => ({ ...prev, template_style: value }));
     }
   }, []);
 
@@ -102,26 +102,6 @@ export const useAdForm = () => {
     setAdData(prev => ({ ...prev, description_color: value }));
   }, []);
   
-  const handleOpacityChange = useCallback((value: number) => {
-    setOverlayOpacity(value);
-  }, []);
-  
-  const handleImagePositionChange = useCallback((position: Position) => {
-    setImagePosition(position);
-  }, []);
-  
-  const handleHeadlinePositionChange = useCallback((position: Position) => {
-    setHeadlinePosition(position);
-  }, []);
-  
-  const handleDescriptionPositionChange = useCallback((position: Position) => {
-    setDescriptionPosition(position);
-  }, []);
-  
-  const handleCtaPositionChange = useCallback((position: Position) => {
-    setCtaPosition(position);
-  }, []);
-
   return {
     adData,
     imagePosition,
@@ -138,10 +118,10 @@ export const useAdForm = () => {
     handleOverlayColorChange,
     handleTextColorChange,
     handleDescriptionColorChange,
-    handleOpacityChange,
-    handleImagePositionChange,
-    handleHeadlinePositionChange,
-    handleDescriptionPositionChange,
-    handleCtaPositionChange
+    handleOpacityChange: setOverlayOpacity,
+    handleImagePositionChange: setImagePosition,
+    handleHeadlinePositionChange: setHeadlinePosition,
+    handleDescriptionPositionChange: setDescriptionPosition,
+    handleCtaPositionChange: setCtaPosition
   };
 };

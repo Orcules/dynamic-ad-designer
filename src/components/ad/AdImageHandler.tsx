@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 
@@ -21,6 +22,7 @@ export function useAdImageHandler({
   const lastImageLoadTime = useRef<number>(0);
   const imageCacheRef = useRef<Map<string, boolean>>(new Map());
   const preloadedImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const imageChangeConfirmed = useRef<boolean>(false);
   
   const preloadImage = (url: string) => {
     if (imageCacheRef.current.has(url) || preloadedImagesRef.current.has(url)) return;
@@ -62,6 +64,7 @@ export function useAdImageHandler({
     if (onImageChangeConfirmed) {
       onImageChangeConfirmed();
     }
+    imageChangeConfirmed.current = true;
     lastImageLoadTime.current = Date.now();
     Logger.info(`Image change confirmed at ${lastImageLoadTime.current}`);
   };
