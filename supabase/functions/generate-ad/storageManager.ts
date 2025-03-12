@@ -13,14 +13,18 @@ export class StorageManager {
     this.imageCache = new Map();
   }
 
-  async uploadOriginalImage(uploadId: string, image: any, adName?: string) {
+  async uploadOriginalImage(uploadId: string, image: any, adName?: string, language?: string, fontName?: string, aspectRatio?: string, templateStyle?: string, version: number = 1) {
     const timestamp = Date.now();
-    // Improved naming logic - prioritize ad name and make it URL-friendly
-    const sanitizedName = adName ? 
-      this.sanitizeFileName(adName) : 
-      `ad_${uploadId}`;
+    const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     
-    const originalFileName = `full-ads/${sanitizedName}_original_${timestamp}.jpg`;
+    // Format the file name according to the required structure
+    const sanitizedName = adName ? this.sanitizeFileName(adName) : `ad_${uploadId}`;
+    const lang = language ? this.sanitizeFileName(language) : 'unknown';
+    const font = fontName ? this.sanitizeFileName(fontName) : 'default';
+    const ratio = aspectRatio ? this.sanitizeFileName(aspectRatio) : '1-1';
+    const style = templateStyle ? this.sanitizeFileName(templateStyle) : 'standard';
+    
+    const originalFileName = `full-ads/${sanitizedName}-${dateStr}-${lang}-${font}-${ratio}-${style}-Ver${version}_original.jpg`;
     
     // Check cache first
     if (this.imageCache.has(originalFileName)) {
@@ -54,14 +58,18 @@ export class StorageManager {
     return { originalFileName, originalImageUrl };
   }
 
-  async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array, adName?: string) {
+  async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array, adName?: string, language?: string, fontName?: string, aspectRatio?: string, templateStyle?: string, version: number = 1) {
     const timestamp = Date.now();
-    // Improved naming logic - prioritize ad name and make it URL-friendly
-    const sanitizedName = adName ? 
-      this.sanitizeFileName(adName) : 
-      `ad_${uploadId}`;
-      
-    const generatedFileName = `full-ads/${sanitizedName}_generated_${timestamp}.png`;
+    const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    
+    // Format the file name according to the required structure
+    const sanitizedName = adName ? this.sanitizeFileName(adName) : `ad_${uploadId}`;
+    const lang = language ? this.sanitizeFileName(language) : 'unknown';
+    const font = fontName ? this.sanitizeFileName(fontName) : 'default';
+    const ratio = aspectRatio ? this.sanitizeFileName(aspectRatio) : '1-1';
+    const style = templateStyle ? this.sanitizeFileName(templateStyle) : 'standard';
+    
+    const generatedFileName = `full-ads/${sanitizedName}-${dateStr}-${lang}-${font}-${ratio}-${style}-Ver${version}_generated.png`;
     
     // Check cache first
     if (this.imageCache.has(generatedFileName)) {
@@ -103,7 +111,7 @@ export class StorageManager {
   }
   
   // Add a method specifically for uploading rendered previews
-  async uploadRenderedPreview(uploadId: string, previewData: string, adName?: string) {
+  async uploadRenderedPreview(uploadId: string, previewData: string, adName?: string, language?: string, fontName?: string, aspectRatio?: string, templateStyle?: string, version: number = 1) {
     try {
       console.log(`Processing rendered preview for ${uploadId}`);
       
@@ -128,13 +136,17 @@ export class StorageManager {
       const contentTypeMatch = previewData.match(/data:(.*?);/);
       const contentType = contentTypeMatch ? contentTypeMatch[1] : 'image/png';
       
-      // Create a unique filename for the rendered preview using the ad name
-      const timestamp = Date.now();
-      const sanitizedName = adName ? 
-        this.sanitizeFileName(adName) : 
-        `ad_${uploadId}`;
+      // Create a unique filename with the new format
+      const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       
-      const renderedFileName = `full-ads/${sanitizedName}_rendered_${timestamp}.png`;
+      // Format the file name according to the required structure
+      const sanitizedName = adName ? this.sanitizeFileName(adName) : `ad_${uploadId}`;
+      const lang = language ? this.sanitizeFileName(language) : 'unknown';
+      const font = fontName ? this.sanitizeFileName(fontName) : 'default';
+      const ratio = aspectRatio ? this.sanitizeFileName(aspectRatio) : '1-1';
+      const style = templateStyle ? this.sanitizeFileName(templateStyle) : 'standard';
+      
+      const renderedFileName = `full-ads/${sanitizedName}-${dateStr}-${lang}-${font}-${ratio}-${style}-Ver${version}_rendered.png`;
       
       console.log(`Uploading rendered preview: ${renderedFileName}, size: ${bytes.length} bytes, type: ${contentType}`);
       
@@ -183,14 +195,20 @@ export class StorageManager {
   }
   
   // Add a faster method for bulk uploads that doesn't wait for each upload to complete
-  async uploadMultipleImages(images: { id: string, buffer: Uint8Array, name?: string }[]) {
+  async uploadMultipleImages(images: { id: string, buffer: Uint8Array, name?: string, language?: string, fontName?: string, aspectRatio?: string, templateStyle?: string, version?: number }[]) {
     const uploadPromises = images.map(async (image) => {
       const timestamp = Date.now();
-      const sanitizedName = image.name ? 
-        this.sanitizeFileName(image.name) : 
-        `ad_${image.id}`;
+      const dateStr = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
       
-      const fileName = `full-ads/${sanitizedName}_${timestamp}.jpg`;
+      // Format the file name according to the required structure
+      const sanitizedName = image.name ? this.sanitizeFileName(image.name) : `ad_${image.id}`;
+      const lang = image.language ? this.sanitizeFileName(image.language) : 'unknown';
+      const font = image.fontName ? this.sanitizeFileName(image.fontName) : 'default';
+      const ratio = image.aspectRatio ? this.sanitizeFileName(image.aspectRatio) : '1-1';
+      const style = image.templateStyle ? this.sanitizeFileName(image.templateStyle) : 'standard';
+      const version = image.version || 1;
+      
+      const fileName = `full-ads/${sanitizedName}-${dateStr}-${lang}-${font}-${ratio}-${style}-Ver${version}.jpg`;
       
       // Check cache first
       if (this.imageCache.has(fileName)) {

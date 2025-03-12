@@ -271,17 +271,31 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         throw new Error(`Skipping zero-size image: ${imageToUpload.name}`);
       }
       
-      // Create a descriptive ad name
       const adName = adData.headline 
-        ? `${adData.headline.substring(0, 30)} - Version ${imageIndex + 1}` 
-        : `Untitled Ad - Version ${imageIndex + 1}`;
+        ? `${adData.headline.substring(0, 30)}` 
+        : `Untitled Ad`;
       
-      let uploadedUrl = await handleSubmission(imageToUpload, previewUrl, adName);
+      const language = document.documentElement.lang || navigator.language || 'en';
+      const fontName = adData.font_url?.split('/').pop()?.split('.')[0] || 'default';
+      const { width, height } = getDimensions(adData.platform);
+      const aspectRatio = `${width}-${height}`;
+      const templateStyle = adData.template_style || 'standard';
+      const version = imageIndex + 1;
+      
+      let uploadedUrl = await handleSubmission(
+        imageToUpload, 
+        previewUrl, 
+        adName, 
+        language, 
+        fontName, 
+        aspectRatio, 
+        templateStyle, 
+        version
+      );
+      
       if (!uploadedUrl) {
         throw new Error('No URL returned from upload');
       }
-      
-      const { width, height } = getDimensions(adData.platform);
       
       const adDataToGenerate = {
         name: adName,

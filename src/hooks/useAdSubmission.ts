@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -185,8 +184,17 @@ export const useAdSubmission = () => {
     }
   };
 
-  // Main function to handle the entire upload process
-  const handleSubmission = async (file: File, renderedPreviewUrl?: string, adName?: string): Promise<string | null> => {
+  // Main function to handle the entire upload process with expanded metadata parameters
+  const handleSubmission = async (
+    file: File, 
+    renderedPreviewUrl?: string, 
+    adName?: string,
+    language?: string,
+    fontName?: string,
+    aspectRatio?: string,
+    templateStyle?: string,
+    version: number = 1
+  ): Promise<string | null> => {
     setIsSubmitting(true);
     setLastError(null);
     
@@ -219,7 +227,12 @@ export const useAdSubmission = () => {
             width: 1200,
             height: 628,
             fastMode: true,
-            headline: adName // Pass the ad name for file naming
+            headline: adName, // Pass the ad name for file naming
+            language,
+            fontName,
+            aspectRatio,
+            templateStyle,
+            version
           }));
           
           const { data, error } = await supabase.functions.invoke('generate-ad', {
@@ -273,7 +286,12 @@ export const useAdSubmission = () => {
             width: 1200,
             height: 628,
             fastMode: true,
-            headline: adName // Pass the ad name for file naming
+            headline: adName, // Pass the ad name for file naming
+            language,
+            fontName,
+            aspectRatio,
+            templateStyle,
+            version
           }));
           
           const { data, error } = await supabase.functions.invoke('generate-ad', {
@@ -293,8 +311,16 @@ export const useAdSubmission = () => {
         }
       }
       
-      // 5. If all else fails, try direct upload
-      const filePath = `${timestamp}-direct-${randomId}.${file.name.split('.').pop() || 'jpg'}`;
+      // 5. If all else fails, try direct upload with new naming format
+      const dateStr = new Date().toISOString().split('T')[0];
+      const sanitizedName = adName ? adName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '').substring(0, 50) : `ad_${uploadId}`;
+      const lang = language ? language.toLowerCase() : 'unknown';
+      const font = fontName ? fontName.toLowerCase() : 'default';
+      const ratio = aspectRatio ? aspectRatio : '1-1';
+      const style = templateStyle ? templateStyle : 'standard';
+      const ver = version || 1;
+      
+      const filePath = `${sanitizedName}-${dateStr}-${lang}-${font}-${ratio}-${style}-Ver${ver}.${file.name.split('.').pop() || 'jpg'}`;
       const uploadedUrl = await uploadFile(file, filePath, adName);
       
       if (uploadedUrl) {
