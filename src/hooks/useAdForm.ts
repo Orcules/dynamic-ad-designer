@@ -1,4 +1,6 @@
-import { useState, useCallback } from "react";
+
+import { useState, useCallback, useEffect } from "react";
+import { templateColorSchemes } from "@/components/TemplateStyleSelector";
 
 interface Position {
   x: number;
@@ -27,6 +29,21 @@ export const useAdForm = () => {
   const [ctaPosition, setCtaPosition] = useState<Position>({ x: 0, y: 0 });
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
   
+  // Apply default color scheme when the component mounts
+  useEffect(() => {
+    if (adData.template_style && templateColorSchemes[adData.template_style]) {
+      const scheme = templateColorSchemes[adData.template_style];
+      setAdData(prev => ({
+        ...prev,
+        text_color: scheme.textColor,
+        description_color: scheme.descriptionColor,
+        overlay_color: scheme.overlayColor,
+        cta_color: scheme.ctaColor
+      }));
+      setOverlayOpacity(scheme.overlayOpacity);
+    }
+  }, []); // Only run once on mount
+  
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setAdData(prev => ({ ...prev, [name]: value }));
@@ -42,6 +59,19 @@ export const useAdForm = () => {
 
   const handleStyleChange = useCallback((value: string) => {
     setAdData(prev => ({ ...prev, template_style: value }));
+    
+    // Apply the color scheme for the selected template
+    if (templateColorSchemes[value]) {
+      const scheme = templateColorSchemes[value];
+      setAdData(prev => ({
+        ...prev,
+        text_color: scheme.textColor,
+        description_color: scheme.descriptionColor,
+        overlay_color: scheme.overlayColor,
+        cta_color: scheme.ctaColor
+      }));
+      setOverlayOpacity(scheme.overlayOpacity);
+    }
   }, []);
 
   const handleColorChange = useCallback((value: string) => {

@@ -1,12 +1,247 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
 import { Button } from "./ui/button";
 import { Check } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
-// Define all available template styles
+export const templateColorSchemes = {
+  // Basic styles
+  "minimal": {
+    textColor: "#333333",
+    descriptionColor: "#666666",
+    overlayColor: "#FFFFFF",
+    ctaColor: "#000000",
+    overlayOpacity: 0.2
+  },
+  "modern": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#F0F0F0",
+    overlayColor: "#000000",
+    ctaColor: "#4A90E2",
+    overlayOpacity: 0.4
+  },
+  "elegant": {
+    textColor: "#F8F0E3",
+    descriptionColor: "#E8D9C5",
+    overlayColor: "#2D2A24",
+    ctaColor: "#C9A87C",
+    overlayOpacity: 0.5
+  },
+  "dynamic": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0E0E0",
+    overlayColor: "#1E3A8A",
+    ctaColor: "#F59E0B",
+    overlayOpacity: 0.6
+  },
+  "spotlight": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#CCCCCC",
+    overlayColor: "#000000",
+    ctaColor: "#FF4500",
+    overlayOpacity: 0.7
+  },
+  
+  // Banner & frame styles
+  "banner-top": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E6E6E6",
+    overlayColor: "#3B82F6",
+    ctaColor: "#1D4ED8",
+    overlayOpacity: 0.85
+  },
+  "banner-bottom": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E6E6E6",
+    overlayColor: "#4B5563",
+    ctaColor: "#1F2937",
+    overlayOpacity: 0.85
+  },
+  "framed": {
+    textColor: "#333333",
+    descriptionColor: "#555555",
+    overlayColor: "#FFFFFF",
+    ctaColor: "#000000",
+    overlayOpacity: 0.15
+  },
+  "corner-accent": {
+    textColor: "#1F2937",
+    descriptionColor: "#4B5563",
+    overlayColor: "#F3F4F6",
+    ctaColor: "#6366F1",
+    overlayOpacity: 0.2
+  },
+  
+  // Advanced styles
+  "tech-glow": {
+    textColor: "#C2FDFF",
+    descriptionColor: "#7BB4D4",
+    overlayColor: "#071D3A",
+    ctaColor: "#00FFFF",
+    overlayOpacity: 0.6
+  },
+  "luxury-frame": {
+    textColor: "#F9F2D6",
+    descriptionColor: "#E6D89C",
+    overlayColor: "#2C201D",
+    ctaColor: "#D4AF37",
+    overlayOpacity: 0.4
+  },
+  "luxury-jewelry": {
+    textColor: "#F9F2D6",
+    descriptionColor: "#E6D89C",
+    overlayColor: "#c5022e",
+    ctaColor: "#f8e9b0",
+    overlayOpacity: 0.3
+  },
+  
+  // Overlay styles
+  "overlay-full": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0E0E0",
+    overlayColor: "#000000",
+    ctaColor: "#FFFFFF",
+    overlayOpacity: 0.7
+  },
+  "overlay-bottom-clean": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E6E6E6",
+    overlayColor: "#000000",
+    ctaColor: "#FFFFFF",
+    overlayOpacity: 0.8
+  },
+  "overlay-bottom-gradient": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#F0F0F0",
+    overlayColor: "#222222",
+    ctaColor: "#FFFFFF",
+    overlayOpacity: 0.9
+  },
+  "overlay-bottom-glass": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0E0E0",
+    overlayColor: "#4B5563",
+    ctaColor: "#FFFFFF",
+    overlayOpacity: 0.4
+  },
+  "overlay-bottom-neon": {
+    textColor: "#00FFFF",
+    descriptionColor: "#E100FF",
+    overlayColor: "#0D0221",
+    ctaColor: "#0FFF50",
+    overlayOpacity: 0.85
+  },
+  "overlay-bottom-minimal": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E6E6E6",
+    overlayColor: "#000000",
+    ctaColor: "#FFFFFF",
+    overlayOpacity: 0.6
+  },
+  
+  // Other styles
+  "wave": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0F7FA",
+    overlayColor: "#01579B",
+    ctaColor: "#00B0FF",
+    overlayOpacity: 0.6
+  },
+  "cinematic": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#B0B0B0",
+    overlayColor: "#000000",
+    ctaColor: "#E50914",
+    overlayOpacity: 0.5
+  },
+  "minimal-fade": {
+    textColor: "#333333",
+    descriptionColor: "#555555",
+    overlayColor: "#FFFFFF",
+    ctaColor: "#000000",
+    overlayOpacity: 0.7
+  },
+  "duotone": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#F0F0F0",
+    overlayColor: "#8A2BE2",
+    ctaColor: "#4B0082",
+    overlayOpacity: 0.5
+  },
+  "vignette": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0E0E0",
+    overlayColor: "#000000",
+    ctaColor: "#FFFFFF",
+    overlayOpacity: 0.6
+  },
+  "luxury": {
+    textColor: "#F9F2D6",
+    descriptionColor: "#D4C69E",
+    overlayColor: "#1A1812",
+    ctaColor: "#D4AF37",
+    overlayOpacity: 0.4
+  },
+  "retro": {
+    textColor: "#F5F5DC",
+    descriptionColor: "#D3CBAE",
+    overlayColor: "#8B4513",
+    ctaColor: "#CD853F",
+    overlayOpacity: 0.5
+  },
+  "glassmorphism": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0E0E0",
+    overlayColor: "#FFFFFF",
+    ctaColor: "#3B82F6",
+    overlayOpacity: 0.15
+  },
+  "3d": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#CCCCCC",
+    overlayColor: "#1E293B",
+    ctaColor: "#6EE7B7",
+    overlayOpacity: 0.7
+  },
+  "vintage": {
+    textColor: "#F2E8DC",
+    descriptionColor: "#D8CFC2",
+    overlayColor: "#5E503F",
+    ctaColor: "#C6AC8F",
+    overlayOpacity: 0.5
+  },
+  "tech": {
+    textColor: "#E2E8F0",
+    descriptionColor: "#CBD5E1",
+    overlayColor: "#0F172A",
+    ctaColor: "#10B981",
+    overlayOpacity: 0.7
+  },
+  "nature": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E0E0E0",
+    overlayColor: "#2D3B2D",
+    ctaColor: "#4CAF50",
+    overlayOpacity: 0.4
+  },
+  "urban": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#CCCCCC",
+    overlayColor: "#1F2937",
+    ctaColor: "#F97316",
+    overlayOpacity: 0.6
+  },
+  "artistic": {
+    textColor: "#FFFFFF",
+    descriptionColor: "#E6E6E6",
+    overlayColor: "#5D4037",
+    ctaColor: "#FF9800",
+    overlayOpacity: 0.5
+  }
+};
+
 const templates = [
   // Basic styles
   { id: "minimal", label: "Minimal Clean" },
@@ -24,7 +259,7 @@ const templates = [
   // Advanced styles
   { id: "tech-glow", label: "Tech Glow" },
   { id: "luxury-frame", label: "Luxury Frame" },
-  { id: "luxury-jewelry", label: "Luxury Jewelry" }, // Add our new template
+  { id: "luxury-jewelry", label: "Luxury Jewelry" },
   
   // Overlay styles
   { id: "overlay-full", label: "Full Overlay" },
@@ -85,10 +320,20 @@ export function TemplateStyleSelector({
   onDescriptionColorChange,
 }: TemplateStyleSelectorProps) {
   
-  // Simple function to handle template style selection
   const handleSelect = (templateId: string) => {
     if (templateId !== value) {
       onChange(templateId);
+      
+      if (templateColorSchemes[templateId]) {
+        const scheme = templateColorSchemes[templateId];
+        onTextColorChange(scheme.textColor);
+        onDescriptionColorChange(scheme.descriptionColor);
+        onOverlayColorChange(scheme.overlayColor);
+        onCtaColorChange(scheme.ctaColor);
+        if (onOpacityChange) {
+          onOpacityChange(scheme.overlayOpacity);
+        }
+      }
     }
   };
 
@@ -106,7 +351,11 @@ export function TemplateStyleSelector({
               key={template.id}
               type="button"
               variant={template.id === value ? "default" : "outline"}
-              className="flex justify-between items-center w-full"
+              className={cn(
+                "flex justify-between items-center w-full",
+                template.id === "luxury-jewelry" && "border-[#f8e9b0] text-[#f8e9b0] hover:text-[#f8e9b0] hover:bg-[#c5022e]/20",
+                template.id === value && template.id === "luxury-jewelry" && "bg-[#c5022e] text-[#f8e9b0]"
+              )}
               onClick={() => handleSelect(template.id)}
             >
               <span className="truncate mr-2">
