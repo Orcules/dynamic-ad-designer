@@ -9,6 +9,7 @@ import { AdPreviewImage } from "./ad/AdPreviewImage";
 import { Button } from "./ui/button";
 import { Download } from "lucide-react";
 import { ImageGenerator } from "@/utils/ImageGenerator";
+import { cn } from "@/lib/utils";
 
 interface Position {
   x: number;
