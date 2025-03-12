@@ -1,4 +1,3 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -8,27 +7,38 @@ import { useCallback } from "react";
 
 // Define all available template styles
 const templates = [
+  // Basic styles
+  { id: "minimal", label: "Minimal Clean" },
   { id: "modern", label: "Modern" },
   { id: "elegant", label: "Elegant" },
   { id: "dynamic", label: "Dynamic" },
   { id: "spotlight", label: "Spotlight" },
+  
+  // New banner & frame styles
+  { id: "banner-top", label: "Top Banner" },
+  { id: "banner-bottom", label: "Bottom Banner" },
+  { id: "framed", label: "Frame Border" },
+  { id: "corner-accent", label: "Corner Accent" },
+  
+  // Advanced styles
+  { id: "tech-glow", label: "Tech Glow" },
+  { id: "luxury-frame", label: "Luxury Frame" },
+  
+  // Overlay styles
+  { id: "overlay-full", label: "Full Overlay" },
+  { id: "overlay-bottom-clean", label: "Bottom Clean" },
+  { id: "overlay-bottom-gradient", label: "Bottom Gradient" },
+  { id: "overlay-bottom-glass", label: "Bottom Glass" },
+  { id: "overlay-bottom-neon", label: "Bottom Neon" },
+  { id: "overlay-bottom-minimal", label: "Bottom Minimal" },
+  
+  // Other styles
   { id: "wave", label: "Wave" },
   { id: "cinematic", label: "Cinematic" },
   { id: "minimal-fade", label: "Minimal Fade" },
   { id: "duotone", label: "Duotone" },
   { id: "vignette", label: "Vignette" },
   { id: "luxury", label: "Luxury" },
-  { id: "overlay-bottom-clean", label: "Bottom Clean" },
-  { id: "overlay-bottom-gradient", label: "Bottom Gradient" },
-  { id: "overlay-bottom-glass", label: "Bottom Glass" },
-  { id: "overlay-bottom-neon", label: "Bottom Neon" },
-  { id: "overlay-bottom-minimal", label: "Bottom Minimal" },
-  { id: "neon", label: "Neon Glow" },
-  { id: "split", label: "Split Design" },
-  { id: "gradient", label: "Gradient Flow" },
-  { id: "outline", label: "Outline Text" },
-  { id: "stacked", label: "Stacked Layout" },
-  { id: "minimal", label: "Minimal Clean" },
   { id: "retro", label: "Retro Style" },
   { id: "glassmorphism", label: "Glass Effect" },
   { id: "3d", label: "3D Text" },

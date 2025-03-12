@@ -15,11 +15,12 @@ export class StorageManager {
 
   async uploadOriginalImage(uploadId: string, image: any, adName?: string) {
     const timestamp = Date.now();
-    const fileName = adName ? 
-      `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.jpg` : 
-      `full-ads/${uploadId}_${timestamp}.jpg`;
+    // Improved naming logic - prioritize ad name and make it URL-friendly
+    const sanitizedName = adName ? 
+      this.sanitizeFileName(adName) : 
+      `ad_${uploadId}`;
     
-    const originalFileName = `full-ads/${fileName}`;
+    const originalFileName = `full-ads/${sanitizedName}_original_${timestamp}.jpg`;
     
     // Check cache first
     if (this.imageCache.has(originalFileName)) {
@@ -55,11 +56,12 @@ export class StorageManager {
 
   async uploadGeneratedImage(uploadId: string, screenshotBuffer: Uint8Array, adName?: string) {
     const timestamp = Date.now();
-    const fileName = adName ? 
-      `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.png` : 
-      `full-ads/${uploadId}_${timestamp}.png`;
-    
-    const generatedFileName = `full-ads/${fileName}`;
+    // Improved naming logic - prioritize ad name and make it URL-friendly
+    const sanitizedName = adName ? 
+      this.sanitizeFileName(adName) : 
+      `ad_${uploadId}`;
+      
+    const generatedFileName = `full-ads/${sanitizedName}_generated_${timestamp}.png`;
     
     // Check cache first
     if (this.imageCache.has(generatedFileName)) {
@@ -126,13 +128,13 @@ export class StorageManager {
       const contentTypeMatch = previewData.match(/data:(.*?);/);
       const contentType = contentTypeMatch ? contentTypeMatch[1] : 'image/png';
       
-      // Create a unique filename for the rendered preview
+      // Create a unique filename for the rendered preview using the ad name
       const timestamp = Date.now();
-      const fileName = adName ? 
-        `${adName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.png` : 
-        `rendered_${uploadId}_${timestamp}.png`;
+      const sanitizedName = adName ? 
+        this.sanitizeFileName(adName) : 
+        `ad_${uploadId}`;
       
-      const renderedFileName = `full-ads/${fileName}`;
+      const renderedFileName = `full-ads/${sanitizedName}_rendered_${timestamp}.png`;
       
       console.log(`Uploading rendered preview: ${renderedFileName}, size: ${bytes.length} bytes, type: ${contentType}`);
       
@@ -168,13 +170,27 @@ export class StorageManager {
     }
   }
   
+  // Helper method to sanitize file names
+  private sanitizeFileName(name: string): string {
+    // Replace spaces with hyphens and remove special characters
+    return name
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-_]/g, '')
+      // Ensure the name isn't too long for file systems
+      .substring(0, 50);
+  }
+  
   // Add a faster method for bulk uploads that doesn't wait for each upload to complete
   async uploadMultipleImages(images: { id: string, buffer: Uint8Array, name?: string }[]) {
     const uploadPromises = images.map(async (image) => {
       const timestamp = Date.now();
-      const fileName = image.name ? 
-        `full-ads/${image.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-_]/g, '')}_${timestamp}.jpg` : 
-        `full-ads/${image.id}_${timestamp}.jpg`;
+      const sanitizedName = image.name ? 
+        this.sanitizeFileName(image.name) : 
+        `ad_${image.id}`;
+      
+      const fileName = `full-ads/${sanitizedName}_${timestamp}.jpg`;
       
       // Check cache first
       if (this.imageCache.has(fileName)) {

@@ -186,6 +186,87 @@ export function getTextStyle({
         letterSpacing: '0.05em',
       };
 
+    // New styles based on examples
+    case 'banner-top':
+      return {
+        ...baseStyle,
+        backgroundColor: accentColor,
+        color: '#FFFFFF',
+        padding: isDescription ? '0.5rem 1rem' : '0.8rem 1.5rem',
+        textAlign: 'left',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        borderRadius: '0',
+        margin: '0',
+        width: '100%',
+        maxWidth: '100%',
+      };
+
+    case 'banner-bottom':
+      return {
+        ...baseStyle,
+        backgroundColor: 'transparent',
+        textShadow: '1px 1px 2px rgba(0,0,0,0.7)',
+        textAlign: 'center',
+        padding: isDescription ? '0.5rem 1rem' : '0.8rem 1.5rem',
+      };
+
+    case 'framed':
+      return {
+        ...baseStyle,
+        border: `2px solid ${accentColor}`,
+        padding: '1rem',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+      };
+
+    case 'corner-accent':
+      return {
+        ...baseStyle,
+        borderLeft: `4px solid ${accentColor}`,
+        paddingLeft: '1.5rem',
+        textAlign: 'left',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+      };
+
+    case 'tech-glow':
+      return {
+        ...baseStyle,
+        textShadow: `0 0 10px ${textColor}, 0 0 20px ${textColor}, 0 0 30px ${accentColor}`,
+        fontFamily: "'Arial', sans-serif",
+        letterSpacing: '0.05em',
+      };
+
+    case 'luxury-frame':
+      return {
+        ...baseStyle,
+        border: '1px solid rgba(255,215,0,0.5)',
+        boxShadow: '0 0 10px rgba(255,215,0,0.2)',
+        padding: isDescription ? '1rem 1.5rem' : '1.5rem 2rem',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        letterSpacing: '0.1em',
+      };
+
+    case 'overlay-bottom-clean':
+    case 'overlay-bottom-gradient': 
+    case 'overlay-bottom-glass':
+    case 'overlay-bottom-neon':
+    case 'overlay-bottom-minimal':
+      return {
+        ...baseStyle,
+        textAlign: 'left',
+        paddingLeft: '1.5rem',
+        paddingRight: '1.5rem',
+        textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+      };
+
+    case 'overlay-full':
+      return {
+        ...baseStyle,
+        textShadow: '1px 1px 3px rgba(0,0,0,0.8)',
+        letterSpacing: '0.05em',
+      };
+
     default:
       return baseStyle;
   }

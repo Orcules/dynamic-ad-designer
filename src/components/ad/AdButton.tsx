@@ -1,3 +1,4 @@
+
 import { CSSProperties } from "react";
 
 interface AdButtonProps {
@@ -237,6 +238,99 @@ export function getButtonStyle({ style = 'minimal', accentColor, isHovered, font
         padding: '0.9em 2.9em',
       };
 
+    // New styles based on examples
+    case 'banner-top':
+    case 'banner-bottom':
+      return {
+        ...baseStyle,
+        background: '#1EAEDB',
+        color: '#FFFFFF',
+        borderRadius: '4px',
+        fontWeight: 'bold',
+        boxShadow: isHovered ? '0 4px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.2)',
+        transform: isHovered ? 'translateY(-2px)' : 'none',
+        padding: '0.7em 2em',
+        fontSize: 'clamp(0.9rem, 1.3vw, 1.1rem)',
+        textTransform: 'none',
+      };
+
+    case 'framed':
+      return {
+        ...baseStyle,
+        backgroundColor: accentColor,
+        border: '3px solid #FFFFFF',
+        borderRadius: '8px',
+        boxShadow: isHovered ? '0 0 20px rgba(0,0,0,0.4)' : '0 0 10px rgba(0,0,0,0.2)',
+        transform: isHovered ? 'scale(1.05)' : 'none',
+      };
+
+    case 'corner-accent':
+      return {
+        ...baseStyle,
+        background: '#FFFFFF',
+        color: '#000000',
+        borderRadius: '0',
+        border: `2px solid ${accentColor}`,
+        fontWeight: 'bold',
+        boxShadow: isHovered ? '4px 4px 0 rgba(0,0,0,0.8)' : '2px 2px 0 rgba(0,0,0,0.5)',
+        transform: isHovered ? 'translate(-2px, -2px)' : 'none',
+      };
+
+    case 'tech-glow':
+      return {
+        ...baseStyle,
+        background: 'rgba(30,174,219,0.9)',
+        border: '1px solid #33F3FF',
+        borderRadius: '50px',
+        boxShadow: isHovered 
+          ? '0 0 20px #33F3FF, inset 0 0 10px #33F3FF' 
+          : '0 0 10px #33F3FF',
+        transform: isHovered ? 'scale(1.05)' : 'none',
+        padding: '0.7em 2.5em',
+      };
+
+    case 'luxury-frame':
+      return {
+        ...baseStyle,
+        background: 'rgba(0,0,0,0.6)',
+        border: '1px solid rgba(255,215,0,0.8)',
+        color: '#FFD700',
+        boxShadow: isHovered 
+          ? '0 0 15px rgba(255,215,0,0.5), inset 0 0 5px rgba(255,215,0,0.5)' 
+          : '0 0 5px rgba(255,215,0,0.3)',
+        borderRadius: '0',
+        letterSpacing: '0.1em',
+        transform: isHovered ? 'translateY(-2px)' : 'none',
+      };
+
+    case 'overlay-bottom-clean':
+    case 'overlay-bottom-gradient':
+    case 'overlay-bottom-glass':
+    case 'overlay-bottom-neon':
+    case 'overlay-bottom-minimal':
+      return {
+        ...baseStyle,
+        background: accentColor,
+        borderRadius: '4px',
+        boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.2)',
+        transform: isHovered ? 'translateY(-2px)' : 'none',
+        fontSize: 'clamp(0.8rem, 1.4vw, 1rem)',
+        margin: '0 0 1.5rem 1.5rem',
+        padding: '0.7em 2em',
+        alignSelf: 'flex-start',
+      };
+
+    case 'overlay-full':
+      return {
+        ...baseStyle,
+        background: 'rgba(255,255,255,0.9)',
+        color: '#000000',
+        borderRadius: '4px',
+        boxShadow: isHovered ? '0 4px 12px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.2)',
+        transform: isHovered ? 'translateY(-2px)' : 'none',
+        fontWeight: 'bold',
+      };
+    
     default:
       return {
         ...baseStyle,
