@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { templateColorSchemes } from "@/components/TemplateStyleSelector";
 
 interface Position {
@@ -8,6 +8,7 @@ interface Position {
 }
 
 export const useAdForm = () => {
+  const initialStyleApplied = useRef<boolean>(false);
   const [adData, setAdData] = useState({
     name: "",
     headline: "",
@@ -31,16 +32,19 @@ export const useAdForm = () => {
   
   // Apply default color scheme when the component mounts
   useEffect(() => {
-    if (adData.template_style && templateColorSchemes[adData.template_style]) {
-      const scheme = templateColorSchemes[adData.template_style];
-      setAdData(prev => ({
-        ...prev,
-        text_color: scheme.textColor,
-        description_color: scheme.descriptionColor,
-        overlay_color: scheme.overlayColor,
-        cta_color: scheme.ctaColor
-      }));
-      setOverlayOpacity(scheme.overlayOpacity);
+    if (!initialStyleApplied.current) {
+      if (adData.template_style && templateColorSchemes[adData.template_style]) {
+        const scheme = templateColorSchemes[adData.template_style];
+        setAdData(prev => ({
+          ...prev,
+          text_color: scheme.textColor,
+          description_color: scheme.descriptionColor,
+          overlay_color: scheme.overlayColor,
+          cta_color: scheme.ctaColor
+        }));
+        setOverlayOpacity(scheme.overlayOpacity);
+        initialStyleApplied.current = true;
+      }
     }
   }, []); // Only run once on mount
   
@@ -58,19 +62,23 @@ export const useAdForm = () => {
   }, []);
 
   const handleStyleChange = useCallback((value: string) => {
+    const startTime = performance.now();
     setAdData(prev => ({ ...prev, template_style: value }));
     
     // Apply the color scheme for the selected template
     if (templateColorSchemes[value]) {
       const scheme = templateColorSchemes[value];
+      // Use a single state update for better performance
       setAdData(prev => ({
         ...prev,
+        template_style: value,
         text_color: scheme.textColor,
         description_color: scheme.descriptionColor,
         overlay_color: scheme.overlayColor,
         cta_color: scheme.ctaColor
       }));
       setOverlayOpacity(scheme.overlayOpacity);
+      console.log(`Applied template style ${value} in ${performance.now() - startTime}ms`);
     }
   }, []);
 

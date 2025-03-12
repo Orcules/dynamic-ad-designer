@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -54,6 +55,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   const currentRenderingIndex = useRef<number>(-1);
   const imageChangeConfirmed = useRef<boolean>(false);
   const waitingForImageRender = useRef<boolean>(false);
+  const processingStartTime = useRef<number>(0);
 
   const {
     selectedImages,
@@ -70,7 +72,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     resetProcessedIndexes,
     getUnprocessedIndexes,
     isChangingIndex,
-    confirmImageChanged
+    confirmImageChanged,
+    getPreloadedImage
   } = useAdImageHandler({
     onImageChange: (urls) => {
       Logger.info(JSON.stringify({ message: 'Images changed', urls }));
@@ -99,13 +102,13 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         confirmImageChanged();
         waitingForImageRender.current = false;
         Logger.info(`Image change for index ${currentRenderingIndex.current} confirmed after render`);
-      }, 1000);
+      }, 500); // Reduced from 1000ms
       
       return () => clearTimeout(timer);
     }
   }, [currentPreviewIndex, confirmImageChanged]);
 
-  const ensurePreviewIndex = async (targetIndex: number, maxRetries = 3): Promise<boolean> => {
+  const ensurePreviewIndex = async (targetIndex: number, maxRetries = 2): Promise<boolean> => {
     Logger.info(`Ensuring preview index is set to ${targetIndex}, current: ${currentPreviewIndex}`);
     
     if (currentPreviewIndex === targetIndex && !isChangingIndex()) {
@@ -119,7 +122,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     
     if (isChangingIndex()) {
       Logger.info(`Waiting for ongoing index change to complete before setting to ${targetIndex}`);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 400)); // Reduced from 800ms
     }
     
     let success = false;
@@ -144,22 +147,22 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
               clearInterval(checkInterval);
               resolve(true);
             }
-          }, 200);
+          }, 100);
           
           setTimeout(() => {
             clearInterval(checkInterval);
             resolve(false);
-          }, 3000);
+          }, 1500); // Reduced from 3000ms
         });
         
         Logger.info(`Image change confirmed: ${imageChangeConfirmed.current}`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1000ms
         return imageChangeConfirmed.current;
       }
       
       if (attempts < maxRetries) {
         Logger.warn(`Failed to set preview index to ${targetIndex}, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 800));
+        await new Promise(resolve => setTimeout(resolve, 400)); // Reduced from 800ms
       }
     }
     
@@ -170,7 +173,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     return success && imageChangeConfirmed.current;
   };
 
-  const capturePreview = async (maxRetries = 3): Promise<string> => {
+  const capturePreview = async (maxRetries = 2): Promise<string> => {
     if (!imageGeneratorRef.current) {
       throw new Error("Image generator not initialized");
     }
@@ -181,14 +184,15 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     while (!previewUrl && captureRetries < maxRetries) {
       try {
         captureRetries++;
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Reduced waiting time before capture
+        await new Promise(resolve => setTimeout(resolve, 800)); // Reduced from 1500ms
         previewUrl = await imageGeneratorRef.current.getImageUrl();
         Logger.info(`Generated preview URL on attempt ${captureRetries}`);
         break;
       } catch (captureError) {
         Logger.error(`Capture attempt ${captureRetries} failed: ${captureError instanceof Error ? captureError.message : String(captureError)}`);
         if (captureRetries >= maxRetries) break;
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        await new Promise(resolve => setTimeout(resolve, 600)); // Reduced from 1200ms
       }
     }
     
@@ -201,6 +205,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
   const processImage = async (imageIndex: number, allImages: Array<File | string>): Promise<string | null> => {
     try {
+      const startTime = performance.now();
+      processingStartTime.current = startTime;
+      
       setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'processing' }));
       setCurrentProcessingIndex(imageIndex);
       
@@ -220,20 +227,21 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         return null;
       }
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Reduced waiting time
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 2000ms
       
       if (currentPreviewIndex !== imageIndex) {
         Logger.error(`Preview index mismatch: expected ${imageIndex}, got ${currentPreviewIndex}`);
         await ensurePreviewIndex(imageIndex);
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 750)); // Reduced from 1500ms
       }
       
       if (!imageChangeConfirmed.current) {
         Logger.warn(`Image change not confirmed for index ${imageIndex}, forcing another index change`);
         await setCurrentPreviewIndexSafely(imageIndex === 0 ? 1 : 0);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 500)); // Reduced from 1000ms
         await setCurrentPreviewIndexSafely(imageIndex);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 2000ms
       }
       
       const previewUrl = await capturePreview();
@@ -323,9 +331,10 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       
       setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'completed' }));
       
-      toast.success(`Generated ad ${imageIndex + 1} of ${allImages.length}`);
+      const processingTime = (performance.now() - startTime) / 1000;
+      toast.success(`Generated ad ${imageIndex + 1} of ${allImages.length} in ${processingTime.toFixed(1)}s`);
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 750)); // Reduced from 1500ms
       
       return uploadedUrl;
     } catch (error) {
@@ -360,6 +369,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     setIsGenerating(true);
     generationInProgress.current = true;
     resetProcessedIndexes();
+    processingStartTime.current = performance.now();
 
     try {
       Logger.info('Starting ad generation process...');
@@ -390,6 +400,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
       });
       setProcessingStatus(initialStatus);
 
+      // Process images sequentially with reduced wait times
       for (let i = 0; i < allImages.length; i++) {
         if (isIndexProcessed(i)) {
           Logger.info(`Image at index ${i} already processed, skipping`);
@@ -399,7 +410,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         setCurrentProcessingIndex(i);
         await processImage(i, allImages);
         
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise(resolve => setTimeout(resolve, 750)); // Reduced from 1500ms
       }
 
       const unprocessed = getUnprocessedIndexes();
@@ -409,13 +420,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         for (const index of unprocessed) {
           setCurrentProcessingIndex(index);
           await processImage(index, allImages);
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          await new Promise(resolve => setTimeout(resolve, 750)); // Reduced from 1500ms
         }
       }
 
       await setCurrentPreviewIndexSafely(originalPreviewIndex);
       
-      toast.success(`All ${allImages.length} ads generated successfully!`);
+      const totalProcessingTime = (performance.now() - processingStartTime.current) / 1000;
+      toast.success(`All ${allImages.length} ads generated in ${totalProcessingTime.toFixed(1)}s!`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       Logger.error(`Error in handleSubmit: ${errorMessage}`);
@@ -484,6 +496,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             ctaPosition={ctaPosition}
             imagePosition={imagePosition}
             showCtaArrow={showCtaArrow}
+            onImageLoaded={confirmImageChanged}
+            fastRenderMode={true} // Enable fast render mode by default
+            preloadedImage={getPreloadedImage(imageUrls[currentPreviewIndex])}
           />
         </div>
 

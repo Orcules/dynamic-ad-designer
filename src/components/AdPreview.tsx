@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -43,6 +44,7 @@ interface AdPreviewProps {
   language?: string;
   onImageLoaded?: () => void;
   fastRenderMode?: boolean;
+  preloadedImage?: HTMLImageElement | null;
 }
 
 export function AdPreview({ 
@@ -72,6 +74,7 @@ export function AdPreview({
   language = "en",
   onImageLoaded,
   fastRenderMode = false,
+  preloadedImage = null
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -82,11 +85,14 @@ export function AdPreview({
   const fontLoaded = useRef<boolean>(false);
   const fontLoadAttempts = useRef<number>(0);
   const preloadedImages = useRef<Set<string>>(new Set());
+  const renderStartTime = useRef<number>(performance.now());
   
   const isLuxuryJewelry = templateStyle === 'luxury-jewelry';
   const luxuryBgColor = "#c5022e";
 
   useEffect(() => {
+    renderStartTime.current = performance.now();
+    
     if (!imageGenerator.current) {
       imageGenerator.current = new ImageGenerator('.ad-content');
     }
@@ -99,31 +105,52 @@ export function AdPreview({
     }
   }, [imageUrl]);
 
+  // More efficient preloading using intersection observer
   useEffect(() => {
-    if (imageUrls.length > 0) {
-      const imagesToPreload = [];
-      
-      if (currentIndex >= 0 && currentIndex < imageUrls.length) {
-        imagesToPreload.push(imageUrls[currentIndex]);
-      }
-      
-      if (currentIndex + 1 < imageUrls.length) {
-        imagesToPreload.push(imageUrls[currentIndex + 1]);
-      }
-      
-      if (currentIndex - 1 >= 0) {
-        imagesToPreload.push(imageUrls[currentIndex - 1]);
-      }
-      
-      imagesToPreload.forEach(url => {
-        if (url && !preloadedImages.current.has(url)) {
-          const img = new Image();
-          img.src = url;
-          img.crossOrigin = "anonymous";
-          preloadedImages.current.add(url);
+    if (imageUrls.length <= 1) return;
+    
+    // Use IntersectionObserver to efficiently preload images
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        // Only preload when the component is visible
+        const imagesToPreload = [];
+        
+        if (currentIndex >= 0 && currentIndex < imageUrls.length) {
+          imagesToPreload.push(imageUrls[currentIndex]);
         }
-      });
+        
+        // Preload next and previous images
+        if (currentIndex + 1 < imageUrls.length) {
+          imagesToPreload.push(imageUrls[currentIndex + 1]);
+        }
+        
+        if (currentIndex - 1 >= 0) {
+          imagesToPreload.push(imageUrls[currentIndex - 1]);
+        }
+        
+        // Preload images in parallel
+        imagesToPreload.forEach(url => {
+          if (url && !preloadedImages.current.has(url)) {
+            const img = new Image();
+            img.src = url;
+            img.crossOrigin = "anonymous";
+            preloadedImages.current.add(url);
+          }
+        });
+      }
+    }, { threshold: 0.1 });
+    
+    const adPreviewElement = document.querySelector('.ad-content');
+    if (adPreviewElement) {
+      observer.observe(adPreviewElement);
     }
+    
+    return () => {
+      if (adPreviewElement) {
+        observer.unobserve(adPreviewElement);
+      }
+      observer.disconnect();
+    };
   }, [imageUrls, currentIndex]);
 
   useEffect(() => {
@@ -136,6 +163,7 @@ export function AdPreview({
     console.log(`Setting font family to: ${family} from ${fontUrl}`);
     setFontFamily(family);
     
+    // Use link.preload for faster font loading
     if (!document.querySelector(`link[href="${fontUrl}"]`)) {
       const link = document.createElement('link');
       link.href = fontUrl;
@@ -144,6 +172,7 @@ export function AdPreview({
         console.log(`Font loaded in AdPreview: ${family}`);
         fontLoaded.current = true;
         
+        // Force a rerender by slightly modifying state
         setFontFamily(prev => prev + ' ');
         setTimeout(() => setFontFamily(family), 10);
       };
@@ -163,15 +192,11 @@ export function AdPreview({
   }, [fontUrl]);
 
   const handleImageLoaded = () => {
-    if (fastRenderMode) {
-      setTimeout(() => {
-        if (onImageLoaded) onImageLoaded();
-      }, 50);
-    } else {
-      console.log('Image loaded callback in AdPreview');
-      if (onImageLoaded) {
-        onImageLoaded();
-      }
+    const renderTime = performance.now() - renderStartTime.current;
+    console.log(`Image render completed in ${renderTime.toFixed(2)}ms`);
+    
+    if (onImageLoaded) {
+      onImageLoaded();
     }
   };
 
@@ -252,6 +277,7 @@ export function AdPreview({
               onPositionChange={() => {}}
               onImageLoaded={handleImageLoaded}
               fastMode={fastRenderMode}
+              preloadedImage={preloadedImage}
             />
           </div>
           <AdContent
@@ -299,6 +325,7 @@ export function AdPreview({
               onPositionChange={() => {}}
               onImageLoaded={handleImageLoaded}
               fastMode={fastRenderMode}
+              preloadedImage={preloadedImage}
             />
             <div
               className="absolute inset-0"
