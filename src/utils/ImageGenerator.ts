@@ -141,7 +141,7 @@ export class ImageGenerator {
     try {
       console.log('Using html2canvas...');
       
-      // Save original styles
+      // Initialize variables before using them
       const originalStyles = new Map<Element, string>();
       const elementsToFixPosition = this.previewElement ? 
         Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
@@ -158,7 +158,8 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      const canvas = await html2canvas.default(this.previewElement, {
+      // Use html2canvas without accessing .default
+      const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: 2,
         useCORS: true,
