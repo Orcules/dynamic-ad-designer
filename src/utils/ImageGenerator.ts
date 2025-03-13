@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -9,7 +10,7 @@ export class ImageGenerator {
     this.previewElement = document.querySelector(previewSelector);
   }
 
-  private async waitForImages(maxWaitTime = 1000): Promise<void> {
+  private async waitForImages(maxWaitTime = 800): Promise<void> {
     if (!this.previewElement) return;
 
     const images = Array.from(this.previewElement.getElementsByTagName('img'));
@@ -25,7 +26,7 @@ export class ImageGenerator {
         } else {
           img.onload = () => resolve();
           img.onerror = () => resolve();
-          setTimeout(() => resolve(), 500);
+          setTimeout(() => resolve(), 300);
         }
       })
     );
@@ -93,9 +94,10 @@ export class ImageGenerator {
     const resetEffect = await this.prepareForCapture();
 
     try {
+      // Use html2canvas with reduced scale for better performance
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
-        scale: 2,
+        scale: 1.5, // Reduced from 2 to improve performance
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -127,7 +129,16 @@ export class ImageGenerator {
       });
       
       resetEffect();
-      return canvas.toDataURL('image/png', 0.9);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG with lower quality
+      
+      // Help garbage collection
+      setTimeout(() => {
+        canvas.width = 1;
+        canvas.height = 1;
+        canvas.remove();
+      }, 100);
+      
+      return dataUrl;
     } catch (error) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', error);
       resetEffect();
@@ -145,8 +156,8 @@ export class ImageGenerator {
 
     try {
       const dataUrl = await domtoimage.toPng(this.previewElement, {
-        quality: 0.9,
-        scale: 2,
+        quality: 0.85, // Reduced quality for better performance
+        scale: 1.5,    // Reduced scale
         bgcolor: null,
       });
       
@@ -172,7 +183,14 @@ export class ImageGenerator {
       ctx.textAlign = 'center';
       ctx.fillText('Image generation failed', canvas.width / 2, canvas.height / 2);
       
-      return canvas.toDataURL('image/png');
+      // Help garbage collection
+      setTimeout(() => {
+        canvas.width = 1;
+        canvas.height = 1;
+        canvas.remove();
+      }, 100);
+      
+      return canvas.toDataURL('image/jpeg', 0.85);
     }
   }
 
@@ -204,7 +222,13 @@ export class ImageGenerator {
       link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      
+      // Clean up
+      setTimeout(() => {
+        document.body.removeChild(link);
+        // Help browser GC by nullifying the data URL
+        link.href = '';
+      }, 100);
     } catch (error) {
       console.error('Error downloading image:', error);
       throw error;

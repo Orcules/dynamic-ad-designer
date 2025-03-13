@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { toast } from "sonner";
 import { fetchWithRetry } from "@/utils/adSubmissionUtils";
 import { AdStorageService } from "@/services/adStorageService";
@@ -7,6 +7,8 @@ import { AdGenerationService } from "@/services/adGenerationService";
 
 export function useAdSubmission() {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const uploadedFiles = useRef<string[]>([]);
 
   const handleSubmission = async (
     adData: any,
@@ -15,8 +17,9 @@ export function useAdSubmission() {
     onSuccess: (newAd: any) => void
   ) => {
     setIsGenerating(true);
+    setIsSubmitting(true);
     const uploadId = crypto.randomUUID();
-    const uploadedFiles: string[] = [];
+    uploadedFiles.current = [];
     
     try {
       console.log(`Starting ad generation process [${uploadId}]`, { adData });
@@ -36,7 +39,7 @@ export function useAdSubmission() {
         imageFile instanceof File ? imageFile.name : 'image.jpg',
         uploadId
       );
-      uploadedFiles.push(originalPath);
+      uploadedFiles.current.push(originalPath);
 
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
       
@@ -49,21 +52,27 @@ export function useAdSubmission() {
       
       onSuccess({ ...adData, imageUrl });
       
+      // Clear references to help garbage collection
+      imageBlob = null as any;
+      
     } catch (error: any) {
       console.error(`Error in handleSubmission [${uploadId}]:`, error);
       
-      if (uploadedFiles.length > 0) {
+      if (uploadedFiles.current.length > 0) {
         console.log(`Cleaning up uploaded files [${uploadId}]...`);
         await Promise.all(
-          uploadedFiles.map(filePath => AdStorageService.deleteFile(filePath))
+          uploadedFiles.current.map(filePath => AdStorageService.deleteFile(filePath))
         );
       }
       
       toast.error(error.message || 'Error creating ad');
     } finally {
       setIsGenerating(false);
+      setIsSubmitting(false);
+      // Clear references
+      uploadedFiles.current = [];
     }
   };
 
-  return { isGenerating, handleSubmission };
+  return { isGenerating, isSubmitting, handleSubmission };
 }
