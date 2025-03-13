@@ -52,7 +52,7 @@ export class AdGenerationService {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       try {
-        // Fixed: Remove the extra argument since fetchWithRetry now only accepts one argument (URL)
+        // Fixed: Removed the second argument since invoke only accepts one options object
         const { data: generatedAd, error: generateError } = await supabase.functions
           .invoke('generate-ad', {
             body: formData

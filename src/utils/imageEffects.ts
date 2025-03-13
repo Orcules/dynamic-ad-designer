@@ -102,11 +102,37 @@ export const calculateCoverDimensions = (
   const imageAspect = imageWidth / imageHeight;
   const containerAspect = containerWidth / containerHeight;
   
-  // Calculate initial dimensions to cover the container (always start larger)
+  // Calculate initial dimensions to cover the container
   let width, height, x, y;
   
-  // First, always calculate dimensions that are LARGER than the container
-  // This ensures we start with a size that can be moved without showing gaps
+  // First, check if we're using default (0,0) position - if so, center the image
+  if (offsetX === 0 && offsetY === 0) {
+    // Just do perfect centering for (0,0) position 
+    if (imageAspect > containerAspect) {
+      // Image is wider than container - scale to match height and center horizontally
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+      y = 0;
+      x = (containerWidth - width) / 2;
+    } else {
+      // Image is taller than container - scale to match width and center vertically
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+      x = 0;
+      y = (containerHeight - height) / 2;
+    }
+    
+    // Add a small scale factor to ensure no gaps
+    const safetyScale = 1.02; // 2% extra to prevent any gaps
+    width *= safetyScale;
+    height *= safetyScale;
+    x -= (width * (safetyScale - 1)) / 2;
+    y -= (height * (safetyScale - 1)) / 2;
+    
+    return { width, height, x, y };
+  }
+  
+  // For custom positions, use the original calculation with safety scale
   if (imageAspect > containerAspect) {
     // Image is wider than container relative to height
     height = containerHeight * 1.2; // Add 20% extra height for safety

@@ -162,9 +162,12 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    // CRITICAL: Use the exact image position from the client without recalculation
-    const imagePosition = data.imagePosition || { x: 0, y: 0 };
-    console.log(`[${uploadId}] Using exact image position from client:`, imagePosition);
+    // Use the image position from the client, or default to centering if no position provided
+    const imagePosition = data.imagePosition && (data.imagePosition.x !== 0 || data.imagePosition.y !== 0) 
+      ? data.imagePosition 
+      : { x: 0, y: 0 };
+    
+    console.log(`[${uploadId}] Using image position:`, imagePosition);
     
     // Helper function that exactly mirrors the client-side calculateCoverDimensions
     const calculateCoverDimensionsServer = (
@@ -178,29 +181,30 @@ serve(async (req) => {
       const imageAspect = imageWidth / imageHeight;
       const containerAspect = containerWidth / containerHeight;
       
+      // Default starting position (centered)
       let width, height, x, y;
       
       if (imageAspect > containerAspect) {
-        // Image is wider than container - scale to match height and center horizontally
+        // Image is wider than container - scale height to match container
         height = containerHeight;
         width = containerHeight * imageAspect;
         y = 0;
-        x = (containerWidth - width) / 2;
+        x = (containerWidth - width) / 2; // Center horizontally
       } else {
-        // Image is taller than container - scale to match width and center vertically
+        // Image is taller than container - scale width to match container
         width = containerWidth;
         height = containerWidth / imageAspect;
         x = 0;
-        y = (containerHeight - height) / 2;
+        y = (containerHeight - height) / 2; // Center vertically
       }
       
-      // Apply the EXACT offsets as provided by the client
-      x += offsetX;
-      y += offsetY;
+      // Only apply non-zero offsets
+      if (offsetX !== 0) x += offsetX;
+      if (offsetY !== 0) y += offsetY;
       
-      // Ensure the image always covers the entire container
+      // Ensure the image always covers the entire container even after applying offsets
       if (x > 0 || (x + width) < containerWidth || y > 0 || (y + height) < containerHeight) {
-        // Calculate how much we need to scale the image to cover the container
+        // Calculate how much we need to scale up to ensure coverage
         const scaleX = x > 0 || (x + width) < containerWidth 
           ? containerWidth / (width - Math.abs(x) * 2) 
           : 1;
@@ -209,14 +213,14 @@ serve(async (req) => {
           ? containerHeight / (height - Math.abs(y) * 2) 
           : 1;
         
-        // Use the larger scale factor for uniform scaling in both dimensions
-        const scale = Math.max(scaleX, scaleY) * 1.05; // Add 5% safety margin
+        // Use the larger scale factor for uniform scaling
+        const scale = Math.max(scaleX, scaleY) * 1.1; // Add 10% safety margin
         
-        // Scale the image
+        // Scale the image dimensions
         const newWidth = width * scale;
         const newHeight = height * scale;
         
-        // Update coordinates to keep image centered
+        // Adjust position to maintain the visual center point
         const newX = x - (newWidth - width) / 2;
         const newY = y - (newHeight - height) / 2;
         
@@ -227,7 +231,6 @@ serve(async (req) => {
     };
     
     // Calculate dimensions ensuring image covers the container completely
-    // Use the exact same calculation as client-side with the exact same position from client
     const coverDimensions = calculateCoverDimensionsServer(
       backgroundImage.width,
       backgroundImage.height,
@@ -301,7 +304,7 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // Draw the image with exact positioning to match the preview for non-luxury templates
+      // Draw the image with exact positioning to match the preview
       ctx.drawImage(
         backgroundImage, 
         0, 0, backgroundImage.width, backgroundImage.height, // Source rectangle (entire original image)

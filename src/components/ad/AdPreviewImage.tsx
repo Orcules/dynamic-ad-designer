@@ -58,6 +58,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     if (!initialLoadComplete.current) {
       initialLoadComplete.current = true;
+      
+      // If the position is (0,0), ensure the image is centered
+      if (position.x === 0 && position.y === 0) {
+        // Let the component render first, then apply initial centering
+        setTimeout(() => updateImageStyle(position), 50);
+      }
     }
     
     setLoaded(true);
@@ -142,14 +148,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       return;
     }
     
+    // Default to centered position if pos is (0,0)
+    const effectivePos = (pos.x === 0 && pos.y === 0) ? 
+      { x: 0, y: 0 } : // This will ensure default centering behavior
+      pos;
+    
     // Calculate dimensions that ensure the image completely covers the container
     const coverDimensions = calculateCoverDimensions(
       imgWidth,
       imgHeight,
       containerRect.width,
       containerRect.height,
-      pos.x,
-      pos.y
+      effectivePos.x,
+      effectivePos.y
     );
     
     // Apply the styles with fixed positioning 
