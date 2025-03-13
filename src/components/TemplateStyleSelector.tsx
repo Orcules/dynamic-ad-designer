@@ -340,30 +340,60 @@ export function TemplateStyleSelector({
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
     handler(value);
   }, []);
+  
+  // Function to get styles for a template button based on its color scheme
+  const getTemplateButtonStyles = (templateId: string) => {
+    if (!templateColorSchemes[templateId]) return {};
+    
+    const scheme = templateColorSchemes[templateId];
+    return {
+      borderColor: scheme.ctaColor,
+      color: scheme.textColor,
+      backgroundColor: templateId === value ? scheme.overlayColor : 'transparent',
+      hoverTextColor: scheme.textColor,
+      hoverBgColor: `${scheme.overlayColor}20` // 20% opacity version of overlay color
+    };
+  };
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
-          {templates.map((template) => (
-            <Button
-              key={template.id}
-              type="button"
-              variant={template.id === value ? "default" : "outline"}
-              className={cn(
-                "flex justify-between items-center w-full",
-                template.id === "luxury-jewelry" && "border-[#f8e9b0] text-[#f8e9b0] hover:text-[#f8e9b0] hover:bg-[#c5022e]/20",
-                template.id === value && template.id === "luxury-jewelry" && "bg-[#c5022e] text-[#f8e9b0]"
-              )}
-              onClick={() => handleSelect(template.id)}
-            >
-              <span className="truncate mr-2">
-                {template.label}
-              </span>
-              {template.id === value && <Check className="h-4 w-4" />}
-            </Button>
-          ))}
+          {templates.map((template) => {
+            const styles = getTemplateButtonStyles(template.id);
+            return (
+              <Button
+                key={template.id}
+                type="button"
+                variant={template.id === value ? "default" : "outline"}
+                className={cn(
+                  "flex justify-between items-center w-full",
+                  // Apply custom styling based on the template's color scheme
+                  `border-[${styles.borderColor}]`,
+                  `text-[${styles.color}]`,
+                  `hover:text-[${styles.hoverTextColor}]`,
+                  `hover:bg-[${styles.hoverBgColor}]`,
+                  template.id === value && `bg-[${styles.backgroundColor}]`,
+                  // Keep the specific styling for luxury-jewelry as it was before
+                  template.id === "luxury-jewelry" && "border-[#f8e9b0] text-[#f8e9b0] hover:text-[#f8e9b0] hover:bg-[#c5022e]/20",
+                  template.id === value && template.id === "luxury-jewelry" && "bg-[#c5022e] text-[#f8e9b0]"
+                )}
+                onClick={() => handleSelect(template.id)}
+                style={{
+                  // Applying colors directly through style to ensure they work with dynamic values
+                  borderColor: styles.borderColor,
+                  color: styles.color,
+                  backgroundColor: template.id === value ? styles.backgroundColor : 'transparent',
+                }}
+              >
+                <span className="truncate mr-2">
+                  {template.label}
+                </span>
+                {template.id === value && <Check className="h-4 w-4" />}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
