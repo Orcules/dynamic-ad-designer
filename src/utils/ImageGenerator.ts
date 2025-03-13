@@ -158,7 +158,7 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      // Properly call html2canvas as a function
+      // Properly call html2canvas with the correct type
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: 2,
@@ -208,20 +208,6 @@ export class ImageGenerator {
       return canvas.toDataURL('image/png', 0.9); // Slightly reduced quality for better performance
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
-      
-      // Make sure these variables are defined in this scope
-      const elementsToFixPosition = this.previewElement ? 
-        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
-        [];
-      const originalStyles = new Map<Element, string>();
-      
-      // Restore original styles before fallback
-      elementsToFixPosition.forEach(el => {
-        const original = originalStyles.get(el);
-        if (original !== undefined) {
-          el.setAttribute('style', original);
-        }
-      });
       
       // Reset hover effect
       resetEffect();
@@ -294,7 +280,6 @@ export class ImageGenerator {
     }
   }
 
-  // Rate-limited getImageUrl to prevent performance issues
   async getImageUrl(): Promise<string> {
     // If a capture is already in progress, queue this request
     if (this.captureInProgress) {
