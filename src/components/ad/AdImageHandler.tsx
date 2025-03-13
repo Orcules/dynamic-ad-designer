@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 
@@ -18,12 +17,41 @@ export function useAdImageHandler({
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const processedIndexes = useRef<Set<number>>(new Set());
   const processedImageUrls = useRef<Set<string>>(new Set()); // Track processed image URLs
+  const uniqueImageHashes = useRef<Map<string, string>>(new Map()); // Store image hashes to prevent duplicates
   const isChangingIndex = useRef<boolean>(false);
   const previousIndex = useRef<number>(0);
   const lastImageLoadTime = useRef<number>(0);
   const imageCacheRef = useRef<Map<string, boolean>>(new Map());
   const preloadedImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const imageChangeConfirmed = useRef<boolean>(false);
+  
+  const generateImageHash = (img: HTMLImageElement): string => {
+    const canvas = document.createElement('canvas');
+    const size = Math.min(img.naturalWidth, img.naturalHeight, 50); // Small sample for faster comparison
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    
+    ctx.drawImage(img, 0, 0, size, size);
+    return canvas.toDataURL('image/jpeg', 0.1); // Low quality for smaller hash
+  };
+  
+  const isDuplicateImage = (url: string, img: HTMLImageElement): boolean => {
+    if (!url || !img) return false;
+    
+    const hash = generateImageHash(img);
+    
+    for (const [existingUrl, existingHash] of uniqueImageHashes.current.entries()) {
+      if (existingHash === hash && existingUrl !== url) {
+        Logger.warn(`Duplicate image detected: ${url.substring(0, 30)}... matches ${existingUrl.substring(0, 30)}...`);
+        return true;
+      }
+    }
+    
+    uniqueImageHashes.current.set(url, hash);
+    return false;
+  };
   
   const preloadImage = (url: string) => {
     if (imageCacheRef.current.has(url) || preloadedImagesRef.current.has(url)) return;
@@ -33,33 +61,16 @@ export function useAdImageHandler({
     img.onload = () => {
       imageCacheRef.current.set(url, true);
       preloadedImagesRef.current.set(url, img);
+      
+      if (isDuplicateImage(url, img)) {
+        Logger.warn(`Image ${url.substring(0, 30)}... will be flagged as a duplicate`);
+        processedImageUrls.current.add(url);
+      }
+      
       Logger.info(`Preloaded image: ${url.substring(0, 50)}...`);
     };
     img.src = url;
   };
-
-  useEffect(() => {
-    if (previousIndex.current !== currentPreviewIndex) {
-      previousIndex.current = currentPreviewIndex;
-      Logger.info(`Index changed from effect: ${currentPreviewIndex}`);
-    }
-    
-    if (imageUrls.length > 0) {
-      preloadImage(imageUrls[currentPreviewIndex]);
-      
-      for (let i = 1; i <= 2; i++) {
-        if (currentPreviewIndex + i < imageUrls.length) {
-          preloadImage(imageUrls[currentPreviewIndex + i]);
-        }
-      }
-      
-      for (let i = 1; i <= 2; i++) {
-        if (currentPreviewIndex - i >= 0) {
-          preloadImage(imageUrls[currentPreviewIndex - i]);
-        }
-      }
-    }
-  }, [currentPreviewIndex, imageUrls]);
 
   const confirmImageChanged = () => {
     if (onImageChangeConfirmed) {
@@ -89,7 +100,6 @@ export function useAdImageHandler({
         return url;
       });
       
-      // Filter out duplicate URLs to ensure each image is unique
       const uniqueUrls = urls.filter(url => !imageUrls.includes(url));
       
       Logger.info(`Adding ${uniqueUrls.length} new image URLs (from ${urls.length} total)`);
@@ -106,7 +116,7 @@ export function useAdImageHandler({
       }
       
       processedIndexes.current = new Set();
-      processedImageUrls.current = new Set(); // Reset processed URLs
+      processedImageUrls.current = new Set();
     }
   };
 
@@ -126,7 +136,9 @@ export function useAdImageHandler({
         return url;
       });
       
-      // Deduplicate URLs to ensure each image is unique
+      const deduplicatedUrls: string[] = [];
+      const seenUrlHashes = new Set<string>();
+      
       const uniqueUrls = Array.from(new Set(secureUrls));
       Logger.info(`Deduplicating URLs: ${secureUrls.length} -> ${uniqueUrls.length}`);
       
@@ -144,7 +156,8 @@ export function useAdImageHandler({
       onCurrentIndexChange(0);
       
       processedIndexes.current = new Set();
-      processedImageUrls.current = new Set(); // Reset processed URLs
+      processedImageUrls.current = new Set();
+      uniqueImageHashes.current.clear();
     } catch (error) {
       Logger.error(`Error in handleImageUrlsChange: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -182,6 +195,23 @@ export function useAdImageHandler({
 
   const setCurrentPreviewIndexSafely = async (index: number, maxRetries = 3): Promise<boolean> => {
     Logger.info(`Ensuring preview index is set to ${index}, current: ${currentPreviewIndex}`);
+    
+    if (index >= 0 && index < imageUrls.length) {
+      const url = imageUrls[index];
+      const isImageDuplicate = processedImageUrls.current.has(url);
+      
+      if (isImageDuplicate) {
+        Logger.warn(`Skipping duplicate image at index ${index}: ${url.substring(0, 30)}...`);
+        
+        if (index < imageUrls.length - 1) {
+          return setCurrentPreviewIndexSafely(index + 1, maxRetries);
+        } else if (index > 0) {
+          return setCurrentPreviewIndexSafely(index - 1, maxRetries);
+        }
+        
+        Logger.warn("All images appear to be duplicates, proceeding with the current one");
+      }
+    }
     
     if (currentPreviewIndex === index && !isChangingIndex.current) {
       if (imageChangeConfirmed.current) {
@@ -259,9 +289,18 @@ export function useAdImageHandler({
   const markIndexProcessed = (index: number) => {
     processedIndexes.current.add(index);
     
-    // Also mark the image URL as processed to prevent duplicates
     if (index >= 0 && index < imageUrls.length) {
       processedImageUrls.current.add(imageUrls[index]);
+      
+      const url = imageUrls[index];
+      const img = preloadedImagesRef.current.get(url);
+      
+      if (img) {
+        const isDuplicate = isDuplicateImage(url, img);
+        if (isDuplicate) {
+          Logger.warn(`Marked visually duplicate image at index ${index} as processed`);
+        }
+      }
     }
     
     Logger.info(`Marked index ${index} as processed. Total processed: ${processedIndexes.current.size}/${imageUrls.length}`);
@@ -277,7 +316,8 @@ export function useAdImageHandler({
 
   const resetProcessedIndexes = () => {
     processedIndexes.current = new Set();
-    processedImageUrls.current = new Set(); // Reset processed URLs
+    processedImageUrls.current = new Set();
+    uniqueImageHashes.current.clear();
     Logger.info("Reset processed indexes and image URLs");
   };
 
@@ -285,6 +325,57 @@ export function useAdImageHandler({
     return Array.from({ length: imageUrls.length }, (_, i) => i)
       .filter(i => !processedIndexes.current.has(i));
   };
+
+  const detectDuplicateImages = () => {
+    Logger.info("Checking for duplicate images in current image set");
+    const duplicateIndexes: number[] = [];
+    
+    imageUrls.forEach((url, index) => {
+      const img = preloadedImagesRef.current.get(url);
+      if (img) {
+        if (!uniqueImageHashes.current.has(url)) {
+          uniqueImageHashes.current.set(url, generateImageHash(img));
+        }
+      }
+    });
+    
+    const hashesMap = new Map<string, number[]>();
+    
+    for (const [url, hash] of uniqueImageHashes.current.entries()) {
+      const index = imageUrls.indexOf(url);
+      if (index === -1) continue;
+      
+      if (!hashesMap.has(hash)) {
+        hashesMap.set(hash, [index]);
+      } else {
+        hashesMap.get(hash)?.push(index);
+      }
+    }
+    
+    for (const [hash, indexes] of hashesMap.entries()) {
+      if (indexes.length > 1) {
+        const [keepIndex, ...duplicates] = indexes;
+        duplicates.forEach(dupIndex => {
+          duplicateIndexes.push(dupIndex);
+          processedImageUrls.current.add(imageUrls[dupIndex]);
+          Logger.warn(`Detected duplicate image at index ${dupIndex} (matches index ${keepIndex})`);
+        });
+      }
+    }
+    
+    return duplicateIndexes;
+  };
+
+  useEffect(() => {
+    if (imageUrls.length > 1 && preloadedImagesRef.current.size >= imageUrls.length) {
+      const timer = setTimeout(() => {
+        const duplicates = detectDuplicateImages();
+        Logger.info(`Found ${duplicates.length} duplicate images`);
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [imageUrls.length, preloadedImagesRef.current.size]);
 
   return {
     selectedImages,
@@ -298,12 +389,13 @@ export function useAdImageHandler({
     setCurrentPreviewIndexSafely,
     markIndexProcessed,
     isIndexProcessed,
-    isImageUrlProcessed, // New method to check if a URL has been processed
+    isImageUrlProcessed,
     resetProcessedIndexes,
     getUnprocessedIndexes,
     isChangingIndex: () => isChangingIndex.current,
     confirmImageChanged,
     preloadImage,
-    getPreloadedImage
+    getPreloadedImage,
+    detectDuplicateImages
   };
 }

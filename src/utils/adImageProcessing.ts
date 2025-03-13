@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageGenerator } from "./ImageGenerator";
-import { Logger } from "@/utils/logger"; // Fixed import path
+import { Logger } from "@/utils/logger";
 
 interface Position {
   x: number;
@@ -32,6 +32,7 @@ export const processImages = async (
   let successCount = 0;
   const processedImageUrls = new Set<string>(); // Track processed image URLs to prevent duplicates
   const processedBlobUrls = new Set<string>(); // Track processed blob URLs as well
+  const processedImageHashes = new Map<string, string>(); // Track image content hashes
   const imageGenerator = new ImageGenerator('.ad-content');
   
   // First, deduplicate the image array to ensure each image is unique
@@ -49,6 +50,53 @@ export const processImages = async (
   });
   
   Logger.info(`Deduplicated image array: ${images.length} -> ${uniqueImages.length}`);
+  
+  // Helper function to generate a simple hash for an image preview
+  const generatePreviewHash = async (previewUrl: string): Promise<string> => {
+    try {
+      const response = await fetch(previewUrl);
+      const blob = await response.blob();
+      
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // Use a small portion of the data for quick comparison
+          const data = reader.result as string;
+          const sample = data.substring(0, 1000) + data.substring(data.length - 1000);
+          resolve(sample);
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      Logger.error(`Error generating preview hash: ${error instanceof Error ? error.message : String(error)}`);
+      return '';
+    }
+  };
+  
+  // Check if an image preview is a duplicate of a previously processed one
+  const isDuplicatePreview = async (previewUrl: string): Promise<boolean> => {
+    try {
+      const hash = await generatePreviewHash(previewUrl);
+      
+      // If hash is empty, don't consider it a duplicate
+      if (!hash) return false;
+      
+      // Check if this hash matches any previously processed image
+      for (const [url, existingHash] of processedImageHashes.entries()) {
+        if (existingHash === hash) {
+          Logger.warn(`Duplicate preview detected: ${previewUrl.substring(0, 30)}... matches ${url.substring(0, 30)}...`);
+          return true;
+        }
+      }
+      
+      // Store this hash
+      processedImageHashes.set(previewUrl, hash);
+      return false;
+    } catch (error) {
+      Logger.error(`Error checking for duplicate preview: ${error instanceof Error ? error.message : String(error)}`);
+      return false;
+    }
+  };
   
   for (let i = 0; i < uniqueImages.length; i++) {
     const currentImage = uniqueImages[i];
@@ -87,6 +135,14 @@ export const processImages = async (
           Logger.warn(`Skipping duplicate blob URL: ${previewUrl.substring(0, 30)}...`);
           throw new Error('Duplicate preview detected - skipping to prevent duplicate ad');
         }
+        
+        // Check if this preview is visually similar to any previously processed one
+        const isDuplicate = await isDuplicatePreview(previewUrl);
+        if (isDuplicate) {
+          Logger.warn(`Skipping visually duplicate preview: ${previewUrl.substring(0, 30)}...`);
+          throw new Error('Visually duplicate preview detected - skipping to prevent duplicate ad');
+        }
+        
         processedBlobUrls.add(previewUrl);
 
         // Convert base64 URL to file
