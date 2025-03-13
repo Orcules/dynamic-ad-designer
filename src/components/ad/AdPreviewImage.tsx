@@ -40,6 +40,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const previousImageUrl = useRef<string | undefined>(undefined);
   const forceUpdateFlag = useRef<boolean>(false);
 
+  // Safely handle container size updates with ResizeObserver
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -65,6 +66,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     };
   }, []);
 
+  // Handle image URL changes and caching
   useEffect(() => {
     renderStartTime.current = performance.now();
     
@@ -118,10 +120,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }
         
         if (onImageLoaded) {
+          // Use a small timeout to prevent potential timing issues
           setTimeout(() => {
-            const renderTime = performance.now() - renderStartTime.current;
-            console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
-            onImageLoaded();
+            try {
+              const renderTime = performance.now() - renderStartTime.current;
+              console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
+              onImageLoaded();
+            } catch (e) {
+              console.error('Error in onImageLoaded callback:', e);
+            }
           }, 20);
         }
       } else {
@@ -133,6 +140,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
+  // Update image position when position or natural size changes
   useEffect(() => {
     if (imageUrl && loaded) {
       if (containerRef.current) {
@@ -166,53 +174,64 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [position, naturalSize, loaded, imageUrl, fastMode]);
 
+  // Safe image load handler with proper error handling
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement;
-    const loadTime = performance.now() - loadStartTime.current;
-    console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
-    
-    if (imageUrl && !imageCache.current.has(imageUrl)) {
-      imageCache.current.set(imageUrl, img);
-    }
-    
-    if (containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
+    try {
+      const img = e.target as HTMLImageElement;
+      const loadTime = performance.now() - loadStartTime.current;
+      console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
       
-      const coverDimensions = calculateCoverDimensions(
-        img.naturalWidth,
-        img.naturalHeight,
-        containerRect.width,
-        containerRect.height,
-        position.x,
-        position.y
-      );
+      if (imageUrl && !imageCache.current.has(imageUrl)) {
+        imageCache.current.set(imageUrl, img);
+      }
       
-      const newStyle = {
-        width: `${coverDimensions.width}px`,
-        height: `${coverDimensions.height}px`,
-        position: 'absolute' as const,
-        left: `${coverDimensions.x}px`,
-        top: `${coverDimensions.y}px`,
-        transform: 'none',
-        transition: fastMode ? 'none' : 'all 0.1s ease-out',
-        objectFit: 'cover' as const,
-        objectPosition: 'center',
-        willChange: 'left, top',
-        zIndex: 1,
-        minWidth: '120%', // Reduced from 150% to 120% for less extreme zoom
-        minHeight: '120%', // Reduced from 150% to 120% for less extreme zoom
-      };
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        const coverDimensions = calculateCoverDimensions(
+          img.naturalWidth,
+          img.naturalHeight,
+          containerRect.width,
+          containerRect.height,
+          position.x,
+          position.y
+        );
+        
+        const newStyle = {
+          width: `${coverDimensions.width}px`,
+          height: `${coverDimensions.height}px`,
+          position: 'absolute' as const,
+          left: `${coverDimensions.x}px`,
+          top: `${coverDimensions.y}px`,
+          transform: 'none',
+          transition: fastMode ? 'none' : 'all 0.1s ease-out',
+          objectFit: 'cover' as const,
+          objectPosition: 'center',
+          willChange: 'left, top',
+          zIndex: 1,
+          minWidth: '120%', // Reduced from 150% to 120% for less extreme zoom
+          minHeight: '120%', // Reduced from 150% to 120% for less extreme zoom
+        };
+        
+        setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+        setImageStyle(newStyle);
+      }
       
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-      setImageStyle(newStyle);
-    }
-    
-    setLoaded(true);
-    
-    if (onImageLoaded) {
-      const completeTime = performance.now() - renderStartTime.current;
-      console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
-      onImageLoaded();
+      setLoaded(true);
+      
+      if (onImageLoaded) {
+        try {
+          const completeTime = performance.now() - renderStartTime.current;
+          console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
+          console.log('Image render completed in', performance.now() - renderStartTime.current, 'ms');
+          onImageLoaded();
+        } catch (callbackError) {
+          console.error('Error in onImageLoaded callback:', callbackError);
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleImageLoad:', error);
+      setError(true);
     }
   }, [imageUrl, onImageLoaded, fastMode, position]);
 

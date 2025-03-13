@@ -163,7 +163,8 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    // Use the exact image positioning from the preview to maintain consistency
+    // IMPORTANT: Use the exact image positioning from the preview to maintain consistency
+    // Use the explicit position as provided - don't recalculate it
     const imagePosition = data.imagePosition || { x: 0, y: 0 };
     
     // Calculate dimensions for precise cropping to match the preview
@@ -198,7 +199,7 @@ serve(async (req) => {
         y = (containerHeight - height) / 2;
       }
       
-      // Apply offsets
+      // Apply offsets - THIS IS CRITICAL: we need to apply the exact offsets passed from the frontend
       x += offsetX;
       y += offsetY;
       
@@ -252,7 +253,8 @@ serve(async (req) => {
     console.log(`[${uploadId}] Image dimensions:`, {
       source: { width: backgroundImage.width, height: backgroundImage.height },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
-      aspect: { image: imageAspect, canvas: canvasAspect }
+      aspect: { image: imageAspect, canvas: canvasAspect },
+      position: imagePosition // Log the received position
     });
     
     // Draw the image with the calculated dimensions to ensure full coverage
