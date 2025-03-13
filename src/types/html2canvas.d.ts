@@ -18,4 +18,7 @@ declare module 'html2canvas' {
     imageTimeout?: number;
     removeContainer?: boolean;
   }
+  
+  // Add this default export to make the module callable
+  export default function html2canvas(element: HTMLElement, options?: Options): Promise<HTMLCanvasElement>;
 }
