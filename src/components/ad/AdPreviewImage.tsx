@@ -256,4 +256,4 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       )}
     </div>
   );
-};
+}

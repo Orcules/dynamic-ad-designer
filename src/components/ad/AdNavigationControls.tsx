@@ -37,7 +37,7 @@ export function AdNavigationControls({
 
   return (
     <div className="absolute inset-0 flex items-center justify-between pointer-events-none z-40">
-      <div className="group ml-4 pointer-events-auto">
+      <div className="group ml-4 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <Button
           variant="outline"
           size="icon"
@@ -51,7 +51,7 @@ export function AdNavigationControls({
         </Button>
       </div>
       
-      <div className="group mr-4 pointer-events-auto">
+      <div className="group mr-4 pointer-events-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <Button
           variant="outline"
           size="icon"
@@ -66,7 +66,7 @@ export function AdNavigationControls({
       </div>
       
       {totalImages > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-50 opacity-80 hover:opacity-100 transition-opacity duration-200 pointer-events-auto">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto">
           {Array.from({ length: totalImages }).map((_, index) => (
             <div
               key={index}
