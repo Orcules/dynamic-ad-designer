@@ -2,6 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface AdNavigationControlsProps {
   onPrevious: () => void;
@@ -18,26 +20,32 @@ export function AdNavigationControls({
 }: AdNavigationControlsProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
-      <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30 -ml-6 transform -translate-x-full"
-        onClick={onPrevious}
-        disabled={totalImages <= 1}
-      >
-        <ArrowLeft className="h-8 w-8" />
-      </Button>
-      <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30 -mr-6 transform translate-x-full"
-        onClick={onNext}
-        disabled={totalImages <= 1}
-      >
-        <ArrowRight className="h-8 w-8" />
-      </Button>
+      <div className="group">
+        <Button
+          variant="outline"
+          size="icon"
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30 -ml-6 transform -translate-x-full"
+          onClick={onPrevious}
+          disabled={totalImages <= 1}
+        >
+          <ArrowLeft className="h-8 w-8" />
+        </Button>
+      </div>
+      
+      <div className="group">
+        <Button
+          variant="outline"
+          size="icon"
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30 -mr-6 transform translate-x-full"
+          onClick={onNext}
+          disabled={totalImages <= 1}
+        >
+          <ArrowRight className="h-8 w-8" />
+        </Button>
+      </div>
+      
       {totalImages > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           {Array.from({ length: totalImages }).map((_, index) => (
             <div
               key={index}

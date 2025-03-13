@@ -76,6 +76,7 @@ export function AdPreview({
   preloadedImage = null
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
   const imageGenerator = useRef<ImageGenerator>();
@@ -251,7 +252,7 @@ export function AdPreview({
   const renderLuxuryJewelryTemplate = () => {
     return (
       <div 
-        className="ad-content relative overflow-hidden"
+        className="ad-content relative overflow-hidden group"
         style={{
           aspectRatio: `${width} / ${height}`,
           width: '100%',
@@ -260,6 +261,8 @@ export function AdPreview({
           backgroundSize: "40px 40px",
         }}
         dir={isRTL ? "rtl" : "ltr"}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
         <div className="relative w-full h-full p-6">
           <div className="absolute inset-0 m-auto w-[80%] h-[50%] rounded-[2rem] overflow-hidden border-4 border-[#f8e9b0] shadow-lg">
@@ -307,12 +310,14 @@ export function AdPreview({
   const renderStandardTemplate = () => {
     return (
       <div 
-        className="ad-content relative overflow-hidden bg-black"
+        className="ad-content relative overflow-hidden group bg-black"
         style={{
           aspectRatio: `${width} / ${height}`,
           width: '100%',
         }}
         dir={isRTL ? "rtl" : "ltr"}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
         <div className={cn(
           "relative w-full h-full",
