@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -377,7 +378,7 @@ serve(async (req) => {
       // Move the text up, but not the arrow
       ctx.fillText(buttonText, startX + textWidth/2, ctaY + buttonHeight/2 - 7);
 
-      // Draw arrow if needed - keep it in the original position (not adjusted)
+      // Draw arrow if needed (changed to point downward)
       if (showArrow) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2; // No adjustment for the arrow (keep it static)
@@ -387,10 +388,12 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        // Draw a right-pointing arrow instead of the previous vertical arrows
-        ctx.moveTo(arrowX - arrowSize/2, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/2, arrowY);
-        ctx.lineTo(arrowX - arrowSize/2, arrowY + arrowSize/2);
+        // Draw a downward-pointing arrow
+        ctx.moveTo(arrowX, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2);
+        ctx.moveTo(arrowX - arrowSize/3, arrowY);
+        ctx.lineTo(arrowX, arrowY + arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY);
         
         ctx.stroke();
       }

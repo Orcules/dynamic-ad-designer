@@ -107,7 +107,7 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M5 12h14M12 5l7 7-7 7" />
+              <path d="M12 5v14M19 12l-7 7-7-7" />
             </svg>
           )}
         </span>

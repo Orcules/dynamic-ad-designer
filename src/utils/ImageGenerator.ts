@@ -76,12 +76,14 @@ export class ImageGenerator {
     if (ctaContainer && ctaContainer instanceof HTMLElement) {
       ctaContainer.style.opacity = '1';
       ctaContainer.style.visibility = 'visible';
+      ctaContainer.style.zIndex = '999'; // Ensure it's above everything else
       console.log('CTA container found and made visible');
     }
     
     if (ctaButton && ctaButton instanceof HTMLElement) {
       ctaButton.style.opacity = '1';
       ctaButton.style.visibility = 'visible';
+      ctaButton.style.zIndex = '1000'; // Ensure it's above everything else
       console.log('CTA button found and made visible');
     } else {
       console.log('CTA button not found, using fallback selector');
@@ -90,6 +92,7 @@ export class ImageGenerator {
       if (fallbackCtaButton && fallbackCtaButton instanceof HTMLElement) {
         fallbackCtaButton.style.opacity = '1';
         fallbackCtaButton.style.visibility = 'visible';
+        fallbackCtaButton.style.zIndex = '1000'; // Ensure it's above everything else
         console.log('Fallback CTA button found and made visible');
       }
     }
@@ -166,6 +169,17 @@ export class ImageGenerator {
     try {
       console.log('Using html2canvas...');
       
+      // IMPORTANT: Force all elements to be visible before capture
+      const ctaElements = this.previewElement.querySelectorAll('[data-cta-container="true"], [data-cta-button="true"], .cta-text, .cta-arrow');
+      ctaElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.style.opacity = '1';
+          el.style.visibility = 'visible';
+          el.style.display = 'flex';
+          el.style.zIndex = '9999';
+        }
+      });
+      
       const originalStyles = new Map<Element, string>();
       const elementsToFixPosition = this.previewElement ? 
         Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
@@ -178,7 +192,7 @@ export class ImageGenerator {
         const currentTop = computedStyle.top;
         const currentTransform = computedStyle.transform;
         
-        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform}; z-index: 99;`);
       });
 
       const htmlToCanvas = html2canvas as unknown as (element: HTMLElement, options?: any) => Promise<HTMLCanvasElement>;
@@ -194,6 +208,22 @@ export class ImageGenerator {
         scrollY: 0,
         imageTimeout: 0,
         onclone: (documentClone) => {
+          // In the cloned document, ensure CTA is visible
+          const clonedCtaContainer = documentClone.querySelector('[data-cta-container="true"]');
+          const clonedCtaButton = documentClone.querySelector('[data-cta-button="true"]');
+          
+          if (clonedCtaContainer instanceof HTMLElement) {
+            clonedCtaContainer.style.opacity = '1';
+            clonedCtaContainer.style.visibility = 'visible';
+            clonedCtaContainer.style.zIndex = '9999';
+          }
+          
+          if (clonedCtaButton instanceof HTMLElement) {
+            clonedCtaButton.style.opacity = '1';
+            clonedCtaButton.style.visibility = 'visible';
+            clonedCtaButton.style.zIndex = '9999';
+          }
+          
           const navigationControls = documentClone.querySelectorAll('.ad-content button[class*="-translate-x-full"], .ad-content button[class*="translate-x-full"]');
           navigationControls.forEach(control => {
             (control as HTMLElement).style.display = 'none';
