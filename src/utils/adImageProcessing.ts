@@ -4,6 +4,7 @@ import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageGenerator } from "./ImageGenerator";
 import { Logger } from "@/utils/logger";
+import { calculateCoverDimensions } from "./imageEffects";
 
 interface Position {
   x: number;
@@ -181,6 +182,10 @@ export const processImages = async (
             preview_url: publicUrl,
             width,
             height,
+            image_position: positions.imagePosition, // Store positioning data
+            headline_position: positions.headlinePosition,
+            description_position: positions.descriptionPosition,
+            cta_position: positions.ctaPosition,
             status: 'completed',
             created_at: new Date().toISOString()
           }])

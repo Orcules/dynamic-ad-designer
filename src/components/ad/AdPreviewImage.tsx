@@ -121,17 +121,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     if (imageAspect > containerAspect) {
       // Image is wider than container (relative to height)
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-      top = 0;
-      // Ensure image is centered and covers the entire width when needed
+      height = Math.max(containerHeight, containerWidth / imageAspect);
+      width = height * imageAspect;
+      // Ensure image covers the entire height
+      top = (containerHeight - height) / 2;
+      // Center horizontally and apply position offset
       left = (containerWidth - width) / 2;
     } else {
       // Image is taller than container (relative to width)
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-      left = 0;
-      // Ensure image is centered and covers the entire height when needed
+      width = Math.max(containerWidth, containerHeight * imageAspect);
+      height = width / imageAspect;
+      // Ensure image covers the entire width
+      left = (containerWidth - width) / 2;
+      // Center vertically and apply position offset
       top = (containerHeight - height) / 2;
     }
     
@@ -139,11 +141,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     left += pos.x;
     top += pos.y;
     
-    // Ensure the image covers the entire container, even with position adjustments
-    const minWidth = containerWidth;
-    const minHeight = containerHeight;
-    width = Math.max(width, minWidth);
-    height = Math.max(height, minHeight);
+    // Ensure we're using at least the container dimensions to guarantee full coverage
+    width = Math.max(width, containerWidth * 1.1);  // Add 10% more to ensure no gaps
+    height = Math.max(height, containerHeight * 1.1);  // Add 10% more to ensure no gaps
     
     return {
       width: `${width}px`,
@@ -153,7 +153,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       top: `${top}px`,
       transform: 'none', // Use left/top instead of transform for better cropping
       transition: useFastMode ? 'none' : 'all 0.1s ease-out',
-      objectFit: 'cover',
+      objectFit: 'cover', // This ensures the image covers the area
       objectPosition: 'center',
       willChange: 'left, top',
       zIndex: 1, // Ensure image is behind text and CTA
@@ -206,13 +206,13 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
-  const placeholderStyle = fastMode ? {
+  const placeholderStyle: React.CSSProperties = fastMode ? {
     filter: 'blur(1px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'cover' as const,
-    objectPosition: 'center' as const,
+    objectFit: 'cover',
+    objectPosition: 'center',
     backgroundColor: '#333',
     willChange: 'transform'
   } : {};

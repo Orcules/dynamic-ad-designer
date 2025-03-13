@@ -175,19 +175,18 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = 0;
-    let destY = 0;
-    let destWidth, destHeight;
-
-    // Match the exact positioning and scaling for object-fit: cover behavior
+    
+    // Calculate dimensions using the same algorithm as in the AdPreviewImage component
+    let destWidth, destHeight, destX, destY;
+    
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to match height and position horizontally
+      // Image is wider than canvas - scale to match height and center horizontally
       destHeight = data.height;
       destWidth = data.height * imageAspect;
       destX = (data.width - destWidth) / 2 + (imagePosition.x || 0);
       destY = 0 + (imagePosition.y || 0);
     } else {
-      // Image is taller than canvas - scale to match width and position vertically
+      // Image is taller than canvas - scale to match width and center vertically
       destWidth = data.width;
       destHeight = data.width / imageAspect;
       destX = 0 + (imagePosition.x || 0);
@@ -200,6 +199,10 @@ serve(async (req) => {
       // @ts-ignore: Property exists but TypeScript doesn't recognize it
       ctx.imageSmoothingQuality = 'high';
     }
+    
+    // Ensure the image is large enough to cover the entire canvas
+    destWidth = Math.max(destWidth, data.width * 1.1);  // Add 10% to ensure full coverage
+    destHeight = Math.max(destHeight, data.height * 1.1);  // Add 10% to ensure full coverage
     
     // Log positioning information for debugging
     console.log(`[${uploadId}] Image dimensions:`, {
