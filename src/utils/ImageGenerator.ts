@@ -77,6 +77,7 @@ export class ImageGenerator {
       ctaContainer.style.opacity = '1';
       ctaContainer.style.visibility = 'visible';
       ctaContainer.style.zIndex = '999'; // Ensure it's above everything else
+      ctaContainer.style.display = 'flex'; // Explicitly set display to flex
       console.log('CTA container found and made visible');
     }
     
@@ -84,15 +85,17 @@ export class ImageGenerator {
       ctaButton.style.opacity = '1';
       ctaButton.style.visibility = 'visible';
       ctaButton.style.zIndex = '1000'; // Ensure it's above everything else
+      ctaButton.style.display = 'inline-flex'; // Explicitly set display to inline-flex
       console.log('CTA button found and made visible');
     } else {
       console.log('CTA button not found, using fallback selector');
       // Try fallback selector
-      const fallbackCtaButton = this.previewElement.querySelector('button');
+      const fallbackCtaButton = this.previewElement.querySelector('button:not([class*="group-hover:opacity"])');
       if (fallbackCtaButton && fallbackCtaButton instanceof HTMLElement) {
         fallbackCtaButton.style.opacity = '1';
         fallbackCtaButton.style.visibility = 'visible';
         fallbackCtaButton.style.zIndex = '1000'; // Ensure it's above everything else
+        fallbackCtaButton.style.display = 'inline-flex'; // Explicitly set display
         console.log('Fallback CTA button found and made visible');
       }
     }
@@ -164,7 +167,8 @@ export class ImageGenerator {
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
     
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Add a small delay to ensure DOM changes are applied
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     try {
       console.log('Using html2canvas...');
@@ -175,10 +179,17 @@ export class ImageGenerator {
         if (el instanceof HTMLElement) {
           el.style.opacity = '1';
           el.style.visibility = 'visible';
-          el.style.display = 'flex';
+          el.style.display = el.classList.contains('cta-text') ? 'inline' : 'flex';
           el.style.zIndex = '9999';
+          el.style.pointerEvents = 'auto';
         }
       });
+      
+      // Make sure AdContent has proper z-index
+      const adContent = this.previewElement.querySelector('.ad-content > div > div');
+      if (adContent && adContent instanceof HTMLElement) {
+        adContent.style.zIndex = '50';
+      }
       
       const originalStyles = new Map<Element, string>();
       const elementsToFixPosition = this.previewElement ? 
@@ -216,15 +227,26 @@ export class ImageGenerator {
             clonedCtaContainer.style.opacity = '1';
             clonedCtaContainer.style.visibility = 'visible';
             clonedCtaContainer.style.zIndex = '9999';
+            clonedCtaContainer.style.display = 'flex';
           }
           
           if (clonedCtaButton instanceof HTMLElement) {
             clonedCtaButton.style.opacity = '1';
             clonedCtaButton.style.visibility = 'visible';
             clonedCtaButton.style.zIndex = '9999';
+            clonedCtaButton.style.display = 'inline-flex';
           }
           
-          const navigationControls = documentClone.querySelectorAll('.ad-content button[class*="-translate-x-full"], .ad-content button[class*="translate-x-full"]');
+          // Explicitly handle the CTA Text
+          const ctaText = documentClone.querySelector('.cta-text');
+          if (ctaText instanceof HTMLElement) {
+            ctaText.style.opacity = '1';
+            ctaText.style.visibility = 'visible';
+            ctaText.style.display = 'inline';
+          }
+          
+          // Hide only navigation controls, not the CTA
+          const navigationControls = documentClone.querySelectorAll('.ad-content [class*="absolute inset-0"] button:not([data-cta-button="true"])');
           navigationControls.forEach(control => {
             (control as HTMLElement).style.display = 'none';
           });

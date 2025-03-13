@@ -1,9 +1,8 @@
 
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 
 interface AdNavigationControlsProps {
   onPrevious: () => void;
@@ -18,15 +17,34 @@ export function AdNavigationControls({
   currentIndex,
   totalImages,
 }: AdNavigationControlsProps) {
+  const handlePrevious = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Navigation: Previous clicked");
+    onPrevious();
+  };
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Navigation: Next clicked");
+    onNext();
+  };
+
+  if (totalImages <= 1) {
+    return null;
+  }
+
   return (
     <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
       <div className="group ml-4">
         <Button
           variant="outline"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30"
-          onClick={onPrevious}
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-40"
+          onClick={handlePrevious}
           disabled={totalImages <= 1}
+          data-navigation-control="previous"
         >
           <ArrowLeft className="h-8 w-8" />
           <span className="sr-only">Previous image</span>
@@ -37,9 +55,10 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30"
-          onClick={onNext}
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-40"
+          onClick={handleNext}
           disabled={totalImages <= 1}
+          data-navigation-control="next"
         >
           <ArrowRight className="h-8 w-8" />
           <span className="sr-only">Next image</span>
