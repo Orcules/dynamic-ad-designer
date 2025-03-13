@@ -79,8 +79,23 @@ export const calculateCoverDimensions = (
   
   // Ensure dimensions are at least as large as the container (with extra margin)
   // This guarantees the image will cover the entire container
-  width = Math.max(width, containerWidth * 1.1);
-  height = Math.max(height, containerHeight * 1.1);
+  const scaleFactor = 1.2; // Increase scale factor to ensure full coverage
+  
+  if (width < containerWidth * scaleFactor) {
+    const ratio = (containerWidth * scaleFactor) / width;
+    width *= ratio;
+    height *= ratio;
+    // Recenter based on the new dimensions
+    x = (containerWidth - width) / 2 + offsetX;
+  }
+  
+  if (height < containerHeight * scaleFactor) {
+    const ratio = (containerHeight * scaleFactor) / height;
+    width *= ratio;
+    height *= ratio;
+    // Recenter based on the new dimensions
+    y = (containerHeight - height) / 2 + offsetY;
+  }
   
   return { width, height, x, y };
 };

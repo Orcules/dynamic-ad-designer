@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -169,23 +170,75 @@ serve(async (req) => {
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
+    // Helper function that mirrors the calculateCoverDimensions logic from the front-end
+    const calculateCoverDimensionsServer = (
+      imageWidth: number,
+      imageHeight: number,
+      containerWidth: number,
+      containerHeight: number,
+      offsetX = 0,
+      offsetY = 0
+    ) => {
+      const imageAspect = imageWidth / imageHeight;
+      const containerAspect = containerWidth / containerHeight;
+      
+      let width, height, x, y;
+      
+      if (imageAspect > containerAspect) {
+        // Image is wider than container - scale to match height and center horizontally
+        height = containerHeight;
+        width = containerHeight * imageAspect;
+        y = 0;
+        x = (containerWidth - width) / 2;
+      } else {
+        // Image is taller than container - scale to match width and center vertically
+        width = containerWidth;
+        height = containerWidth / imageAspect;
+        x = 0;
+        y = (containerHeight - height) / 2;
+      }
+      
+      // Apply offsets
+      x += offsetX;
+      y += offsetY;
+      
+      // Ensure dimensions are large enough to cover the entire container
+      const scaleFactor = 1.2; // Use increased scale factor to ensure full coverage
+      
+      if (width < containerWidth * scaleFactor) {
+        const ratio = (containerWidth * scaleFactor) / width;
+        width *= ratio;
+        height *= ratio;
+        // Recenter based on the new dimensions
+        x = (containerWidth - width) / 2 + offsetX;
+      }
+      
+      if (height < containerHeight * scaleFactor) {
+        const ratio = (containerHeight * scaleFactor) / height;
+        width *= ratio;
+        height *= ratio;
+        // Recenter based on the new dimensions
+        y = (containerHeight - height) / 2 + offsetY;
+      }
+      
+      return { width, height, x, y };
+    };
+    
     // Calculate dimensions ensuring image covers the container completely
     // This uses the same logic as calculateCoverDimensions in imageEffects.ts
-    let destWidth, destHeight, destX, destY;
+    const coverDimensions = calculateCoverDimensionsServer(
+      backgroundImage.width,
+      backgroundImage.height,
+      data.width,
+      data.height, 
+      imagePosition.x,
+      imagePosition.y
+    );
     
-    if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to match height and center horizontally
-      destHeight = data.height;
-      destWidth = data.height * imageAspect;
-      destX = (data.width - destWidth) / 2 + (imagePosition.x || 0);
-      destY = 0 + (imagePosition.y || 0);
-    } else {
-      // Image is taller than canvas - scale to match width and center vertically
-      destWidth = data.width;
-      destHeight = data.width / imageAspect;
-      destX = 0 + (imagePosition.x || 0);
-      destY = (data.height - destHeight) / 2 + (imagePosition.y || 0);
-    }
+    const destWidth = coverDimensions.width;
+    const destHeight = coverDimensions.height;
+    const destX = coverDimensions.x;
+    const destY = coverDimensions.y;
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
     ctx.imageSmoothingEnabled = true;
@@ -193,10 +246,6 @@ serve(async (req) => {
       // @ts-ignore: Property exists but TypeScript doesn't recognize it
       ctx.imageSmoothingQuality = 'high';
     }
-    
-    // Ensure the image is large enough to cover the entire canvas with extra margin
-    destWidth = Math.max(destWidth, data.width * 1.1);  // Add 10% to ensure full coverage
-    destHeight = Math.max(destHeight, data.height * 1.1);  // Add 10% to ensure full coverage
     
     // Log positioning information for debugging
     console.log(`[${uploadId}] Image dimensions:`, {

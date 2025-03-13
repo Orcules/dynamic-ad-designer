@@ -101,6 +101,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             objectPosition: 'center',
             willChange: 'left, top',
             zIndex: 1,
+            minWidth: '105%', // Ensure covering
+            minHeight: '105%', // Ensure covering
           };
           
           setImageStyle(newStyle);
@@ -156,6 +158,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         objectPosition: 'center',
         willChange: 'left, top',
         zIndex: 1,
+        minWidth: '105%', // Ensure covering
+        minHeight: '105%', // Ensure covering
       };
       
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
