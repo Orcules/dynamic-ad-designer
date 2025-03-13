@@ -9,6 +9,7 @@ interface AdNavigationControlsProps {
   onNext: () => void;
   currentIndex: number;
   totalImages: number;
+  disabled?: boolean;
 }
 
 export function AdNavigationControls({
@@ -16,8 +17,10 @@ export function AdNavigationControls({
   onNext,
   currentIndex,
   totalImages,
+  disabled = false
 }: AdNavigationControlsProps) {
   const handlePrevious = (e: React.MouseEvent) => {
+    if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
     console.log("Navigation: Previous clicked");
@@ -25,6 +28,7 @@ export function AdNavigationControls({
   };
 
   const handleNext = (e: React.MouseEvent) => {
+    if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
     console.log("Navigation: Next clicked");
@@ -41,9 +45,12 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="opacity-80 hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground h-12 w-12 border-2 border-primary shadow-lg z-50"
+          className={cn(
+            "opacity-80 hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground h-12 w-12 border-2 border-primary shadow-lg z-50",
+            disabled && "opacity-50 cursor-not-allowed"
+          )}
           onClick={handlePrevious}
-          disabled={totalImages <= 1}
+          disabled={totalImages <= 1 || disabled}
           data-navigation-control="previous"
         >
           <ArrowLeft className="h-8 w-8" />
@@ -55,9 +62,12 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="opacity-80 hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground h-12 w-12 border-2 border-primary shadow-lg z-50"
+          className={cn(
+            "opacity-80 hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground h-12 w-12 border-2 border-primary shadow-lg z-50",
+            disabled && "opacity-50 cursor-not-allowed"
+          )}
           onClick={handleNext}
-          disabled={totalImages <= 1}
+          disabled={totalImages <= 1 || disabled}
           data-navigation-control="next"
         >
           <ArrowRight className="h-8 w-8" />

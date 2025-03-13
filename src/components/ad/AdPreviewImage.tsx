@@ -36,6 +36,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
+  const loadStartTime = useRef<number>(0);
+  const previousImageUrl = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -66,7 +68,13 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     renderStartTime.current = performance.now();
     
     if (imageUrl && imageUrl !== currentImageUrl) {
-      console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
+      // If image is changing from a previous one, log this change
+      if (previousImageUrl.current && previousImageUrl.current !== imageUrl) {
+        console.log(`Image URL changing from "${previousImageUrl.current.substring(0, 50)}..." to "${imageUrl.substring(0, 50)}..."`);
+        loadStartTime.current = performance.now();
+      }
+      
+      previousImageUrl.current = imageUrl;
       
       const cachedImg = imageCache.current.get(imageUrl) || preloadedImage;
       
@@ -126,7 +134,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
-    const loadTime = performance.now() - renderStartTime.current;
+    const loadTime = performance.now() - loadStartTime.current;
     console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
     
     if (imageUrl && !imageCache.current.has(imageUrl)) {

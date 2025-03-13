@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -44,6 +45,7 @@ interface AdPreviewProps {
   onImageLoaded?: () => void;
   fastRenderMode?: boolean;
   preloadedImage?: HTMLImageElement | null;
+  isGenerating?: boolean;
 }
 
 export function AdPreview({ 
@@ -73,7 +75,8 @@ export function AdPreview({
   language = "en",
   onImageLoaded,
   fastRenderMode = false,
-  preloadedImage = null
+  preloadedImage = null,
+  isGenerating = false
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -238,13 +241,13 @@ export function AdPreview({
   });
 
   const handlePrevious = () => {
-    if (onPrevious && typeof onPrevious === 'function') {
+    if (onPrevious && typeof onPrevious === 'function' && !isGenerating) {
       onPrevious();
     }
   };
 
   const handleNext = () => {
-    if (onNext && typeof onNext === 'function') {
+    if (onNext && typeof onNext === 'function' && !isGenerating) {
       onNext();
     }
   };
@@ -299,6 +302,7 @@ export function AdPreview({
             onNext={handleNext}
             currentIndex={currentIndex}
             totalImages={imageUrls.length}
+            disabled={isGenerating}
           />
         )}
       </div>
@@ -361,6 +365,7 @@ export function AdPreview({
               onNext={handleNext}
               currentIndex={currentIndex}
               totalImages={imageUrls.length}
+              disabled={isGenerating}
             />
           )}
         </div>
@@ -381,7 +386,7 @@ export function AdPreview({
           size="sm" 
           onClick={handleDownload}
           className="flex items-center gap-2"
-          disabled={isCapturing}
+          disabled={isCapturing || isGenerating}
         >
           <Download className="h-4 w-4" />
           {isCapturing ? 'Generating...' : 'Download Preview'}

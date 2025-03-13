@@ -112,7 +112,7 @@ export const processImages = async (
     // Ensure sufficient delay between processing each image for smooth navigation
     if (i > 0) {
       Logger.info(`Adding delay before processing next image (${i})`);
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 1200)); // Increased for smoother transitions
     }
     
     let retryCount = 0;
@@ -126,6 +126,9 @@ export const processImages = async (
           throw new Error('Preview element not found');
         }
 
+        // Wait longer before capturing to ensure image is fully loaded and transitions are complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         // Capture preview
         Logger.info('Generating preview image...');
         const previewUrl = await imageGenerator.getImageUrl();
@@ -229,7 +232,7 @@ export const processImages = async (
     // Ensure that the next image is properly loaded before continuing to next image
     if (success && i < uniqueImages.length - 1) {
       Logger.info(`Waiting for UI to refresh before processing next image...`);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Increased for smoother transitions
     }
   }
   

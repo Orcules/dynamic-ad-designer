@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 
@@ -24,6 +25,8 @@ export function useAdImageHandler({
   const imageCacheRef = useRef<Map<string, boolean>>(new Map());
   const preloadedImagesRef = useRef<Map<string, HTMLImageElement>>(new Map());
   const imageChangeConfirmed = useRef<boolean>(false);
+  const imageChangeInProgress = useRef<boolean>(false);
+  const imageNavigationLock = useRef<boolean>(false);
   
   const generateImageHash = (img: HTMLImageElement): string => {
     const canvas = document.createElement('canvas');
@@ -77,8 +80,15 @@ export function useAdImageHandler({
       onImageChangeConfirmed();
     }
     imageChangeConfirmed.current = true;
+    imageChangeInProgress.current = false;
     lastImageLoadTime.current = Date.now();
     Logger.info(`Image change confirmed at ${lastImageLoadTime.current}`);
+    
+    // Release navigation lock after a short delay to ensure rendering is complete
+    setTimeout(() => {
+      imageNavigationLock.current = false;
+      Logger.info("Navigation lock released");
+    }, 200);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,37 +174,85 @@ export function useAdImageHandler({
   };
 
   const handlePrevPreview = () => {
-    if (imageUrls.length === 0 || isChangingIndex.current) return;
+    if (imageUrls.length === 0 || isChangingIndex.current || imageNavigationLock.current) {
+      Logger.info("Navigation skipped: " + (isChangingIndex.current ? "change in progress" : 
+                                           imageNavigationLock.current ? "navigation locked" : 
+                                           "no images"));
+      return;
+    }
     
     isChangingIndex.current = true;
+    imageNavigationLock.current = true;
+    imageChangeInProgress.current = true;
+    imageChangeConfirmed.current = false;
+    
+    Logger.info("Navigation: Previous");
     const newIndex = currentPreviewIndex > 0 ? currentPreviewIndex - 1 : imageUrls.length - 1;
     
     setCurrentPreviewIndex(newIndex);
-    previousIndex.current = newIndex;
+    previousIndex.current = currentPreviewIndex;
     onCurrentIndexChange(newIndex);
     
+    // Use a longer timeout for navigation lock to ensure image loads properly
     setTimeout(() => {
       isChangingIndex.current = false;
-    }, 150);
+      
+      // Navigation lock will be released when image load is confirmed
+      if (!imageChangeConfirmed.current) {
+        setTimeout(() => {
+          imageNavigationLock.current = false;
+          Logger.info("Navigation lock timeout expired");
+        }, 1000);
+      }
+    }, 300);
   };
 
   const handleNextPreview = () => {
-    if (imageUrls.length === 0 || isChangingIndex.current) return;
+    if (imageUrls.length === 0 || isChangingIndex.current || imageNavigationLock.current) {
+      Logger.info("Navigation skipped: " + (isChangingIndex.current ? "change in progress" : 
+                                           imageNavigationLock.current ? "navigation locked" : 
+                                           "no images"));
+      return;
+    }
     
     isChangingIndex.current = true;
+    imageNavigationLock.current = true;
+    imageChangeInProgress.current = true;
+    imageChangeConfirmed.current = false;
+    
+    Logger.info("Navigation: Next");
     const newIndex = currentPreviewIndex < imageUrls.length - 1 ? currentPreviewIndex + 1 : 0;
     
     setCurrentPreviewIndex(newIndex);
-    previousIndex.current = newIndex;
+    previousIndex.current = currentPreviewIndex;
     onCurrentIndexChange(newIndex);
     
+    // Use a longer timeout for navigation lock to ensure image loads properly
     setTimeout(() => {
       isChangingIndex.current = false;
-    }, 150);
+      
+      // Navigation lock will be released when image load is confirmed
+      if (!imageChangeConfirmed.current) {
+        setTimeout(() => {
+          imageNavigationLock.current = false;
+          Logger.info("Navigation lock timeout expired");
+        }, 1000);
+      }
+    }, 300);
   };
 
   const setCurrentPreviewIndexSafely = async (index: number, maxRetries = 3): Promise<boolean> => {
     Logger.info(`Ensuring preview index is set to ${index}, current: ${currentPreviewIndex}`);
+    
+    if (isChangingIndex.current || imageNavigationLock.current) {
+      Logger.info(`Waiting for ongoing index change/navigation lock to complete before setting to ${index}`);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      if (isChangingIndex.current || imageNavigationLock.current) {
+        Logger.info(`Still waiting for lock release...`);
+        await new Promise(resolve => setTimeout(resolve, 800));
+      }
+    }
     
     if (index >= 0 && index < imageUrls.length) {
       const url = imageUrls[index];
@@ -213,18 +271,15 @@ export function useAdImageHandler({
       }
     }
     
-    if (currentPreviewIndex === index && !isChangingIndex.current) {
+    if (currentPreviewIndex === index) {
       if (imageChangeConfirmed.current) {
         Logger.info(`Preview index is already ${index} and image is confirmed`);
         return true;
       } else {
         Logger.info(`Preview index is ${index} but image change not confirmed yet`);
+        imageChangeConfirmed.current = false;
+        imageChangeInProgress.current = true;
       }
-    }
-    
-    if (isChangingIndex.current) {
-      Logger.info(`Waiting for ongoing index change to complete before setting to ${index}`);
-      await new Promise(resolve => setTimeout(resolve, 400));
     }
     
     let success = false;
@@ -235,6 +290,9 @@ export function useAdImageHandler({
       Logger.info(`Attempt ${attempts}/${maxRetries} to set preview index to ${index}`);
       
       imageChangeConfirmed.current = false;
+      imageChangeInProgress.current = true;
+      isChangingIndex.current = true;
+      imageNavigationLock.current = true;
       
       success = await new Promise<boolean>(resolve => {
         setCurrentPreviewIndex(index);
@@ -242,16 +300,17 @@ export function useAdImageHandler({
         onCurrentIndexChange(index);
         
         setTimeout(() => {
-          Logger.info(`Index safely changed to ${index}`);
+          Logger.info(`Index set to ${index}`);
           isChangingIndex.current = false;
           resolve(true);
-        }, 250);
+        }, 400);
       });
       
       if (success) {
         Logger.info(`Successfully set preview index to ${index} on attempt ${attempts}`);
         
-        await new Promise(resolve => {
+        // Wait for image change confirmation
+        let confirmed = await new Promise<boolean>(resolve => {
           const checkInterval = setInterval(() => {
             if (imageChangeConfirmed.current) {
               clearInterval(checkInterval);
@@ -262,8 +321,14 @@ export function useAdImageHandler({
           setTimeout(() => {
             clearInterval(checkInterval);
             resolve(false);
-          }, 1500);
+          }, 2000);
         });
+        
+        if (!confirmed) {
+          Logger.warn(`Image change not confirmed for index ${index} within timeout, forcing confirmation`);
+          confirmImageChanged();
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
         
         Logger.info(`Image change confirmed: ${imageChangeConfirmed.current}`);
         return true;
@@ -271,12 +336,13 @@ export function useAdImageHandler({
       
       if (attempts < maxRetries) {
         Logger.warn(`Failed to set preview index to ${index}, retrying...`);
-        await new Promise(resolve => setTimeout(resolve, 400));
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
     
     if (!success) {
       Logger.error(`Failed to set preview index to ${index} after ${maxRetries} attempts`);
+      imageNavigationLock.current = false; // Release lock in case of failure
     }
     
     return success;
@@ -392,10 +458,11 @@ export function useAdImageHandler({
     isImageUrlProcessed,
     resetProcessedIndexes,
     getUnprocessedIndexes,
-    isChangingIndex: () => isChangingIndex.current,
+    isChangingIndex: () => isChangingIndex.current || imageNavigationLock.current,
     confirmImageChanged,
     preloadImage,
     getPreloadedImage,
-    detectDuplicateImages
+    detectDuplicateImages,
+    isNavigationLocked: () => imageNavigationLock.current
   };
 }
