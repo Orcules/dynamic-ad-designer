@@ -31,16 +31,39 @@ export const processImages = async (
   
   let successCount = 0;
   const processedImageUrls = new Set<string>(); // Track processed image URLs to prevent duplicates
+  const processedBlobUrls = new Set<string>(); // Track processed blob URLs as well
   const imageGenerator = new ImageGenerator('.ad-content');
   
-  for (let i = 0; i < images.length; i++) {
-    const currentImage = images[i];
-    Logger.info(`Processing image ${i + 1}/${images.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
+  // First, deduplicate the image array to ensure each image is unique
+  const uniqueImages: (File | string)[] = [];
+  const uniqueImageMap = new Map<string, boolean>();
+  
+  images.forEach(img => {
+    const imageKey = typeof img === 'string' ? img : img.name + img.size + img.lastModified;
+    if (!uniqueImageMap.has(imageKey)) {
+      uniqueImageMap.set(imageKey, true);
+      uniqueImages.push(img);
+    } else {
+      Logger.warn(`Skipping duplicate image: ${typeof img === 'string' ? img.substring(0, 30) + '...' : img.name}`);
+    }
+  });
+  
+  Logger.info(`Deduplicated image array: ${images.length} -> ${uniqueImages.length}`);
+  
+  for (let i = 0; i < uniqueImages.length; i++) {
+    const currentImage = uniqueImages[i];
+    Logger.info(`Processing image ${i + 1}/${uniqueImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
     
     // Skip if we've already processed this image URL
     if (typeof currentImage === 'string' && processedImageUrls.has(currentImage)) {
       Logger.warn(`Skipping duplicate image at index ${i}: ${currentImage.substring(0, 30)}...`);
       continue;
+    }
+    
+    // Ensure sufficient delay between processing each image for smooth navigation
+    if (i > 0) {
+      Logger.info(`Adding delay before processing next image (${i})`);
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
     
     let retryCount = 0;
@@ -58,6 +81,13 @@ export const processImages = async (
         Logger.info('Generating preview image...');
         const previewUrl = await imageGenerator.getImageUrl();
         Logger.info('Preview URL generated successfully');
+        
+        // Check if this blob URL has already been processed (same preview)
+        if (processedBlobUrls.has(previewUrl)) {
+          Logger.warn(`Skipping duplicate blob URL: ${previewUrl.substring(0, 30)}...`);
+          throw new Error('Duplicate preview detected - skipping to prevent duplicate ad');
+        }
+        processedBlobUrls.add(previewUrl);
 
         // Convert base64 URL to file
         Logger.info('Converting preview to file...');
@@ -95,7 +125,8 @@ export const processImages = async (
             preview_url: publicUrl,
             width,
             height,
-            status: 'completed'
+            status: 'completed',
+            created_at: new Date().toISOString()
           }])
           .select()
           .single();
@@ -132,6 +163,12 @@ export const processImages = async (
           await new Promise(resolve => setTimeout(resolve, backoffTime));
         }
       }
+    }
+    
+    // Ensure that the next image is properly loaded before continuing to next image
+    if (success && i < uniqueImages.length - 1) {
+      Logger.info(`Waiting for UI to refresh before processing next image...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
   
