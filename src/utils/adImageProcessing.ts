@@ -4,7 +4,6 @@ import { getDimensions } from "./adDimensions";
 import { supabase } from "@/integrations/supabase/client";
 import { ImageGenerator } from "./ImageGenerator";
 import { Logger } from "@/utils/logger";
-import { calculateCoverDimensions } from "./imageEffects";
 
 interface Position {
   x: number;
@@ -32,10 +31,7 @@ export const processImages = async (
   
   let successCount = 0;
   const processedImageUrls = new Set<string>(); // Track processed image URLs to prevent duplicates
-  const processedBlobUrls = new Set<string>(); // Track processed blob URLs as well
-  const processedImageHashes = new Map<string, string>(); // Track image content hashes
   const imageGenerator = new ImageGenerator('.ad-content');
-  const navigationLock = { locked: false };
   
   // First, deduplicate the image array to ensure each image is unique
   const uniqueImages: (File | string)[] = [];
@@ -53,77 +49,6 @@ export const processImages = async (
   
   Logger.info(`Deduplicated image array: ${images.length} -> ${uniqueImages.length}`);
   
-  // Helper function to generate a simple hash for an image preview
-  const generatePreviewHash = async (previewUrl: string): Promise<string> => {
-    try {
-      const response = await fetch(previewUrl);
-      const blob = await response.blob();
-      
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          // Use a small portion of the data for quick comparison
-          const data = reader.result as string;
-          const sample = data.substring(0, 1000) + data.substring(data.length - 1000);
-          resolve(sample);
-        };
-        reader.readAsDataURL(blob);
-      });
-    } catch (error) {
-      Logger.error(`Error generating preview hash: ${error instanceof Error ? error.message : String(error)}`);
-      return '';
-    }
-  };
-  
-  // Check if an image preview is a duplicate of a previously processed one
-  const isDuplicatePreview = async (previewUrl: string): Promise<boolean> => {
-    try {
-      const hash = await generatePreviewHash(previewUrl);
-      
-      // If hash is empty, don't consider it a duplicate
-      if (!hash) return false;
-      
-      // Check if this hash matches any previously processed image
-      for (const [url, existingHash] of processedImageHashes.entries()) {
-        if (existingHash === hash) {
-          Logger.warn(`Duplicate preview detected: ${previewUrl.substring(0, 30)}... matches ${url.substring(0, 30)}...`);
-          return true;
-        }
-      }
-      
-      // Store this hash
-      processedImageHashes.set(previewUrl, hash);
-      return false;
-    } catch (error) {
-      Logger.error(`Error checking for duplicate preview: ${error instanceof Error ? error.message : String(error)}`);
-      return false;
-    }
-  };
-  
-  // Navigation lock helper - prevents rapid navigation during processing
-  const acquireNavigationLock = () => {
-    if (navigationLock.locked) {
-      Logger.warn("Navigation lock already acquired, waiting...");
-      return false;
-    }
-    
-    navigationLock.locked = true;
-    return true;
-  };
-  
-  const releaseNavigationLock = () => {
-    if (!navigationLock.locked) {
-      Logger.warn("Attempted to release an unlocked navigation lock");
-      return;
-    }
-    
-    // Small delay to prevent immediate reacquisition 
-    setTimeout(() => {
-      navigationLock.locked = false;
-      Logger.info("Navigation lock released");
-    }, 200);
-  };
-  
   for (let i = 0; i < uniqueImages.length; i++) {
     const currentImage = uniqueImages[i];
     Logger.info(`Processing image ${i + 1}/${uniqueImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
@@ -134,22 +59,14 @@ export const processImages = async (
       continue;
     }
     
-    // Ensure sufficient delay between processing each image for smooth navigation
+    // Ensure sufficient delay between processing each image
     if (i > 0) {
-      Logger.info(`Adding delay before processing next image (${i})`);
-      await new Promise(resolve => setTimeout(resolve, 1800)); // Increased for smoother transitions
-    }
-    
-    if (!acquireNavigationLock()) {
-      Logger.warn(`Skipping image at index ${i} due to navigation lock`);
       await new Promise(resolve => setTimeout(resolve, 800));
-      i--; // Retry this index
-      continue;
     }
     
-    let retryCount = 0;
-    const maxRetries = 3;
     let success = false;
+    let retryCount = 0;
+    const maxRetries = 2;
 
     while (retryCount < maxRetries && !success) {
       try {
@@ -158,29 +75,14 @@ export const processImages = async (
           throw new Error('Preview element not found');
         }
 
-        // Wait longer before capturing to ensure image is fully loaded and transitions are complete
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // Wait before capturing to ensure image is fully loaded
+        await new Promise(resolve => setTimeout(resolve, 300));
         
         // Capture preview
         Logger.info('Generating preview image...');
         const previewUrl = await imageGenerator.getImageUrl();
         Logger.info('Preview URL generated successfully');
         
-        // Check if this blob URL has already been processed (same preview)
-        if (processedBlobUrls.has(previewUrl)) {
-          Logger.warn(`Skipping duplicate blob URL: ${previewUrl.substring(0, 30)}...`);
-          throw new Error('Duplicate preview detected - skipping to prevent duplicate ad');
-        }
-        
-        // Check if this preview is visually similar to any previously processed one
-        const isDuplicate = await isDuplicatePreview(previewUrl);
-        if (isDuplicate) {
-          Logger.warn(`Skipping visually duplicate preview: ${previewUrl.substring(0, 30)}...`);
-          throw new Error('Visually duplicate preview detected - skipping to prevent duplicate ad');
-        }
-        
-        processedBlobUrls.add(previewUrl);
-
         // Convert base64 URL to file
         Logger.info('Converting preview to file...');
         const response = await fetch(previewUrl);
@@ -188,7 +90,7 @@ export const processImages = async (
         const previewFile = new File([blob], `preview_${i + 1}.png`, { type: 'image/png' });
         Logger.info('Preview file created successfully');
 
-        // Upload to storage with retry mechanism
+        // Upload to storage
         Logger.info('Uploading to storage...');
         const publicUrl = await handleSubmission(previewFile);
         Logger.info(`Upload successful, public URL: ${publicUrl}`);
@@ -196,11 +98,10 @@ export const processImages = async (
         const { width, height } = getDimensions(adData.platform);
         Logger.info(`Using dimensions: ${width}x${height} for platform ${adData.platform}`);
 
-        // CRITICAL: Use the exact image position from the preview - don't modify it
-        // This ensures the server rendering matches exactly what the user sees
+        // CRITICAL: Use the exact image position from the preview
         Logger.info(`Using exact image position: ${JSON.stringify(positions.imagePosition)}`);
 
-        // Add ad to table with retry mechanism
+        // Add ad to table
         Logger.info('Inserting ad data into database...');
         const { data: insertedAd, error: insertError } = await supabase
           .from('generated_ads')
@@ -221,7 +122,7 @@ export const processImages = async (
             preview_url: publicUrl,
             width,
             height,
-            image_position: positions.imagePosition, // Store the exact positioning data
+            image_position: positions.imagePosition,
             headline_position: positions.headlinePosition,
             description_position: positions.descriptionPosition,
             cta_position: positions.ctaPosition,
@@ -247,9 +148,6 @@ export const processImages = async (
           }
           
           success = true;
-          
-          // Log that this index has been processed
-          Logger.info(`Marked index ${i} as processed. Total processed: ${successCount}/${uniqueImages.length}`);
         }
 
       } catch (error) {
@@ -258,23 +156,17 @@ export const processImages = async (
         
         if (retryCount === maxRetries) {
           Logger.error(`Failed to process image ${i + 1} after ${maxRetries} attempts`);
-          toast.error(`Failed to process image ${i + 1} after ${maxRetries} attempts`);
+          toast.error(`Failed to process image ${i + 1}`);
         } else {
-          // Wait before retrying (exponential backoff)
-          const backoffTime = Math.pow(2, retryCount) * 1000;
-          Logger.info(`Retrying in ${backoffTime}ms...`);
-          await new Promise(resolve => setTimeout(resolve, backoffTime));
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-      } finally {
-        // Always release navigation lock at the end of processing attempt
-        releaseNavigationLock();
       }
     }
     
-    // Ensure that the next image is properly loaded before continuing to next image
+    // Wait before processing next image
     if (success && i < uniqueImages.length - 1) {
-      Logger.info(`Waiting for UI to refresh before processing next image...`);
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Increased for smoother transitions
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
   }
   

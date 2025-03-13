@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { calculateCoverDimensions } from '@/utils/imageEffects';
 
 interface Position {
@@ -29,28 +29,26 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
-  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
-  const [imageKey, setImageKey] = useState(0);
   const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
-  const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
-  const renderStartTime = useRef<number>(performance.now());
-  const loadStartTime = useRef<number>(0);
-  const previousImageUrl = useRef<string | undefined>(undefined);
-  const forceUpdateFlag = useRef<boolean>(false);
-  const lastPositionUpdate = useRef<Position>(position);
-  const isPositionUpdatePending = useRef<boolean>(false);
-  const pendingPositionUpdate = useRef<Position | null>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const positionRef = useRef<Position>(position);
 
-  // Safely handle container size updates with ResizeObserver
+  // Track position changes
+  useEffect(() => {
+    positionRef.current = position;
+    if (loaded && containerRef.current) {
+      updateImageStyle(position);
+    }
+  }, [position, loaded]);
+
+  // Update container size with ResizeObserver
   useEffect(() => {
     if (!containerRef.current) return;
     
     const updateContainerSize = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerSize({ width: rect.width, height: rect.height });
+      if (containerRef.current && loaded) {
+        updateImageStyle(positionRef.current);
       }
     };
     
@@ -67,137 +65,51 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       }
       resizeObserver.disconnect();
     };
-  }, []);
-
-  // Apply position changes with debouncing to prevent excessive re-rendering
-  useEffect(() => {
-    if (
-      position.x !== lastPositionUpdate.current.x || 
-      position.y !== lastPositionUpdate.current.y
-    ) {
-      lastPositionUpdate.current = position;
-      pendingPositionUpdate.current = position;
-      
-      if (!isPositionUpdatePending.current) {
-        isPositionUpdatePending.current = true;
-        
-        // Delay position updates very slightly to batch rapid changes
-        setTimeout(() => {
-          if (pendingPositionUpdate.current) {
-            updateImageStyle(pendingPositionUpdate.current);
-            pendingPositionUpdate.current = null;
-          }
-          isPositionUpdatePending.current = false;
-        }, 16); // ~1 frame at 60fps for smooth animation
-      }
-    }
-  }, [position]);
-
-  // Handle image URL changes and caching
-  useEffect(() => {
-    renderStartTime.current = performance.now();
-    
-    if (imageUrl && (imageUrl !== currentImageUrl || forceUpdateFlag.current)) {
-      forceUpdateFlag.current = false;
-      
-      if (previousImageUrl.current && previousImageUrl.current !== imageUrl) {
-        console.log(`Image URL changing from "${previousImageUrl.current.substring(0, 50)}..." to "${imageUrl.substring(0, 50)}..."`);
-        loadStartTime.current = performance.now();
-      }
-      
-      previousImageUrl.current = imageUrl;
-      
-      const cachedImg = imageCache.current.get(imageUrl) || preloadedImage;
-      
-      if (cachedImg) {
-        console.log('Using cached image for faster rendering');
-        setLoaded(true);
-        setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
-        
-        if (containerRef.current) {
-          const containerRect = containerRef.current.getBoundingClientRect();
-          setContainerSize({ width: containerRect.width, height: containerRect.height });
-          
-          updateImageStyle(position);
-        }
-        
-        if (onImageLoaded) {
-          // Use a small timeout to prevent potential timing issues
-          setTimeout(() => {
-            try {
-              const renderTime = performance.now() - renderStartTime.current;
-              console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
-              onImageLoaded();
-            } catch (e) {
-              console.error('Error in onImageLoaded callback:', e);
-            }
-          }, 20);
-        }
-      } else {
-        setLoaded(false);
-        setError(false);
-        setCurrentImageUrl(imageUrl);
-        setImageKey(prev => prev + 1);
-      }
-    }
-  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage]);
+  }, [loaded]);
 
   // Helper function to update image style based on position
-  const updateImageStyle = useCallback((pos: Position) => {
-    if (loaded && containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      
-      const coverDimensions = calculateCoverDimensions(
-        naturalSize.width,
-        naturalSize.height,
-        containerRect.width,
-        containerRect.height,
-        pos.x,
-        pos.y
-      );
-      
-      setImageStyle({
-        width: `${coverDimensions.width}px`,
-        height: `${coverDimensions.height}px`,
-        position: 'absolute',
-        left: `${coverDimensions.x}px`,
-        top: `${coverDimensions.y}px`,
-        transform: 'none',
-        transition: fastMode ? 'none' : 'all 0.1s ease-out',
-        objectFit: 'cover',
-        objectPosition: 'center',
-        willChange: 'left, top',
-        zIndex: 1,
-        minWidth: '120%', // Use 120% to ensure coverage without excessive zoom
-        minHeight: '120%', // Use 120% to ensure coverage without excessive zoom
-      });
-    }
-  }, [naturalSize, loaded, fastMode]);
+  const updateImageStyle = (pos: Position) => {
+    if (!containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    
+    const coverDimensions = calculateCoverDimensions(
+      naturalSize.width,
+      naturalSize.height,
+      containerRect.width,
+      containerRect.height,
+      pos.x,
+      pos.y
+    );
+    
+    setImageStyle({
+      width: `${coverDimensions.width}px`,
+      height: `${coverDimensions.height}px`,
+      position: 'absolute',
+      left: `${coverDimensions.x}px`,
+      top: `${coverDimensions.y}px`,
+      transform: 'none',
+      transition: fastMode ? 'none' : 'all 0.1s ease-out',
+      objectFit: 'cover',
+      objectPosition: 'center',
+      willChange: 'left, top',
+      zIndex: 1,
+    });
+  };
 
   // Safe image load handler with proper error handling
-  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     try {
       const img = e.target as HTMLImageElement;
-      const loadTime = performance.now() - loadStartTime.current;
-      console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
-      
-      if (imageUrl && !imageCache.current.has(imageUrl)) {
-        imageCache.current.set(imageUrl, img);
-      }
-      
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+      setLoaded(true);
       
       if (containerRef.current) {
         updateImageStyle(position);
       }
       
-      setLoaded(true);
-      
       if (onImageLoaded) {
         try {
-          const completeTime = performance.now() - renderStartTime.current;
-          console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
-          console.log('Image render completed in', performance.now() - renderStartTime.current, 'ms');
           onImageLoaded();
         } catch (callbackError) {
           console.error('Error in onImageLoaded callback:', callbackError);
@@ -207,23 +119,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.error('Error in handleImageLoad:', error);
       setError(true);
     }
-  }, [imageUrl, onImageLoaded, position, updateImageStyle]);
-
-  const forceUpdate = useCallback(() => {
-    forceUpdateFlag.current = true;
-    setImageKey(prev => prev + 1);
-  }, []);
-
-  const placeholderStyle: React.CSSProperties = fastMode ? {
-    filter: 'blur(1px)',
-    transform: `translate(${position.x}px, ${position.y}px)`,
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    objectPosition: 'center',
-    backgroundColor: '#333',
-    willChange: 'transform'
-  } : {};
+  };
 
   if (!imageUrl) return null;
 
@@ -234,27 +130,21 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       data-image-container="true"
     >
       <img
-        key={`img-${imageKey}`}
+        ref={imageRef}
         src={imageUrl}
         alt="Ad preview"
         className={`transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={imageStyle}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
-        onError={(e) => {
-          console.error('Error loading image:', e);
-          setError(true);
-        }}
+        onError={() => setError(true)}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
         data-preview-image="true"
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
-          {fastMode ? 
-            <div style={placeholderStyle}></div> : 
-            <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          }
+          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
       )}
       {error && (

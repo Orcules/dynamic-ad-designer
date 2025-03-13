@@ -59,43 +59,21 @@ export const calculateCoverDimensions = (
   
   if (imageAspect > containerAspect) {
     // Image is wider than container (relative to height)
-    // Scale to match height and center horizontally
     height = containerHeight;
     width = containerHeight * imageAspect;
     y = 0;
     x = (containerWidth - width) / 2;
   } else {
     // Image is taller than container (relative to width)
-    // Scale to match width and center vertically
     width = containerWidth;
     height = containerWidth / imageAspect;
     x = 0;
     y = (containerHeight - height) / 2;
   }
   
-  // CRITICAL: Apply the offset exactly as provided without modification
+  // Apply the offset exactly as provided without modification
   x += offsetX;
   y += offsetY;
-  
-  // Use consistent scale factor of 1.2 - enough to ensure coverage
-  // without excessive zooming
-  const scaleFactor = 1.2;
-  
-  if (width < containerWidth * scaleFactor) {
-    const ratio = (containerWidth * scaleFactor) / width;
-    width *= ratio;
-    height *= ratio;
-    // Recenter based on the new dimensions but PRESERVE the original offset
-    x = (containerWidth - width) / 2 + offsetX; // Keep offsetX intact
-  }
-  
-  if (height < containerHeight * scaleFactor) {
-    const ratio = (containerHeight * scaleFactor) / height;
-    width *= ratio;
-    height *= ratio;
-    // Recenter based on the new dimensions but PRESERVE the original offset
-    y = (containerHeight - height) / 2 + offsetY; // Keep offsetY intact
-  }
   
   return { width, height, x, y };
 };

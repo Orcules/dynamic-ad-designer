@@ -166,11 +166,7 @@ serve(async (req) => {
     const imagePosition = data.imagePosition || { x: 0, y: 0 };
     console.log(`[${uploadId}] Using exact image position from client:`, imagePosition);
     
-    // Get image dimensions based on aspect ratio calculation, but position exactly as provided
-    const imageAspect = backgroundImage.width / backgroundImage.height;
-    const canvasAspect = data.width / data.height;
-    
-    // Helper function that mirrors the calculateCoverDimensions logic from the front-end
+    // Helper function that mirrors the simplified calculateCoverDimensions logic
     const calculateCoverDimensionsServer = (
       imageWidth: number,
       imageHeight: number,
@@ -198,29 +194,9 @@ serve(async (req) => {
         y = (containerHeight - height) / 2;
       }
       
-      // CRITICAL: Apply the EXACT offsets as provided by the client without ANY modification
-      // DO NOT change these lines - they are crucial for consistent positioning
+      // Apply the EXACT offsets as provided by the client without ANY modification
       x += offsetX;
       y += offsetY;
-      
-      // Use the same scale factor as the client-side (1.2) - MUST match front-end exactly
-      const scaleFactor = 1.2;
-      
-      if (width < containerWidth * scaleFactor) {
-        const ratio = (containerWidth * scaleFactor) / width;
-        width *= ratio;
-        height *= ratio;
-        // Recenter based on the new dimensions, preserving EXACT client offset
-        x = (containerWidth - width) / 2 + offsetX;
-      }
-      
-      if (height < containerHeight * scaleFactor) {
-        const ratio = (containerHeight * scaleFactor) / height;
-        width *= ratio;
-        height *= ratio;
-        // Recenter based on the new dimensions, preserving EXACT client offset
-        y = (containerHeight - height) / 2 + offsetY;
-      }
       
       return { width, height, x, y };
     };
