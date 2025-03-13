@@ -124,18 +124,26 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height = containerHeight;
       width = containerHeight * imageAspect;
       top = 0;
+      // Ensure image is centered and covers the entire width when needed
       left = (containerWidth - width) / 2;
     } else {
       // Image is taller than container (relative to width)
       width = containerWidth;
       height = containerWidth / imageAspect;
       left = 0;
+      // Ensure image is centered and covers the entire height when needed
       top = (containerHeight - height) / 2;
     }
     
     // Apply position offset
     left += pos.x;
     top += pos.y;
+    
+    // Ensure the image covers the entire container, even with position adjustments
+    const minWidth = containerWidth;
+    const minHeight = containerHeight;
+    width = Math.max(width, minWidth);
+    height = Math.max(height, minHeight);
     
     return {
       width: `${width}px`,

@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -141,6 +140,8 @@ export class ImageGenerator {
       svgElement.style.display = 'inline';
     }
     
+    // Move text elements up for snapshot and keep them there
+    // This ensures we capture at the right moment when texts are moved up
     const moveElementUp = (element: Element | null, pixels: number = 7) => {
       if (!element) return;
       
@@ -155,9 +156,28 @@ export class ImageGenerator {
       console.log(`Moved element up by ${pixels}px:`, element);
     };
     
+    // Apply upward transform to elements
     moveElementUp(headlineElement);
     moveElementUp(descriptionElement);
     moveElementUp(buttonTextElement);
+    
+    // Don't move the arrow to ensure it points down correctly
+    if (arrowElement) {
+      console.log('Found arrow element, ensuring it points downward');
+      const arrowSvg = arrowElement as SVGElement;
+      arrowSvg.style.transform = 'rotate(0deg)'; // Ensure arrow points downward
+    }
+    
+    // Make sure ALL CTA elements are visible
+    const allCtaElements = this.previewElement.querySelectorAll('[data-cta-container], [data-cta-button], .cta-text, .cta-arrow, button:not([data-navigation-control])');
+    allCtaElements.forEach(el => {
+      if (el instanceof HTMLElement || el instanceof SVGElement) {
+        el.style.opacity = '1';
+        el.style.visibility = 'visible';
+        el.style.display = 'inline-flex';
+        el.style.zIndex = '1000';
+      }
+    });
     
     return () => {
       // Restore original styles
@@ -185,7 +205,7 @@ export class ImageGenerator {
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
     
-    // Add a small delay to ensure DOM changes are applied
+    // Add a small delay to ensure DOM changes are applied before capture
     await new Promise(resolve => setTimeout(resolve, 150));
 
     try {
@@ -197,7 +217,7 @@ export class ImageGenerator {
       );
       
       ctaElements.forEach(el => {
-        if (el instanceof HTMLElement) {
+        if (el instanceof HTMLElement || el instanceof SVGElement) {
           el.style.opacity = '1';
           el.style.visibility = 'visible';
           el.style.display = el.classList.contains('cta-text') ? 'inline' : 'flex';
@@ -234,6 +254,22 @@ export class ImageGenerator {
           }
         }
       });
+
+      // Make sure image covers the frame completely
+      const imageElement = this.previewElement.querySelector('[data-preview-image="true"]');
+      if (imageElement && imageElement instanceof HTMLImageElement) {
+        const originalStyle = imageElement.getAttribute('style') || '';
+        positionStyles.set(imageElement, { 
+          style: originalStyle,
+          zIndex: imageElement.style.zIndex
+        });
+        
+        imageElement.style.objectFit = 'cover';
+        imageElement.style.width = '100%';
+        imageElement.style.height = '100%';
+        imageElement.style.minWidth = '100%';
+        imageElement.style.minHeight = '100%';
+      }
 
       const htmlToCanvas = html2canvas as unknown as (element: HTMLElement, options?: any) => Promise<HTMLCanvasElement>;
       const canvas = await htmlToCanvas(this.previewElement, {
@@ -286,6 +322,16 @@ export class ImageGenerator {
             ctaArrow.style.opacity = '1';
             ctaArrow.style.visibility = 'visible';
             ctaArrow.style.display = 'inline';
+          }
+          
+          // Ensure image covers the frame in the clone
+          const imageElement = documentClone.querySelector('[data-preview-image="true"]');
+          if (imageElement && imageElement instanceof HTMLImageElement) {
+            imageElement.style.objectFit = 'cover';
+            imageElement.style.width = '100%';
+            imageElement.style.height = '100%';
+            imageElement.style.minWidth = '100%';
+            imageElement.style.minHeight = '100%';
           }
           
           // Hide only navigation controls, not the CTA
@@ -463,3 +509,4 @@ export class ImageGenerator {
     }
   }
 }
+
