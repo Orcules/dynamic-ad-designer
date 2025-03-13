@@ -33,12 +33,17 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const positionRef = useRef<Position>(position);
+  const lastPositionRef = useRef<Position>(position);
 
-  // Track position changes
+  // Track position changes and apply immediately to prevent visual jumps
   useEffect(() => {
     positionRef.current = position;
     if (loaded && containerRef.current) {
-      updateImageStyle(position);
+      // Compare with last position to detect actual movements
+      if (position.x !== lastPositionRef.current.x || position.y !== lastPositionRef.current.y) {
+        lastPositionRef.current = {...position};
+        updateImageStyle(position);
+      }
     }
   }, [position, loaded]);
 
@@ -73,6 +78,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     const containerRect = containerRef.current.getBoundingClientRect();
     
+    // Calculate dimensions that ensure the image completely covers the container
     const coverDimensions = calculateCoverDimensions(
       naturalSize.width,
       naturalSize.height,
@@ -82,6 +88,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       pos.y
     );
     
+    // Apply the styles with fixed positioning to prevent layout shifts
     setImageStyle({
       width: `${coverDimensions.width}px`,
       height: `${coverDimensions.height}px`,
@@ -89,7 +96,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       left: `${coverDimensions.x}px`,
       top: `${coverDimensions.y}px`,
       transform: 'none',
-      transition: fastMode ? 'none' : 'all 0.1s ease-out',
+      transition: fastMode ? 'none' : 'width 0.1s ease-out, height 0.1s ease-out, left 0.1s ease-out, top 0.1s ease-out',
       objectFit: 'cover',
       objectPosition: 'center',
       willChange: 'left, top, width, height',

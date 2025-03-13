@@ -57,47 +57,63 @@ export const calculateCoverDimensions = (
   
   let width, height, x, y;
   
-  // תיקון: שינוי הלוגיקה כך שהתמונה תמיד תכסה את כל המסגרת
+  // חישוב ראשוני של גודל התמונה לפי יחס הממדים
   if (imageAspect > containerAspect) {
     // התמונה רחבה יותר מהמסגרת (יחסית לגובה)
-    // שינוי קנה המידה כך שהגובה יתאים לגובה המסגרת, התמונה תהיה רחבה יותר ומרכוז אופקי
+    // שינוי קנה המידה כך שהגובה יתאים לגובה המסגרת
     height = containerHeight;
     width = height * imageAspect;
     y = 0;
     x = (containerWidth - width) / 2;
   } else {
     // התמונה גבוהה יותר מהמסגרת (יחסית לרוחב)
-    // שינוי קנה המידה כך שהרוחב יתאים לרוחב המסגרת, התמונה תהיה גבוהה יותר ומרכוז אנכי
+    // שינוי קנה המידה כך שהרוחב יתאים לרוחב המסגרת
     width = containerWidth;
     height = width / imageAspect;
     x = 0;
     y = (containerHeight - height) / 2;
   }
   
-  // הוספת ההיסט למיקום התמונה
+  // החלת ההיסט על מיקום התמונה
   x += offsetX;
   y += offsetY;
   
-  // תיקון: וידוא שהתמונה תמיד מכסה את כל המסגרת
-  // אם לאחר הזזת התמונה נוצר מרווח, הגדל את התמונה כדי לכסות את המרווח
-  if (x > 0 || (x + width) < containerWidth || y > 0 || (y + height) < containerHeight) {
-    // חישוב כמה צריך להגדיל את התמונה כדי לכסות את כל המסגרת
-    const scaleX = x > 0 || (x + width) < containerWidth 
-      ? containerWidth / (width - Math.abs(x) * 2) 
-      : 1;
+  // וידוא שהתמונה מכסה תמיד את כל המסגרת
+  // בדיקה אם יש רווח בין התמונה לשולי המסגרת אחרי הזזת התמונה
+  const hasGapX = x > 0 || (x + width) < containerWidth;
+  const hasGapY = y > 0 || (y + height) < containerHeight;
+  
+  if (hasGapX || hasGapY) {
+    // חישוב פקטור הגדלה נדרש לכיסוי מלא של המסגרת
+    let scaleX = 1;
+    let scaleY = 1;
     
-    const scaleY = y > 0 || (y + height) < containerHeight 
-      ? containerHeight / (height - Math.abs(y) * 2) 
-      : 1;
+    if (hasGapX) {
+      // חישוב כמה צריך להגדיל את התמונה ברוחב
+      const uncoveredWidth = Math.max(
+        x > 0 ? x : 0,
+        (x + width) < containerWidth ? containerWidth - (x + width) : 0
+      );
+      scaleX = (width + uncoveredWidth * 2) / width;
+    }
     
-    // בחירת הפקטור הגדול יותר להגדלה אחידה בשני הצירים
-    const scale = Math.max(scaleX, scaleY) * 1.05; // תוספת 5% לבטיחות
+    if (hasGapY) {
+      // חישוב כמה צריך להגדיל את התמונה בגובה
+      const uncoveredHeight = Math.max(
+        y > 0 ? y : 0,
+        (y + height) < containerHeight ? containerHeight - (y + height) : 0
+      );
+      scaleY = (height + uncoveredHeight * 2) / height;
+    }
     
-    // הגדלת התמונה
+    // שימוש בפקטור הגדלה גדול יותר לשמירה על יחס ממדים
+    const scale = Math.max(scaleX, scaleY) * 1.1; // תוספת 10% לביטחון
+    
+    // חישוב מימדים חדשים לתמונה
     const newWidth = width * scale;
     const newHeight = height * scale;
     
-    // עדכון הקואורדינטות כך שהתמונה תישאר ממורכזת
+    // עדכון מיקום התמונה לשמירה על מרכוז
     const newX = x - (newWidth - width) / 2;
     const newY = y - (newHeight - height) / 2;
     
