@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -198,6 +197,31 @@ serve(async (req) => {
       // Apply the EXACT offsets as provided by the client
       x += offsetX;
       y += offsetY;
+      
+      // Ensure the image always covers the entire container
+      if (x > 0 || (x + width) < containerWidth || y > 0 || (y + height) < containerHeight) {
+        // Calculate how much we need to scale the image to cover the container
+        const scaleX = x > 0 || (x + width) < containerWidth 
+          ? containerWidth / (width - Math.abs(x) * 2) 
+          : 1;
+        
+        const scaleY = y > 0 || (y + height) < containerHeight 
+          ? containerHeight / (height - Math.abs(y) * 2) 
+          : 1;
+        
+        // Use the larger scale factor for uniform scaling in both dimensions
+        const scale = Math.max(scaleX, scaleY) * 1.05; // Add 5% safety margin
+        
+        // Scale the image
+        const newWidth = width * scale;
+        const newHeight = height * scale;
+        
+        // Update coordinates to keep image centered
+        const newX = x - (newWidth - width) / 2;
+        const newY = y - (newHeight - height) / 2;
+        
+        return { width: newWidth, height: newHeight, x: newX, y: newY };
+      }
       
       return { width, height, x, y };
     };

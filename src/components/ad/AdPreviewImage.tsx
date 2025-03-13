@@ -92,7 +92,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transition: fastMode ? 'none' : 'all 0.1s ease-out',
       objectFit: 'cover',
       objectPosition: 'center',
-      willChange: 'left, top',
+      willChange: 'left, top, width, height',
       zIndex: 1,
     });
   };

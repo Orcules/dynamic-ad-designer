@@ -57,25 +57,52 @@ export const calculateCoverDimensions = (
   
   let width, height, x, y;
   
+  // תיקון: שינוי הלוגיקה כך שהתמונה תמיד תכסה את כל המסגרת
   if (imageAspect > containerAspect) {
-    // Image is wider than container (relative to height)
-    // Scale image to match container height and center horizontally
+    // התמונה רחבה יותר מהמסגרת (יחסית לגובה)
+    // שינוי קנה המידה כך שהגובה יתאים לגובה המסגרת, התמונה תהיה רחבה יותר ומרכוז אופקי
     height = containerHeight;
-    width = containerHeight * imageAspect;
+    width = height * imageAspect;
     y = 0;
     x = (containerWidth - width) / 2;
   } else {
-    // Image is taller than container (relative to width)
-    // Scale image to match container width and center vertically
+    // התמונה גבוהה יותר מהמסגרת (יחסית לרוחב)
+    // שינוי קנה המידה כך שהרוחב יתאים לרוחב המסגרת, התמונה תהיה גבוהה יותר ומרכוז אנכי
     width = containerWidth;
-    height = containerWidth / imageAspect;
+    height = width / imageAspect;
     x = 0;
     y = (containerHeight - height) / 2;
   }
   
-  // Apply the offset to position the image
+  // הוספת ההיסט למיקום התמונה
   x += offsetX;
   y += offsetY;
+  
+  // תיקון: וידוא שהתמונה תמיד מכסה את כל המסגרת
+  // אם לאחר הזזת התמונה נוצר מרווח, הגדל את התמונה כדי לכסות את המרווח
+  if (x > 0 || (x + width) < containerWidth || y > 0 || (y + height) < containerHeight) {
+    // חישוב כמה צריך להגדיל את התמונה כדי לכסות את כל המסגרת
+    const scaleX = x > 0 || (x + width) < containerWidth 
+      ? containerWidth / (width - Math.abs(x) * 2) 
+      : 1;
+    
+    const scaleY = y > 0 || (y + height) < containerHeight 
+      ? containerHeight / (height - Math.abs(y) * 2) 
+      : 1;
+    
+    // בחירת הפקטור הגדול יותר להגדלה אחידה בשני הצירים
+    const scale = Math.max(scaleX, scaleY) * 1.05; // תוספת 5% לבטיחות
+    
+    // הגדלת התמונה
+    const newWidth = width * scale;
+    const newHeight = height * scale;
+    
+    // עדכון הקואורדינטות כך שהתמונה תישאר ממורכזת
+    const newX = x - (newWidth - width) / 2;
+    const newY = y - (newHeight - height) / 2;
+    
+    return { width: newWidth, height: newHeight, x: newX, y: newY };
+  }
   
   return { width, height, x, y };
 };
