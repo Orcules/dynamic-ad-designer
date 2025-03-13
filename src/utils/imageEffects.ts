@@ -77,9 +77,9 @@ export const calculateCoverDimensions = (
   x += offsetX;
   y += offsetY;
   
-  // Ensure dimensions are at least as large as the container (with extra margin)
-  // This guarantees the image will cover the entire container
-  const scaleFactor = 2.0; // Significantly increased scale factor to ensure full coverage
+  // Adjust the scale factor to be more reasonable - 1.2 is enough to ensure coverage
+  // without excessive zooming
+  const scaleFactor = 1.2;
   
   if (width < containerWidth * scaleFactor) {
     const ratio = (containerWidth * scaleFactor) / width;

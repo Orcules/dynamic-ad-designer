@@ -110,8 +110,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             objectPosition: 'center',
             willChange: 'left, top',
             zIndex: 1,
-            minWidth: '150%', // Significantly increased to ensure covering
-            minHeight: '150%', // Significantly increased to ensure covering
+            minWidth: '120%', // Reduced from 150% to 120% for less extreme zoom
+            minHeight: '120%', // Reduced from 150% to 120% for less extreme zoom
           };
           
           setImageStyle(newStyle);
@@ -159,8 +159,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           objectPosition: 'center',
           willChange: 'left, top',
           zIndex: 1,
-          minWidth: '150%', // Significantly increased to ensure covering
-          minHeight: '150%', // Significantly increased to ensure covering
+          minWidth: '120%', // Reduced from 150% to 120% for less extreme zoom
+          minHeight: '120%', // Reduced from 150% to 120% for less extreme zoom
         });
       }
     }
@@ -199,8 +199,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         objectPosition: 'center',
         willChange: 'left, top',
         zIndex: 1,
-        minWidth: '150%', // Significantly increased to ensure covering
-        minHeight: '150%', // Significantly increased to ensure covering
+        minWidth: '120%', // Reduced from 150% to 120% for less extreme zoom
+        minHeight: '120%', // Reduced from 150% to 120% for less extreme zoom
       };
       
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
