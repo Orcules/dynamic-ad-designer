@@ -52,7 +52,7 @@ export class AdGenerationService {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       try {
-        // FIX: Remove the signal from the options as it's not supported
+        // Fixed: Remove the signal from the options as it's not supported
         const { data: generatedAd, error: generateError } = await supabase.functions
           .invoke('generate-ad', {
             body: formData
