@@ -12,30 +12,33 @@ export const applyImageEffect = async (
       return canvas.toDataURL('image/jpeg', 0.95);
     }
     
-    const width = canvas.width;
-    const height = canvas.height;
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    
     // Get the original image dimensions
     const imageWidth = canvas.width;
     const imageHeight = canvas.height;
     
-    // Calculate dimensions that ensure the image covers the entire canvas
-    const { width: dWidth, height: dHeight, x: dx, y: dy } = calculateCoverDimensions(
+    // Apply actual crop
+    const { width, height, x, y } = calculateCropDimensions(
       imageWidth,
       imageHeight,
-      width,
-      height
+      imageWidth,
+      imageHeight
     );
     
-    // Draw the image centered and covering the entire canvas
+    // Set the temp canvas to exactly the size of the container
+    // This ensures the final image is exactly the right size
+    tempCanvas.width = imageWidth;
+    tempCanvas.height = imageHeight;
+    
+    // Draw only the portion of the image that will cover the container
     tempCtx.drawImage(
       canvas,
-      0, 0, imageWidth, imageHeight, // Source rectangle (entire original image)
-      dx, dy, dWidth, dHeight        // Destination rectangle (calculated for coverage)
+      // Source coordinates (area to crop from original)
+      x, y, width, height,
+      // Destination coordinates (fill the entire new canvas)
+      0, 0, imageWidth, imageHeight
     );
     
+    // Return the cropped image
     return tempCanvas.toDataURL('image/jpeg', 0.95);
   }
   
@@ -43,7 +46,46 @@ export const applyImageEffect = async (
   return canvas.toDataURL('image/jpeg', 0.95);
 };
 
-// Helper function to ensure image covers container while maintaining aspect ratio
+// Helper function to determine how to crop an image to properly cover a container
+export const calculateCropDimensions = (
+  imageWidth: number,
+  imageHeight: number,
+  containerWidth: number,
+  containerHeight: number
+): { width: number; height: number; x: number; y: number } => {
+  // Safety check for zero dimensions
+  if (imageWidth <= 0 || imageHeight <= 0 || containerWidth <= 0 || containerHeight <= 0) {
+    return { width: containerWidth, height: containerHeight, x: 0, y: 0 };
+  }
+  
+  const imageAspect = imageWidth / imageHeight;
+  const containerAspect = containerWidth / containerHeight;
+  
+  let sourceWidth, sourceHeight, sourceX, sourceY;
+  
+  if (imageAspect > containerAspect) {
+    // Image is wider than container - crop the sides
+    sourceHeight = imageHeight;
+    sourceWidth = imageHeight * containerAspect;
+    sourceY = 0;
+    sourceX = (imageWidth - sourceWidth) / 2;
+  } else {
+    // Image is taller than container - crop the top/bottom
+    sourceWidth = imageWidth;
+    sourceHeight = imageWidth / containerAspect;
+    sourceX = 0;
+    sourceY = (imageHeight - sourceHeight) / 2;
+  }
+  
+  return {
+    width: sourceWidth,
+    height: sourceHeight,
+    x: sourceX,
+    y: sourceY
+  };
+};
+
+// Original helper function is retained for compatibility
 export const calculateCoverDimensions = (
   imageWidth: number,
   imageHeight: number,
@@ -108,8 +150,8 @@ export const calculateCoverDimensions = (
     }
     
     // Use the largest scale factor to ensure coverage in both dimensions
-    // Add a 20% margin to the scale factor for safety
-    const scaleFactor = Math.max(scaleFactorX, scaleFactorY) * 1.2;
+    // Add a 30% margin to the scale factor for extra safety
+    const scaleFactor = Math.max(scaleFactorX, scaleFactorY) * 1.3;
     
     // Apply the scale factor
     const newWidth = width * scaleFactor;

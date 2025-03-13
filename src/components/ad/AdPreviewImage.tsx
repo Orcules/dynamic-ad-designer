@@ -36,7 +36,32 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const lastPositionRef = useRef<Position>(position);
   const imageElementRef = useRef<HTMLImageElement | null>(null);
 
-  // Track position changes and apply immediately to prevent visual jumps
+  // Apply physical crop on load
+  const applyCropOnLoad = (img: HTMLImageElement) => {
+    if (!containerRef.current) return;
+    
+    const containerRect = containerRef.current.getBoundingClientRect();
+    imageElementRef.current = img;
+    
+    // Make sure we have accurate natural dimensions
+    setNaturalSize({ 
+      width: img.naturalWidth || img.width, 
+      height: img.naturalHeight || img.height 
+    });
+    
+    setLoaded(true);
+    updateImageStyle(position);
+    
+    if (onImageLoaded) {
+      try {
+        onImageLoaded();
+      } catch (callbackError) {
+        console.error('Error in onImageLoaded callback:', callbackError);
+      }
+    }
+  };
+
+  // Track position changes and apply immediately
   useEffect(() => {
     positionRef.current = position;
     if (loaded && containerRef.current) {
@@ -89,7 +114,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       pos.y
     );
     
-    // Apply the styles with fixed positioning to prevent layout shifts
+    // Apply the styles with fixed positioning 
     setImageStyle({
       width: `${coverDimensions.width}px`,
       height: `${coverDimensions.height}px`,
@@ -120,27 +145,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     try {
       const img = e.target as HTMLImageElement;
-      imageElementRef.current = img;
-      
-      // Make sure we have accurate natural dimensions
-      setNaturalSize({ 
-        width: img.naturalWidth || img.width, 
-        height: img.naturalHeight || img.height 
-      });
-      
-      setLoaded(true);
-      
-      if (containerRef.current) {
-        updateImageStyle(position);
-      }
-      
-      if (onImageLoaded) {
-        try {
-          onImageLoaded();
-        } catch (callbackError) {
-          console.error('Error in onImageLoaded callback:', callbackError);
-        }
-      }
+      applyCropOnLoad(img);
     } catch (error) {
       console.error('Error in handleImageLoad:', error);
       setError(true);
