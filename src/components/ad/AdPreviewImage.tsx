@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Position {
@@ -115,27 +116,39 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    const newStyle: React.CSSProperties = {
-      transform: `translate(${pos.x}px, ${pos.y}px)`,
-      transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
-      position: 'absolute',
-      objectFit: 'cover',
-      willChange: 'transform',
-    };
+    // Determine scaling and positioning to maintain aspect ratio
+    let width, height, left, top;
     
     if (imageAspect > containerAspect) {
-      const scaledWidth = containerHeight * imageAspect;
-      newStyle.height = '100%';
-      newStyle.width = `${scaledWidth}px`;
-      newStyle.maxWidth = 'none';
+      // Image is wider than container (relative to height)
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+      top = 0;
+      left = (containerWidth - width) / 2;
     } else {
-      const scaledHeight = containerWidth / imageAspect;
-      newStyle.width = '100%';
-      newStyle.height = `${scaledHeight}px`;
-      newStyle.maxHeight = 'none';
+      // Image is taller than container (relative to width)
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+      left = 0;
+      top = (containerHeight - height) / 2;
     }
     
-    return newStyle;
+    // Apply position offset
+    left += pos.x;
+    top += pos.y;
+    
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      position: 'absolute',
+      left: `${left}px`,
+      top: `${top}px`,
+      transform: 'none', // Use left/top instead of transform for better cropping
+      transition: useFastMode ? 'none' : 'all 0.1s ease-out',
+      objectFit: 'cover',
+      objectPosition: 'center',
+      willChange: 'transform, left, top',
+    };
   }, []);
 
   const calculateImageStyle = useCallback((img: HTMLImageElement) => {
@@ -149,29 +162,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    if (imageAspect > containerAspect) {
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
-    
-    return {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${position.x}px, ${position.y}px)`,
-      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
-      position: 'absolute' as const,
-      objectFit: 'cover' as const,
-      willChange: 'transform',
-    };
-  }, [position, fastMode]);
+    return calculateStyleFromDimensions(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight,
+      position,
+      fastMode
+    );
+  }, [position, fastMode, calculateStyleFromDimensions]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -185,14 +184,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     if (!fastMode) {
       setImageStyle(calculateImageStyle(img));
     } else {
-      setImageStyle({
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-        position: 'absolute',
-        willChange: 'transform'
-      });
+      const newStyle = calculateImageStyle(img);
+      setImageStyle(newStyle);
     }
     
     setLoaded(true);
@@ -226,7 +219,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         key={`img-${imageKey}`}
         src={imageUrl}
         alt="Ad preview"
-        className={`absolute transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={imageStyle}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}

@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,11 +17,11 @@ export function AdNavigationControls({
   totalImages,
 }: AdNavigationControlsProps) {
   return (
-    <div className="absolute inset-0 flex items-center justify-between -mx-16">
+    <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4">
       <Button
         variant="outline"
         size="icon"
-        className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
+        className="rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30"
         onClick={onPrevious}
         disabled={totalImages <= 1}
       >
@@ -29,19 +30,19 @@ export function AdNavigationControls({
       <Button
         variant="outline"
         size="icon"
-        className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
+        className="rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30"
         onClick={onNext}
         disabled={totalImages <= 1}
       >
         <ArrowRight className="h-8 w-8" />
       </Button>
       {totalImages > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
           {Array.from({ length: totalImages }).map((_, index) => (
             <div
               key={index}
               className={cn(
-                "w-2 h-2 rounded-full transition-colors",
+                "w-3 h-3 rounded-full transition-colors shadow-md",
                 currentIndex === index ? "bg-white" : "bg-white/50"
               )}
             />
