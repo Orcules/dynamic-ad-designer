@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -166,7 +167,7 @@ serve(async (req) => {
     const imagePosition = data.imagePosition || { x: 0, y: 0 };
     console.log(`[${uploadId}] Using exact image position from client:`, imagePosition);
     
-    // Helper function that mirrors the simplified calculateCoverDimensions logic
+    // Helper function that exactly mirrors the client-side calculateCoverDimensions
     const calculateCoverDimensionsServer = (
       imageWidth: number,
       imageHeight: number,
@@ -194,7 +195,7 @@ serve(async (req) => {
         y = (containerHeight - height) / 2;
       }
       
-      // Apply the EXACT offsets as provided by the client without ANY modification
+      // Apply the EXACT offsets as provided by the client
       x += offsetX;
       y += offsetY;
       

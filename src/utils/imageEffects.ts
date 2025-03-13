@@ -59,19 +59,21 @@ export const calculateCoverDimensions = (
   
   if (imageAspect > containerAspect) {
     // Image is wider than container (relative to height)
+    // Scale image to match container height and center horizontally
     height = containerHeight;
     width = containerHeight * imageAspect;
     y = 0;
     x = (containerWidth - width) / 2;
   } else {
     // Image is taller than container (relative to width)
+    // Scale image to match container width and center vertically
     width = containerWidth;
     height = containerWidth / imageAspect;
     x = 0;
     y = (containerHeight - height) / 2;
   }
   
-  // Apply the offset exactly as provided without modification
+  // Apply the offset to position the image
   x += offsetX;
   y += offsetY;
   
