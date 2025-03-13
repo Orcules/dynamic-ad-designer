@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -100,6 +99,10 @@ export class ImageGenerator {
         useCORS: true,
         allowTaint: true,
         logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0,
         onclone: (documentClone) => {
           // Hide navigation controls in the clone
           const clonedNavControls = documentClone.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');

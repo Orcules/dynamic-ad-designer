@@ -19,6 +19,6 @@ declare module 'html2canvas' {
     removeContainer?: boolean;
   }
   
-  function html2canvas(element: HTMLElement, options?: Options): Promise<HTMLCanvasElement>;
+  function html2canvas(element: HTMLElement, options?: Partial<Options>): Promise<HTMLCanvasElement>;
   export = html2canvas;
 }
