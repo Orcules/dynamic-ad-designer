@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -144,6 +145,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -164,6 +166,7 @@
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  object-fit: cover !important;
 }
 
 .ad-content.capturing {
@@ -174,4 +177,28 @@
 .ad-content.capturing * {
   transform: none !important;
   transition: none !important;
+}
+
+/* Ensure images always maintain aspect ratio */
+[data-preview-image="true"] {
+  object-fit: cover !important;
+  object-position: center !important;
+}
+
+/* Ensure CTA button is always visible */
+[data-cta-button="true"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 50 !important;
+}
+
+[data-cta-container="true"] {
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 40 !important;
+}
+
+/* Ensure image container has proper overflow handling */
+[data-image-container="true"] {
+  overflow: hidden !important;
 }

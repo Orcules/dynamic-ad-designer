@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -175,8 +174,8 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = imagePosition.x;
-    let destY = imagePosition.y;
+    let destX = imagePosition.x || 0;
+    let destY = imagePosition.y || 0;
     let destWidth, destHeight;
 
     // Match the exact positioning and scaling from the AdPreviewImage component
@@ -257,6 +256,7 @@ serve(async (req) => {
       }
     } else {
       // Draw the image with exact positioning to match the preview for non-luxury templates
+      // Use proper aspect ratio maintenance - cover approach
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 
@@ -387,17 +387,10 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        // Static arrow (no -1 pixel adjustment)
-        ctx.moveTo(arrowX, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2);
-        
-        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
-        ctx.lineTo(arrowX, arrowY - arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
-        
-        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
-        ctx.lineTo(arrowX, arrowY + arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
+        // Draw a right-pointing arrow instead of the previous vertical arrows
+        ctx.moveTo(arrowX - arrowSize/2, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/2, arrowY);
+        ctx.lineTo(arrowX - arrowSize/2, arrowY + arrowSize/2);
         
         ctx.stroke();
       }

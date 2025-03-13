@@ -214,6 +214,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     <div 
       ref={containerRef} 
       className={`absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center ${!noBackgroundColor ? 'bg-black' : ''}`}
+      data-image-container="true"
     >
       <img
         key={`img-${imageKey}`}
@@ -229,6 +230,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
+        data-preview-image="true"
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
