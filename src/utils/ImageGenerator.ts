@@ -60,12 +60,20 @@ export class ImageGenerator {
       return () => {};
     }
 
-    // Hide navigation buttons only, not the CTA button
-    const navigationButtons = this.previewElement.querySelectorAll('.ad-content > div > div > [class*="absolute inset-0"] button');
-    const originalButtonStyles = new Map<Element, string>();
+    // Hide ONLY navigation controls, not the CTA button
+    const navigationButtons = this.previewElement.querySelectorAll('[data-navigation-control]');
+    const navigationControls = this.previewElement.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');
+    
+    const originalStyles = new Map<Element, string>();
+    
+    // Hide all navigation controls
+    if (navigationControls) {
+      originalStyles.set(navigationControls, navigationControls.getAttribute('style') || '');
+      (navigationControls as HTMLElement).style.display = 'none';
+    }
     
     navigationButtons.forEach(button => {
-      originalButtonStyles.set(button, (button as HTMLElement).style.display);
+      originalStyles.set(button, (button as HTMLElement).style.display);
       (button as HTMLElement).style.display = 'none';
     });
 
@@ -74,6 +82,7 @@ export class ImageGenerator {
     const ctaButton = this.previewElement.querySelector('[data-cta-button="true"]');
     
     if (ctaContainer && ctaContainer instanceof HTMLElement) {
+      originalStyles.set(ctaContainer, ctaContainer.getAttribute('style') || '');
       ctaContainer.style.opacity = '1';
       ctaContainer.style.visibility = 'visible';
       ctaContainer.style.zIndex = '999'; // Ensure it's above everything else
@@ -82,6 +91,7 @@ export class ImageGenerator {
     }
     
     if (ctaButton && ctaButton instanceof HTMLElement) {
+      originalStyles.set(ctaButton, ctaButton.getAttribute('style') || '');
       ctaButton.style.opacity = '1';
       ctaButton.style.visibility = 'visible';
       ctaButton.style.zIndex = '1000'; // Ensure it's above everything else
@@ -90,8 +100,9 @@ export class ImageGenerator {
     } else {
       console.log('CTA button not found, using fallback selector');
       // Try fallback selector
-      const fallbackCtaButton = this.previewElement.querySelector('button:not([class*="group-hover:opacity"])');
+      const fallbackCtaButton = this.previewElement.querySelector('button:not([data-navigation-control])');
       if (fallbackCtaButton && fallbackCtaButton instanceof HTMLElement) {
+        originalStyles.set(fallbackCtaButton, fallbackCtaButton.getAttribute('style') || '');
         fallbackCtaButton.style.opacity = '1';
         fallbackCtaButton.style.visibility = 'visible';
         fallbackCtaButton.style.zIndex = '1000'; // Ensure it's above everything else
@@ -102,21 +113,38 @@ export class ImageGenerator {
     
     const headlineElement = this.previewElement.querySelector('h2');
     const descriptionElement = this.previewElement.querySelector('p');
-    const buttonTextElement = ctaButton instanceof HTMLElement ? 
-      ctaButton.querySelector('.cta-text') : 
-      this.previewElement.querySelector('.cta-text');
+    const buttonTextElement = this.previewElement.querySelector('.cta-text');
+    const arrowElement = this.previewElement.querySelector('.cta-arrow');
     
-    const arrowElement = ctaButton instanceof HTMLElement ? 
-      ctaButton.querySelector('.cta-arrow') : 
-      this.previewElement.querySelector('.cta-arrow');
+    // Preserve original positions to reset after capture
+    if (headlineElement) {
+      originalStyles.set(headlineElement, headlineElement.getAttribute('style') || '');
+    }
     
-    const originalPositions = new Map<Element, string>();
+    if (descriptionElement) {
+      originalStyles.set(descriptionElement, descriptionElement.getAttribute('style') || '');
+    }
+    
+    if (buttonTextElement) {
+      originalStyles.set(buttonTextElement, buttonTextElement.getAttribute('style') || '');
+      (buttonTextElement as HTMLElement).style.opacity = '1';
+      (buttonTextElement as HTMLElement).style.visibility = 'visible';
+      (buttonTextElement as HTMLElement).style.display = 'inline';
+    }
+    
+    if (arrowElement) {
+      originalStyles.set(arrowElement, arrowElement.getAttribute('style') || '');
+      console.log('Arrow found, keeping it visible during rendering');
+      const svgElement = arrowElement as SVGElement;
+      svgElement.style.opacity = '1';
+      svgElement.style.visibility = 'visible';
+      svgElement.style.display = 'inline';
+    }
     
     const moveElementUp = (element: Element | null, pixels: number = 7) => {
       if (!element) return;
       
       const currentTransform = window.getComputedStyle(element).transform;
-      originalPositions.set(element, currentTransform);
       
       if (currentTransform && currentTransform !== 'none') {
         (element as HTMLElement).style.transform = `${currentTransform} translateY(-${pixels}px)`;
@@ -131,25 +159,15 @@ export class ImageGenerator {
     moveElementUp(descriptionElement);
     moveElementUp(buttonTextElement);
     
-    if (arrowElement) {
-      console.log('Arrow found, keeping it static during rendering');
-      const svgElement = arrowElement as SVGElement;
-      originalPositions.set(svgElement, svgElement.style.transform);
-    }
-    
     return () => {
-      originalPositions.forEach((originalTransform, element) => {
-        if (element instanceof SVGElement || element instanceof HTMLElement) {
-          element.style.transform = originalTransform;
+      // Restore original styles
+      originalStyles.forEach((originalStyle, element) => {
+        if (element instanceof HTMLElement || element instanceof SVGElement) {
+          element.setAttribute('style', originalStyle);
         }
       });
       
-      navigationButtons.forEach(button => {
-        const originalStyle = originalButtonStyles.get(button);
-        if (originalStyle !== undefined && button instanceof HTMLElement) {
-          button.style.display = originalStyle;
-        }
-      });
+      console.log('Reset all elements to original styles');
     };
   }
 
@@ -174,7 +192,10 @@ export class ImageGenerator {
       console.log('Using html2canvas...');
       
       // IMPORTANT: Force all elements to be visible before capture
-      const ctaElements = this.previewElement.querySelectorAll('[data-cta-container="true"], [data-cta-button="true"], .cta-text, .cta-arrow');
+      const ctaElements = this.previewElement.querySelectorAll(
+        '[data-cta-container="true"], [data-cta-button="true"], .cta-text, .cta-arrow, button:not([data-navigation-control])'
+      );
+      
       ctaElements.forEach(el => {
         if (el instanceof HTMLElement) {
           el.style.opacity = '1';
@@ -191,19 +212,27 @@ export class ImageGenerator {
         adContent.style.zIndex = '50';
       }
       
-      const originalStyles = new Map<Element, string>();
+      // Fix absolute positioned elements
       const elementsToFixPosition = this.previewElement ? 
         Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
         [];
       
+      const positionStyles = new Map<Element, { style: string, zIndex: string }>();
+      
       elementsToFixPosition.forEach(el => {
-        originalStyles.set(el, el.getAttribute('style') || '');
-        const computedStyle = window.getComputedStyle(el);
-        const currentLeft = computedStyle.left;
-        const currentTop = computedStyle.top;
-        const currentTransform = computedStyle.transform;
-        
-        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform}; z-index: 99;`);
+        if (el instanceof HTMLElement) {
+          positionStyles.set(el, { 
+            style: el.getAttribute('style') || '',
+            zIndex: el.style.zIndex
+          });
+          
+          const computedStyle = window.getComputedStyle(el);
+          
+          // Don't change navigation controls
+          if (!el.hasAttribute('data-navigation-control')) {
+            el.style.zIndex = el === adContent ? '50' : '99';
+          }
+        }
       });
 
       const htmlToCanvas = html2canvas as unknown as (element: HTMLElement, options?: any) => Promise<HTMLCanvasElement>;
@@ -222,7 +251,14 @@ export class ImageGenerator {
           // In the cloned document, ensure CTA is visible
           const clonedCtaContainer = documentClone.querySelector('[data-cta-container="true"]');
           const clonedCtaButton = documentClone.querySelector('[data-cta-button="true"]');
+          const clonedNavControls = documentClone.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');
           
+          // Hide navigation controls in the clone
+          if (clonedNavControls instanceof HTMLElement) {
+            clonedNavControls.style.display = 'none';
+          }
+          
+          // Show CTA elements in the clone
           if (clonedCtaContainer instanceof HTMLElement) {
             clonedCtaContainer.style.opacity = '1';
             clonedCtaContainer.style.visibility = 'visible';
@@ -237,7 +273,7 @@ export class ImageGenerator {
             clonedCtaButton.style.display = 'inline-flex';
           }
           
-          // Explicitly handle the CTA Text
+          // Explicitly handle the CTA Text and Arrow
           const ctaText = documentClone.querySelector('.cta-text');
           if (ctaText instanceof HTMLElement) {
             ctaText.style.opacity = '1';
@@ -245,12 +281,20 @@ export class ImageGenerator {
             ctaText.style.display = 'inline';
           }
           
+          const ctaArrow = documentClone.querySelector('.cta-arrow');
+          if (ctaArrow instanceof HTMLElement || ctaArrow instanceof SVGElement) {
+            ctaArrow.style.opacity = '1';
+            ctaArrow.style.visibility = 'visible';
+            ctaArrow.style.display = 'inline';
+          }
+          
           // Hide only navigation controls, not the CTA
-          const navigationControls = documentClone.querySelectorAll('.ad-content [class*="absolute inset-0"] button:not([data-cta-button="true"])');
+          const navigationControls = documentClone.querySelectorAll('[data-navigation-control]');
           navigationControls.forEach(control => {
             (control as HTMLElement).style.display = 'none';
           });
           
+          // Copy fonts
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -272,10 +316,13 @@ export class ImageGenerator {
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
       
+      // Restore original positions
       elementsToFixPosition.forEach(el => {
-        const original = originalStyles.get(el);
-        if (original !== undefined) {
-          el.setAttribute('style', original);
+        if (el instanceof HTMLElement) {
+          const original = positionStyles.get(el);
+          if (original) {
+            el.setAttribute('style', original.style);
+          }
         }
       });
       

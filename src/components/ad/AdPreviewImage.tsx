@@ -116,7 +116,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    // Determine scaling and positioning to maintain aspect ratio
+    // Determine scaling and positioning to maintain aspect ratio (object-fit: cover behavior)
     let width, height, left, top;
     
     if (imageAspect > containerAspect) {
@@ -147,7 +147,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transition: useFastMode ? 'none' : 'all 0.1s ease-out',
       objectFit: 'cover',
       objectPosition: 'center',
-      willChange: 'transform, left, top',
+      willChange: 'left, top',
+      zIndex: 1, // Ensure image is behind text and CTA
     };
   }, []);
 

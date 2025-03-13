@@ -36,12 +36,12 @@ export function AdNavigationControls({
   }
 
   return (
-    <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
+    <div className="absolute inset-0 flex items-center justify-between pointer-events-none z-10">
       <div className="group ml-4">
         <Button
           variant="outline"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-40"
+          className="opacity-80 hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-40"
           onClick={handlePrevious}
           disabled={totalImages <= 1}
           data-navigation-control="previous"
@@ -55,7 +55,7 @@ export function AdNavigationControls({
         <Button
           variant="outline"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-40"
+          className="opacity-80 hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-40"
           onClick={handleNext}
           disabled={totalImages <= 1}
           data-navigation-control="next"
@@ -66,7 +66,7 @@ export function AdNavigationControls({
       </div>
       
       {totalImages > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30 opacity-80 hover:opacity-100 transition-opacity duration-200">
           {Array.from({ length: totalImages }).map((_, index) => (
             <div
               key={index}

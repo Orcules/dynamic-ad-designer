@@ -175,19 +175,23 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = imagePosition.x || 0;
-    let destY = imagePosition.y || 0;
+    let destX = 0;
+    let destY = 0;
     let destWidth, destHeight;
 
-    // Match the exact positioning and scaling from the AdPreviewImage component
+    // Match the exact positioning and scaling for object-fit: cover behavior
     if (imageAspect > canvasAspect) {
       // Image is wider than canvas - scale to match height and position horizontally
       destHeight = data.height;
       destWidth = data.height * imageAspect;
+      destX = (data.width - destWidth) / 2 + (imagePosition.x || 0);
+      destY = 0 + (imagePosition.y || 0);
     } else {
       // Image is taller than canvas - scale to match width and position vertically
       destWidth = data.width;
       destHeight = data.width / imageAspect;
+      destX = 0 + (imagePosition.x || 0);
+      destY = (data.height - destHeight) / 2 + (imagePosition.y || 0);
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -215,7 +219,7 @@ serve(async (req) => {
       const tempCtx = tempCanvas.getContext('2d');
       
       if (tempCtx) {
-        // Draw the image to the temporary canvas
+        // Draw the image to the temporary canvas with object-fit: cover behavior
         tempCtx.drawImage(
           backgroundImage, 
           sourceX, sourceY, sourceWidth, sourceHeight, 
@@ -378,7 +382,7 @@ serve(async (req) => {
       // Move the text up, but not the arrow
       ctx.fillText(buttonText, startX + textWidth/2, ctaY + buttonHeight/2 - 7);
 
-      // Draw arrow if needed (changed to point downward)
+      // Draw arrow pointing downward
       if (showArrow) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2; // No adjustment for the arrow (keep it static)
