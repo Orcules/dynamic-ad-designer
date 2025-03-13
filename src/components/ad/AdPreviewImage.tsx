@@ -38,6 +38,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const renderStartTime = useRef<number>(performance.now());
   const loadStartTime = useRef<number>(0);
   const previousImageUrl = useRef<string | undefined>(undefined);
+  const forceUpdateFlag = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -67,7 +68,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   useEffect(() => {
     renderStartTime.current = performance.now();
     
-    if (imageUrl && imageUrl !== currentImageUrl) {
+    if (imageUrl && (imageUrl !== currentImageUrl || forceUpdateFlag.current)) {
+      // Reset the force update flag if it was set
+      forceUpdateFlag.current = false;
+      
       // If image is changing from a previous one, log this change
       if (previousImageUrl.current && previousImageUrl.current !== imageUrl) {
         console.log(`Image URL changing from "${previousImageUrl.current.substring(0, 50)}..." to "${imageUrl.substring(0, 50)}..."`);
@@ -132,6 +136,40 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
+  // Force a re-render when the position changes
+  useEffect(() => {
+    if (imageUrl && loaded) {
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        const coverDimensions = calculateCoverDimensions(
+          naturalSize.width,
+          naturalSize.height,
+          containerRect.width,
+          containerRect.height,
+          position.x,
+          position.y
+        );
+        
+        setImageStyle({
+          width: `${coverDimensions.width}px`,
+          height: `${coverDimensions.height}px`,
+          position: 'absolute',
+          left: `${coverDimensions.x}px`,
+          top: `${coverDimensions.y}px`,
+          transform: 'none',
+          transition: fastMode ? 'none' : 'all 0.1s ease-out',
+          objectFit: 'cover',
+          objectPosition: 'center',
+          willChange: 'left, top',
+          zIndex: 1,
+          minWidth: '105%', // Ensure covering
+          minHeight: '105%', // Ensure covering
+        });
+      }
+    }
+  }, [position, naturalSize, loaded, imageUrl, fastMode]);
+
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     const loadTime = performance.now() - loadStartTime.current;
@@ -182,6 +220,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       onImageLoaded();
     }
   }, [imageUrl, onImageLoaded, fastMode, position]);
+
+  // Method to force a re-render of the image with current settings
+  const forceUpdate = useCallback(() => {
+    forceUpdateFlag.current = true;
+    setImageKey(prev => prev + 1);
+  }, []);
 
   const placeholderStyle: React.CSSProperties = fastMode ? {
     filter: 'blur(1px)',

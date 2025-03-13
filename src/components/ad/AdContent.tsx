@@ -61,6 +61,10 @@ export function AdContent({
     return {
       ...textStyle,
       direction: isRTL ? 'rtl' : 'ltr',
+      textAlign: 'center', // Always center text
+      width: '100%',       // Ensure full width
+      maxWidth: '95%',     // Prevent overflow
+      margin: '0 auto',    // Center horizontally
     };
   }, [textStyle, isRTL]);
   
@@ -68,6 +72,10 @@ export function AdContent({
     return {
       ...descriptionStyle,
       direction: isRTL ? 'rtl' : 'ltr',
+      textAlign: 'center', // Always center text
+      width: '100%',       // Ensure full width
+      maxWidth: '85%',     // Prevent overflow
+      margin: '0 auto',    // Center horizontally
     };
   }, [descriptionStyle, isRTL]);
 
@@ -92,7 +100,7 @@ export function AdContent({
         {isLuxuryJewelry ? (
           <div className="relative w-full h-full flex flex-col items-center justify-between py-8">
             {/* Top text section */}
-            <div className="text-center z-10 mt-4">
+            <div className="text-center z-10 mt-4 w-full">
               <AdHeadline
                 headline={headline}
                 textStyle={headlineTextStyle}
@@ -107,7 +115,7 @@ export function AdContent({
             </div>
             
             {/* Bottom CTA section */}
-            <div className="z-10 mb-4" style={{ opacity: 1, visibility: 'visible' }}>
+            <div className="z-10 mb-4 w-full text-center" style={{ opacity: 1, visibility: 'visible' }}>
               <AdCallToAction
                 ctaText={ctaText}
                 buttonStyle={buttonStyle}
@@ -120,29 +128,31 @@ export function AdContent({
           </div>
         ) : (
           <div className={cn(
-            "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
+            "relative w-full flex flex-col min-h-[300px] items-center justify-center max-w-[90%] mx-auto",
             isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
           )}>
-            <AdHeadline
-              headline={headline}
-              textStyle={headlineTextStyle}
-              position={headlinePosition}
-            />
-            
-            <AdDescription
-              description={description}
-              descriptionStyle={updatedDescriptionStyle}
-              position={descriptionPosition}
-            />
-            
-            <AdCallToAction
-              ctaText={ctaText}
-              buttonStyle={buttonStyle}
-              position={ctaPosition}
-              isButtonHovered={isButtonHovered}
-              onButtonHover={handleButtonHover}
-              showArrow={showCtaArrow}
-            />
+            <div className="w-full text-center">
+              <AdHeadline
+                headline={headline}
+                textStyle={headlineTextStyle}
+                position={headlinePosition}
+              />
+              
+              <AdDescription
+                description={description}
+                descriptionStyle={updatedDescriptionStyle}
+                position={descriptionPosition}
+              />
+              
+              <AdCallToAction
+                ctaText={ctaText}
+                buttonStyle={buttonStyle}
+                position={ctaPosition}
+                isButtonHovered={isButtonHovered}
+                onButtonHover={handleButtonHover}
+                showArrow={showCtaArrow}
+              />
+            </div>
           </div>
         )}
       </div>

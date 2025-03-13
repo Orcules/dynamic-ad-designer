@@ -35,6 +35,7 @@ export const processImages = async (
   const processedBlobUrls = new Set<string>(); // Track processed blob URLs as well
   const processedImageHashes = new Map<string, string>(); // Track image content hashes
   const imageGenerator = new ImageGenerator('.ad-content');
+  const navigationLock = { locked: false };
   
   // First, deduplicate the image array to ensure each image is unique
   const uniqueImages: (File | string)[] = [];
@@ -99,6 +100,30 @@ export const processImages = async (
     }
   };
   
+  // Navigation lock helper - prevents rapid navigation during processing
+  const acquireNavigationLock = () => {
+    if (navigationLock.locked) {
+      Logger.warn("Navigation lock already acquired, waiting...");
+      return false;
+    }
+    
+    navigationLock.locked = true;
+    return true;
+  };
+  
+  const releaseNavigationLock = () => {
+    if (!navigationLock.locked) {
+      Logger.warn("Attempted to release an unlocked navigation lock");
+      return;
+    }
+    
+    // Small delay to prevent immediate reacquisition 
+    setTimeout(() => {
+      navigationLock.locked = false;
+      Logger.info("Navigation lock released");
+    }, 200);
+  };
+  
   for (let i = 0; i < uniqueImages.length; i++) {
     const currentImage = uniqueImages[i];
     Logger.info(`Processing image ${i + 1}/${uniqueImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
@@ -112,7 +137,14 @@ export const processImages = async (
     // Ensure sufficient delay between processing each image for smooth navigation
     if (i > 0) {
       Logger.info(`Adding delay before processing next image (${i})`);
-      await new Promise(resolve => setTimeout(resolve, 1200)); // Increased for smoother transitions
+      await new Promise(resolve => setTimeout(resolve, 1800)); // Increased for smoother transitions
+    }
+    
+    if (!acquireNavigationLock()) {
+      Logger.warn(`Skipping image at index ${i} due to navigation lock`);
+      await new Promise(resolve => setTimeout(resolve, 800));
+      i--; // Retry this index
+      continue;
     }
     
     let retryCount = 0;
@@ -127,7 +159,7 @@ export const processImages = async (
         }
 
         // Wait longer before capturing to ensure image is fully loaded and transitions are complete
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         // Capture preview
         Logger.info('Generating preview image...');
@@ -164,6 +196,14 @@ export const processImages = async (
         const { width, height } = getDimensions(adData.platform);
         Logger.info(`Using dimensions: ${width}x${height} for platform ${adData.platform}`);
 
+        // Create fixed stable positions - this prevents text from moving around
+        const stablePositions = {
+          headlinePosition: { x: 0, y: 0 },
+          descriptionPosition: { x: 0, y: 10 },
+          ctaPosition: { x: 0, y: 0 },
+          imagePosition: positions.imagePosition
+        };
+
         // Add ad to table with retry mechanism
         Logger.info('Inserting ad data into database...');
         const { data: insertedAd, error: insertError } = await supabase
@@ -186,9 +226,9 @@ export const processImages = async (
             width,
             height,
             image_position: positions.imagePosition, // Store positioning data
-            headline_position: positions.headlinePosition,
-            description_position: positions.descriptionPosition,
-            cta_position: positions.ctaPosition,
+            headline_position: stablePositions.headlinePosition,
+            description_position: stablePositions.descriptionPosition,
+            cta_position: stablePositions.ctaPosition,
             status: 'completed',
             created_at: new Date().toISOString()
           }])
@@ -211,6 +251,9 @@ export const processImages = async (
           }
           
           success = true;
+          
+          // Log that this index has been processed
+          Logger.info(`Marked index ${i} as processed. Total processed: ${successCount}/${uniqueImages.length}`);
         }
 
       } catch (error) {
@@ -226,6 +269,9 @@ export const processImages = async (
           Logger.info(`Retrying in ${backoffTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
         }
+      } finally {
+        // Always release navigation lock at the end of processing attempt
+        releaseNavigationLock();
       }
     }
     
