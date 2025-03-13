@@ -1,3 +1,4 @@
+
 import html2canvas from "html2canvas";
 import { Logger } from "./logger";
 
@@ -54,7 +55,7 @@ export class ImageGenerator {
         backgroundColor: this.backgroundColor,
         scale: scale,
         useCORS: true,
-        // Remove allowTaint as it conflicts with useCORS and can cause security issues
+        // Remove allowTaint as it conflicts with useCORS
         logging: false,
         scrollX: 0,
         scrollY: 0,
