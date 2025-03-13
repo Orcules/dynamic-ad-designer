@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -170,13 +169,8 @@ serve(async (req) => {
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
-    // Define source and destination parameters for drawing
-    let sourceX = 0;
-    let sourceY = 0;
-    let sourceWidth = backgroundImage.width;
-    let sourceHeight = backgroundImage.height;
-    
-    // Calculate dimensions using the same algorithm as in the AdPreviewImage component
+    // Calculate dimensions ensuring image covers the container completely
+    // This uses the same logic as calculateCoverDimensions in imageEffects.ts
     let destWidth, destHeight, destX, destY;
     
     if (imageAspect > canvasAspect) {
@@ -200,18 +194,18 @@ serve(async (req) => {
       ctx.imageSmoothingQuality = 'high';
     }
     
-    // Ensure the image is large enough to cover the entire canvas
+    // Ensure the image is large enough to cover the entire canvas with extra margin
     destWidth = Math.max(destWidth, data.width * 1.1);  // Add 10% to ensure full coverage
     destHeight = Math.max(destHeight, data.height * 1.1);  // Add 10% to ensure full coverage
     
     // Log positioning information for debugging
     console.log(`[${uploadId}] Image dimensions:`, {
-      source: { width: sourceWidth, height: sourceHeight },
+      source: { width: backgroundImage.width, height: backgroundImage.height },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
       aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
-    // For luxury jewelry template, draw with rounded corners
+    // Draw the image with the calculated dimensions to ensure full coverage
     if (isLuxuryJewelry) {
       // Add padding (4% of the canvas width)
       const padding = Math.round(data.width * 0.04);
@@ -225,7 +219,7 @@ serve(async (req) => {
         // Draw the image to the temporary canvas with object-fit: cover behavior
         tempCtx.drawImage(
           backgroundImage, 
-          sourceX, sourceY, sourceWidth, sourceHeight, 
+          0, 0, backgroundImage.width, backgroundImage.height, 
           0, 0, destWidth, destHeight
         );
         
@@ -264,11 +258,10 @@ serve(async (req) => {
       }
     } else {
       // Draw the image with exact positioning to match the preview for non-luxury templates
-      // Use proper aspect ratio maintenance - cover approach
       ctx.drawImage(
         backgroundImage, 
-        sourceX, sourceY, sourceWidth, sourceHeight, 
-        destX, destY, destWidth, destHeight
+        0, 0, backgroundImage.width, backgroundImage.height, // Source rectangle (entire original image)
+        destX, destY, destWidth, destHeight  // Destination rectangle (calculated for coverage)
       );
     }
 

@@ -17,30 +17,24 @@ export const applyImageEffect = async (
     tempCanvas.width = width;
     tempCanvas.height = height;
     
-    // Draw the original image to the temp canvas with object-fit: cover behavior
-    const imageAspect = canvas.width / canvas.height;
-    const canvasAspect = width / height;
+    // Get the original image dimensions
+    const imageWidth = canvas.width;
+    const imageHeight = canvas.height;
     
-    let sx = 0;
-    let sy = 0;
-    let sWidth = canvas.width;
-    let sHeight = canvas.height;
-    let dx = 0;
-    let dy = 0;
-    let dWidth = width;
-    let dHeight = height;
+    // Calculate dimensions that ensure the image covers the entire canvas
+    const { width: dWidth, height: dHeight, x: dx, y: dy } = calculateCoverDimensions(
+      imageWidth,
+      imageHeight,
+      width,
+      height
+    );
     
-    if (imageAspect > canvasAspect) {
-      // Image is wider than target aspect ratio
-      sWidth = canvas.height * canvasAspect;
-      sx = (canvas.width - sWidth) / 2; // Center the crop horizontally
-    } else {
-      // Image is taller than target aspect ratio
-      sHeight = canvas.width / canvasAspect;
-      sy = (canvas.height - sHeight) / 2; // Center the crop vertically
-    }
-    
-    tempCtx.drawImage(canvas, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+    // Draw the image centered and covering the entire canvas
+    tempCtx.drawImage(
+      canvas,
+      0, 0, imageWidth, imageHeight, // Source rectangle (entire original image)
+      dx, dy, dWidth, dHeight        // Destination rectangle (calculated for coverage)
+    );
     
     return tempCanvas.toDataURL('image/jpeg', 0.95);
   }
@@ -65,19 +59,17 @@ export const calculateCoverDimensions = (
   
   if (imageAspect > containerAspect) {
     // Image is wider than container (relative to height)
-    height = Math.max(containerHeight, containerWidth / imageAspect);
-    width = height * imageAspect;
-    // Ensure image covers the entire height
-    y = (containerHeight - height) / 2;
-    // Center horizontally and apply position offset
+    // Scale to match height and center horizontally
+    height = containerHeight;
+    width = containerHeight * imageAspect;
+    y = 0;
     x = (containerWidth - width) / 2;
   } else {
     // Image is taller than container (relative to width)
-    width = Math.max(containerWidth, containerHeight * imageAspect);
-    height = width / imageAspect;
-    // Ensure image covers the entire width
-    x = (containerWidth - width) / 2;
-    // Center vertically and apply position offset
+    // Scale to match width and center vertically
+    width = containerWidth;
+    height = containerWidth / imageAspect;
+    x = 0;
     y = (containerHeight - height) / 2;
   }
   
@@ -85,7 +77,8 @@ export const calculateCoverDimensions = (
   x += offsetX;
   y += offsetY;
   
-  // Ensure dimensions are at least as large as the container (with some extra margin)
+  // Ensure dimensions are at least as large as the container (with extra margin)
+  // This guarantees the image will cover the entire container
   width = Math.max(width, containerWidth * 1.1);
   height = Math.max(height, containerHeight * 1.1);
   

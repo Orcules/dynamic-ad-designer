@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { calculateCoverDimensions } from '@/utils/imageEffects';
 
 interface Position {
   x: number;
@@ -78,14 +79,30 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
-          const newStyle = calculateStyleFromDimensions(
-            cachedImg.naturalWidth, 
+          // Use consistent cover dimensions calculation
+          const coverDimensions = calculateCoverDimensions(
+            cachedImg.naturalWidth,
             cachedImg.naturalHeight,
             containerRect.width,
             containerRect.height,
-            position,
-            fastMode
+            position.x,
+            position.y
           );
+          
+          const newStyle = {
+            width: `${coverDimensions.width}px`,
+            height: `${coverDimensions.height}px`,
+            position: 'absolute' as const,
+            left: `${coverDimensions.x}px`,
+            top: `${coverDimensions.y}px`,
+            transform: 'none',
+            transition: fastMode ? 'none' : 'all 0.1s ease-out',
+            objectFit: 'cover' as const,
+            objectPosition: 'center',
+            willChange: 'left, top',
+            zIndex: 1,
+          };
+          
           setImageStyle(newStyle);
         }
         
@@ -105,82 +122,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
-  const calculateStyleFromDimensions = useCallback((
-    imgWidth: number,
-    imgHeight: number,
-    containerWidth: number,
-    containerHeight: number,
-    pos: Position,
-    useFastMode: boolean
-  ): React.CSSProperties => {
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    // Determine scaling and positioning to maintain aspect ratio (object-fit: cover behavior)
-    let width, height, left, top;
-    
-    if (imageAspect > containerAspect) {
-      // Image is wider than container (relative to height)
-      height = Math.max(containerHeight, containerWidth / imageAspect);
-      width = height * imageAspect;
-      // Ensure image covers the entire height
-      top = (containerHeight - height) / 2;
-      // Center horizontally and apply position offset
-      left = (containerWidth - width) / 2;
-    } else {
-      // Image is taller than container (relative to width)
-      width = Math.max(containerWidth, containerHeight * imageAspect);
-      height = width / imageAspect;
-      // Ensure image covers the entire width
-      left = (containerWidth - width) / 2;
-      // Center vertically and apply position offset
-      top = (containerHeight - height) / 2;
-    }
-    
-    // Apply position offset
-    left += pos.x;
-    top += pos.y;
-    
-    // Ensure we're using at least the container dimensions to guarantee full coverage
-    width = Math.max(width, containerWidth * 1.1);  // Add 10% more to ensure no gaps
-    height = Math.max(height, containerHeight * 1.1);  // Add 10% more to ensure no gaps
-    
-    return {
-      width: `${width}px`,
-      height: `${height}px`,
-      position: 'absolute',
-      left: `${left}px`,
-      top: `${top}px`,
-      transform: 'none', // Use left/top instead of transform for better cropping
-      transition: useFastMode ? 'none' : 'all 0.1s ease-out',
-      objectFit: 'cover', // This ensures the image covers the area
-      objectPosition: 'center',
-      willChange: 'left, top',
-      zIndex: 1, // Ensure image is behind text and CTA
-    };
-  }, []);
-
-  const calculateImageStyle = useCallback((img: HTMLImageElement) => {
-    if (!containerRef.current) return {};
-    
-    const containerWidth = containerRef.current.clientWidth;
-    const containerHeight = containerRef.current.clientHeight;
-    const imgWidth = img.naturalWidth;
-    const imgHeight = img.naturalHeight;
-    
-    setNaturalSize({ width: imgWidth, height: imgHeight });
-    setContainerSize({ width: containerWidth, height: containerHeight });
-    
-    return calculateStyleFromDimensions(
-      imgWidth,
-      imgHeight,
-      containerWidth,
-      containerHeight,
-      position,
-      fastMode
-    );
-  }, [position, fastMode, calculateStyleFromDimensions]);
-
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     const loadTime = performance.now() - renderStartTime.current;
@@ -190,10 +131,34 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       imageCache.current.set(imageUrl, img);
     }
     
-    if (!fastMode) {
-      setImageStyle(calculateImageStyle(img));
-    } else {
-      const newStyle = calculateImageStyle(img);
+    if (containerRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      // Use consistent cover dimensions calculation
+      const coverDimensions = calculateCoverDimensions(
+        img.naturalWidth,
+        img.naturalHeight,
+        containerRect.width,
+        containerRect.height,
+        position.x,
+        position.y
+      );
+      
+      const newStyle = {
+        width: `${coverDimensions.width}px`,
+        height: `${coverDimensions.height}px`,
+        position: 'absolute' as const,
+        left: `${coverDimensions.x}px`,
+        top: `${coverDimensions.y}px`,
+        transform: 'none',
+        transition: fastMode ? 'none' : 'all 0.1s ease-out',
+        objectFit: 'cover' as const,
+        objectPosition: 'center',
+        willChange: 'left, top',
+        zIndex: 1,
+      };
+      
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
       setImageStyle(newStyle);
     }
     
@@ -204,7 +169,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
       onImageLoaded();
     }
-  }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
+  }, [imageUrl, onImageLoaded, fastMode, position]);
 
   const placeholderStyle: React.CSSProperties = fastMode ? {
     filter: 'blur(1px)',
