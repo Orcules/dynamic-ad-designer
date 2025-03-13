@@ -52,11 +52,10 @@ export class AdGenerationService {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       try {
-        // Fixed: Removed the second argument to match the expected function signature
-        const { data: generatedAd, error: generateError } = await supabase.functions
-          .invoke('generate-ad', {
-            body: formData
-          });
+        // Fixed: Using only one argument as expected by the function signature
+        const { data: generatedAd, error: generateError } = await supabase.functions.invoke('generate-ad', {
+          body: formData
+        });
 
         clearTimeout(timeoutId);
         
@@ -88,10 +87,12 @@ export class AdGenerationService {
     }
   }
   
-  // Helper method to resize large images and reduce memory usage
+  // Improved image resizing with better error handling and memory management
   private static async resizeImage(blob: Blob, maxDimension: number): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      const objectUrl = URL.createObjectURL(blob);
+      
       img.onload = () => {
         try {
           // Calculate new dimensions while maintaining aspect ratio
@@ -113,7 +114,7 @@ export class AdGenerationService {
           
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            URL.revokeObjectURL(img.src);
+            URL.revokeObjectURL(objectUrl);
             return reject(new Error('Could not get canvas context'));
           }
           
@@ -121,10 +122,12 @@ export class AdGenerationService {
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
           
-          // Convert to blob
+          // Convert to blob with improved error handling
           canvas.toBlob(
             (resizedBlob) => {
-              URL.revokeObjectURL(img.src);
+              // Always revoke object URL as soon as possible
+              URL.revokeObjectURL(objectUrl);
+              
               if (!resizedBlob) {
                 reject(new Error('Failed to create resized blob'));
                 return;
@@ -135,17 +138,19 @@ export class AdGenerationService {
             0.92
           );
         } catch (error) {
-          URL.revokeObjectURL(img.src);
+          URL.revokeObjectURL(objectUrl);
           reject(error);
         }
       };
       
       img.onerror = () => {
-        URL.revokeObjectURL(img.src);
+        URL.revokeObjectURL(objectUrl);
         reject(new Error('Failed to load image for resizing'));
       };
       
-      img.src = URL.createObjectURL(blob);
+      // Set crossOrigin attribute for CORS-enabled images
+      img.crossOrigin = 'anonymous';
+      img.src = objectUrl;
     });
   }
 }

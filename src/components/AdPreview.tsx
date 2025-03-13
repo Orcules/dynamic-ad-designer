@@ -38,12 +38,6 @@ interface AdPreviewProps {
 }
 
 export function AdPreview(props: AdPreviewProps) {
-  // Use the new refactored component
-  if (props.fastRenderMode) {
-    return (
-      <AdPreviewCard {...props} />
-    );
-  }
-
+  // Always use the refactored component to ensure consistent rendering
   return <AdPreviewCard {...props} />;
 }
