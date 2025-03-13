@@ -85,16 +85,16 @@ export const calculateCoverDimensions = (
     const ratio = (containerWidth * scaleFactor) / width;
     width *= ratio;
     height *= ratio;
-    // Recenter based on the new dimensions
-    x = (containerWidth - width) / 2 + offsetX;
+    // Recenter based on the new dimensions but PRESERVE the original offset
+    x = (containerWidth - width) / 2 + offsetX; // Keep offsetX intact
   }
   
   if (height < containerHeight * scaleFactor) {
     const ratio = (containerHeight * scaleFactor) / height;
     width *= ratio;
     height *= ratio;
-    // Recenter based on the new dimensions
-    y = (containerHeight - height) / 2 + offsetY;
+    // Recenter based on the new dimensions but PRESERVE the original offset
+    y = (containerHeight - height) / 2 + offsetY; // Keep offsetY intact
   }
   
   return { width, height, x, y };

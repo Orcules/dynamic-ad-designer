@@ -39,6 +39,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const loadStartTime = useRef<number>(0);
   const previousImageUrl = useRef<string | undefined>(undefined);
   const forceUpdateFlag = useRef<boolean>(false);
+  const lastPositionUpdate = useRef<Position>(position);
+  const isPositionUpdatePending = useRef<boolean>(false);
+  const pendingPositionUpdate = useRef<Position | null>(null);
 
   // Safely handle container size updates with ResizeObserver
   useEffect(() => {
@@ -66,6 +69,30 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     };
   }, []);
 
+  // Apply position changes with debouncing to prevent excessive re-rendering
+  useEffect(() => {
+    if (
+      position.x !== lastPositionUpdate.current.x || 
+      position.y !== lastPositionUpdate.current.y
+    ) {
+      lastPositionUpdate.current = position;
+      pendingPositionUpdate.current = position;
+      
+      if (!isPositionUpdatePending.current) {
+        isPositionUpdatePending.current = true;
+        
+        // Delay position updates very slightly to batch rapid changes
+        setTimeout(() => {
+          if (pendingPositionUpdate.current) {
+            updateImageStyle(pendingPositionUpdate.current);
+            pendingPositionUpdate.current = null;
+          }
+          isPositionUpdatePending.current = false;
+        }, 16); // ~1 frame at 60fps for smooth animation
+      }
+    }
+  }, [position]);
+
   // Handle image URL changes and caching
   useEffect(() => {
     renderStartTime.current = performance.now();
@@ -91,32 +118,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
-          const coverDimensions = calculateCoverDimensions(
-            cachedImg.naturalWidth,
-            cachedImg.naturalHeight,
-            containerRect.width,
-            containerRect.height,
-            position.x,
-            position.y
-          );
-          
-          const newStyle = {
-            width: `${coverDimensions.width}px`,
-            height: `${coverDimensions.height}px`,
-            position: 'absolute' as const,
-            left: `${coverDimensions.x}px`,
-            top: `${coverDimensions.y}px`,
-            transform: 'none',
-            transition: fastMode ? 'none' : 'all 0.1s ease-out',
-            objectFit: 'cover' as const,
-            objectPosition: 'center',
-            willChange: 'left, top',
-            zIndex: 1,
-            minWidth: '120%', // Use 120% to ensure coverage without excessive zoom
-            minHeight: '120%', // Use 120% to ensure coverage without excessive zoom
-          };
-          
-          setImageStyle(newStyle);
+          updateImageStyle(position);
         }
         
         if (onImageLoaded) {
@@ -138,41 +140,39 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage]);
 
-  // Update image position when position or natural size changes
-  useEffect(() => {
-    if (imageUrl && loaded) {
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        
-        const coverDimensions = calculateCoverDimensions(
-          naturalSize.width,
-          naturalSize.height,
-          containerRect.width,
-          containerRect.height,
-          position.x,
-          position.y
-        );
-        
-        setImageStyle({
-          width: `${coverDimensions.width}px`,
-          height: `${coverDimensions.height}px`,
-          position: 'absolute',
-          left: `${coverDimensions.x}px`,
-          top: `${coverDimensions.y}px`,
-          transform: 'none',
-          transition: fastMode ? 'none' : 'all 0.1s ease-out',
-          objectFit: 'cover',
-          objectPosition: 'center',
-          willChange: 'left, top',
-          zIndex: 1,
-          minWidth: '120%', // Use 120% to ensure coverage without excessive zoom
-          minHeight: '120%', // Use 120% to ensure coverage without excessive zoom
-        });
-      }
+  // Helper function to update image style based on position
+  const updateImageStyle = useCallback((pos: Position) => {
+    if (loaded && containerRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      const coverDimensions = calculateCoverDimensions(
+        naturalSize.width,
+        naturalSize.height,
+        containerRect.width,
+        containerRect.height,
+        pos.x,
+        pos.y
+      );
+      
+      setImageStyle({
+        width: `${coverDimensions.width}px`,
+        height: `${coverDimensions.height}px`,
+        position: 'absolute',
+        left: `${coverDimensions.x}px`,
+        top: `${coverDimensions.y}px`,
+        transform: 'none',
+        transition: fastMode ? 'none' : 'all 0.1s ease-out',
+        objectFit: 'cover',
+        objectPosition: 'center',
+        willChange: 'left, top',
+        zIndex: 1,
+        minWidth: '120%', // Use 120% to ensure coverage without excessive zoom
+        minHeight: '120%', // Use 120% to ensure coverage without excessive zoom
+      });
     }
-  }, [position, naturalSize, loaded, imageUrl, fastMode]);
+  }, [naturalSize, loaded, fastMode]);
 
   // Safe image load handler with proper error handling
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -185,36 +185,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         imageCache.current.set(imageUrl, img);
       }
       
+      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+      
       if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        
-        const coverDimensions = calculateCoverDimensions(
-          img.naturalWidth,
-          img.naturalHeight,
-          containerRect.width,
-          containerRect.height,
-          position.x,
-          position.y
-        );
-        
-        const newStyle = {
-          width: `${coverDimensions.width}px`,
-          height: `${coverDimensions.height}px`,
-          position: 'absolute' as const,
-          left: `${coverDimensions.x}px`,
-          top: `${coverDimensions.y}px`,
-          transform: 'none',
-          transition: fastMode ? 'none' : 'all 0.1s ease-out',
-          objectFit: 'cover' as const,
-          objectPosition: 'center',
-          willChange: 'left, top',
-          zIndex: 1,
-          minWidth: '120%', // Use 120% to ensure coverage without excessive zoom
-          minHeight: '120%', // Use 120% to ensure coverage without excessive zoom
-        };
-        
-        setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-        setImageStyle(newStyle);
+        updateImageStyle(position);
       }
       
       setLoaded(true);
@@ -233,7 +207,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.error('Error in handleImageLoad:', error);
       setError(true);
     }
-  }, [imageUrl, onImageLoaded, fastMode, position]);
+  }, [imageUrl, onImageLoaded, position, updateImageStyle]);
 
   const forceUpdate = useCallback(() => {
     forceUpdateFlag.current = true;

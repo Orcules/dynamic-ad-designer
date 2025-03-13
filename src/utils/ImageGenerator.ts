@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -34,7 +35,7 @@ export class ImageGenerator {
           
           setTimeout(() => {
             resolve();
-          }, 1500);
+          }, 1000); // Reduced from 1500ms for smoother experience
         }
       })
     );
@@ -43,7 +44,7 @@ export class ImageGenerator {
       Promise.all([
         ...imagePromises,
         document.fonts.ready,
-        new Promise<void>(resolve => setTimeout(resolve, 300))
+        new Promise<void>(resolve => setTimeout(resolve, 200)) // Reduced from 300ms
       ]),
       new Promise<void>(resolve => setTimeout(() => {
         console.warn(`Maximum wait time for images reached (${maxWaitTime}ms)`);
@@ -206,7 +207,7 @@ export class ImageGenerator {
     const resetEffect = await this.prepareForCapture();
     
     // Add a small delay to ensure DOM changes are applied before capture
-    await new Promise(resolve => setTimeout(resolve, 150));
+    await new Promise(resolve => setTimeout(resolve, 100)); // Reduced from 150ms for smoother capture
 
     try {
       console.log('Using html2canvas...');
@@ -255,20 +256,24 @@ export class ImageGenerator {
         }
       });
 
-      // Make sure image covers the frame completely
+      // IMPORTANT: Preserve exact image position - fix for the jumpiness issue
       const imageElement = this.previewElement.querySelector('[data-preview-image="true"]');
       if (imageElement && imageElement instanceof HTMLImageElement) {
+        // Save the original style first
         const originalStyle = imageElement.getAttribute('style') || '';
         positionStyles.set(imageElement, { 
           style: originalStyle,
           zIndex: imageElement.style.zIndex
         });
         
+        // Preserve the EXACT position and transform of the image
+        // THIS IS CRITICAL - DO NOT MODIFY THIS
+        console.log('Preserving exact image position and transform during capture');
+        const computedStyle = window.getComputedStyle(imageElement);
+        
+        // Only set these additional properties but DO NOT change position/transform
         imageElement.style.objectFit = 'cover';
-        imageElement.style.width = '100%';
-        imageElement.style.height = '100%';
-        imageElement.style.minWidth = '100%';
-        imageElement.style.minHeight = '100%';
+        // DO NOT reset the width/height/position values
       }
 
       const htmlToCanvas = html2canvas as unknown as (element: HTMLElement, options?: any) => Promise<HTMLCanvasElement>;
@@ -324,14 +329,12 @@ export class ImageGenerator {
             ctaArrow.style.display = 'inline';
           }
           
-          // Ensure image covers the frame in the clone
+          // CRITICAL: Preserve the EXACT same position for the image in the clone
           const imageElement = documentClone.querySelector('[data-preview-image="true"]');
           if (imageElement && imageElement instanceof HTMLImageElement) {
+            // Only add object-fit but DO NOT change the position/transform
             imageElement.style.objectFit = 'cover';
-            imageElement.style.width = '100%';
-            imageElement.style.height = '100%';
-            imageElement.style.minWidth = '100%';
-            imageElement.style.minHeight = '100%';
+            // DO NOT add any other styles that could affect positioning
           }
           
           // Hide only navigation controls, not the CTA

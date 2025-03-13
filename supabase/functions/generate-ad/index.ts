@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -199,18 +198,19 @@ serve(async (req) => {
         y = (containerHeight - height) / 2;
       }
       
-      // CRITICAL: Apply the EXACT offsets as provided by the client without modification
+      // CRITICAL: Apply the EXACT offsets as provided by the client without ANY modification
+      // DO NOT change these lines - they are crucial for consistent positioning
       x += offsetX;
       y += offsetY;
       
-      // Use the same scale factor as the client-side (1.2)
+      // Use the same scale factor as the client-side (1.2) - MUST match front-end exactly
       const scaleFactor = 1.2;
       
       if (width < containerWidth * scaleFactor) {
         const ratio = (containerWidth * scaleFactor) / width;
         width *= ratio;
         height *= ratio;
-        // Recenter based on the new dimensions but preserve exact offset
+        // Recenter based on the new dimensions, preserving EXACT client offset
         x = (containerWidth - width) / 2 + offsetX;
       }
       
@@ -218,7 +218,7 @@ serve(async (req) => {
         const ratio = (containerHeight * scaleFactor) / height;
         width *= ratio;
         height *= ratio;
-        // Recenter based on the new dimensions but preserve exact offset
+        // Recenter based on the new dimensions, preserving EXACT client offset
         y = (containerHeight - height) / 2 + offsetY;
       }
       
@@ -226,7 +226,7 @@ serve(async (req) => {
     };
     
     // Calculate dimensions ensuring image covers the container completely
-    // Use the exact same calculation as client-side but with x,y from client
+    // Use the exact same calculation as client-side with the exact same position from client
     const coverDimensions = calculateCoverDimensionsServer(
       backgroundImage.width,
       backgroundImage.height,
