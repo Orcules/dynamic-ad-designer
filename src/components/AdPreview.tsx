@@ -288,15 +288,18 @@ export function AdPreview({
             showCtaArrow={showCtaArrow}
             isRTL={isRTL}
           />
-          {imageUrls.length > 1 && (
+        </div>
+        
+        {imageUrls.length > 1 && (
+          <div className="absolute inset-0 w-full h-full">
             <AdNavigationControls
               onPrevious={handlePrevious}
               onNext={handleNext}
               currentIndex={currentIndex}
               totalImages={imageUrls.length}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -347,15 +350,18 @@ export function AdPreview({
               showCtaArrow={showCtaArrow}
               isRTL={isRTL}
             />
-            {imageUrls.length > 1 && (
+          </div>
+          
+          {imageUrls.length > 1 && (
+            <div className="absolute inset-0 w-full h-full">
               <AdNavigationControls
                 onPrevious={handlePrevious}
                 onNext={handleNext}
                 currentIndex={currentIndex}
                 totalImages={imageUrls.length}
               />
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );

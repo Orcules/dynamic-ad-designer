@@ -19,6 +19,6 @@ declare module 'html2canvas' {
     removeContainer?: boolean;
   }
   
-  // Add this default export to make the module callable
-  export default function html2canvas(element: HTMLElement, options?: Options): Promise<HTMLCanvasElement>;
+  function html2canvas(element: HTMLElement, options?: Options): Promise<HTMLCanvasElement>;
+  export = html2canvas;
 }

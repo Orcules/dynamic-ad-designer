@@ -59,6 +59,14 @@ export class ImageGenerator {
       return () => {};
     }
 
+    const navigationButtons = this.previewElement.querySelectorAll('.ad-content > div > div > [class*="absolute inset-0"] button');
+    const originalButtonStyles = new Map<Element, string>();
+    
+    navigationButtons.forEach(button => {
+      originalButtonStyles.set(button, (button as HTMLElement).style.display);
+      (button as HTMLElement).style.display = 'none';
+    });
+
     const ctaButton = this.previewElement.querySelector('button');
     console.log('CTA Button found:', ctaButton !== null);
     
@@ -99,6 +107,13 @@ export class ImageGenerator {
       originalPositions.forEach((originalTransform, element) => {
         if (element instanceof SVGElement || element instanceof HTMLElement) {
           element.style.transform = originalTransform;
+        }
+      });
+      
+      navigationButtons.forEach(button => {
+        const originalStyle = originalButtonStyles.get(button);
+        if (originalStyle !== undefined && button instanceof HTMLElement) {
+          button.style.display = originalStyle;
         }
       });
     };
@@ -151,6 +166,11 @@ export class ImageGenerator {
         scrollY: 0,
         imageTimeout: 0,
         onclone: (documentClone) => {
+          const navigationControls = documentClone.querySelectorAll('.ad-content button[class*="-translate-x-full"], .ad-content button[class*="translate-x-full"]');
+          navigationControls.forEach(control => {
+            (control as HTMLElement).style.display = 'none';
+          });
+          
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
