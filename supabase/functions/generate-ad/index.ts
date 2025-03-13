@@ -203,7 +203,7 @@ serve(async (req) => {
       y += offsetY;
       
       // Ensure dimensions are large enough to cover the entire container
-      const scaleFactor = 1.2; // Use increased scale factor to ensure full coverage
+      const scaleFactor = 1.5; // Use increased scale factor to ensure full coverage
       
       if (width < containerWidth * scaleFactor) {
         const ratio = (containerWidth * scaleFactor) / width;

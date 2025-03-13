@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { calculateCoverDimensions } from '@/utils/imageEffects';
 
@@ -69,10 +68,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     renderStartTime.current = performance.now();
     
     if (imageUrl && (imageUrl !== currentImageUrl || forceUpdateFlag.current)) {
-      // Reset the force update flag if it was set
       forceUpdateFlag.current = false;
       
-      // If image is changing from a previous one, log this change
       if (previousImageUrl.current && previousImageUrl.current !== imageUrl) {
         console.log(`Image URL changing from "${previousImageUrl.current.substring(0, 50)}..." to "${imageUrl.substring(0, 50)}..."`);
         loadStartTime.current = performance.now();
@@ -91,7 +88,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
-          // Use consistent cover dimensions calculation
           const coverDimensions = calculateCoverDimensions(
             cachedImg.naturalWidth,
             cachedImg.naturalHeight,
@@ -113,8 +109,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             objectPosition: 'center',
             willChange: 'left, top',
             zIndex: 1,
-            minWidth: '105%', // Ensure covering
-            minHeight: '105%', // Ensure covering
+            minWidth: '110%', // Increased to ensure covering
+            minHeight: '110%', // Increased to ensure covering
           };
           
           setImageStyle(newStyle);
@@ -136,7 +132,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
-  // Force a re-render when the position changes
   useEffect(() => {
     if (imageUrl && loaded) {
       if (containerRef.current) {
@@ -163,8 +158,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           objectPosition: 'center',
           willChange: 'left, top',
           zIndex: 1,
-          minWidth: '105%', // Ensure covering
-          minHeight: '105%', // Ensure covering
+          minWidth: '110%', // Increased to ensure covering
+          minHeight: '110%', // Increased to ensure covering
         });
       }
     }
@@ -182,7 +177,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     if (containerRef.current) {
       const containerRect = containerRef.current.getBoundingClientRect();
       
-      // Use consistent cover dimensions calculation
       const coverDimensions = calculateCoverDimensions(
         img.naturalWidth,
         img.naturalHeight,
@@ -204,8 +198,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         objectPosition: 'center',
         willChange: 'left, top',
         zIndex: 1,
-        minWidth: '105%', // Ensure covering
-        minHeight: '105%', // Ensure covering
+        minWidth: '110%', // Increased to ensure covering
+        minHeight: '110%', // Increased to ensure covering
       };
       
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
@@ -221,7 +215,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, onImageLoaded, fastMode, position]);
 
-  // Method to force a re-render of the image with current settings
   const forceUpdate = useCallback(() => {
     forceUpdateFlag.current = true;
     setImageKey(prev => prev + 1);
