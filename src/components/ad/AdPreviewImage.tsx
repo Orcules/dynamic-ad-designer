@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import { calculateCoverDimensions } from '@/utils/imageEffects';
+import { calculateCoverDimensions, calculateCropDimensions } from '@/utils/imageEffects';
 
 interface Position {
   x: number;
@@ -35,6 +35,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const positionRef = useRef<Position>(position);
   const lastPositionRef = useRef<Position>(position);
   const imageElementRef = useRef<HTMLImageElement | null>(null);
+  const loadAttemptCount = useRef(0);
+  const initialLoadComplete = useRef(false);
+  const styleUpdateTimeoutRef = useRef<number | null>(null);
 
   // Apply physical crop on load
   const applyCropOnLoad = (img: HTMLImageElement) => {
@@ -44,10 +47,18 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     imageElementRef.current = img;
     
     // Make sure we have accurate natural dimensions
-    setNaturalSize({ 
-      width: img.naturalWidth || img.width, 
-      height: img.naturalHeight || img.height 
-    });
+    const imgWidth = img.naturalWidth || img.width; 
+    const imgHeight = img.naturalHeight || img.height;
+    
+    // Only update state if dimensions are valid and have changed
+    if (imgWidth > 0 && imgHeight > 0 && 
+        (imgWidth !== naturalSize.width || imgHeight !== naturalSize.height)) {
+      setNaturalSize({ width: imgWidth, height: imgHeight });
+    }
+    
+    if (!initialLoadComplete.current) {
+      initialLoadComplete.current = true;
+    }
     
     setLoaded(true);
     updateImageStyle(position);
@@ -68,9 +79,27 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       // Compare with last position to detect actual movements
       if (position.x !== lastPositionRef.current.x || position.y !== lastPositionRef.current.y) {
         lastPositionRef.current = {...position};
+        
+        // Clear any pending timeout
+        if (styleUpdateTimeoutRef.current) {
+          window.clearTimeout(styleUpdateTimeoutRef.current);
+        }
+        
+        // Update immediately
         updateImageStyle(position);
+        
+        // And then again after a short delay to ensure proper rendering
+        styleUpdateTimeoutRef.current = window.setTimeout(() => {
+          updateImageStyle(position);
+        }, 50);
       }
     }
+    
+    return () => {
+      if (styleUpdateTimeoutRef.current) {
+        window.clearTimeout(styleUpdateTimeoutRef.current);
+      }
+    };
   }, [position, loaded]);
 
   // Update container size with ResizeObserver
@@ -104,10 +133,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     const containerRect = containerRef.current.getBoundingClientRect();
     
+    // Get latest natural dimensions from the actual element
+    const imgWidth = imageElementRef.current.naturalWidth || naturalSize.width;
+    const imgHeight = imageElementRef.current.naturalHeight || naturalSize.height;
+    
+    if (imgWidth === 0 || imgHeight === 0) {
+      console.warn('Image has zero dimensions, cannot calculate cover style');
+      return;
+    }
+    
     // Calculate dimensions that ensure the image completely covers the container
     const coverDimensions = calculateCoverDimensions(
-      naturalSize.width,
-      naturalSize.height,
+      imgWidth,
+      imgHeight,
       containerRect.width,
       containerRect.height,
       pos.x,
@@ -131,7 +169,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     // Log dimensions for debugging
     console.log('Image dimensions:', {
-      natural: naturalSize,
+      natural: {
+        width: imgWidth,
+        height: imgHeight
+      },
       container: {
         width: containerRect.width,
         height: containerRect.height
@@ -141,14 +182,31 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     });
   };
 
-  // Safe image load handler with proper error handling
+  // Safe image load handler with proper error handling and retry
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     try {
+      loadAttemptCount.current = 0; // Reset load attempts on success
       const img = e.target as HTMLImageElement;
       applyCropOnLoad(img);
     } catch (error) {
       console.error('Error in handleImageLoad:', error);
       setError(true);
+    }
+  };
+
+  // Retry loading if image fails
+  const handleImageError = () => {
+    setError(true);
+    if (loadAttemptCount.current < 2 && imageUrl) {
+      loadAttemptCount.current++;
+      console.warn(`Image load failed, retrying (${loadAttemptCount.current}/2)...`);
+      
+      // Retry with a slight delay
+      setTimeout(() => {
+        if (imageRef.current) {
+          imageRef.current.src = imageUrl + '?retry=' + Date.now();
+        }
+      }, 500);
     }
   };
 
@@ -168,7 +226,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         style={imageStyle}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
-        onError={() => setError(true)}
+        onError={handleImageError}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
         data-preview-image="true"

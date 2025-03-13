@@ -9,6 +9,7 @@ export function useAdSubmission() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const uploadedFiles = useRef<string[]>([]);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSubmission = async (
     adData: any,
@@ -16,12 +17,25 @@ export function useAdSubmission() {
     previewRef: React.RefObject<HTMLDivElement>,
     onSuccess: (newAd: any) => void
   ) => {
+    // Abort any ongoing submission
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create a new abort controller for this submission
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+    
     setIsGenerating(true);
     setIsSubmitting(true);
     const uploadId = crypto.randomUUID();
     uploadedFiles.current = [];
     
     try {
+      if (signal.aborted) {
+        throw new Error('Submission was aborted');
+      }
+      
       console.log(`Starting ad generation process [${uploadId}]`, { adData });
       
       let imageBlob: Blob;
@@ -37,6 +51,11 @@ export function useAdSubmission() {
         try {
           const response = await fetchWithRetry(imageFile);
           clearTimeout(timeoutId);
+          
+          if (signal.aborted) {
+            throw new Error('Submission was aborted');
+          }
+          
           imageBlob = await response.blob();
         } catch (fetchError) {
           clearTimeout(timeoutId);
@@ -45,12 +64,20 @@ export function useAdSubmission() {
         }
       }
       
+      if (signal.aborted) {
+        throw new Error('Submission was aborted');
+      }
+      
       const { path: originalPath } = await AdStorageService.uploadOriginalImage(
         imageBlob,
         imageFile instanceof File ? imageFile.name : 'image.jpg',
         uploadId
       );
       uploadedFiles.current.push(originalPath);
+
+      if (signal.aborted) {
+        throw new Error('Submission was aborted');
+      }
 
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
       
@@ -67,6 +94,11 @@ export function useAdSubmission() {
       imageBlob = null as any;
       
     } catch (error: any) {
+      if (error.name === 'AbortError' || signal.aborted) {
+        console.log(`Submission aborted [${uploadId}]`);
+        return; // Don't show error toast for aborted requests
+      }
+      
       console.error(`Error in handleSubmission [${uploadId}]:`, error);
       
       if (uploadedFiles.current.length > 0) {
@@ -82,10 +114,13 @@ export function useAdSubmission() {
       
       toast.error(error.message || 'Error creating ad');
     } finally {
-      setIsGenerating(false);
-      setIsSubmitting(false);
-      // Clear references
-      uploadedFiles.current = [];
+      if (!signal.aborted) {
+        setIsGenerating(false);
+        setIsSubmitting(false);
+        // Clear references
+        uploadedFiles.current = [];
+        abortControllerRef.current = null;
+      }
     }
   };
 

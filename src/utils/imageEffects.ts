@@ -85,7 +85,7 @@ export const calculateCropDimensions = (
   };
 };
 
-// Original helper function is retained for compatibility
+// Updated helper function for calculating dimensions to ensure image covers container
 export const calculateCoverDimensions = (
   imageWidth: number,
   imageHeight: number,
@@ -102,22 +102,22 @@ export const calculateCoverDimensions = (
   const imageAspect = imageWidth / imageHeight;
   const containerAspect = containerWidth / containerHeight;
   
-  // Calculate initial dimensions to cover the container
+  // Calculate initial dimensions to cover the container (always start larger)
   let width, height, x, y;
   
+  // First, always calculate dimensions that are LARGER than the container
+  // This ensures we start with a size that can be moved without showing gaps
   if (imageAspect > containerAspect) {
     // Image is wider than container relative to height
-    // Scale so height matches container height
-    height = containerHeight;
+    height = containerHeight * 1.2; // Add 20% extra height for safety
     width = height * imageAspect;
-    y = 0;
+    y = (containerHeight - height) / 2;
     x = (containerWidth - width) / 2;
   } else {
     // Image is taller than container relative to width
-    // Scale so width matches container width
-    width = containerWidth;
+    width = containerWidth * 1.2; // Add 20% extra width for safety
     height = width / imageAspect;
-    x = 0;
+    x = (containerWidth - width) / 2;
     y = (containerHeight - height) / 2;
   }
   
@@ -131,27 +131,27 @@ export const calculateCoverDimensions = (
   const hasGapTop = y > 0;
   const hasGapBottom = (y + height) < containerHeight;
   
-  // If any gaps are present, we need to scale up the image
+  // If any gaps are present, we need to scale up the image more
   if (hasGapLeft || hasGapRight || hasGapTop || hasGapBottom) {
     // Calculate the minimum scale factor needed to cover the container
     let scaleFactorX = 1;
     let scaleFactorY = 1;
     
     if (hasGapLeft || hasGapRight) {
-      // Calculate how much wider the image needs to be
+      // Calculate how much wider the image needs to be to cover after offset
       const totalWidthGap = (hasGapLeft ? x : 0) + (hasGapRight ? (containerWidth - (x + width)) : 0);
       scaleFactorX = (width + totalWidthGap) / width;
     }
     
     if (hasGapTop || hasGapBottom) {
-      // Calculate how much taller the image needs to be
+      // Calculate how much taller the image needs to be to cover after offset
       const totalHeightGap = (hasGapTop ? y : 0) + (hasGapBottom ? (containerHeight - (y + height)) : 0);
       scaleFactorY = (height + totalHeightGap) / height;
     }
     
     // Use the largest scale factor to ensure coverage in both dimensions
-    // Add a 30% margin to the scale factor for extra safety
-    const scaleFactor = Math.max(scaleFactorX, scaleFactorY) * 1.3;
+    // Add a 50% margin to the scale factor for extra safety (was 30%)
+    const scaleFactor = Math.max(scaleFactorX, scaleFactorY) * 1.5;
     
     // Apply the scale factor
     const newWidth = width * scaleFactor;
