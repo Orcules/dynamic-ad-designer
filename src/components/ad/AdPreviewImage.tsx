@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { calculateCoverDimensions } from '@/utils/imageEffects';
 
@@ -109,8 +110,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             objectPosition: 'center',
             willChange: 'left, top',
             zIndex: 1,
-            minWidth: '110%', // Increased to ensure covering
-            minHeight: '110%', // Increased to ensure covering
+            minWidth: '150%', // Significantly increased to ensure covering
+            minHeight: '150%', // Significantly increased to ensure covering
           };
           
           setImageStyle(newStyle);
@@ -158,8 +159,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           objectPosition: 'center',
           willChange: 'left, top',
           zIndex: 1,
-          minWidth: '110%', // Increased to ensure covering
-          minHeight: '110%', // Increased to ensure covering
+          minWidth: '150%', // Significantly increased to ensure covering
+          minHeight: '150%', // Significantly increased to ensure covering
         });
       }
     }
@@ -198,8 +199,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         objectPosition: 'center',
         willChange: 'left, top',
         zIndex: 1,
-        minWidth: '110%', // Increased to ensure covering
-        minHeight: '110%', // Increased to ensure covering
+        minWidth: '150%', // Significantly increased to ensure covering
+        minHeight: '150%', // Significantly increased to ensure covering
       };
       
       setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });

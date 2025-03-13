@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -203,7 +202,7 @@ serve(async (req) => {
       y += offsetY;
       
       // Ensure dimensions are large enough to cover the entire container
-      const scaleFactor = 1.5; // Use increased scale factor to ensure full coverage
+      const scaleFactor = 2.0; // Use significantly increased scale factor to ensure full coverage
       
       if (width < containerWidth * scaleFactor) {
         const ratio = (containerWidth * scaleFactor) / width;
