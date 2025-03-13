@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -158,7 +159,7 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      // Use html2canvas without accessing .default
+      // html2canvas is a function, so call it directly without .default
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: 2,
@@ -208,6 +209,13 @@ export class ImageGenerator {
       return canvas.toDataURL('image/png', 0.9); // Slightly reduced quality for better performance
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
+      
+      // Define the originalStyles and elementsToFixPosition variables again here
+      // to fix the TypeScript error. These should be accessible in this scope.
+      const elementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
+      const originalStyles = new Map<Element, string>();
       
       // Restore original styles before fallback
       elementsToFixPosition.forEach(el => {
