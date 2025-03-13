@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { AdFormContainer } from "./AdFormContainer";
 import { AdPreview } from "./AdPreview";
@@ -73,7 +72,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     getUnprocessedIndexes,
     isChangingIndex,
     confirmImageChanged,
-    getPreloadedImage
+    preloadImage,
+    getPreloadedImage,
+    isImageUrlProcessed
   } = useAdImageHandler({
     onImageChange: (urls) => {
       Logger.info(JSON.stringify({ message: 'Images changed', urls }));
@@ -218,7 +219,14 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         return null;
       }
       
-      Logger.info(`Processing image ${imageIndex + 1}/${allImages.length}`);
+      // Check if this image URL has already been processed - this prevents duplicates
+      if (typeof currentImage === 'string' && isImageUrlProcessed && isImageUrlProcessed(currentImage)) {
+        Logger.warn(`Image URL at index ${imageIndex} has already been processed, skipping to prevent duplicate: ${currentImage.substring(0, 50)}...`);
+        setProcessingStatus(prev => ({ ...prev, [imageIndex]: 'completed' }));
+        return currentImage; // Return the URL but don't process it again
+      }
+      
+      Logger.info(`Processing image ${imageIndex + 1}/${allImages.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 50) + '...' : currentImage.name}`);
       
       const indexSet = await ensurePreviewIndex(imageIndex);
       if (!indexSet) {
@@ -368,7 +376,7 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
     setIsGenerating(true);
     generationInProgress.current = true;
-    resetProcessedIndexes();
+    resetProcessedIndexes(); // This now resets both processed indexes and URLs
     processingStartTime.current = performance.now();
 
     try {
@@ -382,7 +390,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         allImages = [...selectedImages];
       } 
       else if (imageUrls.length > 0) {
-        allImages = [...imageUrls];
+        // Ensure we're working with unique image URLs by using a Set
+        allImages = [...new Set(imageUrls)];
+        Logger.info(`Deduplicating ${imageUrls.length} image URLs to ${allImages.length} unique URLs`);
       }
       
       Logger.info(`Processing ${allImages.length} images`);
@@ -402,15 +412,24 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
 
       // Process images sequentially with reduced wait times
       for (let i = 0; i < allImages.length; i++) {
+        // Skip already processed indexes (shouldn't happen after reset, but just in case)
         if (isIndexProcessed(i)) {
           Logger.info(`Image at index ${i} already processed, skipping`);
+          continue;
+        }
+        
+        // Skip already processed image URLs to prevent duplicates
+        const currentImage = allImages[i];
+        if (typeof currentImage === 'string' && isImageUrlProcessed && isImageUrlProcessed(currentImage)) {
+          Logger.warn(`Image URL at index ${i} has already been processed, skipping to prevent duplicate: ${currentImage.substring(0, 50)}...`);
           continue;
         }
         
         setCurrentProcessingIndex(i);
         await processImage(i, allImages);
         
-        await new Promise(resolve => setTimeout(resolve, 750)); // Reduced from 1500ms
+        // Add a short delay between processing images to allow UI updates
+        await new Promise(resolve => setTimeout(resolve, 750));
       }
 
       const unprocessed = getUnprocessedIndexes();
@@ -418,9 +437,16 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
         Logger.warn(`${unprocessed.length} images weren't processed. Retrying...`);
         
         for (const index of unprocessed) {
+          // Skip already processed image URLs to prevent duplicates
+          const currentImage = allImages[index];
+          if (typeof currentImage === 'string' && isImageUrlProcessed && isImageUrlProcessed(currentImage)) {
+            Logger.warn(`On retry: Image URL at index ${index} has already been processed, skipping to prevent duplicate: ${currentImage.substring(0, 50)}...`);
+            continue;
+          }
+          
           setCurrentProcessingIndex(index);
           await processImage(index, allImages);
-          await new Promise(resolve => setTimeout(resolve, 750)); // Reduced from 1500ms
+          await new Promise(resolve => setTimeout(resolve, 750));
         }
       }
 

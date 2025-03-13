@@ -17,6 +17,7 @@ export function useAdImageHandler({
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
   const processedIndexes = useRef<Set<number>>(new Set());
+  const processedImageUrls = useRef<Set<string>>(new Set()); // Track processed image URLs
   const isChangingIndex = useRef<boolean>(false);
   const previousIndex = useRef<number>(0);
   const lastImageLoadTime = useRef<number>(0);
@@ -88,8 +89,13 @@ export function useAdImageHandler({
         return url;
       });
       
+      // Filter out duplicate URLs to ensure each image is unique
+      const uniqueUrls = urls.filter(url => !imageUrls.includes(url));
+      
+      Logger.info(`Adding ${uniqueUrls.length} new image URLs (from ${urls.length} total)`);
+      
       setImageUrls(prevUrls => {
-        const newUrls = [...prevUrls, ...urls];
+        const newUrls = [...prevUrls, ...uniqueUrls];
         setTimeout(() => onImageChange(newUrls), 0);
         return newUrls;
       });
@@ -100,6 +106,7 @@ export function useAdImageHandler({
       }
       
       processedIndexes.current = new Set();
+      processedImageUrls.current = new Set(); // Reset processed URLs
     }
   };
 
@@ -119,20 +126,25 @@ export function useAdImageHandler({
         return url;
       });
       
-      Promise.all(secureUrls.map(url => {
+      // Deduplicate URLs to ensure each image is unique
+      const uniqueUrls = Array.from(new Set(secureUrls));
+      Logger.info(`Deduplicating URLs: ${secureUrls.length} -> ${uniqueUrls.length}`);
+      
+      Promise.all(uniqueUrls.map(url => {
         preloadImage(url);
         return new Promise<void>((resolve) => {
           setTimeout(resolve, 50);
         });
       }));
       
-      setImageUrls(secureUrls);
+      setImageUrls(uniqueUrls);
       setCurrentPreviewIndex(0);
       previousIndex.current = 0;
-      onImageChange(secureUrls);
+      onImageChange(uniqueUrls);
       onCurrentIndexChange(0);
       
       processedIndexes.current = new Set();
+      processedImageUrls.current = new Set(); // Reset processed URLs
     } catch (error) {
       Logger.error(`Error in handleImageUrlsChange: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -246,6 +258,12 @@ export function useAdImageHandler({
 
   const markIndexProcessed = (index: number) => {
     processedIndexes.current.add(index);
+    
+    // Also mark the image URL as processed to prevent duplicates
+    if (index >= 0 && index < imageUrls.length) {
+      processedImageUrls.current.add(imageUrls[index]);
+    }
+    
     Logger.info(`Marked index ${index} as processed. Total processed: ${processedIndexes.current.size}/${imageUrls.length}`);
   };
 
@@ -253,9 +271,14 @@ export function useAdImageHandler({
     return processedIndexes.current.has(index);
   };
 
+  const isImageUrlProcessed = (url: string): boolean => {
+    return processedImageUrls.current.has(url);
+  };
+
   const resetProcessedIndexes = () => {
     processedIndexes.current = new Set();
-    Logger.info("Reset processed indexes");
+    processedImageUrls.current = new Set(); // Reset processed URLs
+    Logger.info("Reset processed indexes and image URLs");
   };
 
   const getUnprocessedIndexes = (): number[] => {
@@ -275,6 +298,7 @@ export function useAdImageHandler({
     setCurrentPreviewIndexSafely,
     markIndexProcessed,
     isIndexProcessed,
+    isImageUrlProcessed, // New method to check if a URL has been processed
     resetProcessedIndexes,
     getUnprocessedIndexes,
     isChangingIndex: () => isChangingIndex.current,

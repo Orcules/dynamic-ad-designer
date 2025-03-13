@@ -30,15 +30,24 @@ export const processImages = async (
   Logger.info(`Using positions: ${JSON.stringify(positions)}`);
   
   let successCount = 0;
-  let retryCount = 0;
-  const maxRetries = 3;
+  const processedImageUrls = new Set<string>(); // Track processed image URLs to prevent duplicates
   const imageGenerator = new ImageGenerator('.ad-content');
   
   for (let i = 0; i < images.length; i++) {
     const currentImage = images[i];
-    Logger.info(`Processing image ${i + 1}/${images.length}`);
+    Logger.info(`Processing image ${i + 1}/${images.length}: ${typeof currentImage === 'string' ? currentImage.substring(0, 30) + '...' : currentImage.name}`);
+    
+    // Skip if we've already processed this image URL
+    if (typeof currentImage === 'string' && processedImageUrls.has(currentImage)) {
+      Logger.warn(`Skipping duplicate image at index ${i}: ${currentImage.substring(0, 30)}...`);
+      continue;
+    }
+    
+    let retryCount = 0;
+    const maxRetries = 3;
+    let success = false;
 
-    while (retryCount < maxRetries) {
+    while (retryCount < maxRetries && !success) {
       try {
         if (!previewRef.current) {
           Logger.error('Preview element not found');
@@ -100,7 +109,13 @@ export const processImages = async (
           successCount++;
           Logger.info(`Successfully inserted ad ${i + 1} with ID: ${insertedAd.id}`);
           onAdGenerated(insertedAd);
-          break; // Break the retry loop on success
+          
+          // Mark this image URL as processed to prevent duplicates
+          if (typeof currentImage === 'string') {
+            processedImageUrls.add(currentImage);
+          }
+          
+          success = true;
         }
 
       } catch (error) {
@@ -115,11 +130,9 @@ export const processImages = async (
           const backoffTime = Math.pow(2, retryCount) * 1000;
           Logger.info(`Retrying in ${backoffTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
-          continue;
         }
       }
     }
-    retryCount = 0; // Reset retry count for next image
   }
   
   if (successCount > 0) {
