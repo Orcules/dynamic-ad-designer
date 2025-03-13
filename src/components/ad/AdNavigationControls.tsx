@@ -29,6 +29,7 @@ export function AdNavigationControls({
           disabled={totalImages <= 1}
         >
           <ArrowLeft className="h-8 w-8" />
+          <span className="sr-only">Previous image</span>
         </Button>
       </div>
       
@@ -41,6 +42,7 @@ export function AdNavigationControls({
           disabled={totalImages <= 1}
         >
           <ArrowRight className="h-8 w-8" />
+          <span className="sr-only">Next image</span>
         </Button>
       </div>
       
