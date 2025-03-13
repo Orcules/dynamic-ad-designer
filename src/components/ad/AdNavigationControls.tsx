@@ -20,11 +20,11 @@ export function AdNavigationControls({
 }: AdNavigationControlsProps) {
   return (
     <div className="absolute inset-0 flex items-center justify-between pointer-events-none">
-      <div className="group">
+      <div className="group ml-4">
         <Button
           variant="outline"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30 -ml-6 transform -translate-x-full"
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30"
           onClick={onPrevious}
           disabled={totalImages <= 1}
         >
@@ -33,11 +33,11 @@ export function AdNavigationControls({
         </Button>
       </div>
       
-      <div className="group">
+      <div className="group mr-4">
         <Button
           variant="outline"
           size="icon"
-          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30 -mr-6 transform translate-x-full"
+          className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-full bg-primary/80 hover:bg-primary text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg z-30"
           onClick={onNext}
           disabled={totalImages <= 1}
         >
