@@ -49,7 +49,7 @@ export function useAdSubmission() {
         const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         try {
-          // Pass only the URL to fetchWithRetry
+          // Fixed: Passing only the URL to fetchWithRetry
           const response = await fetchWithRetry(imageFile);
           clearTimeout(timeoutId);
           

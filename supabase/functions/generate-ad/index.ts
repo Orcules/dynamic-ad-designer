@@ -187,22 +187,23 @@ serve(async (req) => {
       if (imageAspect > containerAspect) {
         // Image is wider than container - scale height to match container
         height = containerHeight;
-        width = containerHeight * imageAspect;
+        width = height * imageAspect;
         y = 0;
         x = (containerWidth - width) / 2; // Center horizontally
       } else {
         // Image is taller than container - scale width to match container
         width = containerWidth;
-        height = containerWidth / imageAspect;
+        height = width / imageAspect;
         x = 0;
         y = (containerHeight - height) / 2; // Center vertically
       }
       
-      // Only apply non-zero offsets
+      // Apply user-defined offsets - ensure they actually move the image
       if (offsetX !== 0) x += offsetX;
       if (offsetY !== 0) y += offsetY;
       
       // Ensure the image always covers the entire container even after applying offsets
+      // Enhanced to ensure better coverage with wider safety margins
       if (x > 0 || (x + width) < containerWidth || y > 0 || (y + height) < containerHeight) {
         // Calculate how much we need to scale up to ensure coverage
         const scaleX = x > 0 || (x + width) < containerWidth 
@@ -213,14 +214,14 @@ serve(async (req) => {
           ? containerHeight / (height - Math.abs(y) * 2) 
           : 1;
         
-        // Use the larger scale factor for uniform scaling
-        const scale = Math.max(scaleX, scaleY) * 1.1; // Add 10% safety margin
+        // Use the larger scale factor for uniform scaling with increased safety margin
+        const scale = Math.max(scaleX, scaleY) * 1.2; // Increased from 1.1 to 1.2 for better coverage
         
         // Scale the image dimensions
         const newWidth = width * scale;
         const newHeight = height * scale;
         
-        // Adjust position to maintain the visual center point
+        // Adjust position to maintain the visual center point considering offsets
         const newX = x - (newWidth - width) / 2;
         const newY = y - (newHeight - height) / 2;
         

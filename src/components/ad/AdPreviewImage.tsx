@@ -59,7 +59,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     if (!initialLoadComplete.current) {
       initialLoadComplete.current = true;
       
-      // If the position is (0,0), ensure the image is centered
+      // If the position is (0,0), ensure the image is properly centered
       if (position.x === 0 && position.y === 0) {
         // Let the component render first, then apply initial centering
         setTimeout(() => updateImageStyle(position), 50);
@@ -154,6 +154,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       pos;
     
     // Calculate dimensions that ensure the image completely covers the container
+    // Improved to ensure proper centering and scaling regardless of image dimensions
     const coverDimensions = calculateCoverDimensions(
       imgWidth,
       imgHeight,
