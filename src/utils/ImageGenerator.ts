@@ -1,3 +1,4 @@
+
 import html2canvas from "html2canvas";
 import { Logger } from "./logger";
 
@@ -143,6 +144,24 @@ export class ImageGenerator {
       return dataUrl;
     } catch (error) {
       Logger.error(`Error generating image: ${error}`);
+      throw error;
+    }
+  }
+  
+  /**
+   * Downloads the generated image with the specified filename
+   */
+  public async downloadImage(filename: string): Promise<void> {
+    try {
+      const dataUrl = await this.getImageUrl();
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      Logger.error(`Error downloading image: ${error}`);
       throw error;
     }
   }

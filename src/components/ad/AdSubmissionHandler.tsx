@@ -35,7 +35,7 @@ export function useAdSubmission() {
         const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         try {
-          const response = await fetchWithRetry(imageFile, { signal: controller.signal });
+          const response = await fetchWithRetry(imageFile);
           clearTimeout(timeoutId);
           imageBlob = await response.blob();
         } catch (fetchError) {

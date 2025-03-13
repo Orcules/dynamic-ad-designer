@@ -1,3 +1,4 @@
+
 import { format } from 'date-fns';
 
 export const CORS_PROXIES = [
@@ -6,14 +7,14 @@ export const CORS_PROXIES = [
   (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
 ];
 
-export async function fetchWithRetry(url: string): Promise<Response> {
+export async function fetchWithRetry(url: string, options?: RequestInit): Promise<Response> {
   let lastError;
   
   for (const proxyFn of CORS_PROXIES) {
     try {
       const proxyUrl = proxyFn(url);
       console.log('Attempting to fetch with proxy:', proxyUrl);
-      const response = await fetch(proxyUrl);
+      const response = await fetch(proxyUrl, options);
       if (response.ok) {
         return response;
       }
@@ -24,7 +25,7 @@ export async function fetchWithRetry(url: string): Promise<Response> {
   }
 
   try {
-    const response = await fetch(url, { mode: 'no-cors' });
+    const response = await fetch(url, { mode: 'no-cors', ...options });
     return response;
   } catch (error) {
     lastError = error;
