@@ -9,6 +9,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/accessible-dialog';
+import { VisuallyHidden } from '@/components/ui/visually-hidden';
 
 /**
  * Helper function to create a dialog description ID
@@ -28,14 +29,16 @@ export function AccessibleDialog({
   description,
   children,
   footer,
+  hideTitle = false,
 }: {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
-  title?: React.ReactNode;
+  title: React.ReactNode; // Making title required
   description?: React.ReactNode;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  hideTitle?: boolean;
 }) {
   const descriptionId = useDialogDescriptionId();
 
@@ -43,15 +46,19 @@ export function AccessibleDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent aria-describedby={descriptionId}>
-        {title && (
-          <DialogHeader>
+        <DialogHeader>
+          {hideTitle ? (
+            <VisuallyHidden>
+              <DialogTitle>{title}</DialogTitle>
+            </VisuallyHidden>
+          ) : (
             <DialogTitle>{title}</DialogTitle>
-          </DialogHeader>
-        )}
+          )}
+        </DialogHeader>
         
         {/* Always provide a description for screen readers */}
         <DialogDescription id={descriptionId} className={description ? "" : "sr-only"}>
-          {description || "Dialog content"}
+          {description || "This dialog contains content related to the current action"}
         </DialogDescription>
         
         <div className="py-2">{children}</div>

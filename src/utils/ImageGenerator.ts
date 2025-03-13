@@ -1,237 +1,157 @@
+import html2canvas from "html2canvas";
+import { Logger } from "./logger";
 
-import domtoimage from 'dom-to-image-more';
-import html2canvas from 'html2canvas';
+interface Options {
+  selector?: string;
+  quality?: number;
+  scale?: number;
+  backgroundColor?: string | null;
+}
 
 export class ImageGenerator {
-  private previewElement: HTMLElement | null;
-  private captureInProgress: boolean = false;
+  private selector: string;
+  private quality: number;
+  private scale: number;
+  private backgroundColor: string | null;
+  private canvasElements: HTMLCanvasElement[] = [];
+  private dataUrls: string[] = [];
 
-  constructor(previewSelector = '.ad-content') {
-    this.previewElement = document.querySelector(previewSelector);
+  constructor(
+    selector: string = ".capture-element",
+    options: Options = {}
+  ) {
+    this.selector = options.selector || selector;
+    this.quality = options.quality || 0.9;
+    this.scale = options.scale || 2;
+    this.backgroundColor = options.backgroundColor !== undefined ? options.backgroundColor : null;
   }
 
-  private async waitForImages(maxWaitTime = 800): Promise<void> {
-    if (!this.previewElement) return;
-
-    const images = Array.from(this.previewElement.getElementsByTagName('img'));
-    
-    if (images.length === 0) {
-      return;
-    }
-    
-    const imagePromises = images.map(img => 
-      new Promise<void>((resolve) => {
-        if (img.complete) {
-          resolve();
-        } else {
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-          setTimeout(() => resolve(), 300);
-        }
-      })
-    );
-
-    await Promise.race([
-      Promise.all([...imagePromises, document.fonts.ready]),
-      new Promise<void>(resolve => setTimeout(resolve, maxWaitTime))
-    ]);
-  }
-
-  private async prepareForCapture(): Promise<(() => void)> {
-    if (!this.previewElement) {
-      return () => {};
-    }
-
-    // Hide navigation controls
-    const navigationControls = this.previewElement.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');
-    const navigationButtons = this.previewElement.querySelectorAll('[data-navigation-control]');
-    
-    const originalStyles = new Map<Element, string>();
-    
-    // Hide all navigation controls
-    if (navigationControls) {
-      originalStyles.set(navigationControls, navigationControls.getAttribute('style') || '');
-      (navigationControls as HTMLElement).style.display = 'none';
-    }
-    
-    navigationButtons.forEach(button => {
-      originalStyles.set(button, (button as HTMLElement).style.display);
-      (button as HTMLElement).style.display = 'none';
-    });
-
-    // Make sure CTA elements are visible
-    const ctaContainer = this.previewElement.querySelector('[data-cta-container="true"]');
-    const ctaButton = this.previewElement.querySelector('[data-cta-button="true"]');
-    
-    if (ctaContainer && ctaContainer instanceof HTMLElement) {
-      originalStyles.set(ctaContainer, ctaContainer.getAttribute('style') || '');
-      ctaContainer.style.opacity = '1';
-      ctaContainer.style.visibility = 'visible';
-    }
-    
-    if (ctaButton && ctaButton instanceof HTMLElement) {
-      originalStyles.set(ctaButton, ctaButton.getAttribute('style') || '');
-      ctaButton.style.opacity = '1';
-      ctaButton.style.visibility = 'visible';
-    }
-
-    return () => {
-      // Restore original styles
-      originalStyles.forEach((originalStyle, element) => {
-        if (element instanceof HTMLElement || element instanceof SVGElement) {
-          element.setAttribute('style', originalStyle);
-        }
-      });
-    };
-  }
-
-  private async captureElement(): Promise<string> {
-    if (!this.previewElement) {
-      throw new Error('Preview element not found');
-    }
-    
-    await this.waitForImages();
-    const resetEffect = await this.prepareForCapture();
-
+  /**
+   * Get a DOM element based on the selector string
+   */
+  private getElement(): HTMLElement | null {
+    let element: HTMLElement | null = null;
     try {
-      // Use html2canvas with reduced scale for better performance
-      const canvas = await html2canvas(this.previewElement, {
-        backgroundColor: null,
-        scale: 1.5, // Reduced from 2 to improve performance
+      if (typeof this.selector === "string") {
+        element = document.querySelector(this.selector) as HTMLElement;
+      }
+    } catch (error) {
+      Logger.error(`Error getting element with selector ${this.selector}: ${error}`);
+    }
+    return element;
+  }
+
+  /**
+   * Capture an element as a canvas
+   */
+  private async captureElement(
+    element: HTMLElement,
+    scale: number = this.scale
+  ): Promise<HTMLCanvasElement | null> {
+    try {
+      // Enhanced memory cleanup for previous canvases to prevent leaks
+      this.cleanupMemory();
+      
+      // Add required properties to options
+      const canvas = await html2canvas(element, {
+        backgroundColor: this.backgroundColor,
+        scale: scale,
         useCORS: true,
         allowTaint: true,
         logging: false,
+        // Add the missing required properties
         scrollX: 0,
         scrollY: 0,
         x: 0,
         y: 0,
-        onclone: (documentClone) => {
-          // Hide navigation controls in the clone
-          const clonedNavControls = documentClone.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');
-          if (clonedNavControls instanceof HTMLElement) {
-            clonedNavControls.style.display = 'none';
-          }
-          
-          // Show CTA elements in the clone
-          const clonedCtaContainer = documentClone.querySelector('[data-cta-container="true"]');
-          const clonedCtaButton = documentClone.querySelector('[data-cta-button="true"]');
-          
-          if (clonedCtaContainer instanceof HTMLElement) {
-            clonedCtaContainer.style.opacity = '1';
-            clonedCtaContainer.style.visibility = 'visible';
-          }
-          
-          if (clonedCtaButton instanceof HTMLElement) {
-            clonedCtaButton.style.opacity = '1';
-            clonedCtaButton.style.visibility = 'visible';
-          }
+        onclone: (documentClone: Document) => {
+          // Make sure all images are fully loaded
+          Array.from(documentClone.querySelectorAll("img")).forEach((img) => {
+            if (!img.complete && img.src) {
+              Logger.info(`Forcing image load: ${img.src.substring(0, 30)}...`);
+              img.src = img.src; // Trigger reload
+            }
+          });
+        },
+      });
+
+      // Keep track of canvas elements we create
+      this.canvasElements.push(canvas);
+      
+      return canvas;
+    } catch (error) {
+      Logger.error(`Error capturing element: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Convert a canvas to a data URL
+   */
+  private canvasToDataUrl(
+    canvas: HTMLCanvasElement,
+    type: string = "image/png",
+    quality: number = this.quality
+  ): string {
+    const dataUrl = canvas.toDataURL(type, quality);
+    // Track data URLs to clean them up later
+    this.dataUrls.push(dataUrl);
+    return dataUrl;
+  }
+
+  /**
+   * Clean up memory by removing references to canvas elements and revoking object URLs
+   */
+  private cleanupMemory() {
+    // Clean up previous data URLs
+    this.dataUrls.forEach(url => {
+      try {
+        if (url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
         }
-      });
-      
-      resetEffect();
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // Use JPEG with lower quality
-      
-      // Help garbage collection
-      setTimeout(() => {
-        canvas.width = 1;
-        canvas.height = 1;
-        canvas.remove();
-      }, 100);
-      
-      return dataUrl;
-    } catch (error) {
-      console.warn('html2canvas failed, trying dom-to-image fallback:', error);
-      resetEffect();
-      return this.fallbackCapture();
-    }
-  }
-
-  private async fallbackCapture(): Promise<string> {
-    if (!this.previewElement) {
-      throw new Error('Preview element not found');
-    }
+      } catch (e) {
+        Logger.error(`Error revoking URL: ${e}`);
+      }
+    });
+    this.dataUrls = [];
     
-    await this.waitForImages();
-    const resetEffect = await this.prepareForCapture();
+    // Remove references to previous canvas elements
+    this.canvasElements = [];
+  }
 
+  /**
+   * Get an image URL from the selected element
+   */
+  public async getImageUrl(scaleOverride?: number): Promise<string> {
     try {
-      const dataUrl = await domtoimage.toPng(this.previewElement, {
-        quality: 0.85, // Reduced quality for better performance
-        scale: 1.5,    // Reduced scale
-        bgcolor: null,
-      });
+      const element = this.getElement();
+      if (!element) {
+        throw new Error(`Element not found with selector: ${this.selector}`);
+      }
+
+      const scale = scaleOverride !== undefined ? scaleOverride : this.scale;
+      const canvas = await this.captureElement(element, scale);
       
-      resetEffect();
+      if (!canvas) {
+        throw new Error("Failed to capture element as canvas");
+      }
+      
+      // Use a lower quality to reduce memory usage
+      const actualQuality = scaleOverride ? Math.min(this.quality, 0.75) : this.quality;
+      const dataUrl = this.canvasToDataUrl(canvas, "image/png", actualQuality);
+      
       return dataUrl;
     } catch (error) {
-      console.error('Fallback capture failed:', error);
-      resetEffect();
-      
-      // Create a simple canvas with error message
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Failed to get canvas context');
-      
-      const rect = this.previewElement.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-      
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.font = '20px Arial';
-      ctx.fillStyle = '#000000';
-      ctx.textAlign = 'center';
-      ctx.fillText('Image generation failed', canvas.width / 2, canvas.height / 2);
-      
-      // Help garbage collection
-      setTimeout(() => {
-        canvas.width = 1;
-        canvas.height = 1;
-        canvas.remove();
-      }, 100);
-      
-      return canvas.toDataURL('image/jpeg', 0.85);
-    }
-  }
-
-  async getImageUrl(): Promise<string> {
-    if (this.captureInProgress) {
-      return new Promise((_, reject) => {
-        reject(new Error('Capture already in progress'));
-      });
-    }
-
-    try {
-      this.captureInProgress = true;
-      const url = await this.captureElement();
-      this.captureInProgress = false;
-      return url;
-    } catch (error) {
-      this.captureInProgress = false;
-      console.error('Error getting image URL:', error);
+      Logger.error(`Error generating image: ${error}`);
       throw error;
     }
   }
-
-  async downloadImage(filename = 'ad-preview.png'): Promise<void> {
-    try {
-      const dataUrl = await this.getImageUrl();
-      
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      
-      // Clean up
-      setTimeout(() => {
-        document.body.removeChild(link);
-        // Help browser GC by nullifying the data URL
-        link.href = '';
-      }, 100);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      throw error;
-    }
+  
+  /**
+   * Explicitly dispose this generator and clean up any resources
+   */
+  public dispose() {
+    Logger.info('Disposing ImageGenerator and cleaning up resources');
+    this.cleanupMemory();
   }
 }

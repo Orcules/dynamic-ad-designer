@@ -30,8 +30,19 @@ export function useAdSubmission() {
         console.log(`Using uploaded file [${uploadId}]`);
       } else {
         console.log(`Fetching image from URL [${uploadId}]:`, imageFile);
-        const response = await fetchWithRetry(imageFile);
-        imageBlob = await response.blob();
+        // Add timeout to prevent hanging fetch requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        
+        try {
+          const response = await fetchWithRetry(imageFile, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          imageBlob = await response.blob();
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          console.error(`Fetch error [${uploadId}]:`, fetchError);
+          throw new Error(`Failed to fetch image: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
+        }
       }
       
       const { path: originalPath } = await AdStorageService.uploadOriginalImage(
@@ -52,7 +63,7 @@ export function useAdSubmission() {
       
       onSuccess({ ...adData, imageUrl });
       
-      // Clear references to help garbage collection
+      // Help garbage collection
       imageBlob = null as any;
       
     } catch (error: any) {
@@ -60,9 +71,13 @@ export function useAdSubmission() {
       
       if (uploadedFiles.current.length > 0) {
         console.log(`Cleaning up uploaded files [${uploadId}]...`);
-        await Promise.all(
-          uploadedFiles.current.map(filePath => AdStorageService.deleteFile(filePath))
-        );
+        try {
+          await Promise.all(
+            uploadedFiles.current.map(filePath => AdStorageService.deleteFile(filePath))
+          );
+        } catch (cleanupError) {
+          console.error(`Cleanup error [${uploadId}]:`, cleanupError);
+        }
       }
       
       toast.error(error.message || 'Error creating ad');
