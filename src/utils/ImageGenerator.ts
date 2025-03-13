@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -59,6 +60,7 @@ export class ImageGenerator {
       return () => {};
     }
 
+    // Hide navigation buttons only, not the CTA button
     const navigationButtons = this.previewElement.querySelectorAll('.ad-content > div > div > [class*="absolute inset-0"] button');
     const originalButtonStyles = new Map<Element, string>();
     
@@ -67,14 +69,40 @@ export class ImageGenerator {
       (button as HTMLElement).style.display = 'none';
     });
 
-    const ctaButton = this.previewElement.querySelector('button');
-    console.log('CTA Button found:', ctaButton !== null);
+    // Find the CTA button and ensure it's visible
+    const ctaContainer = this.previewElement.querySelector('[data-cta-container="true"]');
+    const ctaButton = this.previewElement.querySelector('[data-cta-button="true"]');
+    
+    if (ctaContainer && ctaContainer instanceof HTMLElement) {
+      ctaContainer.style.opacity = '1';
+      ctaContainer.style.visibility = 'visible';
+      console.log('CTA container found and made visible');
+    }
+    
+    if (ctaButton && ctaButton instanceof HTMLElement) {
+      ctaButton.style.opacity = '1';
+      ctaButton.style.visibility = 'visible';
+      console.log('CTA button found and made visible');
+    } else {
+      console.log('CTA button not found, using fallback selector');
+      // Try fallback selector
+      const fallbackCtaButton = this.previewElement.querySelector('button');
+      if (fallbackCtaButton && fallbackCtaButton instanceof HTMLElement) {
+        fallbackCtaButton.style.opacity = '1';
+        fallbackCtaButton.style.visibility = 'visible';
+        console.log('Fallback CTA button found and made visible');
+      }
+    }
     
     const headlineElement = this.previewElement.querySelector('h2');
     const descriptionElement = this.previewElement.querySelector('p');
-    const buttonTextElement = ctaButton?.querySelector('.cta-text');
+    const buttonTextElement = ctaButton instanceof HTMLElement ? 
+      ctaButton.querySelector('.cta-text') : 
+      this.previewElement.querySelector('.cta-text');
     
-    const arrowElement = ctaButton?.querySelector('.cta-arrow');
+    const arrowElement = ctaButton instanceof HTMLElement ? 
+      ctaButton.querySelector('.cta-arrow') : 
+      this.previewElement.querySelector('.cta-arrow');
     
     const originalPositions = new Map<Element, string>();
     

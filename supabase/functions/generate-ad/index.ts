@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -316,7 +317,7 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, descY);
     }
 
-    // Draw CTA button
+    // Draw CTA button - Important: ensure this is always visible
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
@@ -368,7 +369,7 @@ serve(async (req) => {
       
       // For luxury jewelry, don't show arrow and use uppercase text
       const buttonText = isLuxuryJewelry ? data.cta_text.toUpperCase() : data.cta_text;
-      const showArrow = data.showArrow !== false && !isLuxuryJewelry;
+      const showArrow = data.showCtaArrow !== false && !isLuxuryJewelry;
       
       const contentWidth = showArrow ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - contentWidth) / 2;
@@ -436,4 +437,3 @@ serve(async (req) => {
     );
   }
 });
-

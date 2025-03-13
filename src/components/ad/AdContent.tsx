@@ -83,6 +83,7 @@ export function AdContent({
     <div 
       className="absolute inset-0 flex flex-col pointer-events-auto"
       dir={isRTL ? "rtl" : "ltr"}
+      style={{ zIndex: 10 }} // Ensure the content has a higher z-index
     >
       <div className={cn(
         "relative flex-1 flex flex-col items-center justify-center gap-4 p-4",
@@ -106,7 +107,7 @@ export function AdContent({
             </div>
             
             {/* Bottom CTA section */}
-            <div className="z-10 mb-4">
+            <div className="z-10 mb-4" style={{ opacity: 1, visibility: 'visible' }}>
               <AdCallToAction
                 ctaText={ctaText}
                 buttonStyle={buttonStyle}

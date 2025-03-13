@@ -64,7 +64,11 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
       className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-[90%] flex justify-center items-center z-20"
       style={{
         transform: `translate(-50%, ${position.y}px)`,
+        opacity: 1,  // Ensure the button is always visible
+        visibility: 'visible', // Explicitly set visibility
+        pointerEvents: 'auto' // Ensure clickable
       }}
+      data-cta-container="true" // Add a data attribute for easy selection
     >
       <button 
         className="relative transform rounded-full transition-all duration-300 overflow-hidden whitespace-nowrap inline-flex items-center justify-center cursor-pointer"
@@ -77,11 +81,14 @@ export const AdCallToAction: React.FC<AdCallToActionProps> = ({
           backdropFilter: 'blur(5px)',
           WebkitBackdropFilter: 'blur(5px)',
           zIndex: 30,
-          pointerEvents: 'auto'
+          pointerEvents: 'auto',
+          opacity: 1, // Ensure the button is always visible
+          visibility: 'visible' // Explicitly set visibility
         }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}
+        data-cta-button="true" // Add a data attribute for easy selection
       >
         <span className="inline-flex items-center gap-2">
           <span className="cta-text">{ctaText}</span>
