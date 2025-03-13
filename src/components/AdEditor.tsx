@@ -9,6 +9,7 @@ import { useAdForm } from "@/hooks/useAdForm";
 import { validateAdSubmission } from "@/utils/adValidation";
 import { useAdGeneration } from "@/hooks/useAdGeneration";
 import { ImageGenerator } from "@/utils/ImageGenerator";
+import { getDimensions } from "@/utils/adDimensions";
 
 interface Template {
   id: string;
@@ -91,6 +92,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     await generateAds(e);
   };
 
+  // Get dimensions from the platform
+  const { width, height } = getDimensions(adData.platform);
+
   return (
     <div className="flex flex-col lg:flex-row gap-8">
       <div className="w-full lg:w-1/2">
@@ -126,8 +130,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
           <AdPreview
             imageUrl={imageUrls[currentPreviewIndex]}
             imageUrls={imageUrls}
-            width={adData.width}
-            height={adData.height}
+            width={width}
+            height={height}
             headline={adData.headline}
             description={adData.description}
             descriptionColor={adData.description_color}
