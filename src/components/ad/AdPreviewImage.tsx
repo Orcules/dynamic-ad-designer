@@ -34,6 +34,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const positionRef = useRef<Position>(position);
   const lastPositionRef = useRef<Position>(position);
+  const imageElementRef = useRef<HTMLImageElement | null>(null);
 
   // Track position changes and apply immediately to prevent visual jumps
   useEffect(() => {
@@ -74,7 +75,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   // Helper function to update image style based on position
   const updateImageStyle = (pos: Position) => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !imageElementRef.current) return;
     
     const containerRect = containerRef.current.getBoundingClientRect();
     
@@ -102,13 +103,31 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       willChange: 'left, top, width, height',
       zIndex: 1,
     });
+    
+    // Log dimensions for debugging
+    console.log('Image dimensions:', {
+      natural: naturalSize,
+      container: {
+        width: containerRect.width,
+        height: containerRect.height
+      },
+      cover: coverDimensions,
+      position: pos
+    });
   };
 
   // Safe image load handler with proper error handling
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     try {
       const img = e.target as HTMLImageElement;
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
+      imageElementRef.current = img;
+      
+      // Make sure we have accurate natural dimensions
+      setNaturalSize({ 
+        width: img.naturalWidth || img.width, 
+        height: img.naturalHeight || img.height 
+      });
+      
       setLoaded(true);
       
       if (containerRef.current) {

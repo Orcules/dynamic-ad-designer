@@ -52,70 +52,72 @@ export const calculateCoverDimensions = (
   offsetX: number = 0,
   offsetY: number = 0
 ): { width: number; height: number; x: number; y: number } => {
+  // Safety check for zero dimensions
+  if (imageWidth <= 0 || imageHeight <= 0 || containerWidth <= 0 || containerHeight <= 0) {
+    return { width: containerWidth, height: containerHeight, x: 0, y: 0 };
+  }
+  
   const imageAspect = imageWidth / imageHeight;
   const containerAspect = containerWidth / containerHeight;
   
+  // Calculate initial dimensions to cover the container
   let width, height, x, y;
   
-  // חישוב ראשוני של גודל התמונה לפי יחס הממדים
   if (imageAspect > containerAspect) {
-    // התמונה רחבה יותר מהמסגרת (יחסית לגובה)
-    // שינוי קנה המידה כך שהגובה יתאים לגובה המסגרת
+    // Image is wider than container relative to height
+    // Scale so height matches container height
     height = containerHeight;
     width = height * imageAspect;
     y = 0;
     x = (containerWidth - width) / 2;
   } else {
-    // התמונה גבוהה יותר מהמסגרת (יחסית לרוחב)
-    // שינוי קנה המידה כך שהרוחב יתאים לרוחב המסגרת
+    // Image is taller than container relative to width
+    // Scale so width matches container width
     width = containerWidth;
     height = width / imageAspect;
     x = 0;
     y = (containerHeight - height) / 2;
   }
   
-  // החלת ההיסט על מיקום התמונה
+  // Apply the offset
   x += offsetX;
   y += offsetY;
   
-  // וידוא שהתמונה מכסה תמיד את כל המסגרת
-  // בדיקה אם יש רווח בין התמונה לשולי המסגרת אחרי הזזת התמונה
-  const hasGapX = x > 0 || (x + width) < containerWidth;
-  const hasGapY = y > 0 || (y + height) < containerHeight;
+  // Check if there are any gaps after applying the offset
+  const hasGapLeft = x > 0;
+  const hasGapRight = (x + width) < containerWidth;
+  const hasGapTop = y > 0;
+  const hasGapBottom = (y + height) < containerHeight;
   
-  if (hasGapX || hasGapY) {
-    // חישוב פקטור הגדלה נדרש לכיסוי מלא של המסגרת
-    let scaleX = 1;
-    let scaleY = 1;
+  // If any gaps are present, we need to scale up the image
+  if (hasGapLeft || hasGapRight || hasGapTop || hasGapBottom) {
+    // Calculate the minimum scale factor needed to cover the container
+    let scaleFactorX = 1;
+    let scaleFactorY = 1;
     
-    if (hasGapX) {
-      // חישוב כמה צריך להגדיל את התמונה ברוחב
-      const uncoveredWidth = Math.max(
-        x > 0 ? x : 0,
-        (x + width) < containerWidth ? containerWidth - (x + width) : 0
-      );
-      scaleX = (width + uncoveredWidth * 2) / width;
+    if (hasGapLeft || hasGapRight) {
+      // Calculate how much wider the image needs to be
+      const totalWidthGap = (hasGapLeft ? x : 0) + (hasGapRight ? (containerWidth - (x + width)) : 0);
+      scaleFactorX = (width + totalWidthGap) / width;
     }
     
-    if (hasGapY) {
-      // חישוב כמה צריך להגדיל את התמונה בגובה
-      const uncoveredHeight = Math.max(
-        y > 0 ? y : 0,
-        (y + height) < containerHeight ? containerHeight - (y + height) : 0
-      );
-      scaleY = (height + uncoveredHeight * 2) / height;
+    if (hasGapTop || hasGapBottom) {
+      // Calculate how much taller the image needs to be
+      const totalHeightGap = (hasGapTop ? y : 0) + (hasGapBottom ? (containerHeight - (y + height)) : 0);
+      scaleFactorY = (height + totalHeightGap) / height;
     }
     
-    // שימוש בפקטור הגדלה גדול יותר לשמירה על יחס ממדים
-    const scale = Math.max(scaleX, scaleY) * 1.1; // תוספת 10% לביטחון
+    // Use the largest scale factor to ensure coverage in both dimensions
+    // Add a 20% margin to the scale factor for safety
+    const scaleFactor = Math.max(scaleFactorX, scaleFactorY) * 1.2;
     
-    // חישוב מימדים חדשים לתמונה
-    const newWidth = width * scale;
-    const newHeight = height * scale;
+    // Apply the scale factor
+    const newWidth = width * scaleFactor;
+    const newHeight = height * scaleFactor;
     
-    // עדכון מיקום התמונה לשמירה על מרכוז
-    const newX = x - (newWidth - width) / 2;
-    const newY = y - (newHeight - height) / 2;
+    // Recenter the image
+    const newX = x - ((newWidth - width) / 2);
+    const newY = y - ((newHeight - height) / 2);
     
     return { width: newWidth, height: newHeight, x: newX, y: newY };
   }
