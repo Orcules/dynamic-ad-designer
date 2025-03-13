@@ -196,13 +196,9 @@ export const processImages = async (
         const { width, height } = getDimensions(adData.platform);
         Logger.info(`Using dimensions: ${width}x${height} for platform ${adData.platform}`);
 
-        // Create fixed stable positions - this prevents text from moving around
-        const stablePositions = {
-          headlinePosition: { x: 0, y: 0 },
-          descriptionPosition: { x: 0, y: 10 },
-          ctaPosition: { x: 0, y: 0 },
-          imagePosition: positions.imagePosition
-        };
+        // CRITICAL: Use the exact image position from the preview - don't modify it
+        // This ensures the server rendering matches exactly what the user sees
+        Logger.info(`Using exact image position: ${JSON.stringify(positions.imagePosition)}`);
 
         // Add ad to table with retry mechanism
         Logger.info('Inserting ad data into database...');
@@ -225,10 +221,10 @@ export const processImages = async (
             preview_url: publicUrl,
             width,
             height,
-            image_position: positions.imagePosition, // Store positioning data
-            headline_position: stablePositions.headlinePosition,
-            description_position: stablePositions.descriptionPosition,
-            cta_position: stablePositions.ctaPosition,
+            image_position: positions.imagePosition, // Store the exact positioning data
+            headline_position: positions.headlinePosition,
+            description_position: positions.descriptionPosition,
+            cta_position: positions.ctaPosition,
             status: 'completed',
             created_at: new Date().toISOString()
           }])

@@ -163,11 +163,11 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    // IMPORTANT: Use the exact image positioning from the preview to maintain consistency
-    // Use the explicit position as provided - don't recalculate it
+    // CRITICAL: Use the exact image position from the client without recalculation
     const imagePosition = data.imagePosition || { x: 0, y: 0 };
+    console.log(`[${uploadId}] Using exact image position from client:`, imagePosition);
     
-    // Calculate dimensions for precise cropping to match the preview
+    // Get image dimensions based on aspect ratio calculation, but position exactly as provided
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
@@ -199,19 +199,18 @@ serve(async (req) => {
         y = (containerHeight - height) / 2;
       }
       
-      // Apply offsets - THIS IS CRITICAL: we need to apply the exact offsets passed from the frontend
+      // CRITICAL: Apply the EXACT offsets as provided by the client without modification
       x += offsetX;
       y += offsetY;
       
-      // Ensure dimensions are large enough to cover the entire container
-      // Use a more reasonable scale factor that matches the client side
+      // Use the same scale factor as the client-side (1.2)
       const scaleFactor = 1.2;
       
       if (width < containerWidth * scaleFactor) {
         const ratio = (containerWidth * scaleFactor) / width;
         width *= ratio;
         height *= ratio;
-        // Recenter based on the new dimensions
+        // Recenter based on the new dimensions but preserve exact offset
         x = (containerWidth - width) / 2 + offsetX;
       }
       
@@ -219,7 +218,7 @@ serve(async (req) => {
         const ratio = (containerHeight * scaleFactor) / height;
         width *= ratio;
         height *= ratio;
-        // Recenter based on the new dimensions
+        // Recenter based on the new dimensions but preserve exact offset
         y = (containerHeight - height) / 2 + offsetY;
       }
       
@@ -227,7 +226,7 @@ serve(async (req) => {
     };
     
     // Calculate dimensions ensuring image covers the container completely
-    // This uses the same logic as calculateCoverDimensions in imageEffects.ts
+    // Use the exact same calculation as client-side but with x,y from client
     const coverDimensions = calculateCoverDimensionsServer(
       backgroundImage.width,
       backgroundImage.height,
@@ -242,19 +241,11 @@ serve(async (req) => {
     const destX = coverDimensions.x;
     const destY = coverDimensions.y;
     
-    // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
-    ctx.imageSmoothingEnabled = true;
-    if ('imageSmoothingQuality' in ctx) {
-      // @ts-ignore: Property exists but TypeScript doesn't recognize it
-      ctx.imageSmoothingQuality = 'high';
-    }
-    
     // Log positioning information for debugging
-    console.log(`[${uploadId}] Image dimensions:`, {
+    console.log(`[${uploadId}] Final image dimensions:`, {
       source: { width: backgroundImage.width, height: backgroundImage.height },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
-      aspect: { image: imageAspect, canvas: canvasAspect },
-      position: imagePosition // Log the received position
+      clientPosition: imagePosition
     });
     
     // Draw the image with the calculated dimensions to ensure full coverage

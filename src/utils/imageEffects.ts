@@ -73,11 +73,11 @@ export const calculateCoverDimensions = (
     y = (containerHeight - height) / 2;
   }
   
-  // Apply offsets
+  // CRITICAL: Apply the offset exactly as provided without modification
   x += offsetX;
   y += offsetY;
   
-  // Adjust the scale factor to be more reasonable - 1.2 is enough to ensure coverage
+  // Use consistent scale factor of 1.2 - enough to ensure coverage
   // without excessive zooming
   const scaleFactor = 1.2;
   
