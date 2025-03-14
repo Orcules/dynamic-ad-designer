@@ -1,11 +1,16 @@
 
 export const applyImageEffect = async (
   canvas: HTMLCanvasElement,
-  effect: 'sepia' | 'none'
+  effect: 'sepia' | 'none' = 'none'
 ): Promise<string> => {
   const ctx = canvas.getContext('2d');
   
-  if (ctx && effect === 'sepia') {
+  if (!ctx) {
+    console.error('Failed to get canvas context');
+    return canvas.toDataURL('image/jpeg', 0.95);
+  }
+  
+  if (effect === 'sepia') {
     // Get image data
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;

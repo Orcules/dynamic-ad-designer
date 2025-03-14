@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -8,9 +9,9 @@ import { AdContent } from "./ad/AdContent";
 import { AdPreviewImage } from "./ad/AdPreviewImage";
 import { PageFlip } from "./ad/PageFlip";
 import { Button } from "./ui/button";
-import { Download } from "lucide-react";
 import { ImageGenerator } from "@/utils/ImageGenerator";
 import { cn } from "@/lib/utils";
+import { Download, ZoomIn } from "lucide-react";
 
 interface Position {
   x: number;
@@ -79,7 +80,8 @@ export function AdPreview({
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
-  const imageGenerator = useRef<ImageGenerator>();
+  const [isHighResCapturing, setIsHighResCapturing] = useState(false);
+  const imageGenerator = useRef<ImageGenerator | null>(null);
   const isRTL = language === 'he' || language === 'ar';
   const currentImageUrl = useRef<string | undefined>(imageUrl);
   const fontLoaded = useRef<boolean>(false);
@@ -95,7 +97,10 @@ export function AdPreview({
     renderStartTime.current = performance.now();
     
     if (!imageGenerator.current) {
-      imageGenerator.current = new ImageGenerator('.ad-content');
+      // Initialize with default size matching the container's aspect ratio
+      imageGenerator.current = new ImageGenerator('.ad-content', {
+        outputScale: 2 // Default to 2x scale for better quality
+      });
     }
   }, []);
 
@@ -200,11 +205,36 @@ export function AdPreview({
     try {
       setIsCapturing(true);
       await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Set output dimensions to match the specified width and height
+      // This ensures the downloaded image has the exact dimensions specified
+      imageGenerator.current.setOutputDimensions(width, height, 2);
+      
       await imageGenerator.current.downloadImage('ad-preview.png');
     } catch (error) {
       console.error('Error generating image:', error);
     } finally {
       setIsCapturing(false);
+    }
+  };
+  
+  const handleHighResDownload = async () => {
+    if (!imageGenerator.current) return;
+
+    try {
+      setIsHighResCapturing(true);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Generate a high-resolution image (3x the normal output)
+      const highResWidth = width * 3;
+      const highResHeight = height * 3;
+      
+      imageGenerator.current.setOutputDimensions(highResWidth, highResHeight, 3);
+      await imageGenerator.current.downloadImage('ad-high-res.png');
+    } catch (error) {
+      console.error('Error generating high-resolution image:', error);
+    } finally {
+      setIsHighResCapturing(false);
     }
   };
 
@@ -385,16 +415,28 @@ export function AdPreview({
     <Card className="h-fit w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview</CardTitle>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleDownload}
-          className="flex items-center gap-2"
-          disabled={isCapturing}
-        >
-          <Download className="h-4 w-4" />
-          {isCapturing ? 'Generating...' : 'Download Preview'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleHighResDownload}
+            className="flex items-center gap-2"
+            disabled={isCapturing || isHighResCapturing}
+          >
+            <ZoomIn className="h-4 w-4" />
+            {isHighResCapturing ? 'Generating...' : 'High-Res Download'}
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownload}
+            className="flex items-center gap-2"
+            disabled={isCapturing || isHighResCapturing}
+          >
+            <Download className="h-4 w-4" />
+            {isCapturing ? 'Generating...' : 'Download Preview'}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative w-full">
