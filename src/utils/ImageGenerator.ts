@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -184,16 +183,6 @@ export class ImageGenerator {
           overflow: containerStyle.overflow,
           position: containerStyle.position
         };
-        
-        // Force object-fit: cover on the image to prevent stretching
-        (bgImage as HTMLElement).style.objectFit = 'cover';
-        (bgImage as HTMLElement).style.objectPosition = 'center center';
-        (bgImage as HTMLElement).style.width = '100%';
-        (bgImage as HTMLElement).style.height = '100%';
-        
-        // Ensure container has overflow hidden
-        (bgImageContainer as HTMLElement).style.overflow = 'hidden';
-        (bgImageContainer as HTMLElement).style.position = 'relative';
       }
 
       // Clone the node to avoid modifying the original DOM
@@ -208,13 +197,31 @@ export class ImageGenerator {
       clone.style.height = this.previewElement.offsetHeight + 'px';
       
       // Fix any background images in the clone
-      const clonedBgImage = clone.querySelector('.ad-image');
-      if (clonedBgImage) {
-        (clonedBgImage as HTMLElement).style.objectFit = 'cover';
-        (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
-        (clonedBgImage as HTMLElement).style.width = '100%';
-        (clonedBgImage as HTMLElement).style.height = '100%';
-      }
+      const allImagesInClone = clone.querySelectorAll('img');
+      allImagesInClone.forEach(img => {
+        // Preserve original aspect ratio for all images
+        img.style.objectFit = 'contain';
+        
+        // Store original dimensions
+        const originalWidth = img.width;
+        const originalHeight = img.height;
+        
+        // Make sure the image keeps its position but doesn't stretch
+        if (img.style.transform) {
+          // Position is maintained through transform
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+        }
+      });
+
+      // Prevent text or content overflow
+      const textElements = clone.querySelectorAll('h1, h2, h3, p, button, div:not(.ad-image-container)');
+      textElements.forEach(el => {
+        if (el instanceof HTMLElement) {
+          el.style.overflow = 'hidden';
+          el.style.textOverflow = 'ellipsis';
+        }
+      });
 
       // Fix: Call html2canvas as a function with proper options
       const canvas = await html2canvas(clone, {
@@ -339,16 +346,6 @@ export class ImageGenerator {
         overflow: containerStyle.overflow,
         position: containerStyle.position
       };
-      
-      // Force object-fit: cover on the image to prevent stretching
-      (bgImage as HTMLElement).style.objectFit = 'cover';
-      (bgImage as HTMLElement).style.objectPosition = 'center center';
-      (bgImage as HTMLElement).style.width = '100%';
-      (bgImage as HTMLElement).style.height = '100%';
-      
-      // Ensure container has overflow hidden
-      (bgImageContainer as HTMLElement).style.overflow = 'hidden';
-      (bgImageContainer as HTMLElement).style.position = 'relative';
     }
 
     // Clone the node to avoid modifying the original DOM
@@ -362,17 +359,19 @@ export class ImageGenerator {
     clone.style.width = this.previewElement.offsetWidth + 'px';
     clone.style.height = this.previewElement.offsetHeight + 'px';
     
-    // Fix any background images in the clone
-    const clonedBgImage = clone.querySelector('.ad-image');
-    if (clonedBgImage) {
-      (clonedBgImage as HTMLElement).style.objectFit = 'cover';
-      (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
-      (clonedBgImage as HTMLElement).style.width = '100%';
-      (clonedBgImage as HTMLElement).style.height = '100%';
-    }
+    // Fix any images in the clone for correct aspect ratio
+    const allImagesInClone = clone.querySelectorAll('img');
+    allImagesInClone.forEach(img => {
+      // For preservation of aspect ratio, use 'contain' 
+      img.style.objectFit = 'contain'; 
+      
+      // Ensure the image doesn't overflow its container
+      img.style.maxWidth = '100%';
+      img.style.maxHeight = '100%';
+    });
 
     const config = {
-      quality: 0.9, // Slightly reduced quality for better performance
+      quality: 0.9,
       scale: 2,
       bgcolor: null,
       style: {

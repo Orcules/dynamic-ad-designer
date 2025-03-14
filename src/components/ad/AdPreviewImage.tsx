@@ -38,6 +38,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
+  const positionRef = useRef<Position>(position);
+
+  // Update the position ref whenever the position prop changes
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -86,7 +92,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             cachedImg.naturalHeight,
             containerRect.width,
             containerRect.height,
-            position,
+            positionRef.current,
             fastMode
           );
           setImageStyle(newStyle);
@@ -106,7 +112,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage]);
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
@@ -121,25 +127,21 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Additional scale factor to ensure no black borders (25% extra)
-    const extraScaleFactor = 1.25;
+    // Additional scale factor to ensure no black borders (20% extra)
+    const extraScaleFactor = 1.2;
     
-    // Use cover instead of contain to ensure the image fills the container without black margins
+    // Use scaling logic to maintain aspect ratio
     if (imageAspect > containerAspect) {
       // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
+      height = containerHeight * extraScaleFactor;
+      width = height * imageAspect;
     } else {
       // Image is taller than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
+      width = containerWidth * extraScaleFactor;
+      height = width / imageAspect;
     }
     
-    // Apply extra scaling
-    width *= extraScaleFactor;
-    height *= extraScaleFactor;
-    
-    // Adjust transform to center the scaled image
+    // Adjust transform to center the scaled image with user position offset
     const transformX = pos.x - ((width - containerWidth) / 2);
     const transformY = pos.y - ((height - containerHeight) / 2);
     
@@ -165,32 +167,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    // Use cover instead of contain to ensure the image fills the container without black margins
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
-    
-    return {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${position.x}px, ${position.y}px)`,
-      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
-      position: 'absolute' as const,
-      objectFit: 'cover' as ObjectFit,
-      willChange: 'transform',
-    };
-  }, [position, fastMode]);
+    // Calculate the style with the current position
+    return calculateStyleFromDimensions(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight,
+      positionRef.current,
+      fastMode
+    );
+  }, [calculateStyleFromDimensions, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
