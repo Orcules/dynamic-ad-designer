@@ -56,6 +56,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         // Clear src to stop any ongoing loads
         imageRef.current.src = '';
       }
+      
+      // Clear any cached URLs
+      if (imageUrl) {
+        try {
+          URL.revokeObjectURL(imageUrl);
+        } catch (e) {
+          // Ignore errors - this might not be an object URL
+        }
+      }
+      
+      // Release memory by removing style references
+      setImageStyle({});
+      setNaturalSize({ width: 0, height: 0 });
     };
   }, []);
 
@@ -66,9 +79,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     try {
       // Limit updates if we're rendering too frequently
       renderCount.current += 1;
-      if (renderCount.current > 20) {
+      if (renderCount.current > 10) { // Reduced from 20 to 10
         console.log('Too many render cycles in AdPreviewImage, limiting updates');
-        setTimeout(() => { renderCount.current = 0; }, 2000);
+        setTimeout(() => { renderCount.current = 0; }, 1000); // Reduced from 2000 to 1000ms
         return;
       }
       
@@ -90,7 +103,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         
         // If the position is (0,0), ensure the image is properly centered
         if (position.x === 0 && position.y === 0) {
-          // Let the component render first, then apply initial centering
           if (styleUpdateTimeoutRef.current) {
             window.clearTimeout(styleUpdateTimeoutRef.current);
           }
@@ -105,7 +117,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       
       if (onImageLoaded && !isUnmounted.current) {
         try {
-          onImageLoaded();
+          // Add small delay to ensure rendering is complete
+          setTimeout(() => {
+            if (!isUnmounted.current && onImageLoaded) {
+              onImageLoaded();
+            }
+          }, 10);
         } catch (callbackError) {
           console.error('Error in onImageLoaded callback:', callbackError);
         }
@@ -133,10 +150,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         // Update immediately
         updateImageStyle(position);
         
-        // And then again after a short delay to ensure proper rendering
-        styleUpdateTimeoutRef.current = window.setTimeout(() => {
-          if (!isUnmounted.current) updateImageStyle(position);
-        }, 50);
+        // Removed the second update for better performance
       }
     }
     
@@ -167,7 +181,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         
         styleUpdateTimeoutRef.current = window.setTimeout(() => {
           updateContainerSize();
-        }, 100);
+        }, 200); // Increased from 100ms to 200ms for less frequent updates
       });
       
       resizeObserver.observe(containerRef.current);
@@ -212,7 +226,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         pos;
       
       // Calculate dimensions that ensure the image completely covers the container
-      // Improved to ensure proper centering and scaling regardless of image dimensions
       const coverDimensions = calculateCoverDimensions(
         imgWidth,
         imgHeight,
@@ -233,7 +246,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         transition: fastMode ? 'none' : 'width 0.1s ease-out, height 0.1s ease-out, left 0.1s ease-out, top 0.1s ease-out',
         objectFit: 'cover',
         objectPosition: 'center',
-        willChange: 'left, top, width, height',
+        willChange: fastMode ? 'none' : 'left, top', // Reduce GPU load when in fast mode
         zIndex: 1,
       });
     } catch (err) {
@@ -255,14 +268,14 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   };
 
-  // Retry loading if image fails
+  // Retry loading if image fails, but limit retries
   const handleImageError = () => {
     if (isUnmounted.current) return;
     
     setError(true);
-    if (loadAttemptCount.current < 2 && imageUrl) {
+    if (loadAttemptCount.current < 1 && imageUrl) { // Reduced from 2 to 1 retry
       loadAttemptCount.current++;
-      console.warn(`Image load failed, retrying (${loadAttemptCount.current}/2)...`);
+      console.warn(`Image load failed, retrying (${loadAttemptCount.current}/1)...`);
       
       // Retry with a slight delay
       setTimeout(() => {

@@ -1,5 +1,6 @@
 
 import { AdPreviewCard } from "./ad-preview/AdPreviewCard";
+import React from "react";
 
 interface Position {
   x: number;
@@ -38,6 +39,20 @@ interface AdPreviewProps {
 }
 
 export function AdPreview(props: AdPreviewProps) {
-  // Always use the refactored component to ensure consistent rendering
-  return <AdPreviewCard {...props} />;
+  // Memoize the component to prevent unnecessary re-renders
+  return React.useMemo(() => {
+    return <AdPreviewCard {...props} />;
+  }, [
+    props.imageUrl,
+    props.width,
+    props.height,
+    props.headline,
+    props.description,
+    props.ctaText,
+    props.templateStyle,
+    props.currentIndex,
+    props.isGenerating,
+    // Note: Positions are intentionally not included in the dependency array 
+    // to avoid re-rendering when dragging, which would slow performance
+  ]);
 }

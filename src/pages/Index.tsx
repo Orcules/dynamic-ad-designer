@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useLayoutEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
 import AdEditor from "@/components/AdEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,6 +27,9 @@ const Index = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [hasFetchedInitial, setHasFetchedInitial] = useState(false);
   const [adsFetchComplete, setAdsFetchComplete] = useState(false);
+  
+  // Ref to track whether ads have been loaded
+  const adsLoadedRef = useRef(false);
 
   // Apply suppressDialogWarnings with useLayoutEffect, before rendering
   useLayoutEffect(() => {
@@ -55,9 +58,12 @@ const Index = () => {
       }
       
       // Fetch ads with a longer delay to ensure UI loads completely first
-      setTimeout(() => {
-        fetchGeneratedAds();
-      }, 500);
+      // Increased delay from 500ms to 1000ms
+      const timer = setTimeout(() => {
+        if (!adsLoadedRef.current) {
+          fetchGeneratedAds();
+        }
+      }, 1000);
 
       // Apply again after a short time, to catch dialogs created later
       const timer1 = setTimeout(() => {
@@ -82,6 +88,7 @@ const Index = () => {
         } catch (e) {
           console.error("Error in cleanup function:", e);
         }
+        clearTimeout(timer);
         clearTimeout(timer1);
         clearTimeout(timer2);
         document.documentElement.classList.remove('dark');
@@ -102,7 +109,7 @@ const Index = () => {
 
   // Optimized fetch function with smaller batches and delay
   const fetchGeneratedAds = useCallback(async () => {
-    if (isUpdating) return;
+    if (isUpdating || adsLoadedRef.current) return;
     
     try {
       setIsUpdating(true);
@@ -110,12 +117,12 @@ const Index = () => {
       
       Logger.info("Starting to fetch generated ads with optimized strategy...");
       
-      // Try with a reduced limit and shorter timeout first - reduced from 3 to 2
+      // Try with a reduced limit and shorter timeout first - further reduced to 1
       try {
         const { data: minimalData, error: minimalError } = await supabase
           .from('generated_ads')
           .select('id, name, image_url, preview_url, platform')
-          .limit(2)
+          .limit(1)
           .order('created_at', { ascending: false })
           .maybeSingle();
           
@@ -128,6 +135,8 @@ const Index = () => {
             Logger.info(`Got ${dataArray.length} ads with minimal query`);
             setGeneratedAds(dataArray);
             setHasFetchedInitial(true);
+            // Mark ads as loaded
+            adsLoadedRef.current = true;
           }
         }
       } catch (minimalErr) {
@@ -139,11 +148,11 @@ const Index = () => {
         try {
           Logger.info("Trying alternate storage-based approach for retrieving ads");
           
-          // List files from storage as a backup approach - reduced from 10 to 5 for better initial performance
+          // Further reduced from 5 to 3 for better initial performance
           const { data: storageFiles, error: storageError } = await supabase.storage
             .from('ad-images')
             .list('full-ads', {
-              limit: 5,
+              limit: 3,
               sortBy: { column: 'created_at', order: 'desc' }
             });
             
@@ -171,6 +180,8 @@ const Index = () => {
               Logger.info(`Retrieved ${storageBasedAds.length} ads from storage`);
               setGeneratedAds(storageBasedAds);
               setHasFetchedInitial(true);
+              // Mark ads as loaded
+              adsLoadedRef.current = true;
             }
           }
         } catch (storageErr) {
@@ -184,7 +195,7 @@ const Index = () => {
           const { data: simpleData, error: simpleError } = await supabase
             .from('generated_ads')
             .select('id, name, image_url, preview_url, platform')
-            .limit(3); // Reduced from 5 to 3
+            .limit(2); // Further reduced from 3 to 2
             
           if (simpleError) {
             throw simpleError;
@@ -194,11 +205,15 @@ const Index = () => {
             Logger.info(`Got ${simpleData.length} ads with simple query`);
             setGeneratedAds(simpleData);
             setHasFetchedInitial(true);
+            // Mark ads as loaded
+            adsLoadedRef.current = true;
           } else {
             // No data available
             Logger.info("No ad data found in any system");
             setGeneratedAds([]);
             setHasFetchedInitial(true);
+            // Mark ads as loaded even if empty
+            adsLoadedRef.current = true;
           }
         } catch (simpleErr) {
           Logger.error(`Simple fetch error: ${simpleErr instanceof Error ? simpleErr.message : String(simpleErr)}`);
