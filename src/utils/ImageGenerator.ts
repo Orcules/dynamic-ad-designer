@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -222,14 +223,14 @@ export class ImageGenerator {
       });
       
       console.log('Resetting text positions and hover effect');
-      resetEffect();
+      resetEffect(); // Now this is defined in this scope
       
       this.lastCaptureTime = performance.now();
       return canvas.toDataURL('image/png', 0.9);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      resetEffect();
+      resetEffect(); // Now this is defined in this scope
       
       return this.fallbackCapture();
     }
