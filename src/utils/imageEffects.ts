@@ -29,7 +29,7 @@ export const applyImageEffect = async (
   return canvas.toDataURL('image/jpeg', 0.95);
 };
 
-// Add a new function to ensure page flip element is included in the capture
+// Add a new function to ensure page flip and navigation elements are included in the capture
 export const ensureElementsVisible = (container: HTMLElement): void => {
   // Find all page flip elements and make sure they're visible
   const pageFlips = container.querySelectorAll('.page-flip');
@@ -38,5 +38,14 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.opacity = '1';
     element.style.visibility = 'visible';
     element.style.zIndex = '10';
+  });
+  
+  // Also ensure navigation arrows are visible during capture
+  const navigationButtons = container.querySelectorAll('.absolute.inset-0.flex.items-center.justify-between button');
+  navigationButtons.forEach(button => {
+    const element = button as HTMLElement;
+    element.style.opacity = '1';
+    element.style.visibility = 'visible';
+    element.style.pointerEvents = 'none'; // Ensure they don't interfere with capture
   });
 }

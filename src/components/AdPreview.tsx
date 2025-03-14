@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -90,6 +89,7 @@ export function AdPreview({
   
   const isLuxuryJewelry = templateStyle === 'luxury-jewelry';
   const luxuryBgColor = "#c5022e";
+  const showPageFlip = templateStyle !== 'modern' && templateStyle !== 'overlay-bottom-dark';
 
   useEffect(() => {
     renderStartTime.current = performance.now();
@@ -298,12 +298,13 @@ export function AdPreview({
               totalImages={imageUrls.length}
             />
           )}
-          {/* Add PageFlip component */}
-          <PageFlip 
-            position="bottom-right" 
-            size="medium" 
-            color="#f8e9b0" 
-          />
+          {showPageFlip && (
+            <PageFlip 
+              position="bottom-right" 
+              size="medium" 
+              color="#f8e9b0" 
+            />
+          )}
         </div>
       </div>
     );
@@ -363,12 +364,13 @@ export function AdPreview({
                 totalImages={imageUrls.length}
               />
             )}
-            {/* Add PageFlip component */}
-            <PageFlip 
-              position="bottom-right" 
-              size="medium" 
-              color="#f3f3f3" 
-            />
+            {showPageFlip && (
+              <PageFlip 
+                position="bottom-right" 
+                size="medium" 
+                color="#f3f3f3" 
+              />
+            )}
           </div>
         </div>
       </div>
