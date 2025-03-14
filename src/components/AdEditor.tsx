@@ -10,6 +10,7 @@ import { validateAdSubmission } from "@/utils/adValidation";
 import { useAdGeneration } from "@/hooks/useAdGeneration";
 import { ImageGenerator } from "@/utils/ImageGenerator";
 import { getDimensions } from "@/utils/adDimensions";
+import { useAdImageHandler } from "@/hooks/useAdImageHandler";
 
 interface Template {
   id: string;
@@ -47,12 +48,8 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
   
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Use our new hook for ad generation
+  // Use our new hook for image handling
   const {
-    isGenerating,
-    currentProcessingIndex,
-    processingStatus,
-    imageGeneratorRef,
     selectedImages,
     imageUrls,
     currentPreviewIndex,
@@ -62,10 +59,28 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
     handleNextPreview,
     getPreloadedImage,
     confirmImageChanged,
+  } = useAdImageHandler({
+    onImageChange: (urls) => {
+      // This will be handled by the useAdGeneration hook
+    },
+    onCurrentIndexChange: (index) => {
+      // This will be handled by the useAdGeneration hook
+    }
+  });
+
+  // Use our hook for ad generation
+  const {
+    isGenerating,
+    currentProcessingIndex,
+    processingStatus,
+    imageGeneratorRef,
     generateAds
   } = useAdGeneration({
     adData,
-    onAdGenerated
+    onAdGenerated,
+    selectedImages,
+    imageUrls,
+    currentPreviewIndex
   });
 
   // Initialize the image generator when the component mounts
