@@ -121,6 +121,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
+    // Additional scale factor to ensure no black borders (25% extra)
+    const extraScaleFactor = 1.25;
+    
     // Use cover instead of contain to ensure the image fills the container without black margins
     if (imageAspect > containerAspect) {
       // Image is wider than container - scale to fit height
@@ -132,8 +135,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height = containerWidth / imageAspect;
     }
     
+    // Apply extra scaling
+    width *= extraScaleFactor;
+    height *= extraScaleFactor;
+    
+    // Adjust transform to center the scaled image
+    const transformX = pos.x - ((width - containerWidth) / 2);
+    const transformY = pos.y - ((height - containerHeight) / 2);
+    
     return {
-      transform: `translate(${pos.x}px, ${pos.y}px)`,
+      transform: `translate(${transformX}px, ${transformY}px)`,
       width: `${width}px`,
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',

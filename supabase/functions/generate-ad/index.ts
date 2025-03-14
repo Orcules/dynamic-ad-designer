@@ -175,21 +175,25 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = imagePosition.x;
-    let destY = imagePosition.y;
     let destWidth, destHeight;
-
-    // Match the exact positioning and scaling from the AdPreviewImage component
-    // Changed from 'contain' to 'cover' approach to fill the canvas without black edges
+    
+    // Ensure we use 'cover' approach with extra scaling to eliminate any black borders
+    // Extra scale factor to ensure complete coverage (25% larger than necessary)
+    const extraScaleFactor = 1.25;
+    
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to fit height but may crop sides
+      // Image is wider than canvas - scale to fit height and crop sides
       destHeight = data.height;
-      destWidth = data.height * imageAspect;
+      destWidth = data.height * imageAspect * extraScaleFactor; // Scale width by extra factor
     } else {
-      // Image is taller than canvas - scale to fit width but may crop top/bottom
+      // Image is taller than canvas - scale to fit width and crop top/bottom
       destWidth = data.width;
-      destHeight = data.width / imageAspect;
+      destHeight = data.width / imageAspect * extraScaleFactor; // Scale height by extra factor
     }
+    
+    // Calculate centering position with imagePosition offset
+    const destX = ((data.width - destWidth) / 2) + (imagePosition.x || 0);
+    const destY = ((data.height - destHeight) / 2) + (imagePosition.y || 0);
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
     ctx.imageSmoothingEnabled = true;
@@ -202,7 +206,8 @@ serve(async (req) => {
     console.log(`[${uploadId}] Image dimensions:`, {
       source: { width: sourceWidth, height: sourceHeight },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
-      aspect: { image: imageAspect, canvas: canvasAspect }
+      aspect: { image: imageAspect, canvas: canvasAspect },
+      extraScaleFactor
     });
     
     // For luxury jewelry template, draw with rounded corners
@@ -224,19 +229,23 @@ serve(async (req) => {
         drawHeight = drawWidth / imageAspect;
       }
       
-      const drawX = padding;
+      // Apply extra scale to eliminate borders (multiply by 1.25)
+      drawWidth *= 1.25;
+      drawHeight *= 1.25;
+      
+      const drawX = padding - (drawWidth * 0.125); // Adjust for the extra scale
       const drawY = (data.height - drawHeight) / 2;
       
       // Create a temporary canvas for the image
-      const tempCanvas = createCanvas(destWidth, destHeight);
+      const tempCanvas = createCanvas(drawWidth, drawHeight);
       const tempCtx = tempCanvas.getContext('2d');
       
       if (tempCtx) {
-        // Draw the image to the temporary canvas
+        // Draw the image to the temporary canvas, maintaining aspect ratio
         tempCtx.drawImage(
           backgroundImage, 
           sourceX, sourceY, sourceWidth, sourceHeight, 
-          0, 0, destWidth, destHeight
+          0, 0, drawWidth, drawHeight
         );
         
         // Now draw the image with rounded corners to the main canvas
@@ -244,22 +253,22 @@ serve(async (req) => {
         
         // Create rounded rectangle path
         ctx.beginPath();
-        ctx.moveTo(drawX + cornerRadius, drawY);
-        ctx.lineTo(drawX + drawWidth - cornerRadius, drawY);
-        ctx.arcTo(drawX + drawWidth, drawY, drawX + drawWidth, drawY + cornerRadius, cornerRadius);
-        ctx.lineTo(drawX + drawWidth, drawY + drawHeight - cornerRadius);
-        ctx.arcTo(drawX + drawWidth, drawY + drawHeight, drawX + drawWidth - cornerRadius, drawY + drawHeight, cornerRadius);
-        ctx.lineTo(drawX + cornerRadius, drawY + drawHeight);
-        ctx.arcTo(drawX, drawY + drawHeight, drawX, drawY + drawHeight - cornerRadius, cornerRadius);
-        ctx.lineTo(drawX, drawY + cornerRadius);
-        ctx.arcTo(drawX, drawY, drawX + cornerRadius, drawY, cornerRadius);
+        ctx.moveTo(padding + cornerRadius, padding);
+        ctx.lineTo(padding + drawWidth / 1.25 - cornerRadius, padding);
+        ctx.arcTo(padding + drawWidth / 1.25, padding, padding + drawWidth / 1.25, padding + cornerRadius, cornerRadius);
+        ctx.lineTo(padding + drawWidth / 1.25, padding + drawHeight / 1.25 - cornerRadius);
+        ctx.arcTo(padding + drawWidth / 1.25, padding + drawHeight / 1.25, padding + drawWidth / 1.25 - cornerRadius, padding + drawHeight / 1.25, cornerRadius);
+        ctx.lineTo(padding + cornerRadius, padding + drawHeight / 1.25);
+        ctx.arcTo(padding, padding + drawHeight / 1.25, padding, padding + drawHeight / 1.25 - cornerRadius, cornerRadius);
+        ctx.lineTo(padding, padding + cornerRadius);
+        ctx.arcTo(padding, padding, padding + cornerRadius, padding, cornerRadius);
         ctx.closePath();
         
         // Clip to the rounded rectangle and draw the image
         ctx.clip();
         ctx.drawImage(
           tempCanvas, 
-          0, 0, destWidth, destHeight,
+          0, 0, drawWidth, drawHeight,
           drawX, drawY, drawWidth, drawHeight
         );
         
@@ -268,15 +277,11 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, center the image and fill the container
-      const drawX = (data.width - destWidth) / 2 + imagePosition.x;
-      const drawY = (data.height - destHeight) / 2 + imagePosition.y;
-      
-      // Draw the image with proper positioning and preserved aspect ratio
+      // For standard templates, draw the image with proper positioning and preserved aspect ratio
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 
-        drawX, drawY, destWidth, destHeight
+        destX, destY, destWidth, destHeight
       );
     }
 
