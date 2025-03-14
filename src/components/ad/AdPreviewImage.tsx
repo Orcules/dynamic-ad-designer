@@ -119,17 +119,31 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    let width, height;
+    let width, height, scale = 1;
     
-    // Always fill the container while maintaining aspect ratio
+    // Use a scale approach to ensure image always covers the container completely
     if (imageAspect > containerAspect) {
-      // Image is wider than container - fit width first
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    } else {
-      // Image is taller than container - fit height first
+      // Image is wider than container - scale based on height
       height = containerHeight;
       width = containerHeight * imageAspect;
+      
+      // If width is still smaller than container, scale up to fully cover
+      if (width < containerWidth) {
+        scale = containerWidth / width;
+        width *= scale;
+        height *= scale;
+      }
+    } else {
+      // Image is taller than container - scale based on width
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+      
+      // If height is still smaller than container, scale up to fully cover
+      if (height < containerHeight) {
+        scale = containerHeight / height;
+        width *= scale;
+        height *= scale;
+      }
     }
     
     // Calculate position to center the image
@@ -146,7 +160,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'cover' as ObjectFit, // Use 'cover' to fill the container
+      objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
       objectPosition: '50% 50%',
     };
@@ -197,7 +211,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'cover' as ObjectFit, // Changed from 'contain' to 'cover'
+    objectFit: 'cover' as ObjectFit,
     objectPosition: '50% 50%',
     backgroundColor: '#333',
     willChange: 'transform'

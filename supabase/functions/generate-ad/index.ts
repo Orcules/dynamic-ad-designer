@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -156,18 +157,37 @@ serve(async (req) => {
     let sourceHeight = backgroundImage.height;
     let destX = 0;
     let destY = 0;
-    let destWidth, destHeight;
+    let destWidth, destHeight, scale = 1;
 
+    // Use the improved scaling logic that guarantees full coverage
     if (imageAspect > canvasAspect) {
-      destWidth = data.width;
-      destHeight = data.width / imageAspect;
-      destX = 0 + imagePosition.x;
-      destY = (data.height - destHeight) / 2 + imagePosition.y;
-    } else {
+      // Image is wider than container - scale based on height
       destHeight = data.height;
       destWidth = data.height * imageAspect;
+      
+      // If width is still smaller than canvas width, scale up
+      if (destWidth < data.width) {
+        scale = data.width / destWidth;
+        destWidth *= scale;
+        destHeight *= scale;
+      }
+      
       destX = (data.width - destWidth) / 2 + imagePosition.x;
-      destY = 0 + imagePosition.y;
+      destY = (data.height - destHeight) / 2 + imagePosition.y;
+    } else {
+      // Image is taller than container - scale based on width
+      destWidth = data.width;
+      destHeight = data.width / imageAspect;
+      
+      // If height is still smaller than canvas height, scale up
+      if (destHeight < data.height) {
+        scale = data.height / destHeight;
+        destWidth *= scale;
+        destHeight *= scale;
+      }
+      
+      destX = (data.width - destWidth) / 2 + imagePosition.x;
+      destY = (data.height - destHeight) / 2 + imagePosition.y;
     }
     
     ctx.imageSmoothingEnabled = true;
@@ -178,7 +198,8 @@ serve(async (req) => {
     console.log(`[${uploadId}] Image dimensions:`, {
       source: { width: sourceWidth, height: sourceHeight },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
-      aspect: { image: imageAspect, canvas: canvasAspect }
+      aspect: { image: imageAspect, canvas: canvasAspect },
+      scale: scale
     });
     
     if (isLuxuryJewelry) {
