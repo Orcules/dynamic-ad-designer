@@ -13,7 +13,7 @@ export class AdGenerationService {
   static async generateAd(adData: any, imageBlob: Blob): Promise<GeneratedAdResult> {
     const formData = new FormData();
     
-    // Create a proper file from the blob
+    // בדיקה שה-blob הוא תקין ויצירת קובץ ממנו
     const imageFile = new File([imageBlob], 'image.png', { type: 'image/png' });
     formData.append('image', imageFile);
     
@@ -35,30 +35,23 @@ export class AdGenerationService {
         console.warn('Failed to parse image metadata:', error);
       }
     }
-
-    // Calculate dimensions based on platform
-    const dimensions = getDimensions(adData.platform);
     
-    // Add crop information to ensure correct aspect ratio
-    const cropData = {
+    formData.append('data', JSON.stringify({
       ...adData,
-      ...dimensions,
+      ...getDimensions(adData.platform),
       overlayOpacity: 0.4,
       scaleFactor,
-      elementDimensions,
-      maintainAspectRatio: true, // Flag to ensure the backend maintains aspect ratio
-    };
-    
-    formData.append('data', JSON.stringify(cropData));
+      elementDimensions
+    }));
 
     console.log('Sending to edge function:', {
       imageType: imageFile.type,
       imageSize: imageFile.size,
-      data: cropData,
+      data: adData,
       scaleFactor
     });
 
-    // Call the serverless function to generate the ad
+    // Fix: Pass a single options object to the invoke method
     const { data: generatedAd, error: generateError } = await supabase.functions
       .invoke('generate-ad', {
         body: formData

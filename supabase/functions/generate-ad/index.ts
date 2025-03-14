@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -174,33 +175,20 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = 0;
-    let destY = 0;
+    let destX = imagePosition.x;
+    let destY = imagePosition.y;
     let destWidth, destHeight;
 
-    // Calculate crop area to maintain aspect ratio without stretching
+    // Match the exact positioning and scaling from the AdPreviewImage component
+    // Changed from 'contain' to 'cover' approach to fill the canvas without black edges
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - crop width
-      sourceHeight = backgroundImage.height;
-      sourceWidth = backgroundImage.height * canvasAspect;
-      sourceX = (backgroundImage.width - sourceWidth) / 2;
-      sourceY = 0;
-      
-      destWidth = data.width;
+      // Image is wider than canvas - scale to fit height but may crop sides
       destHeight = data.height;
-      destX = imagePosition.x;
-      destY = imagePosition.y;
+      destWidth = data.height * imageAspect;
     } else {
-      // Image is taller than canvas - crop height
-      sourceWidth = backgroundImage.width;
-      sourceHeight = backgroundImage.width / canvasAspect;
-      sourceX = 0;
-      sourceY = (backgroundImage.height - sourceHeight) / 2;
-      
+      // Image is taller than canvas - scale to fit width but may crop top/bottom
       destWidth = data.width;
-      destHeight = data.height;
-      destX = imagePosition.x;
-      destY = imagePosition.y;
+      destHeight = data.width / imageAspect;
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -212,8 +200,8 @@ serve(async (req) => {
     
     // Log positioning information for debugging
     console.log(`[${uploadId}] Image dimensions:`, {
-      source: { x: sourceX, y: sourceY, width: sourceWidth, height: sourceHeight },
-      dest: { x: destX, y: destY, width: destWidth, height: destHeight },
+      source: { width: sourceWidth, height: sourceHeight },
+      dest: { width: destWidth, height: destHeight, x: destX, y: destY },
       aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
@@ -280,11 +268,15 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, draw the properly cropped image
+      // For standard templates, center the image and fill the container
+      const drawX = (data.width - destWidth) / 2 + imagePosition.x;
+      const drawY = (data.height - destHeight) / 2 + imagePosition.y;
+      
+      // Draw the image with proper positioning and preserved aspect ratio
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 
-        destX, destY, destWidth, destHeight
+        drawX, drawY, destWidth, destHeight
       );
     }
 

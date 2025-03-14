@@ -1,6 +1,5 @@
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
-import { calculateOptimalCrop, cropImage } from './imageCropper';
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
@@ -147,10 +146,6 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      // Set explicit width and height for better rendering
-      const canvasWidth = rect.width * this.scaleFactor;
-      const canvasHeight = rect.height * this.scaleFactor;
-
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: this.scaleFactor,
@@ -163,8 +158,6 @@ export class ImageGenerator {
         y: 0,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: canvasWidth,
-        windowHeight: canvasHeight,
         imageTimeout: 0,
         onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
@@ -182,13 +175,6 @@ export class ImageGenerator {
               // Silently fail for cross-origin stylesheets
             }
           });
-
-          // Ensure clone has the correct dimensions
-          const clonedElement = documentClone.querySelector(this.previewElement?.tagName || '') as HTMLElement;
-          if (clonedElement) {
-            clonedElement.style.width = `${rect.width}px`;
-            clonedElement.style.height = `${rect.height}px`;
-          }
         }
       });
 
@@ -207,7 +193,7 @@ export class ImageGenerator {
       
       this.lastCaptureTime = performance.now();
       
-      const dataUrl = canvas.toDataURL('image/png', 0.95);
+      const dataUrl = canvas.toDataURL('image/png', 0.9);
       const metadata = JSON.stringify(elementDimensions);
       const encodedMetadata = btoa(metadata);
       return `${dataUrl}#metadata=${encodedMetadata}`;
