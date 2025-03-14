@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -156,7 +157,7 @@ serve(async (req) => {
     let sourceHeight = backgroundImage.height;
     let destX = 0;
     let destY = 0;
-    let destWidth, destHeight, scale = 1;
+    let destWidth, destHeight;
 
     if (imageAspect > canvasAspect) {
       destHeight = data.height;
@@ -166,7 +167,8 @@ serve(async (req) => {
       destHeight = data.width / imageAspect;
     }
     
-    scale = 1.05;
+    // Apply a stronger scaling factor (10%) to ensure no black borders
+    const scale = 1.1;
     destWidth *= scale;
     destHeight *= scale;
     
@@ -196,6 +198,9 @@ serve(async (req) => {
       } else {
         drawHeight = drawWidth / imageAspect;
       }
+      
+      // Apply additional scaling for the luxury template
+      drawHeight *= 1.1;
       
       const drawX = padding;
       const drawY = Math.max(padding, (data.height - drawHeight) / 2);
