@@ -52,29 +52,40 @@ export const PageFlip: React.FC<PageFlipProps> = ({
         transformOrigin: posStyle.origin,
       }}
     >
+      {/* Triangle fold effect */}
       <div
         className="absolute"
         style={{
-          width,
-          height,
-          background: color,
-          boxShadow: '0 0 10px rgba(0,0,0,0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          width: 0,
+          height: 0,
+          borderStyle: 'solid',
+          borderWidth: position === 'bottom-right' ? `0 0 ${height} ${width}` : 
+                      position === 'top-right' ? `${height} 0 0 ${width}` :
+                      position === 'bottom-left' ? `0 ${width} ${height} 0` :
+                      `${height} ${width} 0 0`,
+          borderColor: position === 'bottom-right' ? `transparent transparent ${color} transparent` :
+                      position === 'top-right' ? `${color} transparent transparent transparent` :
+                      position === 'bottom-left' ? `transparent transparent ${color} transparent` :
+                      `${color} transparent transparent transparent`,
+          boxShadow: '0 0 5px rgba(0,0,0,0.2)',
         }}
-      >
-        {/* You can add content inside the page if needed */}
-      </div>
+      />
+      
+      {/* Fold shadow line */}
       <div
         className="absolute pointer-events-none"
         style={{
-          width: foldSize,
-          height: foldSize,
-          bottom: '0',
-          right: '0',
-          background: 'linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.1) 50%)',
-          transformOrigin: 'bottom right',
+          width: position === 'bottom-right' || position === 'top-right' ? foldSize : width,
+          height: position === 'bottom-right' || position === 'top-right' ? height : foldSize,
+          bottom: position === 'bottom-right' || position === 'bottom-left' ? '0' : 'auto',
+          right: position === 'bottom-right' || position === 'top-right' ? '0' : 'auto',
+          top: position === 'top-right' || position === 'top-left' ? '0' : 'auto',
+          left: position === 'bottom-left' || position === 'top-left' ? '0' : 'auto',
+          background: position === 'bottom-right' ? 'linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.1) 50%)' :
+                    position === 'top-right' ? 'linear-gradient(45deg, transparent 50%, rgba(0,0,0,0.1) 50%)' :
+                    position === 'bottom-left' ? 'linear-gradient(225deg, transparent 50%, rgba(0,0,0,0.1) 50%)' :
+                    'linear-gradient(315deg, transparent 50%, rgba(0,0,0,0.1) 50%)',
+          transformOrigin: posStyle.origin,
           zIndex: 2,
         }}
       />

@@ -410,10 +410,10 @@ serve(async (req) => {
       // Draw the fold
       ctx.save();
       
-      // Bottom right corner folded page
+      // Bottom right corner folded page - use a triangle instead of rectangle
       ctx.fillStyle = isLuxuryJewelry ? '#f8e9b0' : '#f3f3f3';
       
-      // Draw folded corner rectangle
+      // Draw folded corner triangle
       ctx.beginPath();
       ctx.moveTo(data.width - cornerSize, data.height);
       ctx.lineTo(data.width, data.height - cornerSize);
@@ -421,11 +421,19 @@ serve(async (req) => {
       ctx.closePath();
       ctx.fill();
       
-      // Draw fold shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      // Draw fold shadow line
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(data.width - foldSize, data.height);
-      ctx.lineTo(data.width, data.height - foldSize);
+      ctx.moveTo(data.width - cornerSize, data.height);
+      ctx.lineTo(data.width, data.height - cornerSize);
+      ctx.stroke();
+      
+      // Add subtle shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.05)';
+      ctx.beginPath();
+      ctx.moveTo(data.width - cornerSize/5, data.height);
+      ctx.lineTo(data.width, data.height - cornerSize/5);
       ctx.lineTo(data.width, data.height);
       ctx.closePath();
       ctx.fill();
