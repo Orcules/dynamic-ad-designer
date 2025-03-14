@@ -121,14 +121,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
+    // Always fill the container while maintaining aspect ratio
     if (imageAspect > containerAspect) {
-      // Image is wider than container - fit height first and center horizontally
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - fit width first and center vertically
+      // Image is wider than container - fit width first
       width = containerWidth;
       height = containerWidth / imageAspect;
+    } else {
+      // Image is taller than container - fit height first
+      height = containerHeight;
+      width = containerHeight * imageAspect;
     }
     
     // Calculate position to center the image
@@ -145,7 +146,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'contain' as ObjectFit,
+      objectFit: 'cover' as ObjectFit, // Use 'cover' to fill the container
       willChange: 'transform',
       objectPosition: '50% 50%',
     };
@@ -196,7 +197,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'contain' as ObjectFit,
+    objectFit: 'cover' as ObjectFit, // Changed from 'contain' to 'cover'
     objectPosition: '50% 50%',
     backgroundColor: '#333',
     willChange: 'transform'

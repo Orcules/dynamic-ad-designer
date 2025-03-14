@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -159,19 +158,16 @@ serve(async (req) => {
     let destY = 0;
     let destWidth, destHeight;
 
-    // Use the same scaling logic as in the AdPreviewImage component
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - fit height first and center horizontally
-      destHeight = data.height;
-      destWidth = data.height * imageAspect;
-      destX = (data.width - destWidth) / 2 + imagePosition.x;
-      destY = 0 + imagePosition.y;
-    } else {
-      // Image is taller than canvas - fit width first and center vertically
       destWidth = data.width;
       destHeight = data.width / imageAspect;
       destX = 0 + imagePosition.x;
       destY = (data.height - destHeight) / 2 + imagePosition.y;
+    } else {
+      destHeight = data.height;
+      destWidth = data.height * imageAspect;
+      destX = (data.width - destWidth) / 2 + imagePosition.x;
+      destY = 0 + imagePosition.y;
     }
     
     ctx.imageSmoothingEnabled = true;
