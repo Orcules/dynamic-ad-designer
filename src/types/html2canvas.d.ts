@@ -18,7 +18,4 @@ declare module 'html2canvas' {
     imageTimeout?: number;
     removeContainer?: boolean;
   }
-  
-  function html2canvas(element: HTMLElement, options?: Options): Promise<HTMLCanvasElement>;
-  export = html2canvas;
 }

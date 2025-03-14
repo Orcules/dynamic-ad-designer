@@ -1,4 +1,3 @@
-
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import { Slider } from "./ui/slider";
@@ -341,131 +340,30 @@ export function TemplateStyleSelector({
   const handleInputChange = useCallback((handler: (value: string) => void, value: string) => {
     handler(value);
   }, []);
-  
-  // Function to get styles for a template button based on its color scheme
-  const getTemplateButtonStyles = (templateId: string) => {
-    if (!templateColorSchemes[templateId]) return {};
-    
-    const scheme = templateColorSchemes[templateId];
-    
-    // Calculate contrasting border color for better visibility
-    const contrastBorder = getContrastColor(scheme.overlayColor);
-    
-    // Enhance text visibility with higher contrast
-    const enhancedTextColor = getContrastingTextColor(scheme.overlayColor);
-    
-    return {
-      borderColor: contrastBorder,
-      color: enhancedTextColor,
-      backgroundColor: templateId === value ? scheme.overlayColor : 'transparent',
-      hoverTextColor: scheme.textColor,
-      hoverBgColor: `${scheme.overlayColor}80`, // 50% opacity for better hover visibility
-      displayColor: scheme.ctaColor,
-    };
-  };
-  
-  // Helper to get contrasting color
-  const getContrastColor = (hexColor: string) => {
-    // Enhanced border contrast calculation
-    try {
-      // Make borders more visible by increasing color intensity
-      if (hexColor.startsWith('#')) {
-        // For dark colors, use a lighter contrasting border
-        if (isColorDark(hexColor)) {
-          return lightenColor(hexColor, 40);
-        } 
-        // For light colors, use a darker contrasting border
-        return darkenColor(hexColor, 40);
-      }
-    } catch (e) {
-      console.error("Error calculating contrast color:", e);
-    }
-    return hexColor;
-  };
-  
-  // Helper to determine if a color is dark
-  const isColorDark = (hexColor: string) => {
-    const r = parseInt(hexColor.slice(1, 3), 16);
-    const g = parseInt(hexColor.slice(3, 5), 16);
-    const b = parseInt(hexColor.slice(5, 7), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness < 128;
-  };
-  
-  // Helper to get contrasting text color for better readability
-  const getContrastingTextColor = (bgColor: string) => {
-    return isColorDark(bgColor) ? '#FFFFFF' : '#000000';
-  };
-  
-  // Helper to lighten a color
-  const lightenColor = (hexColor: string, amount: number) => {
-    return adjustColor(hexColor, amount);
-  };
-  
-  // Helper to darken a color
-  const darkenColor = (hexColor: string, amount: number) => {
-    return adjustColor(hexColor, -amount);
-  };
-  
-  // Helper to adjust a color's brightness
-  const adjustColor = (hexColor: string, amount: number) => {
-    try {
-      const r = Math.max(0, Math.min(255, parseInt(hexColor.slice(1, 3), 16) + amount));
-      const g = Math.max(0, Math.min(255, parseInt(hexColor.slice(3, 5), 16) + amount));
-      const b = Math.max(0, Math.min(255, parseInt(hexColor.slice(5, 7), 16) + amount));
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    } catch (e) {
-      console.error("Error adjusting color:", e);
-      return hexColor;
-    }
-  };
 
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Template Style</Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1">
-          {templates.map((template) => {
-            const styles = getTemplateButtonStyles(template.id);
-            
-            // Use a more visible indicator for the selected button
-            const isSelected = template.id === value;
-            
-            return (
-              <Button
-                key={template.id}
-                type="button"
-                variant={isSelected ? "default" : "outline"}
-                className={cn(
-                  "flex justify-between items-center w-full relative",
-                  // Add stronger border and improved visibility
-                  "border-2 hover:border-opacity-100 transition-all duration-200",
-                  // Apply text shadow for better text visibility
-                  "text-shadow-sm",
-                  isSelected && "ring-2 ring-offset-1"
-                )}
-                onClick={() => handleSelect(template.id)}
-                style={{
-                  // Apply direct styles for better visibility
-                  borderColor: styles.borderColor,
-                  color: isSelected ? styles.color : styles.color,
-                  backgroundColor: isSelected ? styles.backgroundColor : 'rgba(0,0,0,0.1)',
-                  textShadow: isColorDark(styles.backgroundColor) ? '0 0 2px rgba(0,0,0,0.8)' : '0 0 2px rgba(255,255,255,0.8)',
-                }}
-              >
-                <span className="truncate mr-2 font-medium">
-                  {template.label}
-                </span>
-                {isSelected && <Check className="h-4 w-4" />}
-                
-                {/* Add color indicator dot for better theme color visibility */}
-                <div 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-sm"
-                  style={{ backgroundColor: styles.displayColor }}
-                ></div>
-              </Button>
-            );
-          })}
+          {templates.map((template) => (
+            <Button
+              key={template.id}
+              type="button"
+              variant={template.id === value ? "default" : "outline"}
+              className={cn(
+                "flex justify-between items-center w-full",
+                template.id === "luxury-jewelry" && "border-[#f8e9b0] text-[#f8e9b0] hover:text-[#f8e9b0] hover:bg-[#c5022e]/20",
+                template.id === value && template.id === "luxury-jewelry" && "bg-[#c5022e] text-[#f8e9b0]"
+              )}
+              onClick={() => handleSelect(template.id)}
+            >
+              <span className="truncate mr-2">
+                {template.label}
+              </span>
+              {template.id === value && <Check className="h-4 w-4" />}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -574,4 +472,3 @@ export function TemplateStyleSelector({
     </div>
   );
 }
-

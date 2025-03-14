@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -45,7 +44,6 @@ interface AdPreviewProps {
   onImageLoaded?: () => void;
   fastRenderMode?: boolean;
   preloadedImage?: HTMLImageElement | null;
-  isGenerating?: boolean;
 }
 
 export function AdPreview({ 
@@ -75,11 +73,9 @@ export function AdPreview({
   language = "en",
   onImageLoaded,
   fastRenderMode = false,
-  preloadedImage = null,
-  isGenerating = false
+  preloadedImage = null
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
   const imageGenerator = useRef<ImageGenerator>();
@@ -241,13 +237,13 @@ export function AdPreview({
   });
 
   const handlePrevious = () => {
-    if (onPrevious && typeof onPrevious === 'function' && !isGenerating) {
+    if (onPrevious && typeof onPrevious === 'function') {
       onPrevious();
     }
   };
 
   const handleNext = () => {
-    if (onNext && typeof onNext === 'function' && !isGenerating) {
+    if (onNext && typeof onNext === 'function') {
       onNext();
     }
   };
@@ -255,7 +251,7 @@ export function AdPreview({
   const renderLuxuryJewelryTemplate = () => {
     return (
       <div 
-        className="ad-content relative overflow-hidden group"
+        className="ad-content relative overflow-hidden"
         style={{
           aspectRatio: `${width} / ${height}`,
           width: '100%',
@@ -264,8 +260,6 @@ export function AdPreview({
           backgroundSize: "40px 40px",
         }}
         dir={isRTL ? "rtl" : "ltr"}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
       >
         <div className="relative w-full h-full p-6">
           <div className="absolute inset-0 m-auto w-[80%] h-[50%] rounded-[2rem] overflow-hidden border-4 border-[#f8e9b0] shadow-lg">
@@ -294,17 +288,15 @@ export function AdPreview({
             showCtaArrow={showCtaArrow}
             isRTL={isRTL}
           />
+          {imageUrls.length > 1 && (
+            <AdNavigationControls
+              onPrevious={handlePrevious}
+              onNext={handleNext}
+              currentIndex={currentIndex}
+              totalImages={imageUrls.length}
+            />
+          )}
         </div>
-        
-        {imageUrls.length > 1 && (
-          <AdNavigationControls
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            currentIndex={currentIndex}
-            totalImages={imageUrls.length}
-            disabled={isGenerating}
-          />
-        )}
       </div>
     );
   };
@@ -312,14 +304,12 @@ export function AdPreview({
   const renderStandardTemplate = () => {
     return (
       <div 
-        className="ad-content relative overflow-hidden group bg-black"
+        className="ad-content relative overflow-hidden bg-black"
         style={{
           aspectRatio: `${width} / ${height}`,
           width: '100%',
         }}
         dir={isRTL ? "rtl" : "ltr"}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
       >
         <div className={cn(
           "relative w-full h-full",
@@ -357,17 +347,15 @@ export function AdPreview({
               showCtaArrow={showCtaArrow}
               isRTL={isRTL}
             />
+            {imageUrls.length > 1 && (
+              <AdNavigationControls
+                onPrevious={handlePrevious}
+                onNext={handleNext}
+                currentIndex={currentIndex}
+                totalImages={imageUrls.length}
+              />
+            )}
           </div>
-          
-          {imageUrls.length > 1 && (
-            <AdNavigationControls
-              onPrevious={handlePrevious}
-              onNext={handleNext}
-              currentIndex={currentIndex}
-              totalImages={imageUrls.length}
-              disabled={isGenerating}
-            />
-          )}
         </div>
       </div>
     );
@@ -386,7 +374,7 @@ export function AdPreview({
           size="sm" 
           onClick={handleDownload}
           className="flex items-center gap-2"
-          disabled={isCapturing || isGenerating}
+          disabled={isCapturing}
         >
           <Download className="h-4 w-4" />
           {isCapturing ? 'Generating...' : 'Download Preview'}

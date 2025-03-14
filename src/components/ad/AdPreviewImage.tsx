@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { calculateCoverDimensions } from '@/utils/imageEffects';
 
 interface Position {
   x: number;
@@ -35,9 +34,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
-  const loadStartTime = useRef<number>(0);
-  const previousImageUrl = useRef<string | undefined>(undefined);
-  const forceUpdateFlag = useRef<boolean>(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -67,15 +63,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   useEffect(() => {
     renderStartTime.current = performance.now();
     
-    if (imageUrl && (imageUrl !== currentImageUrl || forceUpdateFlag.current)) {
-      forceUpdateFlag.current = false;
-      
-      if (previousImageUrl.current && previousImageUrl.current !== imageUrl) {
-        console.log(`Image URL changing from "${previousImageUrl.current.substring(0, 50)}..." to "${imageUrl.substring(0, 50)}..."`);
-        loadStartTime.current = performance.now();
-      }
-      
-      previousImageUrl.current = imageUrl;
+    if (imageUrl && imageUrl !== currentImageUrl) {
+      console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
       
       const cachedImg = imageCache.current.get(imageUrl) || preloadedImage;
       
@@ -88,31 +77,14 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
-          const coverDimensions = calculateCoverDimensions(
-            cachedImg.naturalWidth,
+          const newStyle = calculateStyleFromDimensions(
+            cachedImg.naturalWidth, 
             cachedImg.naturalHeight,
             containerRect.width,
             containerRect.height,
-            position.x,
-            position.y
+            position,
+            fastMode
           );
-          
-          const newStyle = {
-            width: `${coverDimensions.width}px`,
-            height: `${coverDimensions.height}px`,
-            position: 'absolute' as const,
-            left: `${coverDimensions.x}px`,
-            top: `${coverDimensions.y}px`,
-            transform: 'none',
-            transition: fastMode ? 'none' : 'all 0.1s ease-out',
-            objectFit: 'cover' as const,
-            objectPosition: 'center',
-            willChange: 'left, top',
-            zIndex: 1,
-            minWidth: '110%', // Increased to ensure covering
-            minHeight: '110%', // Increased to ensure covering
-          };
-          
           setImageStyle(newStyle);
         }
         
@@ -132,78 +104,95 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
-  useEffect(() => {
-    if (imageUrl && loaded) {
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        
-        const coverDimensions = calculateCoverDimensions(
-          naturalSize.width,
-          naturalSize.height,
-          containerRect.width,
-          containerRect.height,
-          position.x,
-          position.y
-        );
-        
-        setImageStyle({
-          width: `${coverDimensions.width}px`,
-          height: `${coverDimensions.height}px`,
-          position: 'absolute',
-          left: `${coverDimensions.x}px`,
-          top: `${coverDimensions.y}px`,
-          transform: 'none',
-          transition: fastMode ? 'none' : 'all 0.1s ease-out',
-          objectFit: 'cover',
-          objectPosition: 'center',
-          willChange: 'left, top',
-          zIndex: 1,
-          minWidth: '110%', // Increased to ensure covering
-          minHeight: '110%', // Increased to ensure covering
-        });
-      }
+  const calculateStyleFromDimensions = useCallback((
+    imgWidth: number,
+    imgHeight: number,
+    containerWidth: number,
+    containerHeight: number,
+    pos: Position,
+    useFastMode: boolean
+  ): React.CSSProperties => {
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    const newStyle: React.CSSProperties = {
+      transform: `translate(${pos.x}px, ${pos.y}px)`,
+      transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute',
+      objectFit: 'cover',
+      willChange: 'transform',
+    };
+    
+    if (imageAspect > containerAspect) {
+      const scaledWidth = containerHeight * imageAspect;
+      newStyle.height = '100%';
+      newStyle.width = `${scaledWidth}px`;
+      newStyle.maxWidth = 'none';
+    } else {
+      const scaledHeight = containerWidth / imageAspect;
+      newStyle.width = '100%';
+      newStyle.height = `${scaledHeight}px`;
+      newStyle.maxHeight = 'none';
     }
-  }, [position, naturalSize, loaded, imageUrl, fastMode]);
+    
+    return newStyle;
+  }, []);
+
+  const calculateImageStyle = useCallback((img: HTMLImageElement) => {
+    if (!containerRef.current) return {};
+    
+    const containerWidth = containerRef.current.clientWidth;
+    const containerHeight = containerRef.current.clientHeight;
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    
+    setNaturalSize({ width: imgWidth, height: imgHeight });
+    setContainerSize({ width: containerWidth, height: containerHeight });
+    
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    let width, height;
+    
+    if (imageAspect > containerAspect) {
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+    } else {
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+    }
+    
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute' as const,
+      objectFit: 'cover' as const,
+      willChange: 'transform',
+    };
+  }, [position, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
-    const loadTime = performance.now() - loadStartTime.current;
+    const loadTime = performance.now() - renderStartTime.current;
     console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
     
     if (imageUrl && !imageCache.current.has(imageUrl)) {
       imageCache.current.set(imageUrl, img);
     }
     
-    if (containerRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      
-      const coverDimensions = calculateCoverDimensions(
-        img.naturalWidth,
-        img.naturalHeight,
-        containerRect.width,
-        containerRect.height,
-        position.x,
-        position.y
-      );
-      
-      const newStyle = {
-        width: `${coverDimensions.width}px`,
-        height: `${coverDimensions.height}px`,
-        position: 'absolute' as const,
-        left: `${coverDimensions.x}px`,
-        top: `${coverDimensions.y}px`,
-        transform: 'none',
-        transition: fastMode ? 'none' : 'all 0.1s ease-out',
-        objectFit: 'cover' as const,
-        objectPosition: 'center',
-        willChange: 'left, top',
-        zIndex: 1,
-        minWidth: '110%', // Increased to ensure covering
-        minHeight: '110%', // Increased to ensure covering
-      };
-      
-      setNaturalSize({ width: img.naturalWidth, height: img.naturalHeight });
-      setImageStyle(newStyle);
+    if (!fastMode) {
+      setImageStyle(calculateImageStyle(img));
+    } else {
+      setImageStyle({
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        position: 'absolute',
+        willChange: 'transform'
+      });
     }
     
     setLoaded(true);
@@ -213,20 +202,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
       onImageLoaded();
     }
-  }, [imageUrl, onImageLoaded, fastMode, position]);
+  }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
-  const forceUpdate = useCallback(() => {
-    forceUpdateFlag.current = true;
-    setImageKey(prev => prev + 1);
-  }, []);
-
-  const placeholderStyle: React.CSSProperties = fastMode ? {
+  const placeholderStyle = fastMode ? {
     filter: 'blur(1px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'cover',
-    objectPosition: 'center',
+    objectFit: 'cover' as const,
+    objectPosition: 'center' as const,
     backgroundColor: '#333',
     willChange: 'transform'
   } : {};
@@ -237,13 +221,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     <div 
       ref={containerRef} 
       className={`absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center ${!noBackgroundColor ? 'bg-black' : ''}`}
-      data-image-container="true"
     >
       <img
         key={`img-${imageKey}`}
         src={imageUrl}
         alt="Ad preview"
-        className={`transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={imageStyle}
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
@@ -253,7 +236,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
-        data-preview-image="true"
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
@@ -270,4 +252,4 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       )}
     </div>
   );
-}
+};

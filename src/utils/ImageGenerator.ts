@@ -17,6 +17,7 @@ export class ImageGenerator {
     const startTime = performance.now();
     const images = Array.from(this.previewElement.getElementsByTagName('img'));
     
+    // Skip waiting if no images
     if (images.length === 0) {
       return;
     }
@@ -26,24 +27,28 @@ export class ImageGenerator {
         if (img.complete) {
           resolve();
         } else {
+          // Set up resolved callbacks
           img.onload = () => resolve();
           img.onerror = () => {
             console.warn(`Failed to load image: ${img.src}`);
-            resolve();
+            resolve(); // Resolve anyway to continue with capture
           };
           
+          // Set a timeout in case the image hangs
           setTimeout(() => {
+            // If image wasn't loaded yet, move on
             resolve();
           }, 1500);
         }
       })
     );
 
+    // Set a maximum wait time with Promise.race
     await Promise.race([
       Promise.all([
         ...imagePromises,
         document.fonts.ready,
-        new Promise<void>(resolve => setTimeout(resolve, 300))
+        new Promise<void>(resolve => setTimeout(resolve, 300)) // Reduced waiting time
       ]),
       new Promise<void>(resolve => setTimeout(() => {
         console.warn(`Maximum wait time for images reached (${maxWaitTime}ms)`);
@@ -59,94 +64,29 @@ export class ImageGenerator {
       return () => {};
     }
 
-    // Hide ONLY navigation controls, not the CTA button
-    const navigationButtons = this.previewElement.querySelectorAll('[data-navigation-control]');
-    const navigationControls = this.previewElement.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');
+    // Simulate hover effect on button - fix the selector
+    const ctaButton = this.previewElement.querySelector('button');
+    console.log('CTA Button found:', ctaButton !== null);
     
-    const originalStyles = new Map<Element, string>();
-    
-    // Hide all navigation controls
-    if (navigationControls) {
-      originalStyles.set(navigationControls, navigationControls.getAttribute('style') || '');
-      (navigationControls as HTMLElement).style.display = 'none';
-    }
-    
-    navigationButtons.forEach(button => {
-      originalStyles.set(button, (button as HTMLElement).style.display);
-      (button as HTMLElement).style.display = 'none';
-    });
-
-    // Find the CTA button and ensure it's visible
-    const ctaContainer = this.previewElement.querySelector('[data-cta-container="true"]');
-    const ctaButton = this.previewElement.querySelector('[data-cta-button="true"]');
-    
-    if (ctaContainer && ctaContainer instanceof HTMLElement) {
-      originalStyles.set(ctaContainer, ctaContainer.getAttribute('style') || '');
-      ctaContainer.style.opacity = '1';
-      ctaContainer.style.visibility = 'visible';
-      ctaContainer.style.zIndex = '999'; // Ensure it's above everything else
-      ctaContainer.style.display = 'flex'; // Explicitly set display to flex
-      console.log('CTA container found and made visible');
-    }
-    
-    if (ctaButton && ctaButton instanceof HTMLElement) {
-      originalStyles.set(ctaButton, ctaButton.getAttribute('style') || '');
-      ctaButton.style.opacity = '1';
-      ctaButton.style.visibility = 'visible';
-      ctaButton.style.zIndex = '1000'; // Ensure it's above everything else
-      ctaButton.style.display = 'inline-flex'; // Explicitly set display to inline-flex
-      console.log('CTA button found and made visible');
-    } else {
-      console.log('CTA button not found, using fallback selector');
-      // Try fallback selector
-      const fallbackCtaButton = this.previewElement.querySelector('button:not([data-navigation-control])');
-      if (fallbackCtaButton && fallbackCtaButton instanceof HTMLElement) {
-        originalStyles.set(fallbackCtaButton, fallbackCtaButton.getAttribute('style') || '');
-        fallbackCtaButton.style.opacity = '1';
-        fallbackCtaButton.style.visibility = 'visible';
-        fallbackCtaButton.style.zIndex = '1000'; // Ensure it's above everything else
-        fallbackCtaButton.style.display = 'inline-flex'; // Explicitly set display
-        console.log('Fallback CTA button found and made visible');
-      }
-    }
-    
+    // Find text elements - now using the class names we added
     const headlineElement = this.previewElement.querySelector('h2');
     const descriptionElement = this.previewElement.querySelector('p');
-    const buttonTextElement = this.previewElement.querySelector('.cta-text');
-    const arrowElement = this.previewElement.querySelector('.cta-arrow');
+    const buttonTextElement = ctaButton?.querySelector('.cta-text');
     
-    // Preserve original positions to reset after capture
-    if (headlineElement) {
-      originalStyles.set(headlineElement, headlineElement.getAttribute('style') || '');
-    }
+    // Find arrow element separately
+    const arrowElement = ctaButton?.querySelector('.cta-arrow');
     
-    if (descriptionElement) {
-      originalStyles.set(descriptionElement, descriptionElement.getAttribute('style') || '');
-    }
+    // Store original positions to restore later
+    const originalPositions = new Map<Element, string>();
     
-    if (buttonTextElement) {
-      originalStyles.set(buttonTextElement, buttonTextElement.getAttribute('style') || '');
-      (buttonTextElement as HTMLElement).style.opacity = '1';
-      (buttonTextElement as HTMLElement).style.visibility = 'visible';
-      (buttonTextElement as HTMLElement).style.display = 'inline';
-    }
-    
-    if (arrowElement) {
-      originalStyles.set(arrowElement, arrowElement.getAttribute('style') || '');
-      console.log('Arrow found, keeping it visible during rendering');
-      const svgElement = arrowElement as SVGElement;
-      svgElement.style.opacity = '1';
-      svgElement.style.visibility = 'visible';
-      svgElement.style.display = 'inline';
-    }
-    
-    // Move text elements up for snapshot and keep them there
-    // This ensures we capture at the right moment when texts are moved up
+    // Helper to move elements up
     const moveElementUp = (element: Element | null, pixels: number = 7) => {
       if (!element) return;
       
       const currentTransform = window.getComputedStyle(element).transform;
+      originalPositions.set(element, currentTransform);
       
+      // Apply transform to move up
       if (currentTransform && currentTransform !== 'none') {
         (element as HTMLElement).style.transform = `${currentTransform} translateY(-${pixels}px)`;
       } else {
@@ -156,38 +96,26 @@ export class ImageGenerator {
       console.log(`Moved element up by ${pixels}px:`, element);
     };
     
-    // Apply upward transform to elements
+    // Move text elements up but NOT the arrow
     moveElementUp(headlineElement);
     moveElementUp(descriptionElement);
     moveElementUp(buttonTextElement);
     
-    // Don't move the arrow to ensure it points down correctly
+    // We do NOT modify the arrow position here to keep it static
     if (arrowElement) {
-      console.log('Found arrow element, ensuring it points downward');
-      const arrowSvg = arrowElement as SVGElement;
-      arrowSvg.style.transform = 'rotate(0deg)'; // Ensure arrow points downward
+      console.log('Arrow found, keeping it static during rendering');
+      // Just store the original transform to restore later
+      const svgElement = arrowElement as SVGElement;
+      originalPositions.set(svgElement, svgElement.style.transform);
     }
     
-    // Make sure ALL CTA elements are visible
-    const allCtaElements = this.previewElement.querySelectorAll('[data-cta-container], [data-cta-button], .cta-text, .cta-arrow, button:not([data-navigation-control])');
-    allCtaElements.forEach(el => {
-      if (el instanceof HTMLElement || el instanceof SVGElement) {
-        el.style.opacity = '1';
-        el.style.visibility = 'visible';
-        el.style.display = 'inline-flex';
-        el.style.zIndex = '1000';
-      }
-    });
-    
     return () => {
-      // Restore original styles
-      originalStyles.forEach((originalStyle, element) => {
-        if (element instanceof HTMLElement || element instanceof SVGElement) {
-          element.setAttribute('style', originalStyle);
+      // Restore original positions
+      originalPositions.forEach((originalTransform, element) => {
+        if (element instanceof SVGElement || element instanceof HTMLElement) {
+          element.style.transform = originalTransform;
         }
       });
-      
-      console.log('Reset all elements to original styles');
     };
   }
 
@@ -198,81 +126,40 @@ export class ImageGenerator {
     
     const startTime = performance.now();
     
+    // Wait for all images to load
     await this.waitForImages(2000);
     
     console.log(`Image waiting completed in ${performance.now() - startTime}ms`);
 
+    // Trigger hover effect
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
     
-    // Add a small delay to ensure DOM changes are applied before capture
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // Give time for animation to take effect
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
       console.log('Using html2canvas...');
       
-      // IMPORTANT: Force all elements to be visible before capture
-      const ctaElements = this.previewElement.querySelectorAll(
-        '[data-cta-container="true"], [data-cta-button="true"], .cta-text, .cta-arrow, button:not([data-navigation-control])'
-      );
-      
-      ctaElements.forEach(el => {
-        if (el instanceof HTMLElement || el instanceof SVGElement) {
-          el.style.opacity = '1';
-          el.style.visibility = 'visible';
-          el.style.display = el.classList.contains('cta-text') ? 'inline' : 'flex';
-          el.style.zIndex = '9999';
-          el.style.pointerEvents = 'auto';
-        }
-      });
-      
-      // Make sure AdContent has proper z-index
-      const adContent = this.previewElement.querySelector('.ad-content > div > div');
-      if (adContent && adContent instanceof HTMLElement) {
-        adContent.style.zIndex = '50';
-      }
-      
-      // Fix absolute positioned elements
+      // Initialize variables before using them
+      const originalStyles = new Map<Element, string>();
       const elementsToFixPosition = this.previewElement ? 
         Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
         [];
       
-      const positionStyles = new Map<Element, { style: string, zIndex: string }>();
-      
       elementsToFixPosition.forEach(el => {
-        if (el instanceof HTMLElement) {
-          positionStyles.set(el, { 
-            style: el.getAttribute('style') || '',
-            zIndex: el.style.zIndex
-          });
-          
-          const computedStyle = window.getComputedStyle(el);
-          
-          // Don't change navigation controls
-          if (!el.hasAttribute('data-navigation-control')) {
-            el.style.zIndex = el === adContent ? '50' : '99';
-          }
-        }
+        originalStyles.set(el, el.getAttribute('style') || '');
+        const computedStyle = window.getComputedStyle(el);
+        const currentLeft = computedStyle.left;
+        const currentTop = computedStyle.top;
+        const currentTransform = computedStyle.transform;
+        
+        // Apply computed position directly
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      // Make sure image covers the frame completely
-      const imageElement = this.previewElement.querySelector('[data-preview-image="true"]');
-      if (imageElement && imageElement instanceof HTMLImageElement) {
-        const originalStyle = imageElement.getAttribute('style') || '';
-        positionStyles.set(imageElement, { 
-          style: originalStyle,
-          zIndex: imageElement.style.zIndex
-        });
-        
-        imageElement.style.objectFit = 'cover';
-        imageElement.style.width = '100%';
-        imageElement.style.height = '100%';
-        imageElement.style.minWidth = '100%';
-        imageElement.style.minHeight = '100%';
-      }
-
-      const htmlToCanvas = html2canvas as unknown as (element: HTMLElement, options?: any) => Promise<HTMLCanvasElement>;
-      const canvas = await htmlToCanvas(this.previewElement, {
+      // Use html2canvas without accessing .default
+      const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: 2,
         useCORS: true,
@@ -284,63 +171,6 @@ export class ImageGenerator {
         scrollY: 0,
         imageTimeout: 0,
         onclone: (documentClone) => {
-          // In the cloned document, ensure CTA is visible
-          const clonedCtaContainer = documentClone.querySelector('[data-cta-container="true"]');
-          const clonedCtaButton = documentClone.querySelector('[data-cta-button="true"]');
-          const clonedNavControls = documentClone.querySelector('.absolute.inset-0.flex.items-center.justify-between.pointer-events-none.z-10');
-          
-          // Hide navigation controls in the clone
-          if (clonedNavControls instanceof HTMLElement) {
-            clonedNavControls.style.display = 'none';
-          }
-          
-          // Show CTA elements in the clone
-          if (clonedCtaContainer instanceof HTMLElement) {
-            clonedCtaContainer.style.opacity = '1';
-            clonedCtaContainer.style.visibility = 'visible';
-            clonedCtaContainer.style.zIndex = '9999';
-            clonedCtaContainer.style.display = 'flex';
-          }
-          
-          if (clonedCtaButton instanceof HTMLElement) {
-            clonedCtaButton.style.opacity = '1';
-            clonedCtaButton.style.visibility = 'visible';
-            clonedCtaButton.style.zIndex = '9999';
-            clonedCtaButton.style.display = 'inline-flex';
-          }
-          
-          // Explicitly handle the CTA Text and Arrow
-          const ctaText = documentClone.querySelector('.cta-text');
-          if (ctaText instanceof HTMLElement) {
-            ctaText.style.opacity = '1';
-            ctaText.style.visibility = 'visible';
-            ctaText.style.display = 'inline';
-          }
-          
-          const ctaArrow = documentClone.querySelector('.cta-arrow');
-          if (ctaArrow instanceof HTMLElement || ctaArrow instanceof SVGElement) {
-            ctaArrow.style.opacity = '1';
-            ctaArrow.style.visibility = 'visible';
-            ctaArrow.style.display = 'inline';
-          }
-          
-          // Ensure image covers the frame in the clone
-          const imageElement = documentClone.querySelector('[data-preview-image="true"]');
-          if (imageElement && imageElement instanceof HTMLImageElement) {
-            imageElement.style.objectFit = 'cover';
-            imageElement.style.width = '100%';
-            imageElement.style.height = '100%';
-            imageElement.style.minWidth = '100%';
-            imageElement.style.minHeight = '100%';
-          }
-          
-          // Hide only navigation controls, not the CTA
-          const navigationControls = documentClone.querySelectorAll('[data-navigation-control]');
-          navigationControls.forEach(control => {
-            (control as HTMLElement).style.display = 'none';
-          });
-          
-          // Copy fonts
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -362,24 +192,32 @@ export class ImageGenerator {
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
       
-      // Restore original positions
+      // Restore original styles
       elementsToFixPosition.forEach(el => {
-        if (el instanceof HTMLElement) {
-          const original = positionStyles.get(el);
-          if (original) {
-            el.setAttribute('style', original.style);
-          }
+        const original = originalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
         }
       });
       
+      // Reset hover effect after capture
       console.log('Resetting text positions and hover effect');
       resetEffect();
       
       this.lastCaptureTime = performance.now();
-      return canvas.toDataURL('image/png', 0.9);
+      return canvas.toDataURL('image/png', 0.9); // Slightly reduced quality for better performance
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
+      // Restore original styles before fallback
+      elementsToFixPosition.forEach(el => {
+        const original = originalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
+        }
+      });
+      
+      // Reset hover effect
       resetEffect();
       
       return this.fallbackCapture();
@@ -392,13 +230,14 @@ export class ImageGenerator {
     }
     
     const startTime = performance.now();
-    await this.waitForImages(1500);
+    await this.waitForImages(1500); // Reduced waiting time
     
+    // Trigger hover effect
     const resetEffect = await this.prepareForCapture();
 
     console.log('Using dom-to-image fallback...');
     const config = {
-      quality: 0.9,
+      quality: 0.9, // Slightly reduced quality for better performance
       scale: 2,
       bgcolor: null,
       style: {
@@ -407,10 +246,12 @@ export class ImageGenerator {
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
 
+    // Skip extra processing for cross-origin images to improve performance
     try {
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
       
+      // Reset hover effect
       resetEffect();
       
       this.lastCaptureTime = performance.now();
@@ -418,8 +259,10 @@ export class ImageGenerator {
     } catch (error) {
       console.error('Fallback capture failed:', error);
       
+      // Reset hover effect
       resetEffect();
       
+      // Last resort: try to get a screenshot with a simpler approach
       try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
@@ -429,6 +272,7 @@ export class ImageGenerator {
         canvas.width = rect.width;
         canvas.height = rect.height;
         
+        // Fill with a background color as placeholder
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.font = '20px Arial';
@@ -444,7 +288,9 @@ export class ImageGenerator {
     }
   }
 
+  // Rate-limited getImageUrl to prevent performance issues
   async getImageUrl(): Promise<string> {
+    // If a capture is already in progress, queue this request
     if (this.captureInProgress) {
       console.log('Capture already in progress, queuing this request');
       return new Promise((resolve, reject) => {
@@ -459,9 +305,11 @@ export class ImageGenerator {
       });
     }
 
+    // Check if we need to throttle requests
     const now = performance.now();
     const timeSinceLastCapture = now - this.lastCaptureTime;
     
+    // If the last capture was too recent, wait before proceeding
     if (timeSinceLastCapture < 500) {
       console.log(`Waiting ${500 - timeSinceLastCapture}ms before capture`);
       await new Promise(resolve => setTimeout(resolve, 500 - timeSinceLastCapture));
@@ -471,6 +319,7 @@ export class ImageGenerator {
       this.captureInProgress = true;
       const url = await this.captureElement();
       
+      // Process any queued captures
       if (this.captureQueue.length > 0) {
         console.log(`Processing ${this.captureQueue.length} queued captures`);
         setTimeout(() => {
@@ -509,4 +358,3 @@ export class ImageGenerator {
     }
   }
 }
-

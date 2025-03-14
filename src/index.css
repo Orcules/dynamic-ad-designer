@@ -88,31 +88,6 @@
   }
 }
 
-/* Add text shadow utility for better text visibility on various backgrounds */
-.text-shadow-sm {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.dark .text-shadow-sm {
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-/* Improved button styles for template selector */
-.dark .template-btn {
-  border-width: 2px;
-  transition: all 0.2s ease;
-}
-
-.dark .template-btn:hover {
-  border-opacity: 1;
-  transform: translateY(-1px);
-}
-
-/* Selected template button enhancement */
-.dark .template-btn-selected {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
-}
-
 .preview-container {
   position: relative;
   z-index: 1;
@@ -145,7 +120,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -166,7 +140,6 @@
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  object-fit: cover !important;
 }
 
 .ad-content.capturing {
@@ -177,28 +150,4 @@
 .ad-content.capturing * {
   transform: none !important;
   transition: none !important;
-}
-
-/* Ensure images always maintain aspect ratio */
-[data-preview-image="true"] {
-  object-fit: cover !important;
-  object-position: center !important;
-}
-
-/* Ensure CTA button is always visible */
-[data-cta-button="true"] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  z-index: 50 !important;
-}
-
-[data-cta-container="true"] {
-  opacity: 1 !important;
-  visibility: visible !important;
-  z-index: 40 !important;
-}
-
-/* Ensure image container has proper overflow handling */
-[data-image-container="true"] {
-  overflow: hidden !important;
 }

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -170,75 +169,25 @@ serve(async (req) => {
     const imageAspect = backgroundImage.width / backgroundImage.height;
     const canvasAspect = data.width / data.height;
     
-    // Helper function that mirrors the calculateCoverDimensions logic from the front-end
-    const calculateCoverDimensionsServer = (
-      imageWidth: number,
-      imageHeight: number,
-      containerWidth: number,
-      containerHeight: number,
-      offsetX = 0,
-      offsetY = 0
-    ) => {
-      const imageAspect = imageWidth / imageHeight;
-      const containerAspect = containerWidth / containerHeight;
-      
-      let width, height, x, y;
-      
-      if (imageAspect > containerAspect) {
-        // Image is wider than container - scale to match height and center horizontally
-        height = containerHeight;
-        width = containerHeight * imageAspect;
-        y = 0;
-        x = (containerWidth - width) / 2;
-      } else {
-        // Image is taller than container - scale to match width and center vertically
-        width = containerWidth;
-        height = containerWidth / imageAspect;
-        x = 0;
-        y = (containerHeight - height) / 2;
-      }
-      
-      // Apply offsets
-      x += offsetX;
-      y += offsetY;
-      
-      // Ensure dimensions are large enough to cover the entire container
-      const scaleFactor = 1.5; // Use increased scale factor to ensure full coverage
-      
-      if (width < containerWidth * scaleFactor) {
-        const ratio = (containerWidth * scaleFactor) / width;
-        width *= ratio;
-        height *= ratio;
-        // Recenter based on the new dimensions
-        x = (containerWidth - width) / 2 + offsetX;
-      }
-      
-      if (height < containerHeight * scaleFactor) {
-        const ratio = (containerHeight * scaleFactor) / height;
-        width *= ratio;
-        height *= ratio;
-        // Recenter based on the new dimensions
-        y = (containerHeight - height) / 2 + offsetY;
-      }
-      
-      return { width, height, x, y };
-    };
-    
-    // Calculate dimensions ensuring image covers the container completely
-    // This uses the same logic as calculateCoverDimensions in imageEffects.ts
-    const coverDimensions = calculateCoverDimensionsServer(
-      backgroundImage.width,
-      backgroundImage.height,
-      data.width,
-      data.height, 
-      imagePosition.x,
-      imagePosition.y
-    );
-    
-    const destWidth = coverDimensions.width;
-    const destHeight = coverDimensions.height;
-    const destX = coverDimensions.x;
-    const destY = coverDimensions.y;
+    // Define source and destination parameters for drawing
+    let sourceX = 0;
+    let sourceY = 0;
+    let sourceWidth = backgroundImage.width;
+    let sourceHeight = backgroundImage.height;
+    let destX = imagePosition.x;
+    let destY = imagePosition.y;
+    let destWidth, destHeight;
+
+    // Match the exact positioning and scaling from the AdPreviewImage component
+    if (imageAspect > canvasAspect) {
+      // Image is wider than canvas - scale to match height and position horizontally
+      destHeight = data.height;
+      destWidth = data.height * imageAspect;
+    } else {
+      // Image is taller than canvas - scale to match width and position vertically
+      destWidth = data.width;
+      destHeight = data.width / imageAspect;
+    }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
     ctx.imageSmoothingEnabled = true;
@@ -249,12 +198,12 @@ serve(async (req) => {
     
     // Log positioning information for debugging
     console.log(`[${uploadId}] Image dimensions:`, {
-      source: { width: backgroundImage.width, height: backgroundImage.height },
+      source: { width: sourceWidth, height: sourceHeight },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
       aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
-    // Draw the image with the calculated dimensions to ensure full coverage
+    // For luxury jewelry template, draw with rounded corners
     if (isLuxuryJewelry) {
       // Add padding (4% of the canvas width)
       const padding = Math.round(data.width * 0.04);
@@ -265,10 +214,10 @@ serve(async (req) => {
       const tempCtx = tempCanvas.getContext('2d');
       
       if (tempCtx) {
-        // Draw the image to the temporary canvas with object-fit: cover behavior
+        // Draw the image to the temporary canvas
         tempCtx.drawImage(
           backgroundImage, 
-          0, 0, backgroundImage.width, backgroundImage.height, 
+          sourceX, sourceY, sourceWidth, sourceHeight, 
           0, 0, destWidth, destHeight
         );
         
@@ -309,8 +258,8 @@ serve(async (req) => {
       // Draw the image with exact positioning to match the preview for non-luxury templates
       ctx.drawImage(
         backgroundImage, 
-        0, 0, backgroundImage.width, backgroundImage.height, // Source rectangle (entire original image)
-        destX, destY, destWidth, destHeight  // Destination rectangle (calculated for coverage)
+        sourceX, sourceY, sourceWidth, sourceHeight, 
+        destX, destY, destWidth, destHeight
       );
     }
 
@@ -367,7 +316,7 @@ serve(async (req) => {
       ctx.fillText(data.description, descX, descY);
     }
 
-    // Draw CTA button - Important: ensure this is always visible
+    // Draw CTA button
     if (data.cta_text) {
       const buttonWidth = Math.min(data.width * 0.4, 200);
       const buttonHeight = Math.floor(data.width * 0.06);
@@ -419,7 +368,7 @@ serve(async (req) => {
       
       // For luxury jewelry, don't show arrow and use uppercase text
       const buttonText = isLuxuryJewelry ? data.cta_text.toUpperCase() : data.cta_text;
-      const showArrow = data.showCtaArrow !== false && !isLuxuryJewelry;
+      const showArrow = data.showArrow !== false && !isLuxuryJewelry;
       
       const contentWidth = showArrow ? textWidth + arrowWidth + spacing : textWidth;
       const startX = ctaX + (buttonWidth - contentWidth) / 2;
@@ -427,7 +376,7 @@ serve(async (req) => {
       // Move the text up, but not the arrow
       ctx.fillText(buttonText, startX + textWidth/2, ctaY + buttonHeight/2 - 7);
 
-      // Draw arrow pointing downward
+      // Draw arrow if needed - keep it in the original position (not adjusted)
       if (showArrow) {
         const arrowX = startX + textWidth + spacing;
         const arrowY = ctaY + buttonHeight/2; // No adjustment for the arrow (keep it static)
@@ -437,12 +386,17 @@ serve(async (req) => {
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#FFFFFF';
         
-        // Draw a downward-pointing arrow
+        // Static arrow (no -1 pixel adjustment)
         ctx.moveTo(arrowX, arrowY - arrowSize/2);
         ctx.lineTo(arrowX, arrowY + arrowSize/2);
-        ctx.moveTo(arrowX - arrowSize/3, arrowY);
+        
+        ctx.moveTo(arrowX - arrowSize/3, arrowY - arrowSize/4);
+        ctx.lineTo(arrowX, arrowY - arrowSize/2);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY - arrowSize/4);
+        
+        ctx.moveTo(arrowX - arrowSize/3, arrowY + arrowSize/4);
         ctx.lineTo(arrowX, arrowY + arrowSize/2);
-        ctx.lineTo(arrowX + arrowSize/3, arrowY);
+        ctx.lineTo(arrowX + arrowSize/3, arrowY + arrowSize/4);
         
         ctx.stroke();
       }
@@ -482,3 +436,4 @@ serve(async (req) => {
     );
   }
 });
+
