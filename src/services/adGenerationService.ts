@@ -52,7 +52,7 @@ export class AdGenerationService {
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
       
       try {
-        // Fixed: Using only one argument as expected by the function signature
+        // Fix: Use a single object parameter with body property
         const { data: generatedAd, error: generateError } = await supabase.functions.invoke('generate-ad', {
           body: formData
         });
