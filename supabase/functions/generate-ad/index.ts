@@ -402,6 +402,40 @@ serve(async (req) => {
       }
     }
 
+    // Add page flip effect
+    const drawPageFlip = () => {
+      const cornerSize = Math.floor(data.width * 0.15); // 15% of width
+      const foldSize = Math.floor(cornerSize * 0.4);
+      
+      // Draw the fold
+      ctx.save();
+      
+      // Bottom right corner folded page
+      ctx.fillStyle = isLuxuryJewelry ? '#f8e9b0' : '#f3f3f3';
+      
+      // Draw folded corner rectangle
+      ctx.beginPath();
+      ctx.moveTo(data.width - cornerSize, data.height);
+      ctx.lineTo(data.width, data.height - cornerSize);
+      ctx.lineTo(data.width, data.height);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw fold shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.1)';
+      ctx.beginPath();
+      ctx.moveTo(data.width - foldSize, data.height);
+      ctx.lineTo(data.width, data.height - foldSize);
+      ctx.lineTo(data.width, data.height);
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.restore();
+    };
+    
+    // Draw the page flip
+    drawPageFlip();
+
     // Export the generated image with optimized settings for PNG format
     const imageBuffer = canvas.toBuffer();
     
@@ -436,4 +470,3 @@ serve(async (req) => {
     );
   }
 });
-

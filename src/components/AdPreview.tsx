@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -6,6 +7,7 @@ import { getButtonStyle } from "./ad/AdButton";
 import { AdNavigationControls } from "./ad/AdNavigationControls";
 import { AdContent } from "./ad/AdContent";
 import { AdPreviewImage } from "./ad/AdPreviewImage";
+import { PageFlip } from "./ad/PageFlip";
 import { Button } from "./ui/button";
 import { Download } from "lucide-react";
 import { ImageGenerator } from "@/utils/ImageGenerator";
@@ -296,6 +298,12 @@ export function AdPreview({
               totalImages={imageUrls.length}
             />
           )}
+          {/* Add PageFlip component */}
+          <PageFlip 
+            position="bottom-right" 
+            size="medium" 
+            color="#f8e9b0" 
+          />
         </div>
       </div>
     );
@@ -355,6 +363,12 @@ export function AdPreview({
                 totalImages={imageUrls.length}
               />
             )}
+            {/* Add PageFlip component */}
+            <PageFlip 
+              position="bottom-right" 
+              size="medium" 
+              color="#f3f3f3" 
+            />
           </div>
         </div>
       </div>

@@ -28,3 +28,15 @@ export const applyImageEffect = async (
   // Return the canvas data URL with high quality
   return canvas.toDataURL('image/jpeg', 0.95);
 };
+
+// Add a new function to ensure page flip element is included in the capture
+export const ensureElementsVisible = (container: HTMLElement): void => {
+  // Find all page flip elements and make sure they're visible
+  const pageFlips = container.querySelectorAll('.page-flip');
+  pageFlips.forEach(flip => {
+    const element = flip as HTMLElement;
+    element.style.opacity = '1';
+    element.style.visibility = 'visible';
+    element.style.zIndex = '10';
+  });
+}
