@@ -121,27 +121,33 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Properly center the image with object-fit: cover while maintaining aspect ratio
     if (imageAspect > containerAspect) {
-      // Image is wider than container - ensure it fills height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - ensure it fills width
+      // Image is wider than container - fit width first and center vertically
       width = containerWidth;
       height = containerWidth / imageAspect;
+    } else {
+      // Image is taller than container - fit height first and center horizontally
+      height = containerHeight;
+      width = containerHeight * imageAspect;
     }
     
-    // Calculate offset to center the image properly with the user's position adjustments
+    // Calculate position to center the image
+    const xCenter = (containerWidth - width) / 2;
+    const yCenter = (containerHeight - height) / 2;
+    
+    // Apply user position adjustment
+    const xPos = xCenter + pos.x;
+    const yPos = yCenter + pos.y;
+    
     return {
-      transform: `translate(${pos.x}px, ${pos.y}px)`,
+      transform: `translate(${xPos}px, ${yPos}px)`,
       width: `${width}px`,
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
-      objectPosition: '50% 50%', // Center the image by default
+      objectPosition: '50% 50%',
     };
   }, []);
 
@@ -161,26 +167,33 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Properly center the image with object-fit: cover
     if (imageAspect > containerAspect) {
-      // Image is wider than container - ensure it fills height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - ensure it fills width
+      // Image is wider than container - fit width first and center vertically
       width = containerWidth;
       height = containerWidth / imageAspect;
+    } else {
+      // Image is taller than container - fit height first and center horizontally
+      height = containerHeight;
+      width = containerHeight * imageAspect;
     }
+    
+    // Calculate position to center the image
+    const xCenter = (containerWidth - width) / 2;
+    const yCenter = (containerHeight - height) / 2;
+    
+    // Apply user position adjustment
+    const xPos = xCenter + position.x;
+    const yPos = yCenter + position.y;
     
     return {
       width: `${width}px`,
       height: `${height}px`,
-      transform: `translate(${position.x}px, ${position.y}px)`,
+      transform: `translate(${xPos}px, ${yPos}px)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
-      objectPosition: '50% 50%', // Center the image by default
+      objectPosition: '50% 50%',
     };
   }, [position, fastMode]);
 
@@ -209,7 +222,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     width: '100%',
     height: '100%',
     objectFit: 'cover' as ObjectFit,
-    objectPosition: '50% 50%', // Center the placeholder too
+    objectPosition: '50% 50%',
     backgroundColor: '#333',
     willChange: 'transform'
   };

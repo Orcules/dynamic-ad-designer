@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -175,24 +174,23 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
-    let destX = imagePosition.x;
-    let destY = imagePosition.y;
+    let destX = 0;
+    let destY = 0;
     let destWidth, destHeight;
 
     // Match the exact positioning and scaling from the AdPreviewImage component
-    // Ensure image maintains aspect ratio and covers the canvas without stretching
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to fit height but may crop sides
-      destHeight = data.height;
-      destWidth = data.height * imageAspect;
-      // Center horizontally with the user's position adjustment
-      destX = (data.width - destWidth) / 2 + imagePosition.x;
-    } else {
-      // Image is taller than canvas - scale to fit width but may crop top/bottom
+      // Image is wider - fit width first and center vertically
       destWidth = data.width;
       destHeight = data.width / imageAspect;
-      // Center vertically with the user's position adjustment
+      destX = 0;
       destY = (data.height - destHeight) / 2 + imagePosition.y;
+    } else {
+      // Image is taller - fit height first and center horizontally
+      destHeight = data.height;
+      destWidth = data.height * imageAspect;
+      destX = (data.width - destWidth) / 2 + imagePosition.x;
+      destY = 0;
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -273,7 +271,6 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, ensure the image is properly centered
       // Draw the image with proper positioning and preserved aspect ratio
       ctx.drawImage(
         backgroundImage, 
