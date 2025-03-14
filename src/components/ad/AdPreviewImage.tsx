@@ -127,9 +127,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Use a higher scale factor to ensure the image fills the container better
-    // Increased from 1.2 to 1.4 to eliminate black borders
-    const extraScaleFactor = 1.4;
+    // Use a higher scale factor to ensure the image fills the container completely
+    // Increased from 1.4 to 1.6 to eliminate black borders entirely
+    const extraScaleFactor = 1.6;
     
     // Use scaling logic to maintain aspect ratio
     if (imageAspect > containerAspect) {
@@ -142,19 +142,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height = width / imageAspect;
     }
     
-    // Adjust transform to better center the image with user position offset
-    // We apply a centering correction to ensure the image stays more centered
-    const centeringCorrection = 0.1 * containerWidth; // 10% correction toward center
+    // Improved centering logic
+    // For horizontal positioning, we need stronger centering force
+    const centeringForceX = 0.2; // Increased from 0.1 to 0.2 (20% correction toward center)
     
     // Calculate the offset from center
     const offsetFromCenterX = (pos.x === 0) ? 0 : pos.x;
     
-    // Apply correction to push the image more toward the center
+    // Apply stronger correction to pull the image more toward the center
     const correctedPosX = offsetFromCenterX > 0 ? 
-      offsetFromCenterX - centeringCorrection : 
-      offsetFromCenterX + centeringCorrection;
+      offsetFromCenterX - (centeringForceX * containerWidth) : 
+      offsetFromCenterX + (centeringForceX * containerWidth);
     
-    // Calculate final transform position with centering applied
+    // Calculate final transform position with improved centering applied
     const transformX = correctedPosX - ((width - containerWidth) / 2);
     const transformY = pos.y - ((height - containerHeight) / 2);
     

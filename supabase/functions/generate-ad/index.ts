@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -178,8 +177,8 @@ serve(async (req) => {
     let destWidth, destHeight;
     
     // Ensure we use 'cover' approach with extra scaling to eliminate any black borders
-    // Extra scale factor to ensure complete coverage (25% larger than necessary)
-    const extraScaleFactor = 1.25;
+    // Extra scale factor increased to 1.6 to match the client-side rendering
+    const extraScaleFactor = 1.6;
     
     if (imageAspect > canvasAspect) {
       // Image is wider than canvas - scale to fit height and crop sides
@@ -191,8 +190,19 @@ serve(async (req) => {
       destHeight = data.width / imageAspect * extraScaleFactor; // Scale height by extra factor
     }
     
-    // Calculate centering position with imagePosition offset
-    const destX = ((data.width - destWidth) / 2) + (imagePosition.x || 0);
+    // Apply the same centering correction as in the client component
+    const centeringForceX = 0.2; // 20% correction toward center
+    
+    // Calculate the offset from center
+    const offsetFromCenterX = (imagePosition.x === 0) ? 0 : imagePosition.x;
+    
+    // Apply correction to push the image more toward the center
+    const correctedPosX = offsetFromCenterX > 0 ? 
+      offsetFromCenterX - (centeringForceX * data.width) : 
+      offsetFromCenterX + (centeringForceX * data.width);
+    
+    // Calculate centering position with corrected imagePosition offset
+    const destX = ((data.width - destWidth) / 2) + correctedPosX;
     const destY = ((data.height - destHeight) / 2) + (imagePosition.y || 0);
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -207,7 +217,8 @@ serve(async (req) => {
       source: { width: sourceWidth, height: sourceHeight },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
       aspect: { image: imageAspect, canvas: canvasAspect },
-      extraScaleFactor
+      extraScaleFactor,
+      centeringCorrection: centeringForceX
     });
     
     // For luxury jewelry template, draw with rounded corners
@@ -229,12 +240,13 @@ serve(async (req) => {
         drawHeight = drawWidth / imageAspect;
       }
       
-      // Apply extra scale to eliminate borders (multiply by 1.25)
-      drawWidth *= 1.25;
-      drawHeight *= 1.25;
+      // Apply extra scale to eliminate borders (use the same 1.6 factor)
+      drawWidth *= 1.6;
+      drawHeight *= 1.6;
       
-      const drawX = padding - (drawWidth * 0.125); // Adjust for the extra scale
-      const drawY = (data.height - drawHeight) / 2;
+      // Apply centering correction
+      const drawX = padding - (drawWidth * 0.3) + correctedPosX; // Adjust with the centering correction
+      const drawY = (data.height - drawHeight) / 2 + (imagePosition.y || 0);
       
       // Create a temporary canvas for the image
       const tempCanvas = createCanvas(drawWidth, drawHeight);
@@ -254,12 +266,12 @@ serve(async (req) => {
         // Create rounded rectangle path
         ctx.beginPath();
         ctx.moveTo(padding + cornerRadius, padding);
-        ctx.lineTo(padding + drawWidth / 1.25 - cornerRadius, padding);
-        ctx.arcTo(padding + drawWidth / 1.25, padding, padding + drawWidth / 1.25, padding + cornerRadius, cornerRadius);
-        ctx.lineTo(padding + drawWidth / 1.25, padding + drawHeight / 1.25 - cornerRadius);
-        ctx.arcTo(padding + drawWidth / 1.25, padding + drawHeight / 1.25, padding + drawWidth / 1.25 - cornerRadius, padding + drawHeight / 1.25, cornerRadius);
-        ctx.lineTo(padding + cornerRadius, padding + drawHeight / 1.25);
-        ctx.arcTo(padding, padding + drawHeight / 1.25, padding, padding + drawHeight / 1.25 - cornerRadius, cornerRadius);
+        ctx.lineTo(padding + drawWidth / 1.6 - cornerRadius, padding);
+        ctx.arcTo(padding + drawWidth / 1.6, padding, padding + drawWidth / 1.6, padding + cornerRadius, cornerRadius);
+        ctx.lineTo(padding + drawWidth / 1.6, padding + drawHeight / 1.6 - cornerRadius);
+        ctx.arcTo(padding + drawWidth / 1.6, padding + drawHeight / 1.6, padding + drawWidth / 1.6 - cornerRadius, padding + drawHeight / 1.6, cornerRadius);
+        ctx.lineTo(padding + cornerRadius, padding + drawHeight / 1.6);
+        ctx.arcTo(padding, padding + drawHeight / 1.6, padding, padding + drawHeight / 1.6 - cornerRadius, cornerRadius);
         ctx.lineTo(padding, padding + cornerRadius);
         ctx.arcTo(padding, padding, padding + cornerRadius, padding, cornerRadius);
         ctx.closePath();
