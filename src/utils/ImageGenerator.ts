@@ -4,6 +4,18 @@ import html2canvas from 'html2canvas';
 import * as htmlToImage from 'html-to-image';
 import { applyImageEffect, createProportionalCanvas, optimizeCanvasRendering, ensureElementsVisible, fixRTLTextRendering } from './imageEffects';
 
+// Define the Options interface for html-to-image since it's not exported
+interface HtmlToImageOptions {
+  pixelRatio?: number;
+  quality?: number;
+  backgroundColor?: string | null;
+  skipFonts?: boolean;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  cacheBust?: boolean;
+  filter?: (node: HTMLElement) => boolean;
+}
+
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
   private lastCaptureTime: number = 0;
@@ -355,7 +367,7 @@ export class ImageGenerator {
       const startTime = performance.now();
       
       // Configure the html-to-image options
-      const options: htmlToImage.Options = {
+      const options: HtmlToImageOptions = {
         pixelRatio: this.outputScale,
         quality: 1.0,
         backgroundColor: null,
