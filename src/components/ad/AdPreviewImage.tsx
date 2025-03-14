@@ -128,8 +128,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     let width, height;
     
     // Use a higher scale factor to ensure the image fills the container completely
-    // Increased from 1.4 to 1.6 to eliminate black borders entirely
-    const extraScaleFactor = 1.6;
+    // Using 1.8 to completely eliminate black borders
+    const extraScaleFactor = 1.8;
     
     // Use scaling logic to maintain aspect ratio
     if (imageAspect > containerAspect) {
@@ -142,9 +142,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height = width / imageAspect;
     }
     
-    // Improved centering logic
+    // Improved centering logic with stronger correction
     // For horizontal positioning, we need stronger centering force
-    const centeringForceX = 0.2; // Increased from 0.1 to 0.2 (20% correction toward center)
+    const centeringForceX = 0.25; // Increased from 0.2 to 0.25 (25% correction toward center)
     
     // Calculate the offset from center
     const offsetFromCenterX = (pos.x === 0) ? 0 : pos.x;
@@ -167,7 +167,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
       // Ensure image is centered with object-position
-      objectPosition: 'center',
+      objectPosition: 'center center',
     };
   }, []);
 
@@ -218,7 +218,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     width: '100%',
     height: '100%',
     objectFit: 'cover' as ObjectFit,
-    objectPosition: 'center',
+    objectPosition: 'center center',
     backgroundColor: '#333',
     willChange: 'transform'
   };
