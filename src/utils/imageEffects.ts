@@ -64,3 +64,26 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.zIndex = '20';
   });
 }
+
+// Fix RTL text rendering in canvas
+export const fixRTLTextRendering = (container: HTMLElement): void => {
+  // Find all text elements that might need RTL support
+  const rtlElements = container.querySelectorAll('[dir="rtl"], [lang="he"], [lang="ar"]');
+  
+  rtlElements.forEach(element => {
+    const el = element as HTMLElement;
+    // Ensure proper text alignment and direction
+    el.style.textAlign = 'right';
+    el.style.direction = 'rtl';
+    el.style.unicodeBidi = 'embed';
+    
+    // For text inside canvas, we need special handling
+    const textNodes = el.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, button');
+    textNodes.forEach(node => {
+      const textEl = node as HTMLElement;
+      textEl.style.textAlign = 'right';
+      textEl.style.direction = 'rtl';
+      textEl.style.unicodeBidi = 'embed';
+    });
+  });
+}

@@ -56,11 +56,13 @@ export function AdContent({
     return safeTemplateStyle === 'luxury-jewelry';
   }, [safeTemplateStyle]);
 
-  // Use useMemo for style objects to prevent unnecessary re-renders
+  // Use useMemo for style objects to prevent unnecessary re-renders and properly handle RTL
   const headlineTextStyle = useMemo(() => {
     return {
       ...textStyle,
       direction: isRTL ? 'rtl' : 'ltr',
+      textAlign: isRTL ? 'right' : 'center',
+      unicodeBidi: 'embed',
     };
   }, [textStyle, isRTL]);
   
@@ -68,6 +70,8 @@ export function AdContent({
     return {
       ...descriptionStyle,
       direction: isRTL ? 'rtl' : 'ltr',
+      textAlign: isRTL ? 'right' : 'center',
+      unicodeBidi: 'embed',
     };
   }, [descriptionStyle, isRTL]);
 
@@ -78,6 +82,11 @@ export function AdContent({
       onButtonHover(isHovered);
     });
   }, [onButtonHover]);
+
+  // Safe handling of potential placeholder content
+  const safeHeadline = headline?.trim() || "Your Headline Here";
+  const safeDescription = description?.trim() || "Your description text here";
+  const safeCtaText = ctaText?.trim() || "Click Here";
 
   return (
     <div 
@@ -93,13 +102,13 @@ export function AdContent({
             {/* Top text section */}
             <div className="text-center z-10 mt-4">
               <AdHeadline
-                headline={headline}
+                headline={safeHeadline}
                 textStyle={headlineTextStyle}
                 position={headlinePosition}
               />
               
               <AdDescription
-                description={description}
+                description={safeDescription}
                 descriptionStyle={updatedDescriptionStyle}
                 position={descriptionPosition}
               />
@@ -108,7 +117,7 @@ export function AdContent({
             {/* Bottom CTA section */}
             <div className="z-10 mb-4">
               <AdCallToAction
-                ctaText={ctaText}
+                ctaText={safeCtaText}
                 buttonStyle={buttonStyle}
                 position={ctaPosition}
                 isButtonHovered={isButtonHovered}
@@ -123,19 +132,19 @@ export function AdContent({
             isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
           )}>
             <AdHeadline
-              headline={headline}
+              headline={safeHeadline}
               textStyle={headlineTextStyle}
               position={headlinePosition}
             />
             
             <AdDescription
-              description={description}
+              description={safeDescription}
               descriptionStyle={updatedDescriptionStyle}
               position={descriptionPosition}
             />
             
             <AdCallToAction
-              ctaText={ctaText}
+              ctaText={safeCtaText}
               buttonStyle={buttonStyle}
               position={ctaPosition}
               isButtonHovered={isButtonHovered}
