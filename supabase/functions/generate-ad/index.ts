@@ -180,15 +180,15 @@ serve(async (req) => {
     let destWidth, destHeight;
 
     // Match the exact positioning and scaling from the AdPreviewImage component
-    // Always maintain aspect ratio using 'contain' approach
+    // Changed from 'contain' to 'cover' approach to fill the canvas without black edges
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to fit width
-      destWidth = data.width;
-      destHeight = data.width / imageAspect;
-    } else {
-      // Image is taller than canvas - scale to fit height
+      // Image is wider than canvas - scale to fit height but may crop sides
       destHeight = data.height;
       destWidth = data.height * imageAspect;
+    } else {
+      // Image is taller than canvas - scale to fit width but may crop top/bottom
+      destWidth = data.width;
+      destHeight = data.width / imageAspect;
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -211,10 +211,19 @@ serve(async (req) => {
       const padding = Math.round(data.width * 0.04);
       const cornerRadius = Math.round(data.width * 0.1); // 10% of width for rounded corners
       
-      // Calculate proportions to maintain aspect ratio
+      // Calculate proportions to maintain aspect ratio and fill the space
       const drawWidth = data.width - (padding * 2);
-      // Maintain aspect ratio for the height
-      const drawHeight = (drawWidth / imageAspect);
+      
+      // Maintain aspect ratio for the height but ensure it fills the space
+      let drawHeight;
+      if (imageAspect > drawWidth / (data.height - padding * 2)) {
+        // Image is wider - fit to height and crop sides
+        drawHeight = data.height - (padding * 2);
+      } else {
+        // Image is taller - fit to width and crop top/bottom
+        drawHeight = drawWidth / imageAspect;
+      }
+      
       const drawX = padding;
       const drawY = (data.height - drawHeight) / 2;
       
@@ -259,7 +268,7 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, center the image and maintain aspect ratio
+      // For standard templates, center the image and fill the container
       const drawX = (data.width - destWidth) / 2 + imagePosition.x;
       const drawY = (data.height - destHeight) / 2 + imagePosition.y;
       
