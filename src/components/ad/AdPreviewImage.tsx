@@ -122,15 +122,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Use cover instead of contain to ensure the image fills the container without black margins
+    // Use "contain" to preserve the image's aspect ratio
     if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
+      // Image is wider than container - scale to fit width
       width = containerWidth;
       height = containerWidth / imageAspect;
+    } else {
+      // Image is taller than container - scale to fit height
+      height = containerHeight;
+      width = containerHeight * imageAspect;
     }
     
     return {
@@ -139,7 +139,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'cover' as ObjectFit,
+      objectFit: 'contain' as ObjectFit, // Changed from 'cover' to 'contain'
       willChange: 'transform',
     };
   }, []);
@@ -160,15 +160,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Use cover instead of contain to ensure the image fills the container without black margins
+    // Use "contain" to preserve the image's aspect ratio
     if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
+      // Image is wider than container - scale to fit width
       width = containerWidth;
       height = containerWidth / imageAspect;
+    } else {
+      // Image is taller than container - scale to fit height
+      height = containerHeight;
+      width = containerHeight * imageAspect;
     }
     
     return {
@@ -177,7 +177,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${position.x}px, ${position.y}px)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,
-      objectFit: 'cover' as ObjectFit,
+      objectFit: 'contain' as ObjectFit, // Changed from 'cover' to 'contain'
       willChange: 'transform',
     };
   }, [position, fastMode]);
@@ -206,7 +206,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'cover' as ObjectFit,
+    objectFit: 'contain' as ObjectFit, // Changed from 'cover' to 'contain'
     objectPosition: 'center',
     backgroundColor: '#333',
     willChange: 'transform'

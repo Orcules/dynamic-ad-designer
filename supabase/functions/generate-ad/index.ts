@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -179,16 +178,17 @@ serve(async (req) => {
     let destY = imagePosition.y;
     let destWidth, destHeight;
 
-    // Match the exact positioning and scaling from the AdPreviewImage component
-    // Changed from 'contain' to 'cover' approach to fill the canvas without black edges
+    // Changed to 'contain' approach to maintain aspect ratio
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to fit height but may crop sides
-      destHeight = data.height;
-      destWidth = data.height * imageAspect;
-    } else {
-      // Image is taller than canvas - scale to fit width but may crop top/bottom
+      // Image is wider than canvas - scale to fit width
       destWidth = data.width;
       destHeight = data.width / imageAspect;
+      destY = (data.height - destHeight) / 2 + imagePosition.y;
+    } else {
+      // Image is taller than canvas - scale to fit height
+      destHeight = data.height;
+      destWidth = data.height * imageAspect;
+      destX = (data.width - destWidth) / 2 + imagePosition.x;
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
