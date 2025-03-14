@@ -1,7 +1,7 @@
 
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
-import { applyImageEffect } from './imageEffects';
+import { applyImageEffect, createProportionalCanvas, optimizeCanvasRendering, ensureElementsVisible, fixRTLTextRendering } from './imageEffects';
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
@@ -11,7 +11,7 @@ export class ImageGenerator {
   private outputWidth: number | null = null;
   private outputHeight: number | null = null;
   private outputScale: number = 2;
-  private imageEffect: 'sepia' | 'none' = 'none';
+  private imageEffect: 'sepia' | 'none' | 'highres' = 'none';
 
   constructor(
     previewSelector = '.ad-content', 
@@ -19,7 +19,7 @@ export class ImageGenerator {
       outputWidth?: number; 
       outputHeight?: number; 
       outputScale?: number;
-      effect?: 'sepia' | 'none';
+      effect?: 'sepia' | 'none' | 'highres';
     }
   ) {
     this.previewElement = document.querySelector(previewSelector);
@@ -49,9 +49,9 @@ export class ImageGenerator {
   
   /**
    * Set the image effect to apply during generation
-   * @param effect The effect to apply ('sepia' or 'none')
+   * @param effect The effect to apply ('sepia', 'none', or 'highres')
    */
-  public setImageEffect(effect: 'sepia' | 'none'): void {
+  public setImageEffect(effect: 'sepia' | 'none' | 'highres'): void {
     this.imageEffect = effect;
     console.log(`Image effect set to: ${effect}`);
   }
@@ -109,55 +109,31 @@ export class ImageGenerator {
       return () => {};
     }
 
-    // Simulate hover effect on button - fix the selector
-    const ctaButton = this.previewElement.querySelector('button');
-    console.log('CTA Button found:', ctaButton !== null);
+    // Store and remove transformations temporarily to avoid scaling issues
+    const elementsWithTransform = Array.from(this.previewElement.querySelectorAll('*[style*="transform"]'));
+    const originalTransforms = new Map<Element, string>();
     
-    // Find text elements - now using the class names we added
-    const headlineElement = this.previewElement.querySelector('h2');
-    const descriptionElement = this.previewElement.querySelector('p');
-    const buttonTextElement = ctaButton?.querySelector('.cta-text');
-    
-    // Find arrow element separately
-    const arrowElement = ctaButton?.querySelector('.cta-arrow');
-    
-    // Store original positions to restore later
-    const originalPositions = new Map<Element, string>();
-    
-    // Helper to move elements up
-    const moveElementUp = (element: Element | null, pixels: number = 7) => {
-      if (!element) return;
+    elementsWithTransform.forEach(el => {
+      const computedStyle = window.getComputedStyle(el);
+      originalTransforms.set(el, computedStyle.transform);
       
-      const currentTransform = window.getComputedStyle(element).transform;
-      originalPositions.set(element, currentTransform);
-      
-      // Apply transform to move up
-      if (currentTransform && currentTransform !== 'none') {
-        (element as HTMLElement).style.transform = `${currentTransform} translateY(-${pixels}px)`;
-      } else {
-        (element as HTMLElement).style.transform = `translateY(-${pixels}px)`;
+      // Don't remove positioning transforms completely, just scale transforms
+      const elStyle = (el as HTMLElement).style;
+      if (elStyle.transform.includes('scale')) {
+        elStyle.transform = elStyle.transform.replace(/scale\([^)]+\)/g, 'scale(1)');
       }
-      
-      console.log(`Moved element up by ${pixels}px:`, element);
-    };
+    });
     
-    // Move text elements up but NOT the arrow
-    moveElementUp(headlineElement);
-    moveElementUp(descriptionElement);
-    moveElementUp(buttonTextElement);
+    // Ensure all navigation elements are visible for capture
+    ensureElementsVisible(this.previewElement);
     
-    // We do NOT modify the arrow position here to keep it static
-    if (arrowElement) {
-      console.log('Arrow found, keeping it static during rendering');
-      // Just store the original transform to restore later
-      const svgElement = arrowElement as SVGElement;
-      originalPositions.set(svgElement, svgElement.style.transform);
-    }
+    // Fix RTL text rendering issues before capture
+    fixRTLTextRendering(this.previewElement);
     
     return () => {
-      // Restore original positions
-      originalPositions.forEach((originalTransform, element) => {
-        if (element instanceof SVGElement || element instanceof HTMLElement) {
+      // Restore original transforms
+      originalTransforms.forEach((originalTransform, element) => {
+        if (element instanceof HTMLElement) {
           element.style.transform = originalTransform;
         }
       });
@@ -173,20 +149,19 @@ export class ImageGenerator {
     
     // Wait for all images to load
     await this.waitForImages(2000);
-    
     console.log(`Image waiting completed in ${performance.now() - startTime}ms`);
 
-    // Trigger hover effect
+    // Prepare element for capture (remove transforms, ensure visibility)
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
     
-    // Give time for animation to take effect
+    // Give time for prep changes to take effect
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      console.log('Using html2canvas...');
+      console.log('Using html2canvas with optimized settings...');
       
-      // Create a clone of the element to avoid modifying the original
+      // Create a clone to avoid modifying the original
       const clone = this.previewElement.cloneNode(true) as HTMLElement;
       const container = document.createElement('div');
       container.style.position = 'absolute';
@@ -195,22 +170,7 @@ export class ImageGenerator {
       container.appendChild(clone);
       document.body.appendChild(container);
       
-      // Set up advanced positioning for absolute elements
-      const elementsToFixPosition = Array.from(clone.querySelectorAll('.absolute, [style*="position: absolute"]'));
-      const originalStyles = new Map<Element, string>();
-      
-      elementsToFixPosition.forEach(el => {
-        originalStyles.set(el, el.getAttribute('style') || '');
-        const computedStyle = window.getComputedStyle(el);
-        const currentLeft = computedStyle.left;
-        const currentTop = computedStyle.top;
-        const currentTransform = computedStyle.transform;
-        
-        // Apply computed position directly
-        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
-      });
-      
-      // Set up options for html2canvas with custom dimensions if specified
+      // Set up html2canvas options with fixes for stretching
       const options: any = {
         backgroundColor: null,
         useCORS: true,
@@ -221,7 +181,9 @@ export class ImageGenerator {
         scrollX: 0,
         scrollY: 0,
         imageTimeout: 0,
+        scale: this.outputScale || window.devicePixelRatio || 2,
         onclone: (documentClone: Document) => {
+          // Copy over font face rules to ensure text renders correctly
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -237,6 +199,22 @@ export class ImageGenerator {
               // Silently fail for cross-origin stylesheets
             }
           });
+          
+          // Fix background-size on elements to prevent stretching
+          const bgElements = documentClone.querySelectorAll('[style*="background"]');
+          bgElements.forEach(el => {
+            if (el instanceof HTMLElement) {
+              if (el.style.backgroundSize === '200%' || el.style.backgroundSize === '200% auto') {
+                el.style.backgroundSize = '200% 200%';
+              }
+              // Ensure backgrounds maintain aspect ratio
+              if (!el.style.backgroundSize) {
+                el.style.backgroundSize = 'contain';
+                el.style.backgroundRepeat = 'no-repeat';
+                el.style.backgroundPosition = 'center';
+              }
+            }
+          });
         }
       };
       
@@ -244,27 +222,39 @@ export class ImageGenerator {
       if (this.outputWidth && this.outputHeight) {
         options.width = this.outputWidth;
         options.height = this.outputHeight;
-        options.scale = this.outputScale;
         console.log(`Using custom dimensions: ${this.outputWidth}x${this.outputHeight}, scale: ${this.outputScale}`);
       } else {
-        options.scale = this.outputScale;
-        console.log(`Using original dimensions with scale: ${this.outputScale}`);
+        // Use exact element dimensions to prevent stretching
+        options.width = clone.offsetWidth;
+        options.height = clone.offsetHeight;
+        console.log(`Using element dimensions: ${clone.offsetWidth}x${clone.offsetHeight}, scale: ${this.outputScale}`);
       }
 
-      // Generate the canvas
+      // Generate the canvas with optimized settings
       const canvas = await html2canvas(clone, options);
       
       // Clean up the cloned element
       document.body.removeChild(container);
+      
+      // Ensure the canvas maintains the proper aspect ratio
+      let finalCanvas = canvas;
+      if (this.outputWidth && this.outputHeight) {
+        finalCanvas = createProportionalCanvas(canvas, this.outputWidth, this.outputHeight);
+      }
+      
+      // Optimize canvas rendering
+      const ctx = finalCanvas.getContext('2d');
+      if (ctx) {
+        optimizeCanvasRendering(ctx);
+      }
 
       // Apply any image effects to the canvas
-      const dataUrl = await applyImageEffect(canvas, this.imageEffect);
+      const dataUrl = await applyImageEffect(finalCanvas, this.imageEffect);
 
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
       
-      // Reset hover effect after capture
-      console.log('Resetting text positions and hover effect');
+      // Reset the element after capture
       resetEffect();
       
       this.lastCaptureTime = performance.now();
@@ -272,7 +262,7 @@ export class ImageGenerator {
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      // Reset hover effect
+      // Reset the element
       resetEffect();
       
       return this.fallbackCapture();
@@ -287,13 +277,13 @@ export class ImageGenerator {
     const startTime = performance.now();
     await this.waitForImages(1500); // Reduced waiting time
     
-    // Trigger hover effect
+    // Prepare element for capture
     const resetEffect = await this.prepareForCapture();
 
-    console.log('Using dom-to-image fallback...');
+    console.log('Using dom-to-image fallback with optimized settings...');
     
     const config: any = {
-      quality: 0.9, // Slightly reduced quality for better performance
+      quality: 0.95, // Increased quality
       bgcolor: null,
       style: {
         'transform-origin': 'top left',
@@ -301,21 +291,20 @@ export class ImageGenerator {
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
     
-    // Apply custom dimensions for dom-to-image if specified
+    // Apply custom dimensions and scale for dom-to-image
     if (this.outputWidth && this.outputHeight) {
       config.width = this.outputWidth;
       config.height = this.outputHeight;
       config.scale = this.outputScale;
     } else {
-      config.scale = this.outputScale;
+      config.scale = this.outputScale || window.devicePixelRatio || 2;
     }
 
-    // Skip extra processing for cross-origin images to improve performance
     try {
       const dataUrl = await domtoimage.toPng(this.previewElement, config);
       console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
       
-      // Reset hover effect
+      // Reset the element
       resetEffect();
       
       this.lastCaptureTime = performance.now();
@@ -344,7 +333,7 @@ export class ImageGenerator {
     } catch (error) {
       console.error('Fallback capture failed:', error);
       
-      // Reset hover effect
+      // Reset the element
       resetEffect();
       
       // Last resort: try to get a screenshot with a simpler approach

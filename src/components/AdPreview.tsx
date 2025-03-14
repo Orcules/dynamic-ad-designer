@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -97,9 +96,8 @@ export function AdPreview({
     renderStartTime.current = performance.now();
     
     if (!imageGenerator.current) {
-      // Initialize with default size matching the container's aspect ratio
       imageGenerator.current = new ImageGenerator('.ad-content', {
-        outputScale: 2 // Default to 2x scale for better quality
+        outputScale: 2
       });
     }
   }, []);
@@ -206,8 +204,6 @@ export function AdPreview({
       setIsCapturing(true);
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Set output dimensions to match the specified width and height
-      // This ensures the downloaded image has the exact dimensions specified
       imageGenerator.current.setOutputDimensions(width, height, 2);
       
       await imageGenerator.current.downloadImage('ad-preview.png');
@@ -225,7 +221,6 @@ export function AdPreview({
       setIsHighResCapturing(true);
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Generate a high-resolution image (3x the normal output)
       const highResWidth = width * 3;
       const highResHeight = height * 3;
       
