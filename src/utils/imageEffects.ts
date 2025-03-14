@@ -40,12 +40,22 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.zIndex = '10';
   });
   
-  // Also ensure navigation arrows are visible during capture
-  const navigationButtons = container.querySelectorAll('.absolute.inset-0.flex.items-center.justify-between button');
+  // Ensure navigation arrows are visible during capture
+  const navigationButtons = container.querySelectorAll('.absolute.inset-0.flex.items-center.justify-between button, .px-4.items-center.justify-between button');
   navigationButtons.forEach(button => {
     const element = button as HTMLElement;
     element.style.opacity = '1';
     element.style.visibility = 'visible';
+    element.style.zIndex = '20';
     element.style.pointerEvents = 'none'; // Ensure they don't interfere with capture
+  });
+  
+  // Ensure pagination dots are visible
+  const paginationDots = container.querySelectorAll('.absolute.bottom-4.left-1\\/2.-translate-x-1\\/2.flex.gap-2');
+  paginationDots.forEach(dots => {
+    const element = dots as HTMLElement;
+    element.style.opacity = '1';
+    element.style.visibility = 'visible';
+    element.style.zIndex = '20';
   });
 }

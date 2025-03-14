@@ -16,39 +16,39 @@ export function AdNavigationControls({
   currentIndex,
   totalImages,
 }: AdNavigationControlsProps) {
+  // Don't render anything if there's only one or no images
+  if (totalImages <= 1) return null;
+  
   return (
-    <div className="absolute inset-0 flex items-center justify-between -mx-16">
+    <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4">
       <Button
         variant="outline"
         size="icon"
-        className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
+        className="rounded-full bg-white/80 hover:bg-white text-gray-800 pointer-events-auto h-12 w-12 border-2 border-white shadow-lg z-10"
         onClick={onPrevious}
-        disabled={totalImages <= 1}
       >
-        <ArrowLeft className="h-8 w-8" />
+        <ArrowLeft className="h-6 w-6" />
       </Button>
       <Button
         variant="outline"
         size="icon"
-        className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground pointer-events-auto h-12 w-12 border-2 border-primary shadow-lg"
+        className="rounded-full bg-white/80 hover:bg-white text-gray-800 pointer-events-auto h-12 w-12 border-2 border-white shadow-lg z-10"
         onClick={onNext}
-        disabled={totalImages <= 1}
       >
-        <ArrowRight className="h-8 w-8" />
+        <ArrowRight className="h-6 w-6" />
       </Button>
-      {totalImages > 1 && (
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {Array.from({ length: totalImages }).map((_, index) => (
-            <div
-              key={index}
-              className={cn(
-                "w-2 h-2 rounded-full transition-colors",
-                currentIndex === index ? "bg-white" : "bg-white/50"
-              )}
-            />
-          ))}
-        </div>
-      )}
+      
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+        {Array.from({ length: totalImages }).map((_, index) => (
+          <div
+            key={index}
+            className={cn(
+              "w-3 h-3 rounded-full transition-colors",
+              currentIndex === index ? "bg-white" : "bg-white/50"
+            )}
+          />
+        ))}
+      </div>
     </div>
   );
 }
