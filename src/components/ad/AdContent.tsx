@@ -61,6 +61,8 @@ export function AdContent({
     return {
       ...textStyle,
       direction: isRTL ? 'rtl' : 'ltr',
+      textAlign: isRTL ? 'right' : 'left',
+      unicodeBidi: 'bidi-override', // Ensure proper bidirectional text rendering
     };
   }, [textStyle, isRTL]);
   
@@ -68,6 +70,8 @@ export function AdContent({
     return {
       ...descriptionStyle,
       direction: isRTL ? 'rtl' : 'ltr',
+      textAlign: isRTL ? 'right' : 'left',
+      unicodeBidi: 'bidi-override', // Ensure proper bidirectional text rendering
     };
   }, [descriptionStyle, isRTL]);
 
@@ -91,7 +95,10 @@ export function AdContent({
         {isLuxuryJewelry ? (
           <div className="relative w-full h-full flex flex-col items-center justify-between py-8">
             {/* Top text section */}
-            <div className="text-center z-10 mt-4">
+            <div className={cn(
+              "text-center z-10 mt-4",
+              isRTL ? "items-end text-right" : "items-start text-left"
+            )}>
               <AdHeadline
                 headline={headline}
                 textStyle={headlineTextStyle}
@@ -121,6 +128,7 @@ export function AdContent({
           <div className={cn(
             "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
             isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
+            isRTL && "items-end text-right"
           )}>
             <AdHeadline
               headline={headline}
