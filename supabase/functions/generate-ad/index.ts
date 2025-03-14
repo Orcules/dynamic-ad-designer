@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -179,14 +180,15 @@ serve(async (req) => {
     let destWidth, destHeight;
 
     // Match the exact positioning and scaling from the AdPreviewImage component
+    // Always maintain aspect ratio using 'contain' approach
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to match height and position horizontally
-      destHeight = data.height;
-      destWidth = data.height * imageAspect;
-    } else {
-      // Image is taller than canvas - scale to match width and position vertically
+      // Image is wider than canvas - scale to fit width
       destWidth = data.width;
       destHeight = data.width / imageAspect;
+    } else {
+      // Image is taller than canvas - scale to fit height
+      destHeight = data.height;
+      destWidth = data.height * imageAspect;
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -209,6 +211,13 @@ serve(async (req) => {
       const padding = Math.round(data.width * 0.04);
       const cornerRadius = Math.round(data.width * 0.1); // 10% of width for rounded corners
       
+      // Calculate proportions to maintain aspect ratio
+      const drawWidth = data.width - (padding * 2);
+      // Maintain aspect ratio for the height
+      const drawHeight = (drawWidth / imageAspect);
+      const drawX = padding;
+      const drawY = (data.height - drawHeight) / 2;
+      
       // Create a temporary canvas for the image
       const tempCanvas = createCanvas(destWidth, destHeight);
       const tempCtx = tempCanvas.getContext('2d');
@@ -225,11 +234,6 @@ serve(async (req) => {
         ctx.save();
         
         // Create rounded rectangle path
-        const drawWidth = data.width - (padding * 2);
-        const drawHeight = (drawWidth / destWidth) * destHeight;
-        const drawX = padding;
-        const drawY = (data.height - drawHeight) / 2;
-        
         ctx.beginPath();
         ctx.moveTo(drawX + cornerRadius, drawY);
         ctx.lineTo(drawX + drawWidth - cornerRadius, drawY);
@@ -255,11 +259,15 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // Draw the image with exact positioning to match the preview for non-luxury templates
+      // For standard templates, center the image and maintain aspect ratio
+      const drawX = (data.width - destWidth) / 2 + imagePosition.x;
+      const drawY = (data.height - destHeight) / 2 + imagePosition.y;
+      
+      // Draw the image with proper positioning and preserved aspect ratio
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 
-        destX, destY, destWidth, destHeight
+        drawX, drawY, destWidth, destHeight
       );
     }
 
