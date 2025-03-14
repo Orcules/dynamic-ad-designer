@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { cleanImageUrl } from '@/utils/imageEffects';
 import { Logger } from '@/utils/logger';
@@ -69,7 +70,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     renderStartTime.current = performance.now();
     
     if (imageUrl) {
-      // Clean the image URL first
+      // Clean the image URL first - removed the second parameter that was causing the error
       const cleanUrl = cleanImageUrl(imageUrl);
       
       if (cleanUrl !== cleanedImageUrl) {

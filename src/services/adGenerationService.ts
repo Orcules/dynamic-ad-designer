@@ -41,7 +41,7 @@ export class AdGenerationService {
       }
     }
     
-    // Clean the source image URL before sending
+    // Clean the source image URL before sending - removed the second parameter that was causing errors
     if (adData.sourceImageUrl) {
       adData.cleanSourceImageUrl = cleanImageUrl(adData.sourceImageUrl);
     }
@@ -87,14 +87,14 @@ export class AdGenerationService {
       throw new Error('Failed to generate ad');
     }
 
-    // Process the generated URL to ensure it doesn't have metadata
+    // Process the generated URL to ensure it doesn't have metadata - fixed by removing second parameter
     let imageUrl = generatedAd.imageUrl;
     if (imageUrl) {
       imageUrl = cleanImageUrl(imageUrl);
       generatedAd.imageUrl = imageUrl;
     }
 
-    // Also clean previewUrl if it exists
+    // Also clean previewUrl if it exists - fixed by removing second parameter
     if (generatedAd.previewUrl) {
       generatedAd.previewUrl = cleanImageUrl(generatedAd.previewUrl);
     }
