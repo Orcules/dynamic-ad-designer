@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { cleanImageUrl } from '@/utils/imageEffects';
 
 interface Position {
   x: number;
@@ -32,7 +33,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [error, setError] = useState(false);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
+  const [cleanedImageUrl, setCleanedImageUrl] = useState<string | undefined>(undefined);
   const [imageKey, setImageKey] = useState(0);
   const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -67,46 +68,51 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   useEffect(() => {
     renderStartTime.current = performance.now();
     
-    if (imageUrl && imageUrl !== currentImageUrl) {
-      console.log('Image URL changed from', currentImageUrl, 'to', imageUrl);
+    if (imageUrl) {
+      // Clean the image URL first
+      const cleanUrl = cleanImageUrl(imageUrl);
       
-      const cachedImg = imageCache.current.get(imageUrl) || preloadedImage;
-      
-      if (cachedImg) {
-        console.log('Using cached image for faster rendering');
-        setLoaded(true);
-        setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
+      if (cleanUrl !== cleanedImageUrl) {
+        console.log('Image URL changed and cleaned from', cleanedImageUrl, 'to', cleanUrl);
         
-        if (containerRef.current) {
-          const containerRect = containerRef.current.getBoundingClientRect();
-          setContainerSize({ width: containerRect.width, height: containerRect.height });
+        const cachedImg = imageCache.current.get(cleanUrl) || preloadedImage;
+        
+        if (cachedImg) {
+          console.log('Using cached image for faster rendering');
+          setLoaded(true);
+          setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
           
-          const newStyle = calculateStyleFromDimensions(
-            cachedImg.naturalWidth, 
-            cachedImg.naturalHeight,
-            containerRect.width,
-            containerRect.height,
-            position,
-            fastMode
-          );
-          setImageStyle(newStyle);
+          if (containerRef.current) {
+            const containerRect = containerRef.current.getBoundingClientRect();
+            setContainerSize({ width: containerRect.width, height: containerRect.height });
+            
+            const newStyle = calculateStyleFromDimensions(
+              cachedImg.naturalWidth, 
+              cachedImg.naturalHeight,
+              containerRect.width,
+              containerRect.height,
+              position,
+              fastMode
+            );
+            setImageStyle(newStyle);
+          }
+          
+          if (onImageLoaded) {
+            setTimeout(() => {
+              const renderTime = performance.now() - renderStartTime.current;
+              console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
+              onImageLoaded();
+            }, 20);
+          }
+        } else {
+          setLoaded(false);
+          setError(false);
+          setCleanedImageUrl(cleanUrl);
+          setImageKey(prev => prev + 1);
         }
-        
-        if (onImageLoaded) {
-          setTimeout(() => {
-            const renderTime = performance.now() - renderStartTime.current;
-            console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
-            onImageLoaded();
-          }, 20);
-        }
-      } else {
-        setLoaded(false);
-        setError(false);
-        setCurrentImageUrl(imageUrl);
-        setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
+  }, [imageUrl, cleanedImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
@@ -151,6 +157,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imgWidth = img.naturalWidth;
     const imgHeight = img.naturalHeight;
     
+    console.log(`Image dimensions: ${imgWidth}x${imgHeight}, Container: ${containerWidth}x${containerHeight}`);
+    
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
@@ -184,10 +192,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     const loadTime = performance.now() - renderStartTime.current;
-    console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
+    console.log(`Image loaded in ${loadTime.toFixed(2)}ms, dimensions: ${img.naturalWidth}x${img.naturalHeight}`);
     
-    if (imageUrl && !imageCache.current.has(imageUrl)) {
-      imageCache.current.set(imageUrl, img);
+    if (cleanedImageUrl && !imageCache.current.has(cleanedImageUrl)) {
+      imageCache.current.set(cleanedImageUrl, img);
     }
     
     setImageStyle(calculateImageStyle(img));
@@ -198,7 +206,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
       onImageLoaded();
     }
-  }, [imageUrl, onImageLoaded, calculateImageStyle]);
+  }, [cleanedImageUrl, onImageLoaded, calculateImageStyle]);
 
   const placeholderStyle: React.CSSProperties = {
     filter: 'blur(1px)',
@@ -211,7 +219,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     willChange: 'transform'
   };
 
-  if (!imageUrl) return null;
+  if (!imageUrl && !cleanedImageUrl) return null;
 
   return (
     <div 
@@ -220,7 +228,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     >
       <img
         key={`img-${imageKey}`}
-        src={imageUrl}
+        src={cleanedImageUrl || (imageUrl ? cleanImageUrl(imageUrl) : '')}
         alt="Ad preview"
         className={`absolute transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={imageStyle}

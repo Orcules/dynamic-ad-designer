@@ -33,10 +33,16 @@ export const applyImageEffect = async (
 export const cleanImageUrl = (url: string): string => {
   if (!url) return url;
   
-  // If the URL contains metadata (after #), remove it
+  // If the URL is a data URL with metadata
+  if (url.startsWith('data:') && url.includes('#metadata=')) {
+    return url.split('#metadata=')[0];
+  }
+  
+  // If the URL is a regular URL with metadata
   if (url.includes('#metadata=')) {
     return url.split('#metadata=')[0];
   }
+  
   return url;
 };
 
@@ -90,4 +96,26 @@ export const adjustPositionForScale = (position: { x: number, y: number }, scale
     x: position.x * scaleFactor,
     y: position.y * scaleFactor
   };
+};
+
+// Check if an image URL contains metadata
+export const hasImageMetadata = (url: string): boolean => {
+  return url.includes('#metadata=');
+};
+
+// Extract metadata from image URL
+export const extractImageMetadata = (url: string): any | null => {
+  if (!hasImageMetadata(url)) return null;
+  
+  try {
+    const metadataPart = url.split('#metadata=')[1];
+    if (metadataPart) {
+      const decodedMetadata = atob(metadataPart);
+      return JSON.parse(decodedMetadata);
+    }
+  } catch (error) {
+    console.warn('Failed to parse image metadata:', error);
+  }
+  
+  return null;
 };

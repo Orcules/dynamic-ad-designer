@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Logger } from "@/utils/logger";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cleanImageUrl } from "@/utils/imageEffects";
 
 interface GeneratedAd {
   id: string;
@@ -28,7 +29,6 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   const [copiedLinks, setCopiedLinks] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
-    // Load all images from storage bucket directly
     const fetchStorageImages = async () => {
       try {
         Logger.info("Fetching all images from storage bucket");
@@ -45,7 +45,6 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
         }
         
         if (storageFiles && storageFiles.length > 0) {
-          // Convert storage files to ad objects
           const storageBasedAds = storageFiles
             .filter(file => file.name && !file.name.includes('.gitkeep'))
             .map((file, index) => {
@@ -53,14 +52,10 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                 .from('ad-images')
                 .getPublicUrl(`full-ads/${file.name}`);
                 
-              // Try to extract a readable name from the filename
               let displayName = file.name;
-              // Extract the ad name (should be the first part before the date)
               const nameParts = displayName.split('-');
               if (nameParts.length > 1) {
-                // First part is the ad name
                 displayName = nameParts[0];
-                // Capitalize and format
                 displayName = displayName.replace(/-/g, ' ');
                 displayName = displayName.split(' ')
                   .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -73,7 +68,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                 image_url: publicUrl,
                 preview_url: publicUrl,
                 platform: 'unknown',
-                originalFilename: file.name // Store the original filename for downloads
+                originalFilename: file.name
               };
             });
             
@@ -91,10 +86,8 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   }, []);
 
   useEffect(() => {
-    // Combine ads from props with ads from storage
     const allAds = [...ads];
     
-    // Add storage images that aren't already in ads (by URL)
     const existingUrls = new Set(ads.map(ad => ad.image_url));
     const uniqueStorageAds = storageImages.filter(ad => !existingUrls.has(ad.image_url));
     
@@ -102,15 +95,12 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     
     Logger.info(`Processing ${allAds.length} ads for display (${ads.length} from props, ${uniqueStorageAds.length} unique from storage)`);
     
-    // Initialize loading states for all ads
     setLoadingStates(
       allAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
     );
     
-    // Set display ads with minimal validation
     setDisplayAds(allAds);
     
-    // Set all images as loaded after a delay
     const timer = setTimeout(() => {
       setLoadingStates(
         allAds.reduce((acc, ad) => ({ ...acc, [ad.id]: false }), {})
@@ -138,30 +128,17 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     }
   };
 
-  // Function to get clean image URL (removing any metadata)
-  const getCleanImageUrl = (url: string): string => {
-    // If the URL contains a metadata section (after #), remove it
-    if (url.includes('#metadata=')) {
-      return url.split('#metadata=')[0];
-    }
-    return url;
-  };
-
-  // Function to copy image URL to clipboard
   const handleCopyLink = async (ad: GeneratedAd) => {
     let imageUrl = ad.preview_url || ad.image_url;
     if (!imageUrl) return;
     
-    // Clean the URL before copying (remove any metadata)
-    imageUrl = getCleanImageUrl(imageUrl);
+    imageUrl = cleanImageUrl(imageUrl);
     
     try {
       await navigator.clipboard.writeText(imageUrl);
       
-      // Set copied state for this specific ad
       setCopiedLinks(prev => ({ ...prev, [ad.id]: true }));
       
-      // Reset copied state after 2 seconds
       setTimeout(() => {
         setCopiedLinks(prev => ({ ...prev, [ad.id]: false }));
       }, 2000);
@@ -203,12 +180,10 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   const handlePreviewClick = (imageUrl: string) => {
     if (!imageUrl) return;
     
-    // Clean the URL before showing the preview (remove any metadata)
-    const cleanUrl = getCleanImageUrl(imageUrl);
+    const cleanUrl = cleanImageUrl(imageUrl);
     Logger.info(`Previewing image: ${cleanUrl.substring(0, 50)}...`);
     
     try {
-      // Create a modal overlay for viewing the image
       const overlay = document.createElement('div');
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
@@ -223,7 +198,6 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       overlay.style.zIndex = '9999';
       overlay.style.padding = '20px';
       
-      // Create image element in the modal
       const img = document.createElement('img');
       img.src = cleanUrl;
       img.style.maxWidth = '90%';
@@ -231,8 +205,14 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       img.style.objectFit = 'contain';
       img.style.border = '1px solid #333';
       img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
+      img.style.backgroundSize = 'contain';
+      img.style.backgroundPosition = 'center center';
+      img.style.backgroundColor = '#000';
       
-      // Handle image load errors
+      img.onload = () => {
+        Logger.info(`Image loaded for preview: ${img.naturalWidth}x${img.naturalHeight}`);
+      };
+      
       img.onerror = () => {
         Logger.error(`Failed to load preview image: ${cleanUrl}`);
         img.src = "/placeholder.svg";
@@ -240,9 +220,8 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
         img.style.maxHeight = '300px';
       };
       
-      // Create close button
       const closeButton = document.createElement('button');
-      closeButton.innerText = 'Close';
+      closeButton.innerText = 'סגור';
       closeButton.style.marginTop = '20px';
       closeButton.style.padding = '8px 16px';
       closeButton.style.backgroundColor = '#333';
@@ -268,32 +247,26 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       
     } catch (error) {
       Logger.error(`Error showing preview: ${error instanceof Error ? error.message : String(error)}`);
-      toast.error("Failed to show preview");
+      toast.error("שגיאה בטעינת התצוגה המקדימה");
     }
   };
 
   const handleDownloadClick = (ad: GeneratedAd) => {
     if (!ad.preview_url && !ad.image_url) return;
     
-    // Clean the URL before downloading (remove any metadata)
-    const imageUrl = getCleanImageUrl(ad.preview_url || ad.image_url);
+    const imageUrl = cleanImageUrl(ad.preview_url || ad.image_url);
     Logger.info(`Attempting to download image: ${imageUrl.substring(0, 50)}...`);
     
-    // Determine the filename to use for download
     let filename = 'ad.png';
     if ((ad as any).originalFilename) {
-      // Use the original filename from storage if available
       filename = (ad as any).originalFilename;
     } else if (ad.name) {
-      // Extract filename from URL if possible
       const urlParts = imageUrl.split('/');
       const lastPart = urlParts[urlParts.length - 1];
       
       if (lastPart && lastPart.includes('.')) {
-        // URL contains a filename with extension
         filename = lastPart;
       } else {
-        // Use ad name with .png extension
         filename = `${ad.name.replace(/\s+/g, '-')}.png`;
       }
     }
@@ -335,7 +308,6 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
           })
           .catch(error => {
             Logger.error(`Failed to download from external URL: ${error.message}`);
-            // Fallback to direct download
             const a = document.createElement('a');
             a.href = imageUrl;
             a.download = filename;
@@ -372,7 +344,9 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
               <>
                 {(ad.preview_url || ad.image_url) && (
                   <img
-                    src={failedImages.has(ad.preview_url || ad.image_url) ? "/placeholder.svg" : (ad.preview_url || ad.image_url)}
+                    src={failedImages.has(ad.preview_url || ad.image_url) ? 
+                          "/placeholder.svg" : 
+                          cleanImageUrl(ad.preview_url || ad.image_url)}
                     alt={ad.name}
                     className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                     onError={(e) => handleImageError(e, ad)}
@@ -411,7 +385,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="truncate pr-4">
-                <h3 className="font-medium text-sm truncate">{ad.name}</h3>
+                <h3 className="font-medium text-sm truncate" dir="auto">{ad.name}</h3>
                 {ad.platform && (
                   <span className="text-xs text-muted-foreground">{ad.platform}</span>
                 )}
@@ -422,7 +396,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                   size="icon"
                   className="h-8 w-8 flex-shrink-0"
                   onClick={() => handleCopyLink(ad)}
-                  title="Copy link to clipboard"
+                  title="העתק קישור"
                 >
                   {copiedLinks[ad.id] ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                 </Button>
@@ -435,7 +409,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                       handlePreviewClick(ad.preview_url || ad.image_url);
                     }
                   }}
-                  title="Preview image"
+                  title="תצוגה מקדימה"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
@@ -447,7 +421,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       {onRetryLoad && (
         <div className="col-span-full flex justify-center mt-4">
           <Button variant="outline" onClick={onRetryLoad}>
-            Load More Ads
+            טען מודעות נוספות
           </Button>
         </div>
       )}

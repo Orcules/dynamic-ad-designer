@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDimensions } from "@/utils/adDimensions";
+import { cleanImageUrl, extractImageMetadata } from "@/utils/imageEffects";
 
 export interface GeneratedAdResult {
   imageUrl: string;
@@ -21,18 +22,23 @@ export class AdGenerationService {
     let elementDimensions = null;
     
     // Check if the source image URL has metadata
-    if (adData.sourceImageUrl && adData.sourceImageUrl.includes('#metadata=')) {
+    if (adData.sourceImageUrl) {
       try {
-        const metadataPart = adData.sourceImageUrl.split('#metadata=')[1];
-        if (metadataPart) {
-          const decodedMetadata = atob(metadataPart);
-          elementDimensions = JSON.parse(decodedMetadata);
-          scaleFactor = elementDimensions.scaleFactor || 2;
+        // Extract metadata using the helper function
+        const metadata = extractImageMetadata(adData.sourceImageUrl);
+        if (metadata) {
+          elementDimensions = metadata;
+          scaleFactor = metadata.scaleFactor || 2;
           console.log('Extracted metadata:', elementDimensions);
         }
       } catch (error) {
         console.warn('Failed to parse image metadata:', error);
       }
+    }
+    
+    // Clean the source image URL before sending
+    if (adData.sourceImageUrl) {
+      adData.cleanSourceImageUrl = cleanImageUrl(adData.sourceImageUrl);
     }
     
     formData.append('data', JSON.stringify({
@@ -63,9 +69,14 @@ export class AdGenerationService {
 
     // Process the generated URL to ensure it doesn't have metadata
     let imageUrl = generatedAd.imageUrl;
-    if (imageUrl && imageUrl.includes('#metadata=')) {
-      imageUrl = imageUrl.split('#metadata=')[0];
+    if (imageUrl) {
+      imageUrl = cleanImageUrl(imageUrl);
       generatedAd.imageUrl = imageUrl;
+    }
+
+    // Also clean previewUrl if it exists
+    if (generatedAd.previewUrl) {
+      generatedAd.previewUrl = cleanImageUrl(generatedAd.previewUrl);
     }
 
     return {
