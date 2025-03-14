@@ -12,6 +12,8 @@ declare module 'html2canvas' {
     scrollY: number;
     x: number;
     y: number;
+    windowWidth?: number;
+    windowHeight?: number;
     foreignObjectRendering?: boolean;
     onclone?: (document: Document) => void | Promise<void>;
     ignoreElements?: (element: Element) => boolean;

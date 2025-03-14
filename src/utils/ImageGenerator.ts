@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 import { calculateOptimalCrop, cropImage } from './imageCropper';
@@ -164,8 +163,8 @@ export class ImageGenerator {
         y: 0,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: rect.width * this.scaleFactor,
-        windowHeight: rect.height * this.scaleFactor,
+        windowWidth: canvasWidth,
+        windowHeight: canvasHeight,
         imageTimeout: 0,
         onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
