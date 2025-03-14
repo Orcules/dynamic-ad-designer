@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { calculateCoverDimensions, calculateCropDimensions } from '@/utils/imageEffects';
-import { Logger } from '@/utils/logger';
 
 interface Position {
   x: number;
@@ -39,22 +38,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const loadAttemptCount = useRef(0);
   const initialLoadComplete = useRef(false);
   const styleUpdateTimeoutRef = useRef<number | null>(null);
-  const unmountedRef = useRef(false);
-
-  // Set up unmounted ref for cleanup
-  useEffect(() => {
-    return () => {
-      unmountedRef.current = true;
-      if (styleUpdateTimeoutRef.current) {
-        window.clearTimeout(styleUpdateTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // Apply physical crop on load
   const applyCropOnLoad = (img: HTMLImageElement) => {
-    if (!containerRef.current || unmountedRef.current) return;
+    if (!containerRef.current) return;
     
+    const containerRect = containerRef.current.getBoundingClientRect();
     imageElementRef.current = img;
     
     // Make sure we have accurate natural dimensions
@@ -73,18 +62,14 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       // If the position is (0,0), ensure the image is properly centered
       if (position.x === 0 && position.y === 0) {
         // Let the component render first, then apply initial centering
-        setTimeout(() => {
-          if (!unmountedRef.current) {
-            updateImageStyle(position);
-          }
-        }, 50);
+        setTimeout(() => updateImageStyle(position), 50);
       }
     }
     
     setLoaded(true);
     updateImageStyle(position);
     
-    if (onImageLoaded && !unmountedRef.current) {
+    if (onImageLoaded) {
       try {
         onImageLoaded();
       } catch (callbackError) {
@@ -96,7 +81,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   // Track position changes and apply immediately
   useEffect(() => {
     positionRef.current = position;
-    if (loaded && containerRef.current && !unmountedRef.current) {
+    if (loaded && containerRef.current) {
       // Compare with last position to detect actual movements
       if (position.x !== lastPositionRef.current.x || position.y !== lastPositionRef.current.y) {
         lastPositionRef.current = {...position};
@@ -111,9 +96,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         
         // And then again after a short delay to ensure proper rendering
         styleUpdateTimeoutRef.current = window.setTimeout(() => {
-          if (!unmountedRef.current) {
-            updateImageStyle(position);
-          }
+          updateImageStyle(position);
         }, 50);
       }
     }
@@ -127,18 +110,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   // Update container size with ResizeObserver
   useEffect(() => {
-    if (!containerRef.current || unmountedRef.current) return;
+    if (!containerRef.current) return;
     
     const updateContainerSize = () => {
-      if (containerRef.current && loaded && !unmountedRef.current) {
+      if (containerRef.current && loaded) {
         updateImageStyle(positionRef.current);
       }
     };
     
     const resizeObserver = new ResizeObserver(() => {
-      if (!unmountedRef.current) {
-        updateContainerSize();
-      }
+      updateContainerSize();
     });
     
     resizeObserver.observe(containerRef.current);
@@ -154,7 +135,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   // Helper function to update image style based on position
   const updateImageStyle = (pos: Position) => {
-    if (!containerRef.current || !imageElementRef.current || unmountedRef.current) return;
+    if (!containerRef.current || !imageElementRef.current) return;
     
     const containerRect = containerRef.current.getBoundingClientRect();
     
@@ -184,21 +165,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     );
     
     // Apply the styles with fixed positioning 
-    if (!unmountedRef.current) {
-      setImageStyle({
-        width: `${coverDimensions.width}px`,
-        height: `${coverDimensions.height}px`,
-        position: 'absolute',
-        left: `${coverDimensions.x}px`,
-        top: `${coverDimensions.y}px`,
-        transform: 'none',
-        transition: fastMode ? 'none' : 'width 0.1s ease-out, height 0.1s ease-out, left 0.1s ease-out, top 0.1s ease-out',
-        objectFit: 'cover',
-        objectPosition: 'center',
-        willChange: 'left, top, width, height',
-        zIndex: 1,
-      });
-    }
+    setImageStyle({
+      width: `${coverDimensions.width}px`,
+      height: `${coverDimensions.height}px`,
+      position: 'absolute',
+      left: `${coverDimensions.x}px`,
+      top: `${coverDimensions.y}px`,
+      transform: 'none',
+      transition: fastMode ? 'none' : 'width 0.1s ease-out, height 0.1s ease-out, left 0.1s ease-out, top 0.1s ease-out',
+      objectFit: 'cover',
+      objectPosition: 'center',
+      willChange: 'left, top, width, height',
+      zIndex: 1,
+    });
     
     // Log dimensions for debugging
     console.log('Image dimensions:', {
@@ -218,23 +197,17 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   // Safe image load handler with proper error handling and retry
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     try {
-      if (unmountedRef.current) return;
-      
       loadAttemptCount.current = 0; // Reset load attempts on success
       const img = e.target as HTMLImageElement;
       applyCropOnLoad(img);
     } catch (error) {
       console.error('Error in handleImageLoad:', error);
-      if (!unmountedRef.current) {
-        setError(true);
-      }
+      setError(true);
     }
   };
 
   // Retry loading if image fails
   const handleImageError = () => {
-    if (unmountedRef.current) return;
-    
     setError(true);
     if (loadAttemptCount.current < 2 && imageUrl) {
       loadAttemptCount.current++;
@@ -242,7 +215,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       
       // Retry with a slight delay
       setTimeout(() => {
-        if (imageRef.current && !unmountedRef.current) {
+        if (imageRef.current) {
           imageRef.current.src = imageUrl + '?retry=' + Date.now();
         }
       }, 500);
