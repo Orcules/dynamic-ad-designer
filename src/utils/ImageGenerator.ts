@@ -1,14 +1,59 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
+import { applyImageEffect } from './imageEffects';
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
   private lastCaptureTime: number = 0;
   private captureInProgress: boolean = false;
   private captureQueue: Array<() => void> = [];
+  private outputWidth: number | null = null;
+  private outputHeight: number | null = null;
+  private outputScale: number = 2;
+  private imageEffect: 'sepia' | 'none' = 'none';
 
-  constructor(previewSelector = '.ad-content') {
+  constructor(
+    previewSelector = '.ad-content', 
+    options?: { 
+      outputWidth?: number; 
+      outputHeight?: number; 
+      outputScale?: number;
+      effect?: 'sepia' | 'none';
+    }
+  ) {
     this.previewElement = document.querySelector(previewSelector);
+    
+    if (options) {
+      if (options.outputWidth) this.outputWidth = options.outputWidth;
+      if (options.outputHeight) this.outputHeight = options.outputHeight;
+      if (options.outputScale) this.outputScale = options.outputScale;
+      if (options.effect) this.imageEffect = options.effect;
+    }
+    
+    console.log(`ImageGenerator initialized with dimensions: ${this.outputWidth}x${this.outputHeight}, scale: ${this.outputScale}`);
+  }
+
+  /**
+   * Set the output dimensions for the generated image
+   * @param width The width in pixels for the output image (null to use original)
+   * @param height The height in pixels for the output image (null to use original)
+   * @param scale The scale factor for the output image (default: 2)
+   */
+  public setOutputDimensions(width: number | null, height: number | null, scale: number = 2): void {
+    this.outputWidth = width;
+    this.outputHeight = height;
+    this.outputScale = scale;
+    console.log(`Output dimensions set to: ${width}x${height}, scale: ${scale}`);
+  }
+  
+  /**
+   * Set the image effect to apply during generation
+   * @param effect The effect to apply ('sepia' or 'none')
+   */
+  public setImageEffect(effect: 'sepia' | 'none'): void {
+    this.imageEffect = effect;
+    console.log(`Image effect set to: ${effect}`);
   }
 
   private async waitForImages(maxWaitTime = 2000): Promise<void> {
@@ -141,11 +186,18 @@ export class ImageGenerator {
     try {
       console.log('Using html2canvas...');
       
-      // Initialize variables before using them
+      // Create a clone of the element to avoid modifying the original
+      const clone = this.previewElement.cloneNode(true) as HTMLElement;
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.top = '-9999px';
+      container.style.left = '-9999px';
+      container.appendChild(clone);
+      document.body.appendChild(container);
+      
+      // Set up advanced positioning for absolute elements
+      const elementsToFixPosition = Array.from(clone.querySelectorAll('.absolute, [style*="position: absolute"]'));
       const originalStyles = new Map<Element, string>();
-      const elementsToFixPosition = this.previewElement ? 
-        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
-        [];
       
       elementsToFixPosition.forEach(el => {
         originalStyles.set(el, el.getAttribute('style') || '');
@@ -157,11 +209,10 @@ export class ImageGenerator {
         // Apply computed position directly
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
-
-      // Fix: Call html2canvas as a function with proper options
-      const canvas = await html2canvas(this.previewElement, {
+      
+      // Set up options for html2canvas with custom dimensions if specified
+      const options: any = {
         backgroundColor: null,
-        scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -170,7 +221,7 @@ export class ImageGenerator {
         scrollX: 0,
         scrollY: 0,
         imageTimeout: 0,
-        onclone: (documentClone) => {
+        onclone: (documentClone: Document) => {
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -187,41 +238,39 @@ export class ImageGenerator {
             }
           });
         }
-      });
+      };
+      
+      // Apply custom dimensions if specified
+      if (this.outputWidth && this.outputHeight) {
+        options.width = this.outputWidth;
+        options.height = this.outputHeight;
+        options.scale = this.outputScale;
+        console.log(`Using custom dimensions: ${this.outputWidth}x${this.outputHeight}, scale: ${this.outputScale}`);
+      } else {
+        options.scale = this.outputScale;
+        console.log(`Using original dimensions with scale: ${this.outputScale}`);
+      }
+
+      // Generate the canvas
+      const canvas = await html2canvas(clone, options);
+      
+      // Clean up the cloned element
+      document.body.removeChild(container);
+
+      // Apply any image effects to the canvas
+      const dataUrl = await applyImageEffect(canvas, this.imageEffect);
 
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
-      
-      // Restore original styles
-      elementsToFixPosition.forEach(el => {
-        const original = originalStyles.get(el);
-        if (original !== undefined) {
-          el.setAttribute('style', original);
-        }
-      });
       
       // Reset hover effect after capture
       console.log('Resetting text positions and hover effect');
       resetEffect();
       
       this.lastCaptureTime = performance.now();
-      return canvas.toDataURL('image/png', 0.9); // Slightly reduced quality for better performance
+      return dataUrl;
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
-      
-      // Fix: Define a local scope copy of these variables before using them in this catch block
-      const localElementsToFixPosition = this.previewElement ? 
-        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
-        [];
-      const localOriginalStyles = new Map<Element, string>();
-      
-      // Restore original styles before fallback
-      localElementsToFixPosition.forEach(el => {
-        const original = localOriginalStyles.get(el);
-        if (original !== undefined) {
-          el.setAttribute('style', original);
-        }
-      });
       
       // Reset hover effect
       resetEffect();
@@ -242,15 +291,24 @@ export class ImageGenerator {
     const resetEffect = await this.prepareForCapture();
 
     console.log('Using dom-to-image fallback...');
-    const config = {
+    
+    const config: any = {
       quality: 0.9, // Slightly reduced quality for better performance
-      scale: 2,
       bgcolor: null,
       style: {
         'transform-origin': 'top left',
       },
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
+    
+    // Apply custom dimensions for dom-to-image if specified
+    if (this.outputWidth && this.outputHeight) {
+      config.width = this.outputWidth;
+      config.height = this.outputHeight;
+      config.scale = this.outputScale;
+    } else {
+      config.scale = this.outputScale;
+    }
 
     // Skip extra processing for cross-origin images to improve performance
     try {
@@ -261,6 +319,27 @@ export class ImageGenerator {
       resetEffect();
       
       this.lastCaptureTime = performance.now();
+      
+      // Apply image effect to the data URL if needed
+      if (this.imageEffect !== 'none') {
+        // Create a canvas from the data URL
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = reject;
+          img.src = dataUrl;
+        });
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+        
+        ctx.drawImage(img, 0, 0);
+        return applyImageEffect(canvas, this.imageEffect);
+      }
+      
       return dataUrl;
     } catch (error) {
       console.error('Fallback capture failed:', error);
@@ -275,8 +354,8 @@ export class ImageGenerator {
         if (!ctx) throw new Error('Failed to get canvas context');
         
         const rect = this.previewElement.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+        canvas.width = this.outputWidth || rect.width;
+        canvas.height = this.outputHeight || rect.height;
         
         // Fill with a background color as placeholder
         ctx.fillStyle = '#ffffff';
@@ -360,6 +439,49 @@ export class ImageGenerator {
       console.log('Download completed successfully');
     } catch (error) {
       console.error('Error downloading image:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Generate a high-resolution version of the image
+   * Useful for creating images suitable for printing or high-quality sharing
+   * @param filename Optional filename for download
+   * @param scale Scale factor for the high-resolution image
+   */
+  async downloadHighResolution(filename = 'ad-high-res.png', scale = 3): Promise<void> {
+    try {
+      console.log(`Starting high-resolution download (scale: ${scale})...`);
+      
+      // Store original settings
+      const originalWidth = this.outputWidth;
+      const originalHeight = this.outputHeight;
+      const originalScale = this.outputScale;
+      
+      // Set high-resolution settings
+      if (originalWidth && originalHeight) {
+        this.setOutputDimensions(originalWidth * scale / originalScale, originalHeight * scale / originalScale, scale);
+      } else {
+        this.setOutputDimensions(null, null, scale);
+      }
+      
+      // Generate high-resolution image
+      const dataUrl = await this.getImageUrl();
+      
+      // Restore original settings
+      this.setOutputDimensions(originalWidth, originalHeight, originalScale);
+      
+      // Download the image
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      console.log('High-resolution download completed successfully');
+    } catch (error) {
+      console.error('Error downloading high-resolution image:', error);
       throw error;
     }
   }

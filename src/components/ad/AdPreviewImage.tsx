@@ -16,9 +16,6 @@ interface AdPreviewImageProps {
   preloadedImage?: HTMLImageElement | null;
 }
 
-// Define the correct ObjectFit type
-type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
-
 export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   imageUrl,
   position,
@@ -119,28 +116,30 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    let width, height;
-    
-    // Use cover instead of contain to ensure the image fills the container without black margins
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
-    
-    return {
+    const newStyle: React.CSSProperties = {
       transform: `translate(${pos.x}px, ${pos.y}px)`,
-      width: `${width}px`,
-      height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'cover' as ObjectFit,
+      objectFit: 'contain', // Changed from 'cover' to 'contain' to preserve aspect ratio
       willChange: 'transform',
     };
+    
+    // Calculate dimensions while preserving aspect ratio
+    if (imageAspect > containerAspect) {
+      // Image is wider than container
+      const scaledWidth = containerHeight * imageAspect;
+      newStyle.height = '100%';
+      newStyle.width = `${scaledWidth}px`;
+      newStyle.maxWidth = 'none';
+    } else {
+      // Image is taller than container
+      const scaledHeight = containerWidth / imageAspect;
+      newStyle.width = '100%';
+      newStyle.height = `${scaledHeight}px`;
+      newStyle.maxHeight = 'none';
+    }
+    
+    return newStyle;
   }, []);
 
   const calculateImageStyle = useCallback((img: HTMLImageElement) => {
@@ -159,13 +158,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Use cover instead of contain to ensure the image fills the container without black margins
     if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
+      // Image is wider than container - scale by height
       height = containerHeight;
       width = containerHeight * imageAspect;
     } else {
-      // Image is taller than container - scale to fit width
+      // Image is taller than container - scale by width
       width = containerWidth;
       height = containerWidth / imageAspect;
     }
@@ -176,7 +174,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${position.x}px, ${position.y}px)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,
-      objectFit: 'cover' as ObjectFit,
+      objectFit: 'contain' as const, // Changed from 'cover' to 'contain'
       willChange: 'transform',
     };
   }, [position, fastMode]);
@@ -190,7 +188,40 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       imageCache.current.set(imageUrl, img);
     }
     
-    setImageStyle(calculateImageStyle(img));
+    if (!fastMode) {
+      setImageStyle(calculateImageStyle(img));
+    } else {
+      // Even in fast mode, we need to preserve aspect ratio
+      const imgWidth = img.naturalWidth;
+      const imgHeight = img.naturalHeight;
+      
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+        const imageAspect = imgWidth / imgHeight;
+        const containerAspect = containerWidth / containerHeight;
+        
+        let width, height;
+        
+        if (imageAspect > containerAspect) {
+          height = containerHeight;
+          width = containerHeight * imageAspect;
+        } else {
+          width = containerWidth;
+          height = containerWidth / imageAspect;
+        }
+        
+        setImageStyle({
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          width: `${width}px`, 
+          height: `${height}px`,
+          objectFit: 'contain', // Changed from 'cover' to 'contain'
+          position: 'absolute',
+          willChange: 'transform'
+        });
+      }
+    }
+    
     setLoaded(true);
     
     if (onImageLoaded) {
@@ -198,18 +229,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
       onImageLoaded();
     }
-  }, [imageUrl, onImageLoaded, calculateImageStyle]);
+  }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
-  const placeholderStyle: React.CSSProperties = {
+  // When in fast mode, still use 'contain' instead of 'cover'
+  const placeholderStyle = fastMode ? {
     filter: 'blur(1px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'cover' as ObjectFit,
-    objectPosition: 'center',
+    objectFit: 'contain' as const, // Changed from 'cover' to 'contain'
+    objectPosition: 'center' as const,
     backgroundColor: '#333',
     willChange: 'transform'
-  };
+  } : {};
 
   if (!imageUrl) return null;
 
