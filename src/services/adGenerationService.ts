@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDimensions } from "@/utils/adDimensions";
-import { cleanImageUrl, extractImageMetadata } from "@/utils/imageEffects";
+import { cleanImageUrl } from "@/utils/imageEffects";
 import { Logger } from "@/utils/logger";
 
 export interface GeneratedAdResult {
@@ -25,12 +25,16 @@ export class AdGenerationService {
     // Check if the source image URL has metadata
     if (adData.sourceImageUrl) {
       try {
-        // Extract metadata using the helper function
-        const metadata = extractImageMetadata(adData.sourceImageUrl);
-        if (metadata) {
-          elementDimensions = metadata;
-          scaleFactor = metadata.scaleFactor || 2;
-          Logger.info('Extracted metadata:', elementDimensions);
+        // Extract metadata from the URL if present
+        const metadataMatch = adData.sourceImageUrl.match(/metadata=([^;]+)/);
+        if (metadataMatch && metadataMatch[1]) {
+          try {
+            elementDimensions = JSON.parse(decodeURIComponent(metadataMatch[1]));
+            scaleFactor = elementDimensions.scaleFactor || 2;
+            Logger.info('Extracted metadata:', elementDimensions);
+          } catch (parseError) {
+            Logger.warn('Failed to parse metadata JSON:', parseError);
+          }
         }
       } catch (error) {
         Logger.warn('Failed to parse image metadata:', error);

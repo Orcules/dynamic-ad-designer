@@ -1,6 +1,5 @@
-
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { cleanImageUrl, preserveAspectRatio } from '@/utils/imageEffects';
+import { cleanImageUrl } from '@/utils/imageEffects';
 import { Logger } from '@/utils/logger';
 
 interface Position {
@@ -114,6 +113,43 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       }
     }
   }, [imageUrl, cleanedImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
+
+  const preserveAspectRatio = (
+    imgWidth: number, 
+    imgHeight: number, 
+    containerWidth: number, 
+    containerHeight: number, 
+    objectFit: 'contain' | 'cover' = 'cover'
+  ) => {
+    const imgRatio = imgWidth / imgHeight;
+    const containerRatio = containerWidth / containerHeight;
+    
+    let width, height, x = 0, y = 0;
+    
+    if (objectFit === 'contain') {
+      if (imgRatio > containerRatio) {
+        width = containerWidth;
+        height = containerWidth / imgRatio;
+        y = (containerHeight - height) / 2;
+      } else {
+        height = containerHeight;
+        width = containerHeight * imgRatio;
+        x = (containerWidth - width) / 2;
+      }
+    } else { // cover
+      if (imgRatio > containerRatio) {
+        height = containerHeight;
+        width = containerHeight * imgRatio;
+        x = (containerWidth - width) / 2;
+      } else {
+        width = containerWidth;
+        height = containerWidth / imgRatio;
+        y = (containerHeight - height) / 2;
+      }
+    }
+    
+    return { width, height, x, y };
+  };
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,

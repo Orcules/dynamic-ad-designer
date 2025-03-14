@@ -1,4 +1,3 @@
-
 export const applyImageEffect = async (
   canvas: HTMLCanvasElement,
   effect: 'sepia' | 'none'
@@ -104,64 +103,50 @@ export const hasImageMetadata = (url: string): boolean => {
 };
 
 // Extract metadata from image URL
-export const extractImageMetadata = (url: string): any | null => {
-  if (!hasImageMetadata(url)) return null;
-  
+export const extractImageMetadata = (url: string) => {
   try {
-    const metadataPart = url.split('#metadata=')[1];
-    if (metadataPart) {
-      const decodedMetadata = atob(metadataPart);
-      return JSON.parse(decodedMetadata);
+    const metadataMatch = url.match(/metadata=([^;]+)/);
+    if (metadataMatch && metadataMatch[1]) {
+      return JSON.parse(decodeURIComponent(metadataMatch[1]));
     }
   } catch (error) {
-    console.warn('Failed to parse image metadata:', error);
+    console.error("Failed to extract metadata:", error);
   }
-  
   return null;
 };
 
-// New helper function to preserve aspect ratio when drawing images
+// New helper function to preserve aspect ratio when displaying images
 export const preserveAspectRatio = (
-  sourceWidth: number, 
-  sourceHeight: number, 
-  targetWidth: number, 
-  targetHeight: number,
-  fit: 'contain' | 'cover' = 'cover'
-): { width: number; height: number; x: number; y: number } => {
-  const sourceRatio = sourceWidth / sourceHeight;
-  const targetRatio = targetWidth / targetHeight;
+  imgWidth: number, 
+  imgHeight: number, 
+  containerWidth: number, 
+  containerHeight: number, 
+  objectFit: 'contain' | 'cover' = 'cover'
+) => {
+  const imgRatio = imgWidth / imgHeight;
+  const containerRatio = containerWidth / containerHeight;
   
-  let width, height, x, y;
+  let width, height, x = 0, y = 0;
   
-  if (fit === 'contain') {
-    // Fit the entire image within the target dimensions
-    if (sourceRatio > targetRatio) {
-      // Source is wider than target
-      width = targetWidth;
-      height = targetWidth / sourceRatio;
-      x = 0;
-      y = (targetHeight - height) / 2;
+  if (objectFit === 'contain') {
+    if (imgRatio > containerRatio) {
+      width = containerWidth;
+      height = containerWidth / imgRatio;
+      y = (containerHeight - height) / 2;
     } else {
-      // Source is taller than target
-      height = targetHeight;
-      width = targetHeight * sourceRatio;
-      x = (targetWidth - width) / 2;
-      y = 0;
+      height = containerHeight;
+      width = containerHeight * imgRatio;
+      x = (containerWidth - width) / 2;
     }
   } else { // cover
-    // Fill the entire target area, may crop image
-    if (sourceRatio > targetRatio) {
-      // Source is wider than target
-      height = targetHeight;
-      width = targetHeight * sourceRatio;
-      x = (targetWidth - width) / 2;
-      y = 0;
+    if (imgRatio > containerRatio) {
+      height = containerHeight;
+      width = containerHeight * imgRatio;
+      x = (containerWidth - width) / 2;
     } else {
-      // Source is taller than target
-      width = targetWidth;
-      height = targetWidth / sourceRatio;
-      x = 0;
-      y = (targetHeight - height) / 2;
+      width = containerWidth;
+      height = containerWidth / imgRatio;
+      y = (containerHeight - height) / 2;
     }
   }
   
