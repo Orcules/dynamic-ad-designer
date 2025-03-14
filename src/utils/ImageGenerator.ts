@@ -158,7 +158,7 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      // Use html2canvas without accessing .default
+      // Fix: Call html2canvas as a function with proper options
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: 2,
@@ -209,9 +209,15 @@ export class ImageGenerator {
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
+      // Fix: Define a local scope copy of these variables before using them in this catch block
+      const localElementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
+      const localOriginalStyles = new Map<Element, string>();
+      
       // Restore original styles before fallback
-      elementsToFixPosition.forEach(el => {
-        const original = originalStyles.get(el);
+      localElementsToFixPosition.forEach(el => {
+        const original = localOriginalStyles.get(el);
         if (original !== undefined) {
           el.setAttribute('style', original);
         }
