@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { calculateCoverDimensions, calculateCropDimensions } from '@/utils/imageEffects';
+import { Logger } from '@/utils/logger';
 
 interface Position {
   x: number;
@@ -38,50 +39,69 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const loadAttemptCount = useRef(0);
   const initialLoadComplete = useRef(false);
   const styleUpdateTimeoutRef = useRef<number | null>(null);
+  const isUnmounted = useRef(false);
+
+  // Clean up resources when component unmounts
+  useEffect(() => {
+    return () => {
+      isUnmounted.current = true;
+      if (styleUpdateTimeoutRef.current) {
+        window.clearTimeout(styleUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Apply physical crop on load
   const applyCropOnLoad = (img: HTMLImageElement) => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || isUnmounted.current) return;
     
-    const containerRect = containerRef.current.getBoundingClientRect();
-    imageElementRef.current = img;
-    
-    // Make sure we have accurate natural dimensions
-    const imgWidth = img.naturalWidth || img.width; 
-    const imgHeight = img.naturalHeight || img.height;
-    
-    // Only update state if dimensions are valid and have changed
-    if (imgWidth > 0 && imgHeight > 0 && 
-        (imgWidth !== naturalSize.width || imgHeight !== naturalSize.height)) {
-      setNaturalSize({ width: imgWidth, height: imgHeight });
-    }
-    
-    if (!initialLoadComplete.current) {
-      initialLoadComplete.current = true;
+    try {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      imageElementRef.current = img;
       
-      // If the position is (0,0), ensure the image is properly centered
-      if (position.x === 0 && position.y === 0) {
-        // Let the component render first, then apply initial centering
-        setTimeout(() => updateImageStyle(position), 50);
+      // Make sure we have accurate natural dimensions
+      const imgWidth = img.naturalWidth || img.width; 
+      const imgHeight = img.naturalHeight || img.height;
+      
+      // Only update state if dimensions are valid and have changed
+      if (imgWidth > 0 && imgHeight > 0 && 
+          (imgWidth !== naturalSize.width || imgHeight !== naturalSize.height)) {
+        setNaturalSize({ width: imgWidth, height: imgHeight });
       }
-    }
-    
-    setLoaded(true);
-    updateImageStyle(position);
-    
-    if (onImageLoaded) {
-      try {
-        onImageLoaded();
-      } catch (callbackError) {
-        console.error('Error in onImageLoaded callback:', callbackError);
+      
+      if (!initialLoadComplete.current) {
+        initialLoadComplete.current = true;
+        
+        // If the position is (0,0), ensure the image is properly centered
+        if (position.x === 0 && position.y === 0) {
+          // Let the component render first, then apply initial centering
+          setTimeout(() => {
+            if (!isUnmounted.current) updateImageStyle(position);
+          }, 50);
+        }
       }
+      
+      setLoaded(true);
+      updateImageStyle(position);
+      
+      if (onImageLoaded && !isUnmounted.current) {
+        try {
+          onImageLoaded();
+        } catch (callbackError) {
+          console.error('Error in onImageLoaded callback:', callbackError);
+        }
+      }
+    } catch (err) {
+      console.error("Error in applyCropOnLoad:", err);
+      // Still set loaded to true to avoid infinite loading state
+      setLoaded(true);
     }
   };
 
   // Track position changes and apply immediately
   useEffect(() => {
     positionRef.current = position;
-    if (loaded && containerRef.current) {
+    if (loaded && containerRef.current && !isUnmounted.current) {
       // Compare with last position to detect actual movements
       if (position.x !== lastPositionRef.current.x || position.y !== lastPositionRef.current.y) {
         lastPositionRef.current = {...position};
@@ -96,7 +116,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         
         // And then again after a short delay to ensure proper rendering
         styleUpdateTimeoutRef.current = window.setTimeout(() => {
-          updateImageStyle(position);
+          if (!isUnmounted.current) updateImageStyle(position);
         }, 50);
       }
     }
@@ -113,90 +133,93 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     if (!containerRef.current) return;
     
     const updateContainerSize = () => {
-      if (containerRef.current && loaded) {
+      if (containerRef.current && loaded && !isUnmounted.current) {
         updateImageStyle(positionRef.current);
       }
     };
     
-    const resizeObserver = new ResizeObserver(() => {
+    let resizeObserver: ResizeObserver;
+    try {
+      resizeObserver = new ResizeObserver(() => {
+        updateContainerSize();
+      });
+      
+      resizeObserver.observe(containerRef.current);
       updateContainerSize();
-    });
-    
-    resizeObserver.observe(containerRef.current);
-    updateContainerSize();
+    } catch (err) {
+      console.error("Error setting up ResizeObserver:", err);
+    }
     
     return () => {
-      if (containerRef.current) {
-        resizeObserver.unobserve(containerRef.current);
+      try {
+        if (resizeObserver && containerRef.current) {
+          resizeObserver.unobserve(containerRef.current);
+        }
+        if (resizeObserver) {
+          resizeObserver.disconnect();
+        }
+      } catch (err) {
+        console.error("Error cleaning up ResizeObserver:", err);
       }
-      resizeObserver.disconnect();
     };
   }, [loaded]);
 
   // Helper function to update image style based on position
   const updateImageStyle = (pos: Position) => {
-    if (!containerRef.current || !imageElementRef.current) return;
+    if (!containerRef.current || !imageElementRef.current || isUnmounted.current) return;
     
-    const containerRect = containerRef.current.getBoundingClientRect();
-    
-    // Get latest natural dimensions from the actual element
-    const imgWidth = imageElementRef.current.naturalWidth || naturalSize.width;
-    const imgHeight = imageElementRef.current.naturalHeight || naturalSize.height;
-    
-    if (imgWidth === 0 || imgHeight === 0) {
-      console.warn('Image has zero dimensions, cannot calculate cover style');
-      return;
+    try {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      // Get latest natural dimensions from the actual element
+      const imgWidth = imageElementRef.current.naturalWidth || naturalSize.width;
+      const imgHeight = imageElementRef.current.naturalHeight || naturalSize.height;
+      
+      if (imgWidth === 0 || imgHeight === 0) {
+        console.warn('Image has zero dimensions, cannot calculate cover style');
+        return;
+      }
+      
+      // Default to centered position if pos is (0,0)
+      const effectivePos = (pos.x === 0 && pos.y === 0) ? 
+        { x: 0, y: 0 } : // This will ensure default centering behavior
+        pos;
+      
+      // Calculate dimensions that ensure the image completely covers the container
+      // Improved to ensure proper centering and scaling regardless of image dimensions
+      const coverDimensions = calculateCoverDimensions(
+        imgWidth,
+        imgHeight,
+        containerRect.width,
+        containerRect.height,
+        effectivePos.x,
+        effectivePos.y
+      );
+      
+      // Apply the styles with fixed positioning 
+      setImageStyle({
+        width: `${coverDimensions.width}px`,
+        height: `${coverDimensions.height}px`,
+        position: 'absolute',
+        left: `${coverDimensions.x}px`,
+        top: `${coverDimensions.y}px`,
+        transform: 'none',
+        transition: fastMode ? 'none' : 'width 0.1s ease-out, height 0.1s ease-out, left 0.1s ease-out, top 0.1s ease-out',
+        objectFit: 'cover',
+        objectPosition: 'center',
+        willChange: 'left, top, width, height',
+        zIndex: 1,
+      });
+    } catch (err) {
+      console.error("Error in updateImageStyle:", err);
     }
-    
-    // Default to centered position if pos is (0,0)
-    const effectivePos = (pos.x === 0 && pos.y === 0) ? 
-      { x: 0, y: 0 } : // This will ensure default centering behavior
-      pos;
-    
-    // Calculate dimensions that ensure the image completely covers the container
-    // Improved to ensure proper centering and scaling regardless of image dimensions
-    const coverDimensions = calculateCoverDimensions(
-      imgWidth,
-      imgHeight,
-      containerRect.width,
-      containerRect.height,
-      effectivePos.x,
-      effectivePos.y
-    );
-    
-    // Apply the styles with fixed positioning 
-    setImageStyle({
-      width: `${coverDimensions.width}px`,
-      height: `${coverDimensions.height}px`,
-      position: 'absolute',
-      left: `${coverDimensions.x}px`,
-      top: `${coverDimensions.y}px`,
-      transform: 'none',
-      transition: fastMode ? 'none' : 'width 0.1s ease-out, height 0.1s ease-out, left 0.1s ease-out, top 0.1s ease-out',
-      objectFit: 'cover',
-      objectPosition: 'center',
-      willChange: 'left, top, width, height',
-      zIndex: 1,
-    });
-    
-    // Log dimensions for debugging
-    console.log('Image dimensions:', {
-      natural: {
-        width: imgWidth,
-        height: imgHeight
-      },
-      container: {
-        width: containerRect.width,
-        height: containerRect.height
-      },
-      cover: coverDimensions,
-      position: pos
-    });
   };
 
   // Safe image load handler with proper error handling and retry
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     try {
+      if (isUnmounted.current) return;
+      
       loadAttemptCount.current = 0; // Reset load attempts on success
       const img = e.target as HTMLImageElement;
       applyCropOnLoad(img);
@@ -208,6 +231,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   // Retry loading if image fails
   const handleImageError = () => {
+    if (isUnmounted.current) return;
+    
     setError(true);
     if (loadAttemptCount.current < 2 && imageUrl) {
       loadAttemptCount.current++;
@@ -215,6 +240,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       
       // Retry with a slight delay
       setTimeout(() => {
+        if (isUnmounted.current) return;
+        
         if (imageRef.current) {
           imageRef.current.src = imageUrl + '?retry=' + Date.now();
         }

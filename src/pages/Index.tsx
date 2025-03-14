@@ -26,6 +26,7 @@ const Index = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [hasFetchedInitial, setHasFetchedInitial] = useState(false);
+  const [adsFetchComplete, setAdsFetchComplete] = useState(false);
 
   // Apply suppressDialogWarnings with useLayoutEffect, before rendering
   useLayoutEffect(() => {
@@ -53,7 +54,10 @@ const Index = () => {
         console.error("Error setting up accessibility fixes:", accessError);
       }
       
-      fetchGeneratedAds();
+      // Fetch ads with a small delay to ensure UI loads first
+      setTimeout(() => {
+        fetchGeneratedAds();
+      }, 100);
 
       // Apply again after a short time, to catch dialogs created later
       const timer1 = setTimeout(() => {
@@ -135,11 +139,11 @@ const Index = () => {
         try {
           Logger.info("Trying alternate storage-based approach for retrieving ads");
           
-          // List files from storage as a backup approach
+          // List files from storage as a backup approach - limit to 10 for better performance
           const { data: storageFiles, error: storageError } = await supabase.storage
             .from('ad-images')
             .list('full-ads', {
-              limit: 20,
+              limit: 10, // Reduced from 20 for initial load
               sortBy: { column: 'created_at', order: 'desc' }
             });
             
@@ -209,6 +213,7 @@ const Index = () => {
         }
       }
 
+      setAdsFetchComplete(true);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
       Logger.error(`Unexpected error during fetch: ${errorMessage}`);
@@ -219,6 +224,8 @@ const Index = () => {
           description: "There was a problem loading your ads"
         });
       }
+      
+      setAdsFetchComplete(true);
     } finally {
       setIsUpdating(false);
     }

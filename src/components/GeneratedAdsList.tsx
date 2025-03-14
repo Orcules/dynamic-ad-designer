@@ -27,16 +27,17 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [storageImages, setStorageImages] = useState<GeneratedAd[]>([]);
   const [copiedLinks, setCopiedLinks] = useState<{ [key: string]: boolean }>({});
+  const [visibleCount, setVisibleCount] = useState(10); // Initially show only 10 ads
 
   useEffect(() => {
-    // Load all images from storage bucket directly
+    // Load all images from storage bucket directly but limit to 20 for better performance
     const fetchStorageImages = async () => {
       try {
-        Logger.info("Fetching all images from storage bucket");
+        Logger.info("Fetching images from storage bucket (limited to 20)");
         const { data: storageFiles, error: storageError } = await supabase.storage
           .from('ad-images')
           .list('full-ads', {
-            limit: 100,
+            limit: 20, // Limit to 20 items to reduce initial load
             sortBy: { column: 'created_at', order: 'desc' }
           });
           
@@ -92,12 +93,14 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   }, []);
 
   useEffect(() => {
-    // Combine ads from props with ads from storage
+    // Combine ads from props with ads from storage, but limit the total
     const allAds = [...ads];
     
     // Add storage images that aren't already in ads (by URL)
     const existingUrls = new Set(ads.map(ad => ad.image_url));
-    const uniqueStorageAds = storageImages.filter(ad => !existingUrls.has(ad.image_url));
+    const uniqueStorageAds = storageImages
+      .filter(ad => !existingUrls.has(ad.image_url))
+      .slice(0, 20); // Limit to 20 storage ads max
     
     allAds.push(...uniqueStorageAds);
     
@@ -108,7 +111,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       allAds.reduce((acc, ad) => ({ ...acc, [ad.id]: true }), {})
     );
     
-    // Set display ads with minimal validation
+    // Set display ads with minimal validation but limit the total number
     setDisplayAds(allAds);
     
     // Set all images as loaded after a delay
@@ -163,6 +166,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     }
   };
 
+  // Load more items
+  const loadMoreItems = () => {
+    setVisibleCount(prev => prev + 10);
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse flex flex-col gap-4">
@@ -188,6 +196,10 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       </div>
     );
   }
+
+  // Only display a limited number of ads
+  const visibleAds = displayAds.slice(0, visibleCount);
+  const hasMoreToLoad = visibleCount < displayAds.length;
 
   const handlePreviewClick = (imageUrl: string) => {
     if (!imageUrl) return;
@@ -339,94 +351,106 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {displayAds.map((ad) => (
-        <Card key={ad.id} className="overflow-hidden group relative">
-          <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
-            {loadingStates[ad.id] ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : (
-              <>
-                {(ad.preview_url || ad.image_url) && (
-                  <img
-                    src={failedImages.has(ad.preview_url || ad.image_url) ? "/placeholder.svg" : (ad.preview_url || ad.image_url)}
-                    alt={ad.name}
-                    className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-                    onError={(e) => handleImageError(e, ad)}
-                    crossOrigin="anonymous"
-                  />
-                )}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="rounded-full bg-white/20 backdrop-blur-sm" 
-                    onClick={() => handlePreviewClick(ad.preview_url || ad.image_url)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="rounded-full bg-white/20 backdrop-blur-sm" 
-                    onClick={() => handleDownloadClick(ad)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="rounded-full bg-white/20 backdrop-blur-sm" 
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {visibleAds.map((ad) => (
+          <Card key={ad.id} className="overflow-hidden group relative">
+            <div className="aspect-video relative overflow-hidden bg-muted flex items-center justify-center">
+              {loadingStates[ad.id] ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <>
+                  {(ad.preview_url || ad.image_url) && (
+                    <img
+                      src={failedImages.has(ad.preview_url || ad.image_url) ? "/placeholder.svg" : (ad.preview_url || ad.image_url)}
+                      alt={ad.name}
+                      className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+                      onError={(e) => handleImageError(e, ad)}
+                      crossOrigin="anonymous"
+                      loading="lazy" // Add lazy loading
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="rounded-full bg-white/20 backdrop-blur-sm" 
+                      onClick={() => handlePreviewClick(ad.preview_url || ad.image_url)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="rounded-full bg-white/20 backdrop-blur-sm" 
+                      onClick={() => handleDownloadClick(ad)}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="rounded-full bg-white/20 backdrop-blur-sm" 
+                      onClick={() => handleCopyLink(ad)}
+                    >
+                      {copiedLinks[ad.id] ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="truncate pr-4">
+                  <h3 className="font-medium text-sm truncate">{ad.name}</h3>
+                  {ad.platform && (
+                    <span className="text-xs text-muted-foreground">{ad.platform}</span>
+                  )}
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 flex-shrink-0"
                     onClick={() => handleCopyLink(ad)}
+                    title="Copy link to clipboard"
                   >
                     {copiedLinks[ad.id] ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 flex-shrink-0"
+                    onClick={() => {
+                      if (ad.preview_url || ad.image_url) {
+                        handlePreviewClick(ad.preview_url || ad.image_url);
+                      }
+                    }}
+                    title="Preview image"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
                 </div>
-              </>
-            )}
-          </div>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="truncate pr-4">
-                <h3 className="font-medium text-sm truncate">{ad.name}</h3>
-                {ad.platform && (
-                  <span className="text-xs text-muted-foreground">{ad.platform}</span>
-                )}
               </div>
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={() => handleCopyLink(ad)}
-                  title="Copy link to clipboard"
-                >
-                  {copiedLinks[ad.id] ? <CheckCircle2 className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={() => {
-                    if (ad.preview_url || ad.image_url) {
-                      handlePreviewClick(ad.preview_url || ad.image_url);
-                    }
-                  }}
-                  title="Preview image"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      
+      {hasMoreToLoad && (
+        <div className="flex justify-center mt-6">
+          <Button variant="outline" onClick={loadMoreItems}>
+            Load More Ads ({visibleCount} of {displayAds.length})
+          </Button>
+        </div>
+      )}
+      
       {onRetryLoad && (
-        <div className="col-span-full flex justify-center mt-4">
+        <div className="flex justify-center mt-4">
           <Button variant="outline" onClick={onRetryLoad}>
-            Load More Ads
+            Refresh Ads
           </Button>
         </div>
       )}
