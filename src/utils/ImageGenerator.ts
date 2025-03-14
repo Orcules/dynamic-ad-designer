@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -190,6 +191,10 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
+      // Use explicit windowWidth and windowHeight as suggested
+      const fixedWidth = 1920; // Use a fixed reference width for consistent rendering
+      const fixedHeight = Math.round(fixedWidth * (rect.height / rect.width));
+      
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
         scale: this.scaleFactor,
@@ -200,8 +205,8 @@ export class ImageGenerator {
         y: 0,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: rect.width * this.scaleFactor,
-        windowHeight: rect.height * this.scaleFactor,
+        windowWidth: fixedWidth, // Fixed reference width for better consistency
+        windowHeight: fixedHeight, // Keep aspect ratio
         imageTimeout: 0,
         onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
