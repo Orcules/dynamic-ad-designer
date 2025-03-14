@@ -79,6 +79,15 @@ export class ImageGenerator {
     
     // Store original positions to restore later
     const originalPositions = new Map<Element, string>();
+    const originalStyles = new Map<Element, CSSStyleDeclaration>();
+    
+    // Save positions of all absolutely positioned elements
+    const positionedElements = this.previewElement.querySelectorAll('[style*="transform"]');
+    positionedElements.forEach(el => {
+      const style = window.getComputedStyle(el);
+      originalPositions.set(el, style.transform);
+      originalStyles.set(el, style);
+    });
     
     // Helper to move elements up
     const moveElementUp = (element: Element | null, pixels: number = 7) => {
@@ -145,7 +154,7 @@ export class ImageGenerator {
       // Initialize variables before using them
       const originalStyles = new Map<Element, string>();
       const elementsToFixPosition = this.previewElement ? 
-        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"], [style*="transform"]')) : 
         [];
       
       elementsToFixPosition.forEach(el => {
@@ -156,20 +165,17 @@ export class ImageGenerator {
         const currentTransform = computedStyle.transform;
         
         // Apply computed position directly
-        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform}; transition: none !important;`);
       });
 
       // Find and fix the background image to prevent stretching
-      const bgImageContainer = this.previewElement.querySelector('.ad-image-container');
-      const bgImage = this.previewElement.querySelector('.ad-image');
+      const adImage = this.previewElement.querySelector('img:not(.placeholder)');
       
-      let originalImageStyles: Record<string, string> = {};
-      let originalContainerStyles: Record<string, string> = {};
+      let originalImageStyles: Record<string, string | null> = {};
       
-      if (bgImage && bgImageContainer) {
+      if (adImage) {
         // Save original styles
-        const imgStyle = window.getComputedStyle(bgImage);
-        const containerStyle = window.getComputedStyle(bgImageContainer);
+        const imgStyle = window.getComputedStyle(adImage);
         
         // Record original styles
         originalImageStyles = {
@@ -177,23 +183,20 @@ export class ImageGenerator {
           objectPosition: imgStyle.objectPosition,
           width: imgStyle.width,
           height: imgStyle.height,
-          transform: imgStyle.transform
-        };
-        
-        originalContainerStyles = {
-          overflow: containerStyle.overflow,
-          position: containerStyle.position
+          transform: imgStyle.transform,
+          transition: imgStyle.transition
         };
         
         // Force object-fit: cover on the image to prevent stretching
-        (bgImage as HTMLElement).style.objectFit = 'cover';
-        (bgImage as HTMLElement).style.objectPosition = 'center center';
-        (bgImage as HTMLElement).style.width = '100%';
-        (bgImage as HTMLElement).style.height = '100%';
+        (adImage as HTMLElement).style.objectFit = 'cover';
+        (adImage as HTMLElement).style.objectPosition = 'center center';
+        (adImage as HTMLElement).style.transition = 'none';
         
-        // Ensure container has overflow hidden
-        (bgImageContainer as HTMLElement).style.overflow = 'hidden';
-        (bgImageContainer as HTMLElement).style.position = 'relative';
+        // Ensure transform is preserved exactly as it is
+        const transform = imgStyle.transform;
+        if (transform && transform !== 'none') {
+          (adImage as HTMLElement).style.transform = transform;
+        }
       }
 
       // Clone the node to avoid modifying the original DOM
@@ -206,20 +209,31 @@ export class ImageGenerator {
       clone.style.top = '0';
       clone.style.width = this.previewElement.offsetWidth + 'px';
       clone.style.height = this.previewElement.offsetHeight + 'px';
+      clone.style.transition = 'none';
       
       // Fix any background images in the clone
-      const clonedBgImage = clone.querySelector('.ad-image');
-      if (clonedBgImage) {
-        (clonedBgImage as HTMLElement).style.objectFit = 'cover';
-        (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
-        (clonedBgImage as HTMLElement).style.width = '100%';
-        (clonedBgImage as HTMLElement).style.height = '100%';
+      const clonedImage = clone.querySelector('img:not(.placeholder)');
+      if (clonedImage) {
+        (clonedImage as HTMLElement).style.objectFit = 'cover';
+        (clonedImage as HTMLElement).style.objectPosition = 'center center'; 
+        (clonedImage as HTMLElement).style.transition = 'none';
+        
+        // Make sure the transform is preserved exactly
+        if (adImage) {
+          const transform = window.getComputedStyle(adImage).transform;
+          if (transform && transform !== 'none') {
+            (clonedImage as HTMLElement).style.transform = transform;
+          }
+        }
       }
 
+      // Set an extra scale factor of 1.5 for better quality
+      const scaleFactor = 1.5;
+      
       // Fix: Call html2canvas as a function with proper options
       const canvas = await html2canvas(clone, {
         backgroundColor: null,
-        scale: 2,
+        scale: scaleFactor,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -244,6 +258,14 @@ export class ImageGenerator {
               // Silently fail for cross-origin stylesheets
             }
           });
+          
+          // Additional fix for the cloned images
+          const clonedImages = documentClone.querySelectorAll('img:not(.placeholder)');
+          clonedImages.forEach(img => {
+            (img as HTMLElement).style.objectFit = 'cover';
+            (img as HTMLElement).style.objectPosition = 'center center';
+            (img as HTMLElement).style.transition = 'none';
+          });
         }
       });
       
@@ -262,13 +284,11 @@ export class ImageGenerator {
       });
       
       // Restore original image styles
-      if (bgImage && bgImageContainer) {
+      if (adImage) {
         Object.entries(originalImageStyles).forEach(([prop, value]) => {
-          (bgImage as HTMLElement).style[prop as any] = value;
-        });
-        
-        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
-          (bgImageContainer as HTMLElement).style[prop as any] = value;
+          if (value !== null) {
+            (adImage as HTMLElement).style[prop as any] = value;
+          }
         });
       }
       
@@ -283,7 +303,7 @@ export class ImageGenerator {
       
       // Fix: Define a local scope copy of these variables before using them in this catch block
       const localElementsToFixPosition = this.previewElement ? 
-        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"], [style*="transform"]')) : 
         [];
       const localOriginalStyles = new Map<Element, string>();
       
@@ -316,39 +336,34 @@ export class ImageGenerator {
     console.log('Using dom-to-image fallback...');
 
     // Find and fix the background image to prevent stretching
-    const bgImageContainer = this.previewElement.querySelector('.ad-image-container');
-    const bgImage = this.previewElement.querySelector('.ad-image');
+    const adImage = this.previewElement.querySelector('img:not(.placeholder)');
     
-    let originalImageStyles: Record<string, string> = {};
-    let originalContainerStyles: Record<string, string> = {};
+    let originalImageStyles: Record<string, string | null> = {};
     
-    if (bgImage && bgImageContainer) {
+    if (adImage) {
       // Save original styles
-      const imgStyle = window.getComputedStyle(bgImage);
-      const containerStyle = window.getComputedStyle(bgImageContainer);
+      const imgStyle = window.getComputedStyle(adImage);
       
       // Record original styles
       originalImageStyles = {
         objectFit: imgStyle.objectFit,
         objectPosition: imgStyle.objectPosition,
         width: imgStyle.width,
-        height: imgStyle.height
-      };
-      
-      originalContainerStyles = {
-        overflow: containerStyle.overflow,
-        position: containerStyle.position
+        height: imgStyle.height,
+        transform: imgStyle.transform,
+        transition: imgStyle.transition
       };
       
       // Force object-fit: cover on the image to prevent stretching
-      (bgImage as HTMLElement).style.objectFit = 'cover';
-      (bgImage as HTMLElement).style.objectPosition = 'center center';
-      (bgImage as HTMLElement).style.width = '100%';
-      (bgImage as HTMLElement).style.height = '100%';
+      (adImage as HTMLElement).style.objectFit = 'cover';
+      (adImage as HTMLElement).style.objectPosition = 'center center';
+      (adImage as HTMLElement).style.transition = 'none';
       
-      // Ensure container has overflow hidden
-      (bgImageContainer as HTMLElement).style.overflow = 'hidden';
-      (bgImageContainer as HTMLElement).style.position = 'relative';
+      // Ensure transform is preserved exactly as it is
+      const transform = imgStyle.transform;
+      if (transform && transform !== 'none') {
+        (adImage as HTMLElement).style.transform = transform;
+      }
     }
 
     // Clone the node to avoid modifying the original DOM
@@ -361,22 +376,31 @@ export class ImageGenerator {
     clone.style.top = '0';
     clone.style.width = this.previewElement.offsetWidth + 'px';
     clone.style.height = this.previewElement.offsetHeight + 'px';
+    clone.style.transition = 'none';
     
     // Fix any background images in the clone
-    const clonedBgImage = clone.querySelector('.ad-image');
-    if (clonedBgImage) {
-      (clonedBgImage as HTMLElement).style.objectFit = 'cover';
-      (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
-      (clonedBgImage as HTMLElement).style.width = '100%';
-      (clonedBgImage as HTMLElement).style.height = '100%';
+    const clonedImage = clone.querySelector('img:not(.placeholder)');
+    if (clonedImage) {
+      (clonedImage as HTMLElement).style.objectFit = 'cover';
+      (clonedImage as HTMLElement).style.objectPosition = 'center center'; 
+      (clonedImage as HTMLElement).style.transition = 'none';
+      
+      // Make sure the transform is preserved exactly
+      if (adImage) {
+        const transform = window.getComputedStyle(adImage).transform;
+        if (transform && transform !== 'none') {
+          (clonedImage as HTMLElement).style.transform = transform;
+        }
+      }
     }
 
     const config = {
       quality: 0.9, // Slightly reduced quality for better performance
-      scale: 2,
+      scale: 1.5, // Increased scale factor for better quality
       bgcolor: null,
       style: {
         'transform-origin': 'top left',
+        'transition': 'none',
       },
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
@@ -390,13 +414,11 @@ export class ImageGenerator {
       document.body.removeChild(clone);
       
       // Restore original image styles
-      if (bgImage && bgImageContainer) {
+      if (adImage) {
         Object.entries(originalImageStyles).forEach(([prop, value]) => {
-          (bgImage as HTMLElement).style[prop as any] = value;
-        });
-        
-        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
-          (bgImageContainer as HTMLElement).style[prop as any] = value;
+          if (value !== null) {
+            (adImage as HTMLElement).style[prop as any] = value;
+          }
         });
       }
       
@@ -414,13 +436,11 @@ export class ImageGenerator {
       }
       
       // Restore original image styles
-      if (bgImage && bgImageContainer) {
+      if (adImage) {
         Object.entries(originalImageStyles).forEach(([prop, value]) => {
-          (bgImage as HTMLElement).style[prop as any] = value;
-        });
-        
-        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
-          (bgImageContainer as HTMLElement).style[prop as any] = value;
+          if (value !== null) {
+            (adImage as HTMLElement).style[prop as any] = value;
+          }
         });
       }
       

@@ -38,6 +38,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
+  const positionRef = useRef<Position>(position);
+
+  // Update the position ref when the position prop changes
+  useEffect(() => {
+    positionRef.current = position;
+  }, [position]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -86,7 +92,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             cachedImg.naturalHeight,
             containerRect.width,
             containerRect.height,
-            position,
+            positionRef.current, // Use the ref instead of the prop for more stability
             fastMode
           );
           setImageStyle(newStyle);
@@ -106,7 +112,26 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage]);
+
+  // Added debounce for applying position changes to prevent jumps
+  useEffect(() => {
+    if (loaded && containerRef.current && naturalSize.width > 0 && naturalSize.height > 0) {
+      const timer = setTimeout(() => {
+        const newStyle = calculateStyleFromDimensions(
+          naturalSize.width,
+          naturalSize.height,
+          containerSize.width,
+          containerSize.height,
+          position,
+          fastMode
+        );
+        setImageStyle(newStyle);
+      }, 50); // Small debounce to prevent rapid jumps
+      
+      return () => clearTimeout(timer);
+    }
+  }, [position, containerSize, naturalSize, loaded, fastMode]);
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
@@ -147,7 +172,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${transformX}px, ${transformY}px)`,
       width: `${width}px`,
       height: `${height}px`,
-      transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
+      transition: useFastMode ? 'none' : 'transform 0.2s ease-out', // Smoother transition
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
@@ -165,32 +190,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    // Use cover instead of contain to ensure the image fills the container without black margins
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
-    
-    return {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${position.x}px, ${position.y}px)`,
-      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
-      position: 'absolute' as const,
-      objectFit: 'cover' as ObjectFit,
-      willChange: 'transform',
-    };
-  }, [position, fastMode]);
+    // Use the current position from the ref for more stability
+    return calculateStyleFromDimensions(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight,
+      positionRef.current,
+      fastMode
+    );
+  }, [calculateStyleFromDimensions, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -201,7 +210,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       imageCache.current.set(imageUrl, img);
     }
     
-    setImageStyle(calculateImageStyle(img));
+    const newStyle = calculateImageStyle(img);
+    setImageStyle(newStyle);
     setLoaded(true);
     
     if (onImageLoaded) {
@@ -243,6 +253,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
+        draggable={false} // Prevent accidental dragging
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
