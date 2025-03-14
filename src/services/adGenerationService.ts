@@ -13,7 +13,7 @@ export class AdGenerationService {
   static async generateAd(adData: any, imageBlob: Blob): Promise<GeneratedAdResult> {
     const formData = new FormData();
     
-    // בדיקה שה-blob הוא תקין ויצירת קובץ ממנו
+    // Create a file from the blob
     const imageFile = new File([imageBlob], 'image.png', { type: 'image/png' });
     formData.append('image', imageFile);
     
@@ -41,22 +41,33 @@ export class AdGenerationService {
       adData.cleanSourceImageUrl = cleanImageUrl(adData.sourceImageUrl);
     }
     
+    // Get dimensions for the platform and make sure they're used consistently
+    const platformDimensions = getDimensions(adData.platform);
+    
     formData.append('data', JSON.stringify({
       ...adData,
-      ...getDimensions(adData.platform),
+      ...platformDimensions,
       overlayOpacity: 0.4,
       scaleFactor,
-      elementDimensions
+      elementDimensions,
+      preserveAspectRatio: true, // Add flag to preserve aspect ratio
+      originalDimensions: {
+        width: platformDimensions.width,
+        height: platformDimensions.height
+      }
     }));
 
     console.log('Sending to edge function:', {
       imageType: imageFile.type,
       imageSize: imageFile.size,
-      data: adData,
-      scaleFactor
+      data: {
+        ...adData,
+        dimensions: platformDimensions,
+        scaleFactor
+      }
     });
 
-    // Fix: Pass a single options object to the invoke method
+    // Send the data to the edge function
     const { data: generatedAd, error: generateError } = await supabase.functions
       .invoke('generate-ad', {
         body: formData

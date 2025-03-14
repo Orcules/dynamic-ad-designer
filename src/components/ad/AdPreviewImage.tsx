@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { cleanImageUrl } from '@/utils/imageEffects';
+import { cleanImageUrl, preserveAspectRatio } from '@/utils/imageEffects';
 
 interface Position {
   x: number;
@@ -122,26 +122,21 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     pos: Position,
     useFastMode: boolean
   ): React.CSSProperties => {
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    // Use cover instead of contain to ensure the image fills the container without black margins
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
+    // Use the preserveAspectRatio helper to maintain aspect ratio
+    const dimensions = preserveAspectRatio(
+      imgWidth, 
+      imgHeight, 
+      containerWidth, 
+      containerHeight, 
+      'cover'
+    );
     
     return {
       transform: `translate(${pos.x}px, ${pos.y}px)`,
-      width: `${width}px`,
-      height: `${height}px`,
+      width: `${dimensions.width}px`,
+      height: `${dimensions.height}px`,
+      left: `${dimensions.x}px`,
+      top: `${dimensions.y}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
@@ -162,25 +157,20 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    // Use cover instead of contain to ensure the image fills the container without black margins
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
+    // Use the preserveAspectRatio helper
+    const dimensions = preserveAspectRatio(
+      imgWidth, 
+      imgHeight, 
+      containerWidth, 
+      containerHeight, 
+      'cover'
+    );
     
     return {
-      width: `${width}px`,
-      height: `${height}px`,
+      width: `${dimensions.width}px`,
+      height: `${dimensions.height}px`,
+      left: `${dimensions.x}px`,
+      top: `${dimensions.y}px`,
       transform: `translate(${position.x}px, ${position.y}px)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,

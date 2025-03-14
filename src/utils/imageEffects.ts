@@ -88,7 +88,7 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
   });
 }
 
-// Add function to account for scale factor in positioning
+// Adjust position for scale factor
 export const adjustPositionForScale = (position: { x: number, y: number }, scaleFactor: number = 1): { x: number, y: number } => {
   if (scaleFactor === 1) return position;
   
@@ -118,4 +118,52 @@ export const extractImageMetadata = (url: string): any | null => {
   }
   
   return null;
+};
+
+// New helper function to preserve aspect ratio when drawing images
+export const preserveAspectRatio = (
+  sourceWidth: number, 
+  sourceHeight: number, 
+  targetWidth: number, 
+  targetHeight: number,
+  fit: 'contain' | 'cover' = 'cover'
+): { width: number; height: number; x: number; y: number } => {
+  const sourceRatio = sourceWidth / sourceHeight;
+  const targetRatio = targetWidth / targetHeight;
+  
+  let width, height, x, y;
+  
+  if (fit === 'contain') {
+    // Fit the entire image within the target dimensions
+    if (sourceRatio > targetRatio) {
+      // Source is wider than target
+      width = targetWidth;
+      height = targetWidth / sourceRatio;
+      x = 0;
+      y = (targetHeight - height) / 2;
+    } else {
+      // Source is taller than target
+      height = targetHeight;
+      width = targetHeight * sourceRatio;
+      x = (targetWidth - width) / 2;
+      y = 0;
+    }
+  } else { // cover
+    // Fill the entire target area, may crop image
+    if (sourceRatio > targetRatio) {
+      // Source is wider than target
+      height = targetHeight;
+      width = targetHeight * sourceRatio;
+      x = (targetWidth - width) / 2;
+      y = 0;
+    } else {
+      // Source is taller than target
+      width = targetWidth;
+      height = targetWidth / sourceRatio;
+      x = 0;
+      y = (targetHeight - height) / 2;
+    }
+  }
+  
+  return { width, height, x, y };
 };
