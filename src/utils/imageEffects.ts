@@ -70,3 +70,13 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.display = 'block';
   });
 }
+
+// Add function to account for scale factor in positioning
+export const adjustPositionForScale = (position: { x: number, y: number }, scaleFactor: number = 1): { x: number, y: number } => {
+  if (scaleFactor === 1) return position;
+  
+  return {
+    x: position.x * scaleFactor,
+    y: position.y * scaleFactor
+  };
+};

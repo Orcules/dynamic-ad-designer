@@ -16,16 +16,38 @@ export class AdGenerationService {
     const imageFile = new File([imageBlob], 'image.png', { type: 'image/png' });
     formData.append('image', imageFile);
     
+    // Extract metadata if it exists in the DataURL
+    let scaleFactor = 2; // Default scale factor
+    let elementDimensions = null;
+    
+    // Check if the source image URL has metadata
+    if (adData.sourceImageUrl && adData.sourceImageUrl.includes('#metadata=')) {
+      try {
+        const metadataPart = adData.sourceImageUrl.split('#metadata=')[1];
+        if (metadataPart) {
+          const decodedMetadata = atob(metadataPart);
+          elementDimensions = JSON.parse(decodedMetadata);
+          scaleFactor = elementDimensions.scaleFactor;
+          console.log('Extracted metadata:', elementDimensions);
+        }
+      } catch (error) {
+        console.warn('Failed to parse image metadata:', error);
+      }
+    }
+    
     formData.append('data', JSON.stringify({
       ...adData,
       ...getDimensions(adData.platform),
-      overlayOpacity: 0.4
+      overlayOpacity: 0.4,
+      scaleFactor,
+      elementDimensions
     }));
 
     console.log('Sending to edge function:', {
       imageType: imageFile.type,
       imageSize: imageFile.size,
-      data: adData
+      data: adData,
+      scaleFactor
     });
 
     // Fix: Pass a single options object to the invoke method
