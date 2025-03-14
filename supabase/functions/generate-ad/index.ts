@@ -174,36 +174,20 @@ serve(async (req) => {
     let sourceY = 0;
     let sourceWidth = backgroundImage.width;
     let sourceHeight = backgroundImage.height;
+    let destX = imagePosition.x;
+    let destY = imagePosition.y;
     let destWidth, destHeight;
-    
-    // Ensure we use 'cover' approach with extra scaling to eliminate any black borders
-    // Extra scale factor increased to 1.6 to match the client-side rendering
-    const extraScaleFactor = 1.6;
-    
+
+    // Match the exact positioning and scaling from the AdPreviewImage component
     if (imageAspect > canvasAspect) {
-      // Image is wider than canvas - scale to fit height and crop sides
+      // Image is wider than canvas - scale to match height and position horizontally
       destHeight = data.height;
-      destWidth = data.height * imageAspect * extraScaleFactor; // Scale width by extra factor
+      destWidth = data.height * imageAspect;
     } else {
-      // Image is taller than canvas - scale to fit width and crop top/bottom
+      // Image is taller than canvas - scale to match width and position vertically
       destWidth = data.width;
-      destHeight = data.width / imageAspect * extraScaleFactor; // Scale height by extra factor
+      destHeight = data.width / imageAspect;
     }
-    
-    // Apply the same centering correction as in the client component
-    const centeringForceX = 0.2; // 20% correction toward center
-    
-    // Calculate the offset from center
-    const offsetFromCenterX = (imagePosition.x === 0) ? 0 : imagePosition.x;
-    
-    // Apply correction to push the image more toward the center
-    const correctedPosX = offsetFromCenterX > 0 ? 
-      offsetFromCenterX - (centeringForceX * data.width) : 
-      offsetFromCenterX + (centeringForceX * data.width);
-    
-    // Calculate centering position with corrected imagePosition offset
-    const destX = ((data.width - destWidth) / 2) + correctedPosX;
-    const destY = ((data.height - destHeight) / 2) + (imagePosition.y || 0);
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
     ctx.imageSmoothingEnabled = true;
@@ -216,9 +200,7 @@ serve(async (req) => {
     console.log(`[${uploadId}] Image dimensions:`, {
       source: { width: sourceWidth, height: sourceHeight },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
-      aspect: { image: imageAspect, canvas: canvasAspect },
-      extraScaleFactor,
-      centeringCorrection: centeringForceX
+      aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
     // For luxury jewelry template, draw with rounded corners
@@ -227,60 +209,44 @@ serve(async (req) => {
       const padding = Math.round(data.width * 0.04);
       const cornerRadius = Math.round(data.width * 0.1); // 10% of width for rounded corners
       
-      // Calculate proportions to maintain aspect ratio and fill the space
-      const drawWidth = data.width - (padding * 2);
-      
-      // Maintain aspect ratio for the height but ensure it fills the space
-      let drawHeight;
-      if (imageAspect > drawWidth / (data.height - padding * 2)) {
-        // Image is wider - fit to height and crop sides
-        drawHeight = data.height - (padding * 2);
-      } else {
-        // Image is taller - fit to width and crop top/bottom
-        drawHeight = drawWidth / imageAspect;
-      }
-      
-      // Apply extra scale to eliminate borders (use the same 1.6 factor)
-      drawWidth *= 1.6;
-      drawHeight *= 1.6;
-      
-      // Apply centering correction
-      const drawX = padding - (drawWidth * 0.3) + correctedPosX; // Adjust with the centering correction
-      const drawY = (data.height - drawHeight) / 2 + (imagePosition.y || 0);
-      
       // Create a temporary canvas for the image
-      const tempCanvas = createCanvas(drawWidth, drawHeight);
+      const tempCanvas = createCanvas(destWidth, destHeight);
       const tempCtx = tempCanvas.getContext('2d');
       
       if (tempCtx) {
-        // Draw the image to the temporary canvas, maintaining aspect ratio
+        // Draw the image to the temporary canvas
         tempCtx.drawImage(
           backgroundImage, 
           sourceX, sourceY, sourceWidth, sourceHeight, 
-          0, 0, drawWidth, drawHeight
+          0, 0, destWidth, destHeight
         );
         
         // Now draw the image with rounded corners to the main canvas
         ctx.save();
         
         // Create rounded rectangle path
+        const drawWidth = data.width - (padding * 2);
+        const drawHeight = (drawWidth / destWidth) * destHeight;
+        const drawX = padding;
+        const drawY = (data.height - drawHeight) / 2;
+        
         ctx.beginPath();
-        ctx.moveTo(padding + cornerRadius, padding);
-        ctx.lineTo(padding + drawWidth / 1.6 - cornerRadius, padding);
-        ctx.arcTo(padding + drawWidth / 1.6, padding, padding + drawWidth / 1.6, padding + cornerRadius, cornerRadius);
-        ctx.lineTo(padding + drawWidth / 1.6, padding + drawHeight / 1.6 - cornerRadius);
-        ctx.arcTo(padding + drawWidth / 1.6, padding + drawHeight / 1.6, padding + drawWidth / 1.6 - cornerRadius, padding + drawHeight / 1.6, cornerRadius);
-        ctx.lineTo(padding + cornerRadius, padding + drawHeight / 1.6);
-        ctx.arcTo(padding, padding + drawHeight / 1.6, padding, padding + drawHeight / 1.6 - cornerRadius, cornerRadius);
-        ctx.lineTo(padding, padding + cornerRadius);
-        ctx.arcTo(padding, padding, padding + cornerRadius, padding, cornerRadius);
+        ctx.moveTo(drawX + cornerRadius, drawY);
+        ctx.lineTo(drawX + drawWidth - cornerRadius, drawY);
+        ctx.arcTo(drawX + drawWidth, drawY, drawX + drawWidth, drawY + cornerRadius, cornerRadius);
+        ctx.lineTo(drawX + drawWidth, drawY + drawHeight - cornerRadius);
+        ctx.arcTo(drawX + drawWidth, drawY + drawHeight, drawX + drawWidth - cornerRadius, drawY + drawHeight, cornerRadius);
+        ctx.lineTo(drawX + cornerRadius, drawY + drawHeight);
+        ctx.arcTo(drawX, drawY + drawHeight, drawX, drawY + drawHeight - cornerRadius, cornerRadius);
+        ctx.lineTo(drawX, drawY + cornerRadius);
+        ctx.arcTo(drawX, drawY, drawX + cornerRadius, drawY, cornerRadius);
         ctx.closePath();
         
         // Clip to the rounded rectangle and draw the image
         ctx.clip();
         ctx.drawImage(
           tempCanvas, 
-          0, 0, drawWidth, drawHeight,
+          0, 0, destWidth, destHeight,
           drawX, drawY, drawWidth, drawHeight
         );
         
@@ -289,7 +255,7 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, draw the image with proper positioning and preserved aspect ratio
+      // Draw the image with exact positioning to match the preview for non-luxury templates
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 

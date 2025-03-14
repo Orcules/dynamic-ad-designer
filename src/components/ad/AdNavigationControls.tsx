@@ -8,7 +8,6 @@ interface AdNavigationControlsProps {
   onNext: () => void;
   currentIndex: number;
   totalImages: number;
-  hidden?: boolean; // New prop to hide controls during generation
 }
 
 export function AdNavigationControls({
@@ -16,10 +15,9 @@ export function AdNavigationControls({
   onNext,
   currentIndex,
   totalImages,
-  hidden = false,
 }: AdNavigationControlsProps) {
-  // Don't render anything if there's only one or no images or if hidden is true
-  if (totalImages <= 1 || hidden) return null;
+  // Don't render anything if there's only one or no images
+  if (totalImages <= 1) return null;
   
   return (
     <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4">

@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -46,7 +45,6 @@ interface AdPreviewProps {
   onImageLoaded?: () => void;
   fastRenderMode?: boolean;
   preloadedImage?: HTMLImageElement | null;
-  isGenerating?: boolean; // New prop to hide navigation during generation
 }
 
 export function AdPreview({ 
@@ -76,8 +74,7 @@ export function AdPreview({
   language = "en",
   onImageLoaded,
   fastRenderMode = false,
-  preloadedImage = null,
-  isGenerating = false, // Default to false
+  preloadedImage = null
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
@@ -299,7 +296,6 @@ export function AdPreview({
               onNext={handleNext}
               currentIndex={currentIndex}
               totalImages={imageUrls.length}
-              hidden={isGenerating} // Pass the isGenerating prop here
             />
           )}
           {showPageFlip && (
@@ -366,7 +362,6 @@ export function AdPreview({
                 onNext={handleNext}
                 currentIndex={currentIndex}
                 totalImages={imageUrls.length}
-                hidden={isGenerating} // Pass the isGenerating prop here
               />
             )}
             {showPageFlip && (

@@ -32,18 +32,7 @@ export const processImages = async (
   let successCount = 0;
   let retryCount = 0;
   const maxRetries = 3;
-  
-  // Get dimensions based on platform
-  const { width, height } = getDimensions(adData.platform);
-  
-  // Create image generator with specific output dimensions
-  const imageGenerator = new ImageGenerator('.ad-content', {
-    outputWidth: width * 2, // Double the dimensions for higher quality
-    outputHeight: height * 2,
-    outputScale: 1 // Use scale 1 since we're already specifying larger dimensions
-  });
-  
-  Logger.info(`Configured image generator with output dimensions: ${width * 2}x${height * 2}`);
+  const imageGenerator = new ImageGenerator('.ad-content');
   
   for (let i = 0; i < images.length; i++) {
     const currentImage = images[i];

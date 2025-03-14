@@ -16,9 +16,6 @@ interface AdPreviewImageProps {
   preloadedImage?: HTMLImageElement | null;
 }
 
-// Define the correct ObjectFit type
-type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
-
 export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   imageUrl,
   position,
@@ -38,12 +35,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
-  const positionRef = useRef<Position>(position);
-
-  // Update the position ref whenever the position prop changes
-  useEffect(() => {
-    positionRef.current = position;
-  }, [position]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -92,7 +83,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             cachedImg.naturalHeight,
             containerRect.width,
             containerRect.height,
-            positionRef.current,
+            position,
             fastMode
           );
           setImageStyle(newStyle);
@@ -112,7 +103,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
@@ -125,50 +116,30 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    let width, height;
-    
-    // Use a higher scale factor to ensure the image fills the container completely
-    // Using 1.8 to completely eliminate black borders
-    const extraScaleFactor = 1.8;
-    
-    // Use scaling logic to maintain aspect ratio
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
-      height = containerHeight * extraScaleFactor;
-      width = height * imageAspect;
-    } else {
-      // Image is taller than container - scale to fit width
-      width = containerWidth * extraScaleFactor;
-      height = width / imageAspect;
-    }
-    
-    // Improved centering logic with stronger correction
-    // For horizontal positioning, we need stronger centering force
-    const centeringForceX = 0.25; // Increased from 0.2 to 0.25 (25% correction toward center)
-    
-    // Calculate the offset from center
-    const offsetFromCenterX = (pos.x === 0) ? 0 : pos.x;
-    
-    // Apply stronger correction to pull the image more toward the center
-    const correctedPosX = offsetFromCenterX > 0 ? 
-      offsetFromCenterX - (centeringForceX * containerWidth) : 
-      offsetFromCenterX + (centeringForceX * containerWidth);
-    
-    // Calculate final transform position with improved centering applied
-    const transformX = correctedPosX - ((width - containerWidth) / 2);
-    const transformY = pos.y - ((height - containerHeight) / 2);
-    
-    return {
-      transform: `translate(${transformX}px, ${transformY}px)`,
-      width: `${width}px`,
-      height: `${height}px`,
+    const newStyle: React.CSSProperties = {
+      transform: `translate(${pos.x}px, ${pos.y}px)`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'cover' as ObjectFit,
+      objectFit: 'contain', // Changed from 'cover' to 'contain' to preserve aspect ratio
       willChange: 'transform',
-      // Ensure image is centered with object-position
-      objectPosition: 'center center',
     };
+    
+    // Calculate dimensions while preserving aspect ratio
+    if (imageAspect > containerAspect) {
+      // Image is wider than container
+      const scaledWidth = containerHeight * imageAspect;
+      newStyle.height = '100%';
+      newStyle.width = `${scaledWidth}px`;
+      newStyle.maxWidth = 'none';
+    } else {
+      // Image is taller than container
+      const scaledHeight = containerWidth / imageAspect;
+      newStyle.width = '100%';
+      newStyle.height = `${scaledHeight}px`;
+      newStyle.maxHeight = 'none';
+    }
+    
+    return newStyle;
   }, []);
 
   const calculateImageStyle = useCallback((img: HTMLImageElement) => {
@@ -182,16 +153,31 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    // Calculate the style with the current position
-    return calculateStyleFromDimensions(
-      imgWidth,
-      imgHeight,
-      containerWidth,
-      containerHeight,
-      positionRef.current,
-      fastMode
-    );
-  }, [calculateStyleFromDimensions, fastMode]);
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    let width, height;
+    
+    if (imageAspect > containerAspect) {
+      // Image is wider than container - scale by height
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+    } else {
+      // Image is taller than container - scale by width
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+    }
+    
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute' as const,
+      objectFit: 'contain' as const, // Changed from 'cover' to 'contain'
+      willChange: 'transform',
+    };
+  }, [position, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -202,7 +188,40 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       imageCache.current.set(imageUrl, img);
     }
     
-    setImageStyle(calculateImageStyle(img));
+    if (!fastMode) {
+      setImageStyle(calculateImageStyle(img));
+    } else {
+      // Even in fast mode, we need to preserve aspect ratio
+      const imgWidth = img.naturalWidth;
+      const imgHeight = img.naturalHeight;
+      
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+        const imageAspect = imgWidth / imgHeight;
+        const containerAspect = containerWidth / containerHeight;
+        
+        let width, height;
+        
+        if (imageAspect > containerAspect) {
+          height = containerHeight;
+          width = containerHeight * imageAspect;
+        } else {
+          width = containerWidth;
+          height = containerWidth / imageAspect;
+        }
+        
+        setImageStyle({
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          width: `${width}px`, 
+          height: `${height}px`,
+          objectFit: 'contain', // Changed from 'cover' to 'contain'
+          position: 'absolute',
+          willChange: 'transform'
+        });
+      }
+    }
+    
     setLoaded(true);
     
     if (onImageLoaded) {
@@ -210,18 +229,19 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
       onImageLoaded();
     }
-  }, [imageUrl, onImageLoaded, calculateImageStyle]);
+  }, [imageUrl, onImageLoaded, fastMode, position, calculateImageStyle]);
 
-  const placeholderStyle: React.CSSProperties = {
+  // When in fast mode, still use 'contain' instead of 'cover'
+  const placeholderStyle = fastMode ? {
     filter: 'blur(1px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'cover' as ObjectFit,
-    objectPosition: 'center center',
+    objectFit: 'contain' as const, // Changed from 'cover' to 'contain'
+    objectPosition: 'center' as const,
     backgroundColor: '#333',
     willChange: 'transform'
-  };
+  } : {};
 
   if (!imageUrl) return null;
 
