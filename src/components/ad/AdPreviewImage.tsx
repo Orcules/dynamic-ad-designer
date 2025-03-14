@@ -121,30 +121,22 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height, scale = 1;
     
-    // Use a scale approach to ensure image always covers the container completely
+    // First, determine initial dimensions to cover the container
     if (imageAspect > containerAspect) {
       // Image is wider than container - scale based on height
       height = containerHeight;
       width = containerHeight * imageAspect;
-      
-      // If width is still smaller than container, scale up to fully cover
-      if (width < containerWidth) {
-        scale = containerWidth / width;
-        width *= scale;
-        height *= scale;
-      }
     } else {
       // Image is taller than container - scale based on width
       width = containerWidth;
       height = containerWidth / imageAspect;
-      
-      // If height is still smaller than container, scale up to fully cover
-      if (height < containerHeight) {
-        scale = containerHeight / height;
-        width *= scale;
-        height *= scale;
-      }
     }
+    
+    // Apply additional scaling to ensure no borders are visible
+    // Scale up by an extra 5% to eliminate any potential gaps
+    scale = 1.05;
+    width *= scale;
+    height *= scale;
     
     // Calculate position to center the image
     const xCenter = (containerWidth - width) / 2;
