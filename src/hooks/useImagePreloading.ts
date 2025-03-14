@@ -12,16 +12,24 @@ export function useImagePreloading() {
   // Clean up memory when component unmounts
   useEffect(() => {
     return () => {
-      // Clear caches
-      imageCacheRef.current.clear();
-      preloadedImagesRef.current.clear();
-      uniqueImageHashes.current.clear();
+      try {
+        // Clear caches
+        imageCacheRef.current?.clear();
+        preloadedImagesRef.current?.clear();
+        uniqueImageHashes.current?.clear();
+        Logger.info("Image cache cleared on unmount");
+      } catch (error) {
+        Logger.error(`Error clearing image cache: ${error}`);
+      }
     };
   }, []);
 
   const preloadImageWithCache = (url: string, processedImageUrls?: Set<string>) => {
     // Safety check for server-side rendering or initialization
-    if (typeof window === 'undefined' || !url) return;
+    if (typeof window === 'undefined' || !url) {
+      Logger.warn("Preload attempted with invalid URL or in SSR context");
+      return;
+    }
     
     try {
       preloadImage(
@@ -38,7 +46,10 @@ export function useImagePreloading() {
             Logger.error(`Error during image duplicate check: ${error}`);
           }
         },
-        () => {}, // on error
+        () => {
+          // On error - just log, don't crash
+          Logger.warn(`Failed to preload image: ${url.substring(0, 30)}...`);
+        }, 
         imageCacheRef.current,
         preloadedImagesRef.current
       );
@@ -50,7 +61,13 @@ export function useImagePreloading() {
   const getPreloadedImage = (url: string): HTMLImageElement | null => {
     // Safety check for server-side rendering
     if (typeof window === 'undefined' || !url) return null;
-    return preloadedImagesRef.current.get(url) || null;
+    
+    try {
+      return preloadedImagesRef.current.get(url) || null;
+    } catch (err) {
+      Logger.error(`Error getting preloaded image: ${err}`);
+      return null;
+    }
   };
 
   return {

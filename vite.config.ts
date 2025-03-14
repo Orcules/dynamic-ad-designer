@@ -13,13 +13,18 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    // Add error handling for the server
     hmr: {
       timeout: 5000, // Increase timeout for HMR connections
+      overlay: true, // Show errors as overlay
+    },
+    watch: {
+      usePolling: true, // Help with file system issues
     },
   },
   plugins: [
-    react(),
+    react({
+      tsDecorators: true, // Improved TypeScript support
+    }),
     mode === 'development' && componentTagger(),
   ].filter(Boolean),
   resolve: {
@@ -27,13 +32,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // Add optimizations for faster startup
   optimizeDeps: {
     include: ['react', 'react-dom'],
     exclude: ['puppeteer'],
   },
-  // Improve error handling
   esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    jsxFactory: 'React.createElement',
+    jsxFragment: 'React.Fragment',
   },
+  // Add better error handling
+  logLevel: 'info',
 }));
