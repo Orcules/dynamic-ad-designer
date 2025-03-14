@@ -28,6 +28,7 @@ export class AdGenerationService {
       data: adData
     });
 
+    // Fix: Pass a single options object to the invoke method
     const { data: generatedAd, error: generateError } = await supabase.functions
       .invoke('generate-ad', {
         body: formData
