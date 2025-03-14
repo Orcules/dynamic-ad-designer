@@ -121,40 +121,25 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Always cover the container with the image
+    // Use cover instead of contain to ensure the image fills the container without black margins
     if (imageAspect > containerAspect) {
-      // Image is wider than container - scale based on height
+      // Image is wider than container - scale to fit height
       height = containerHeight;
       width = containerHeight * imageAspect;
     } else {
-      // Image is taller than container - scale based on width
+      // Image is taller than container - scale to fit width
       width = containerWidth;
       height = containerWidth / imageAspect;
     }
     
-    // Apply significant additional scaling to ensure no borders are visible
-    // Scale up by 20% to guarantee full coverage
-    const scale = 1.2;
-    width *= scale;
-    height *= scale;
-    
-    // Calculate position to center the image
-    const xCenter = (containerWidth - width) / 2;
-    const yCenter = (containerHeight - height) / 2;
-    
-    // Apply user position adjustment
-    const xPos = xCenter + pos.x;
-    const yPos = yCenter + pos.y;
-    
     return {
-      transform: `translate(${xPos}px, ${yPos}px)`,
+      transform: `translate(${pos.x}px, ${pos.y}px)`,
       width: `${width}px`,
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
-      objectPosition: '50% 50%',
     };
   }, []);
 
@@ -169,15 +154,32 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    return calculateStyleFromDimensions(
-      imgWidth,
-      imgHeight,
-      containerWidth,
-      containerHeight,
-      position,
-      fastMode
-    );
-  }, [position, fastMode, calculateStyleFromDimensions]);
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
+    
+    let width, height;
+    
+    // Use cover instead of contain to ensure the image fills the container without black margins
+    if (imageAspect > containerAspect) {
+      // Image is wider than container - scale to fit height
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+    } else {
+      // Image is taller than container - scale to fit width
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+    }
+    
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute' as const,
+      objectFit: 'cover' as ObjectFit,
+      willChange: 'transform',
+    };
+  }, [position, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -204,7 +206,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     width: '100%',
     height: '100%',
     objectFit: 'cover' as ObjectFit,
-    objectPosition: '50% 50%',
+    objectPosition: 'center',
     backgroundColor: '#333',
     willChange: 'transform'
   };
