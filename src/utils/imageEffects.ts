@@ -25,8 +25,19 @@ export const applyImageEffect = async (
     ctx.putImageData(imageData, 0, 0);
   }
   
-  // Return the canvas data URL with high quality
+  // Return the canvas data URL with high quality, but without any metadata
   return canvas.toDataURL('image/jpeg', 0.95);
+};
+
+// Clean image URLs by removing any metadata
+export const cleanImageUrl = (url: string): string => {
+  if (!url) return url;
+  
+  // If the URL contains metadata (after #), remove it
+  if (url.includes('#metadata=')) {
+    return url.split('#metadata=')[0];
+  }
+  return url;
 };
 
 // Add a new function to ensure page flip and navigation elements are included in the capture

@@ -1,4 +1,3 @@
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Download, Eye, Copy, CheckCircle2 } from "lucide-react";
@@ -139,10 +138,22 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     }
   };
 
+  // Function to get clean image URL (removing any metadata)
+  const getCleanImageUrl = (url: string): string => {
+    // If the URL contains a metadata section (after #), remove it
+    if (url.includes('#metadata=')) {
+      return url.split('#metadata=')[0];
+    }
+    return url;
+  };
+
   // Function to copy image URL to clipboard
   const handleCopyLink = async (ad: GeneratedAd) => {
-    const imageUrl = ad.preview_url || ad.image_url;
+    let imageUrl = ad.preview_url || ad.image_url;
     if (!imageUrl) return;
+    
+    // Clean the URL before copying (remove any metadata)
+    imageUrl = getCleanImageUrl(imageUrl);
     
     try {
       await navigator.clipboard.writeText(imageUrl);
@@ -192,9 +203,12 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   const handlePreviewClick = (imageUrl: string) => {
     if (!imageUrl) return;
     
-    Logger.info(`Previewing image: ${imageUrl.substring(0, 50)}...`);
+    // Clean the URL before showing the preview (remove any metadata)
+    const cleanUrl = getCleanImageUrl(imageUrl);
+    Logger.info(`Previewing image: ${cleanUrl.substring(0, 50)}...`);
     
     try {
+      // Create a modal overlay for viewing the image
       const overlay = document.createElement('div');
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
@@ -209,21 +223,24 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       overlay.style.zIndex = '9999';
       overlay.style.padding = '20px';
       
+      // Create image element in the modal
       const img = document.createElement('img');
-      img.src = imageUrl;
+      img.src = cleanUrl;
       img.style.maxWidth = '90%';
       img.style.maxHeight = '80%';
       img.style.objectFit = 'contain';
       img.style.border = '1px solid #333';
       img.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
       
+      // Handle image load errors
       img.onerror = () => {
-        Logger.error(`Failed to load preview image: ${imageUrl}`);
+        Logger.error(`Failed to load preview image: ${cleanUrl}`);
         img.src = "/placeholder.svg";
         img.style.maxWidth = '300px';
         img.style.maxHeight = '300px';
       };
       
+      // Create close button
       const closeButton = document.createElement('button');
       closeButton.innerText = 'Close';
       closeButton.style.marginTop = '20px';
@@ -251,13 +268,15 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       
     } catch (error) {
       Logger.error(`Error showing preview: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error("Failed to show preview");
     }
   };
 
   const handleDownloadClick = (ad: GeneratedAd) => {
     if (!ad.preview_url && !ad.image_url) return;
     
-    const imageUrl = ad.preview_url || ad.image_url;
+    // Clean the URL before downloading (remove any metadata)
+    const imageUrl = getCleanImageUrl(ad.preview_url || ad.image_url);
     Logger.info(`Attempting to download image: ${imageUrl.substring(0, 50)}...`);
     
     // Determine the filename to use for download
@@ -316,6 +335,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
           })
           .catch(error => {
             Logger.error(`Failed to download from external URL: ${error.message}`);
+            // Fallback to direct download
             const a = document.createElement('a');
             a.href = imageUrl;
             a.download = filename;
@@ -335,6 +355,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       }
     } catch (err) {
       Logger.error(`Error downloading image: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error("Failed to download image");
     }
   };
 

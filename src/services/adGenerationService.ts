@@ -27,7 +27,7 @@ export class AdGenerationService {
         if (metadataPart) {
           const decodedMetadata = atob(metadataPart);
           elementDimensions = JSON.parse(decodedMetadata);
-          scaleFactor = elementDimensions.scaleFactor;
+          scaleFactor = elementDimensions.scaleFactor || 2;
           console.log('Extracted metadata:', elementDimensions);
         }
       } catch (error) {
@@ -59,6 +59,13 @@ export class AdGenerationService {
     if (generateError) {
       console.error('Generate ad error:', generateError);
       throw new Error('Failed to generate ad');
+    }
+
+    // Process the generated URL to ensure it doesn't have metadata
+    let imageUrl = generatedAd.imageUrl;
+    if (imageUrl && imageUrl.includes('#metadata=')) {
+      imageUrl = imageUrl.split('#metadata=')[0];
+      generatedAd.imageUrl = imageUrl;
     }
 
     return {
