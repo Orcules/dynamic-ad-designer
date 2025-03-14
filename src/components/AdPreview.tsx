@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect, useRef } from "react";
 import { AdGradient } from "./ad/AdGradient";
@@ -10,7 +11,10 @@ import { PageFlip } from "./ad/PageFlip";
 import { Button } from "./ui/button";
 import { ImageGenerator } from "@/utils/ImageGenerator";
 import { cn } from "@/lib/utils";
-import { Download, ZoomIn } from "lucide-react";
+import { Download, ZoomIn, Settings2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Label } from "./ui/label";
+import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 interface Position {
   x: number;
@@ -80,6 +84,8 @@ export function AdPreview({
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
   const [isHighResCapturing, setIsHighResCapturing] = useState(false);
+  const [renderMethod, setRenderMethod] = useState<'html2canvas' | 'dom-to-image' | 'html-to-image'>('html2canvas');
+  
   const imageGenerator = useRef<ImageGenerator | null>(null);
   const isRTL = language === 'he' || language === 'ar';
   const currentImageUrl = useRef<string | undefined>(imageUrl);
@@ -97,10 +103,13 @@ export function AdPreview({
     
     if (!imageGenerator.current) {
       imageGenerator.current = new ImageGenerator('.ad-content', {
-        outputScale: 2
+        outputScale: 2,
+        renderMethod: renderMethod
       });
+    } else {
+      imageGenerator.current.setRenderMethod(renderMethod);
     }
-  }, []);
+  }, [renderMethod]);
 
   useEffect(() => {
     if (imageUrl !== currentImageUrl.current) {
@@ -221,11 +230,7 @@ export function AdPreview({
       setIsHighResCapturing(true);
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      const highResWidth = width * 3;
-      const highResHeight = height * 3;
-      
-      imageGenerator.current.setOutputDimensions(highResWidth, highResHeight, 3);
-      await imageGenerator.current.downloadImage('ad-high-res.png');
+      await imageGenerator.current.downloadHighResolution('ad-high-res.png', 3);
     } catch (error) {
       console.error('Error generating high-resolution image:', error);
     } finally {
@@ -273,6 +278,10 @@ export function AdPreview({
     if (onNext && typeof onNext === 'function') {
       onNext();
     }
+  };
+
+  const handleRenderMethodChange = (value: string) => {
+    setRenderMethod(value as 'html2canvas' | 'dom-to-image' | 'html-to-image');
   };
 
   const renderLuxuryJewelryTemplate = () => {
@@ -411,6 +420,40 @@ export function AdPreview({
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview</CardTitle>
         <div className="flex items-center gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+              >
+                <Settings2 className="h-4 w-4" />
+                Render Options
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60">
+              <div className="space-y-4">
+                <h4 className="font-medium">Rendering Method</h4>
+                <RadioGroup 
+                  defaultValue={renderMethod} 
+                  onValueChange={handleRenderMethodChange}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="html2canvas" id="r1" />
+                    <Label htmlFor="r1">html2canvas</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="html-to-image" id="r2" />
+                    <Label htmlFor="r2">html-to-image</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="dom-to-image" id="r3" />
+                    <Label htmlFor="r3">dom-to-image</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button 
             variant="outline" 
             size="sm" 
