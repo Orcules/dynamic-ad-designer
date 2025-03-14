@@ -5,15 +5,22 @@ import { Logger } from "@/utils/logger";
  * Generate a simple hash for an image to detect duplicates
  */
 export const generateImageHash = (img: HTMLImageElement): string => {
-  const canvas = document.createElement('canvas');
-  const size = Math.min(img.naturalWidth, img.naturalHeight, 50); // Small sample for faster comparison
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return '';
-  
-  ctx.drawImage(img, 0, 0, size, size);
-  return canvas.toDataURL('image/jpeg', 0.1); // Low quality for smaller hash
+  try {
+    if (!img || typeof document === 'undefined') return '';
+    
+    const canvas = document.createElement('canvas');
+    const size = Math.min(img.naturalWidth || 50, img.naturalHeight || 50, 50); // Small sample for faster comparison
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    
+    ctx.drawImage(img, 0, 0, size, size);
+    return canvas.toDataURL('image/jpeg', 0.1); // Low quality for smaller hash
+  } catch (error) {
+    Logger.error(`Error generating image hash: ${error}`);
+    return '';
+  }
 };
 
 /**
@@ -24,19 +31,25 @@ export const isDuplicateImage = (
   img: HTMLImageElement, 
   existingHashes: Map<string, string>
 ): boolean => {
-  if (!url || !img) return false;
-  
-  const hash = generateImageHash(img);
-  
-  for (const [existingUrl, existingHash] of existingHashes.entries()) {
-    if (existingHash === hash && existingUrl !== url) {
-      Logger.warn(`Duplicate image detected: ${url.substring(0, 30)}... matches ${existingUrl.substring(0, 30)}...`);
-      return true;
+  try {
+    if (!url || !img || typeof document === 'undefined') return false;
+    
+    const hash = generateImageHash(img);
+    if (!hash) return false;
+    
+    for (const [existingUrl, existingHash] of existingHashes.entries()) {
+      if (existingHash === hash && existingUrl !== url) {
+        Logger.warn(`Duplicate image detected: ${url.substring(0, 30)}... matches ${existingUrl.substring(0, 30)}...`);
+        return true;
+      }
     }
+    
+    existingHashes.set(url, hash);
+    return false;
+  } catch (error) {
+    Logger.error(`Error in isDuplicateImage: ${error}`);
+    return false;
   }
-  
-  existingHashes.set(url, hash);
-  return false;
 };
 
 /**
@@ -49,31 +62,46 @@ export const preloadImage = (
   imageCacheRef: Map<string, boolean>,
   preloadedImagesRef: Map<string, HTMLImageElement>
 ): void => {
-  if (imageCacheRef.has(url) || preloadedImagesRef.has(url)) {
-    const cachedImg = preloadedImagesRef.get(url);
-    if (cachedImg && onSuccess) {
-      onSuccess(cachedImg);
+  try {
+    if (!url || typeof window === 'undefined') return;
+
+    if (imageCacheRef.has(url) || preloadedImagesRef.has(url)) {
+      const cachedImg = preloadedImagesRef.get(url);
+      if (cachedImg && onSuccess) {
+        onSuccess(cachedImg);
+      }
+      return;
     }
-    return;
+    
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    
+    img.onload = () => {
+      try {
+        imageCacheRef.set(url, true);
+        preloadedImagesRef.set(url, img);
+        
+        if (onSuccess) {
+          onSuccess(img);
+        }
+        
+        Logger.info(`Preloaded image: ${url.substring(0, 50)}...`);
+      } catch (loadError) {
+        Logger.error(`Error in image onload handler: ${loadError}`);
+        if (onError) onError();
+      }
+    };
+    
+    img.onerror = () => {
+      Logger.warn(`Failed to preload image: ${url.substring(0, 50)}...`);
+      if (onError) {
+        onError();
+      }
+    };
+    
+    img.src = url;
+  } catch (error) {
+    Logger.error(`Error in preloadImage: ${error}`);
+    if (onError) onError();
   }
-  
-  const img = new Image();
-  img.crossOrigin = "anonymous";
-  img.onload = () => {
-    imageCacheRef.set(url, true);
-    preloadedImagesRef.set(url, img);
-    
-    if (onSuccess) {
-      onSuccess(img);
-    }
-    
-    Logger.info(`Preloaded image: ${url.substring(0, 50)}...`);
-  };
-  img.onerror = () => {
-    Logger.warn(`Failed to preload image: ${url.substring(0, 50)}...`);
-    if (onError) {
-      onError();
-    }
-  };
-  img.src = url;
 };

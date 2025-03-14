@@ -13,6 +13,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Add error handling for the server
+    hmr: {
+      timeout: 5000, // Increase timeout for HMR connections
+    },
   },
   plugins: [
     react(),
@@ -22,5 +26,14 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  // Add optimizations for faster startup
+  optimizeDeps: {
+    include: ['react', 'react-dom'],
+    exclude: ['puppeteer'],
+  },
+  // Improve error handling
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   },
 }));

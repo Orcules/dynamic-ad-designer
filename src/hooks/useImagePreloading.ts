@@ -20,24 +20,36 @@ export function useImagePreloading() {
   }, []);
 
   const preloadImageWithCache = (url: string, processedImageUrls?: Set<string>) => {
-    if (!url) return;
+    // Safety check for server-side rendering or initialization
+    if (typeof window === 'undefined' || !url) return;
     
-    preloadImage(
-      url, 
-      (img) => {
-        // Check if it's a duplicate after preloading
-        if (processedImageUrls && isDuplicateImage(url, img, uniqueImageHashes.current)) {
-          Logger.warn(`Image ${url.substring(0, 30)}... will be flagged as a duplicate`);
-          processedImageUrls.add(url);
-        }
-      },
-      () => {}, // on error
-      imageCacheRef.current,
-      preloadedImagesRef.current
-    );
+    try {
+      preloadImage(
+        url, 
+        (img) => {
+          try {
+            // Check if it's a duplicate after preloading
+            if (processedImageUrls && isDuplicateImage(url, img, uniqueImageHashes.current)) {
+              Logger.warn(`Image ${url.substring(0, 30)}... will be flagged as a duplicate`);
+              processedImageUrls.add(url);
+            }
+          } catch (error) {
+            // Silently handle errors during preloading to prevent app crashes
+            Logger.error(`Error during image duplicate check: ${error}`);
+          }
+        },
+        () => {}, // on error
+        imageCacheRef.current,
+        preloadedImagesRef.current
+      );
+    } catch (err) {
+      Logger.error(`Error in preloadImageWithCache: ${err}`);
+    }
   };
 
   const getPreloadedImage = (url: string): HTMLImageElement | null => {
+    // Safety check for server-side rendering
+    if (typeof window === 'undefined' || !url) return null;
     return preloadedImagesRef.current.get(url) || null;
   };
 
