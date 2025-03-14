@@ -6,9 +6,25 @@ export class ImageGenerator {
   private lastCaptureTime: number = 0;
   private captureInProgress: boolean = false;
   private captureQueue: Array<() => void> = [];
+  private outputWidth: number | null = null;
+  private outputHeight: number | null = null;
+  private outputScale: number = 2;
 
-  constructor(previewSelector = '.ad-content') {
+  constructor(previewSelector = '.ad-content', options?: { outputWidth?: number; outputHeight?: number; outputScale?: number }) {
     this.previewElement = document.querySelector(previewSelector);
+    
+    if (options) {
+      this.outputWidth = options.outputWidth || null;
+      this.outputHeight = options.outputHeight || null;
+      this.outputScale = options.outputScale || 2;
+    }
+  }
+
+  public setOutputDimensions(width: number | null, height: number | null, scale: number = 2): void {
+    this.outputWidth = width;
+    this.outputHeight = height;
+    this.outputScale = scale;
+    console.log(`Set output dimensions to ${width}x${height}, scale: ${scale}`);
   }
 
   private async waitForImages(maxWaitTime = 2000): Promise<void> {
@@ -179,18 +195,17 @@ export class ImageGenerator {
         }
       });
 
-      const canvas = await html2canvas(clone, {
+      const options: any = {
         backgroundColor: null,
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
         logging: false,
         x: 0,
         y: 0,
         scrollX: 0,
         scrollY: 0,
         imageTimeout: 0,
-        onclone: (documentClone) => {
+        useCORS: true,
+        allowTaint: true,
+        onclone: (documentClone: Document) => {
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -207,12 +222,25 @@ export class ImageGenerator {
             }
           });
         }
-      });
+      };
+
+      if (this.outputWidth && this.outputHeight) {
+        options.width = this.outputWidth;
+        options.height = this.outputHeight;
+        options.scale = this.outputScale;
+        console.log(`Using specific dimensions: ${this.outputWidth}x${this.outputHeight}, scale: ${this.outputScale}`);
+      } else {
+        options.scale = this.outputScale;
+        console.log(`Using default scale: ${this.outputScale}`);
+      }
+
+      const canvas = await html2canvas(clone, options);
       
       document.body.removeChild(clone);
 
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
+      console.log(`Canvas dimensions: ${canvas.width}x${canvas.height}`);
       
       elementsToFixPosition.forEach(el => {
         const original = originalStyles.get(el);
@@ -222,14 +250,14 @@ export class ImageGenerator {
       });
       
       console.log('Resetting text positions and hover effect');
-      resetEffect(); // Now using the local variable
+      resetEffect(); // Using the locally defined resetEffect
       
       this.lastCaptureTime = performance.now();
       return canvas.toDataURL('image/png', 0.9);
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      resetEffect(); // Now using the local variable
+      resetEffect(); // Using the locally defined resetEffect
       
       return this.fallbackCapture();
     }
@@ -275,8 +303,14 @@ export class ImageGenerator {
     clone.style.position = 'fixed';
     clone.style.left = '-9999px';
     clone.style.top = '0';
-    clone.style.width = this.previewElement.offsetWidth + 'px';
-    clone.style.height = this.previewElement.offsetHeight + 'px';
+    
+    if (this.outputWidth && this.outputHeight) {
+      clone.style.width = this.outputWidth + 'px';
+      clone.style.height = this.outputHeight + 'px';
+    } else {
+      clone.style.width = this.previewElement.offsetWidth + 'px';
+      clone.style.height = this.previewElement.offsetHeight + 'px';
+    }
     
     const allImagesInClone = clone.querySelectorAll('img');
     allImagesInClone.forEach(img => {
@@ -287,7 +321,7 @@ export class ImageGenerator {
 
     const config = {
       quality: 0.9,
-      scale: 2,
+      scale: this.outputScale,
       bgcolor: null,
       style: {
         'transform-origin': 'top left',
@@ -295,12 +329,7 @@ export class ImageGenerator {
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
 
-    try {
-      const dataUrl = await domtoimage.toPng(clone, config);
-      console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
-      
-      document.body.removeChild(clone);
-      
+    const resetEffect = () => {
       if (bgImage && bgImageContainer) {
         Object.entries(originalImageStyles).forEach(([prop, value]) => {
           (bgImage as HTMLElement).style[prop as any] = value;
@@ -310,6 +339,13 @@ export class ImageGenerator {
           (bgImageContainer as HTMLElement).style[prop as any] = value;
         });
       }
+    };
+
+    try {
+      const dataUrl = await domtoimage.toPng(clone, config);
+      console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
+      
+      document.body.removeChild(clone);
       
       resetEffect();
       
@@ -320,16 +356,6 @@ export class ImageGenerator {
       
       if (clone.parentNode) {
         document.body.removeChild(clone);
-      }
-      
-      if (bgImage && bgImageContainer) {
-        Object.entries(originalImageStyles).forEach(([prop, value]) => {
-          (bgImage as HTMLElement).style[prop as any] = value;
-        });
-        
-        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
-          (bgImageContainer as HTMLElement).style[prop as any] = value;
-        });
       }
       
       resetEffect();
@@ -404,9 +430,14 @@ export class ImageGenerator {
     }
   }
 
-  async downloadImage(filename = 'ad-preview.png'): Promise<void> {
+  async downloadImage(filename = 'ad-preview.png', width?: number, height?: number, scale?: number): Promise<void> {
     try {
       console.log('Starting download process...');
+      
+      if (width !== undefined && height !== undefined) {
+        this.setOutputDimensions(width, height, scale);
+      }
+      
       const dataUrl = await this.getImageUrl();
       
       const link = document.createElement('a');
