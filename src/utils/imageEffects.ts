@@ -1,16 +1,11 @@
 
 export const applyImageEffect = async (
   canvas: HTMLCanvasElement,
-  effect: 'sepia' | 'none' = 'none'
+  effect: 'sepia' | 'none'
 ): Promise<string> => {
   const ctx = canvas.getContext('2d');
   
-  if (!ctx) {
-    console.error('Failed to get canvas context');
-    return canvas.toDataURL('image/jpeg', 0.95);
-  }
-  
-  if (effect === 'sepia') {
+  if (ctx && effect === 'sepia') {
     // Get image data
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
@@ -63,27 +58,15 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.visibility = 'visible';
     element.style.zIndex = '20';
   });
-}
-
-// Fix RTL text rendering in canvas
-export const fixRTLTextRendering = (container: HTMLElement): void => {
-  // Find all text elements that might need RTL support
-  const rtlElements = container.querySelectorAll('[dir="rtl"], [lang="he"], [lang="ar"]');
   
-  rtlElements.forEach(element => {
-    const el = element as HTMLElement;
-    // Ensure proper text alignment and direction
-    el.style.textAlign = 'right';
-    el.style.direction = 'rtl';
-    el.style.unicodeBidi = 'embed';
-    
-    // For text inside canvas, we need special handling
-    const textNodes = el.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, button');
-    textNodes.forEach(node => {
-      const textEl = node as HTMLElement;
-      textEl.style.textAlign = 'right';
-      textEl.style.direction = 'rtl';
-      textEl.style.unicodeBidi = 'embed';
-    });
+  // Special handling for hidden elements during generation
+  // Make them temporarily visible for the screenshot but preserve their hidden state
+  const hiddenElements = container.querySelectorAll('[data-hidden="true"]');
+  hiddenElements.forEach(hiddenEl => {
+    const element = hiddenEl as HTMLElement;
+    element.dataset.wasHidden = 'true';
+    element.style.opacity = '1';
+    element.style.visibility = 'visible';
+    element.style.display = 'block';
   });
 }
