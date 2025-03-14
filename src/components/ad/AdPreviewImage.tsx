@@ -121,17 +121,18 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Use cover instead of contain to ensure the image fills the container without black margins
+    // Properly center the image with object-fit: cover while maintaining aspect ratio
     if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
+      // Image is wider than container - ensure it fills height
       height = containerHeight;
       width = containerHeight * imageAspect;
     } else {
-      // Image is taller than container - scale to fit width
+      // Image is taller than container - ensure it fills width
       width = containerWidth;
       height = containerWidth / imageAspect;
     }
     
+    // Calculate offset to center the image properly with the user's position adjustments
     return {
       transform: `translate(${pos.x}px, ${pos.y}px)`,
       width: `${width}px`,
@@ -140,6 +141,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
+      objectPosition: '50% 50%', // Center the image by default
     };
   }, []);
 
@@ -159,13 +161,13 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     let width, height;
     
-    // Use cover instead of contain to ensure the image fills the container without black margins
+    // Properly center the image with object-fit: cover
     if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit height
+      // Image is wider than container - ensure it fills height
       height = containerHeight;
       width = containerHeight * imageAspect;
     } else {
-      // Image is taller than container - scale to fit width
+      // Image is taller than container - ensure it fills width
       width = containerWidth;
       height = containerWidth / imageAspect;
     }
@@ -178,6 +180,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       position: 'absolute' as const,
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
+      objectPosition: '50% 50%', // Center the image by default
     };
   }, [position, fastMode]);
 
@@ -206,7 +209,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     width: '100%',
     height: '100%',
     objectFit: 'cover' as ObjectFit,
-    objectPosition: 'center',
+    objectPosition: '50% 50%', // Center the placeholder too
     backgroundColor: '#333',
     willChange: 'transform'
   };

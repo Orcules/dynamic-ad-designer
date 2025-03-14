@@ -180,15 +180,19 @@ serve(async (req) => {
     let destWidth, destHeight;
 
     // Match the exact positioning and scaling from the AdPreviewImage component
-    // Changed from 'contain' to 'cover' approach to fill the canvas without black edges
+    // Ensure image maintains aspect ratio and covers the canvas without stretching
     if (imageAspect > canvasAspect) {
       // Image is wider than canvas - scale to fit height but may crop sides
       destHeight = data.height;
       destWidth = data.height * imageAspect;
+      // Center horizontally with the user's position adjustment
+      destX = (data.width - destWidth) / 2 + imagePosition.x;
     } else {
       // Image is taller than canvas - scale to fit width but may crop top/bottom
       destWidth = data.width;
       destHeight = data.width / imageAspect;
+      // Center vertically with the user's position adjustment
+      destY = (data.height - destHeight) / 2 + imagePosition.y;
     }
     
     // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
@@ -224,8 +228,9 @@ serve(async (req) => {
         drawHeight = drawWidth / imageAspect;
       }
       
+      // Center the image within the container
       const drawX = padding;
-      const drawY = (data.height - drawHeight) / 2;
+      const drawY = Math.max(padding, (data.height - drawHeight) / 2);
       
       // Create a temporary canvas for the image
       const tempCanvas = createCanvas(destWidth, destHeight);
@@ -268,15 +273,12 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, center the image and fill the container
-      const drawX = (data.width - destWidth) / 2 + imagePosition.x;
-      const drawY = (data.height - destHeight) / 2 + imagePosition.y;
-      
+      // For standard templates, ensure the image is properly centered
       // Draw the image with proper positioning and preserved aspect ratio
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 
-        drawX, drawY, destWidth, destHeight
+        destX, destY, destWidth, destHeight
       );
     }
 
