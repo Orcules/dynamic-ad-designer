@@ -497,8 +497,9 @@ const AdEditor: React.FC<AdEditorProps> = ({ template, onAdGenerated }) => {
             imagePosition={imagePosition}
             showCtaArrow={showCtaArrow}
             onImageLoaded={confirmImageChanged}
-            fastRenderMode={true} // Enable fast render mode by default
+            fastRenderMode={true}
             preloadedImage={getPreloadedImage(imageUrls[currentPreviewIndex])}
+            isGenerating={isGenerating} // Pass the isGenerating state
           />
         </div>
 

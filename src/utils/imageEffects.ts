@@ -58,4 +58,15 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.visibility = 'visible';
     element.style.zIndex = '20';
   });
+  
+  // Special handling for hidden elements during generation
+  // Make them temporarily visible for the screenshot but preserve their hidden state
+  const hiddenElements = container.querySelectorAll('[data-hidden="true"]');
+  hiddenElements.forEach(hiddenEl => {
+    const element = hiddenEl as HTMLElement;
+    element.dataset.wasHidden = 'true';
+    element.style.opacity = '1';
+    element.style.visibility = 'visible';
+    element.style.display = 'block';
+  });
 }
