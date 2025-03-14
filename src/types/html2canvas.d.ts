@@ -12,8 +12,8 @@ declare module 'html2canvas' {
     scrollY: number;
     x: number;
     y: number;
-    windowWidth?: number;
-    windowHeight?: number;
+    windowWidth: number;  // Now properly defined in the interface
+    windowHeight: number; // Now properly defined in the interface
     foreignObjectRendering?: boolean;
     onclone?: (document: Document) => void | Promise<void>;
     ignoreElements?: (element: Element) => boolean;
@@ -22,6 +22,6 @@ declare module 'html2canvas' {
   }
   
   // Add the default export definition
-  function html2canvas(element: HTMLElement, options?: Options): Promise<HTMLCanvasElement>;
+  function html2canvas(element: HTMLElement, options?: Partial<Options>): Promise<HTMLCanvasElement>;
   export default html2canvas;
 }

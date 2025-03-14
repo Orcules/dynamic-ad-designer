@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -107,7 +106,6 @@ export class ImageGenerator {
   }
 
   private convertToPercentageStyles(element: HTMLElement): void {
-    // Apply percentage-based styles to all positioned elements
     const processElements = (el: HTMLElement) => {
       const imgElements = el.querySelectorAll('img');
       const parent = el;
@@ -119,11 +117,9 @@ export class ImageGenerator {
         const style = window.getComputedStyle(img);
         const rect = img.getBoundingClientRect();
         
-        // Calculate percentage values
         const widthPercent = (rect.width / parentWidth) * 100;
         const heightPercent = (rect.height / parentHeight) * 100;
         
-        // For transform, extract translation values
         let translateX = 0, translateY = 0;
         const transform = style.transform;
         if (transform && transform !== 'none') {
@@ -132,7 +128,6 @@ export class ImageGenerator {
             translateX = parseFloat(match[1]);
             translateY = parseFloat(match[2]);
           } else {
-            // Try to match translateX and translateY separate functions
             const matchX = transform.match(/translateX\(([^)]+)\)/);
             const matchY = transform.match(/translateY\(([^)]+)\)/);
             if (matchX) translateX = parseFloat(matchX[1]);
@@ -140,11 +135,9 @@ export class ImageGenerator {
           }
         }
         
-        // Convert to percentages
         const xPercent = (translateX / parentWidth) * 100;
         const yPercent = (translateY / parentHeight) * 100;
         
-        // Apply percentage styles
         img.style.width = `${widthPercent}%`;
         img.style.height = `${heightPercent}%`;
         img.style.transform = `translate(${xPercent}%, ${yPercent}%)`;
@@ -168,7 +161,6 @@ export class ImageGenerator {
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
     
-    // Convert all positioned elements to use percentage-based styling
     this.convertToPercentageStyles(this.previewElement as HTMLElement);
     
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -204,14 +196,12 @@ export class ImageGenerator {
         useCORS: true,
         allowTaint: true,
         logging: false,
-        width: rect.width,
-        height: rect.height,
         x: 0,
         y: 0,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
+        windowWidth: rect.width * this.scaleFactor,
+        windowHeight: rect.height * this.scaleFactor,
         imageTimeout: 0,
         onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
