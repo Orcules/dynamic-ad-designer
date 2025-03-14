@@ -302,7 +302,7 @@ export function AdPreview({
               hidden={isGenerating} // Pass the isGenerating prop here
             />
           )}
-          {showPageFlip && !isGenerating && ( // Hide page flip during generation too
+          {showPageFlip && (
             <PageFlip 
               position="bottom-right" 
               size="medium" 
@@ -369,7 +369,7 @@ export function AdPreview({
                 hidden={isGenerating} // Pass the isGenerating prop here
               />
             )}
-            {showPageFlip && !isGenerating && ( // Hide page flip during generation too
+            {showPageFlip && (
               <PageFlip 
                 position="bottom-right" 
                 size="medium" 
