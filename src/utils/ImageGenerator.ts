@@ -1,4 +1,3 @@
-
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 import * as htmlToImage from 'html-to-image';
@@ -139,6 +138,7 @@ export class ImageGenerator {
     const originalTransforms = new Map<Element, string>();
     const originalBoxShadows = new Map<Element, string>();
     const originalBorders = new Map<Element, string>();
+    const originalGradients = new Map<Element, string>();
     
     // Store original styles
     elementsWithTransform.forEach(el => {
@@ -152,7 +152,7 @@ export class ImageGenerator {
       }
     });
     
-    // Also handle box-shadow and border which can cause rendering issues
+    // Handle box-shadow and border which can cause rendering issues
     const elementsWithShadow = Array.from(this.previewElement.querySelectorAll('*[style*="box-shadow"]'));
     elementsWithShadow.forEach(el => {
       const computedStyle = window.getComputedStyle(el);
@@ -170,6 +170,22 @@ export class ImageGenerator {
       // Make sure borders are solid for better rendering
       if ((el as HTMLElement).style.borderStyle === 'dashed' || (el as HTMLElement).style.borderStyle === 'dotted') {
         (el as HTMLElement).style.borderStyle = 'solid';
+      }
+    });
+    
+    // Fix gradient elements that might cause rendering issues
+    const elementsWithGradient = Array.from(this.previewElement.querySelectorAll('*[style*="gradient"]'));
+    elementsWithGradient.forEach(el => {
+      const elStyle = (el as HTMLElement).style;
+      const backgroundImage = elStyle.backgroundImage;
+      originalGradients.set(el, backgroundImage);
+      
+      // If this is a complex gradient that might cause issues, simplify it temporarily
+      if (backgroundImage.includes('gradient') && 
+          (backgroundImage.includes('NaN') || backgroundImage.includes('Infinity') || 
+           backgroundImage.includes('undefined'))) {
+        elStyle.backgroundImage = 'none';
+        elStyle.backgroundColor = '#ffffff';
       }
     });
     
@@ -196,6 +212,12 @@ export class ImageGenerator {
       originalBorders.forEach((originalBorder, element) => {
         if (element instanceof HTMLElement) {
           element.style.border = originalBorder;
+        }
+      });
+      
+      originalGradients.forEach((originalGradient, element) => {
+        if (element instanceof HTMLElement) {
+          element.style.backgroundImage = originalGradient;
         }
       });
     };
@@ -263,6 +285,22 @@ export class ImageGenerator {
       container.appendChild(clone);
       document.body.appendChild(container);
       
+      // Process and fix any problematic elements that might cause gradient errors
+      const elementsWithGradient = Array.from(clone.querySelectorAll('*[style*="gradient"]'));
+      elementsWithGradient.forEach(el => {
+        if (el instanceof HTMLElement) {
+          const backgroundImage = el.style.backgroundImage;
+          // Check for potential problematic values
+          if (backgroundImage.includes('gradient') && 
+              (backgroundImage.includes('NaN') || backgroundImage.includes('Infinity') || 
+               backgroundImage.includes('undefined'))) {
+            // Replace with a solid color
+            el.style.backgroundImage = 'none';
+            el.style.backgroundColor = '#ffffff';
+          }
+        }
+      });
+      
       // Set up html2canvas options with fixes for stretching
       const options: any = {
         backgroundColor: null,
@@ -306,6 +344,21 @@ export class ImageGenerator {
                 el.style.backgroundSize = 'contain';
                 el.style.backgroundRepeat = 'no-repeat';
                 el.style.backgroundPosition = 'center';
+              }
+            }
+          });
+          
+          // Fix gradient elements in the clone
+          const gradientElements = documentClone.querySelectorAll('[style*="gradient"]');
+          gradientElements.forEach(el => {
+            if (el instanceof HTMLElement) {
+              const backgroundImage = el.style.backgroundImage;
+              if (backgroundImage.includes('gradient') && 
+                 (backgroundImage.includes('NaN') || backgroundImage.includes('Infinity') || 
+                  backgroundImage.includes('undefined'))) {
+                // Replace problematic gradients
+                el.style.backgroundImage = 'none';
+                el.style.backgroundColor = '#ffffff';
               }
             }
           });
@@ -358,6 +411,16 @@ export class ImageGenerator {
     } catch (error) {
       console.error('html2canvas error:', error);
       resetEffect();
+      
+      // If we encounter a gradient error, try to recover by using fallbackCapture
+      if (error instanceof Error && 
+          (error.message.includes('addColorStop') || 
+           error.message.includes('non-finite') || 
+           error.message.includes('gradient'))) {
+        console.warn('Gradient error detected, trying fallback method');
+        return this.captureWithHtmlToImage(() => {});
+      }
+      
       throw error;
     }
   }
@@ -606,6 +669,32 @@ export class ImageGenerator {
     } catch (error) {
       console.error('Error downloading high-resolution image:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Generate an image using html-to-image as the primary renderer
+   * This is recommended for cases where html2canvas has issues with gradients
+   */
+  async getImageUrlSafe(): Promise<string> {
+    const currentMethod = this.renderMethod;
+    try {
+      // Set html-to-image as the primary method
+      this.setRenderMethod('html-to-image');
+      return await this.getImageUrl();
+    } catch (error) {
+      console.error('Safe rendering with html-to-image failed:', error);
+      // Try dom-to-image as fallback
+      this.setRenderMethod('dom-to-image');
+      try {
+        return await this.getImageUrl();
+      } catch (fallbackError) {
+        console.error('Fallback dom-to-image failed:', fallbackError);
+        return this.fallbackCapture();
+      }
+    } finally {
+      // Restore original method
+      this.setRenderMethod(currentMethod);
     }
   }
 }
