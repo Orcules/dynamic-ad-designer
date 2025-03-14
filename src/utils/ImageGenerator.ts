@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -158,8 +159,65 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
+      // Find and fix the background image to prevent stretching
+      const bgImageContainer = this.previewElement.querySelector('.ad-image-container');
+      const bgImage = this.previewElement.querySelector('.ad-image');
+      
+      let originalImageStyles: Record<string, string> = {};
+      let originalContainerStyles: Record<string, string> = {};
+      
+      if (bgImage && bgImageContainer) {
+        // Save original styles
+        const imgStyle = window.getComputedStyle(bgImage);
+        const containerStyle = window.getComputedStyle(bgImageContainer);
+        
+        // Record original styles
+        originalImageStyles = {
+          objectFit: imgStyle.objectFit,
+          objectPosition: imgStyle.objectPosition,
+          width: imgStyle.width,
+          height: imgStyle.height,
+          transform: imgStyle.transform
+        };
+        
+        originalContainerStyles = {
+          overflow: containerStyle.overflow,
+          position: containerStyle.position
+        };
+        
+        // Force object-fit: cover on the image to prevent stretching
+        (bgImage as HTMLElement).style.objectFit = 'cover';
+        (bgImage as HTMLElement).style.objectPosition = 'center center';
+        (bgImage as HTMLElement).style.width = '100%';
+        (bgImage as HTMLElement).style.height = '100%';
+        
+        // Ensure container has overflow hidden
+        (bgImageContainer as HTMLElement).style.overflow = 'hidden';
+        (bgImageContainer as HTMLElement).style.position = 'relative';
+      }
+
+      // Clone the node to avoid modifying the original DOM
+      const clone = this.previewElement.cloneNode(true) as HTMLElement;
+      document.body.appendChild(clone);
+      
+      // Make the clone visible but off-screen
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = this.previewElement.offsetWidth + 'px';
+      clone.style.height = this.previewElement.offsetHeight + 'px';
+      
+      // Fix any background images in the clone
+      const clonedBgImage = clone.querySelector('.ad-image');
+      if (clonedBgImage) {
+        (clonedBgImage as HTMLElement).style.objectFit = 'cover';
+        (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
+        (clonedBgImage as HTMLElement).style.width = '100%';
+        (clonedBgImage as HTMLElement).style.height = '100%';
+      }
+
       // Fix: Call html2canvas as a function with proper options
-      const canvas = await html2canvas(this.previewElement, {
+      const canvas = await html2canvas(clone, {
         backgroundColor: null,
         scale: 2,
         useCORS: true,
@@ -188,6 +246,9 @@ export class ImageGenerator {
           });
         }
       });
+      
+      // Remove the clone from the DOM
+      document.body.removeChild(clone);
 
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
@@ -199,6 +260,17 @@ export class ImageGenerator {
           el.setAttribute('style', original);
         }
       });
+      
+      // Restore original image styles
+      if (bgImage && bgImageContainer) {
+        Object.entries(originalImageStyles).forEach(([prop, value]) => {
+          (bgImage as HTMLElement).style[prop as any] = value;
+        });
+        
+        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
+          (bgImageContainer as HTMLElement).style[prop as any] = value;
+        });
+      }
       
       // Reset hover effect after capture
       console.log('Resetting text positions and hover effect');
@@ -242,6 +314,63 @@ export class ImageGenerator {
     const resetEffect = await this.prepareForCapture();
 
     console.log('Using dom-to-image fallback...');
+
+    // Find and fix the background image to prevent stretching
+    const bgImageContainer = this.previewElement.querySelector('.ad-image-container');
+    const bgImage = this.previewElement.querySelector('.ad-image');
+    
+    let originalImageStyles: Record<string, string> = {};
+    let originalContainerStyles: Record<string, string> = {};
+    
+    if (bgImage && bgImageContainer) {
+      // Save original styles
+      const imgStyle = window.getComputedStyle(bgImage);
+      const containerStyle = window.getComputedStyle(bgImageContainer);
+      
+      // Record original styles
+      originalImageStyles = {
+        objectFit: imgStyle.objectFit,
+        objectPosition: imgStyle.objectPosition,
+        width: imgStyle.width,
+        height: imgStyle.height
+      };
+      
+      originalContainerStyles = {
+        overflow: containerStyle.overflow,
+        position: containerStyle.position
+      };
+      
+      // Force object-fit: cover on the image to prevent stretching
+      (bgImage as HTMLElement).style.objectFit = 'cover';
+      (bgImage as HTMLElement).style.objectPosition = 'center center';
+      (bgImage as HTMLElement).style.width = '100%';
+      (bgImage as HTMLElement).style.height = '100%';
+      
+      // Ensure container has overflow hidden
+      (bgImageContainer as HTMLElement).style.overflow = 'hidden';
+      (bgImageContainer as HTMLElement).style.position = 'relative';
+    }
+
+    // Clone the node to avoid modifying the original DOM
+    const clone = this.previewElement.cloneNode(true) as HTMLElement;
+    document.body.appendChild(clone);
+    
+    // Make the clone visible but off-screen
+    clone.style.position = 'fixed';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.width = this.previewElement.offsetWidth + 'px';
+    clone.style.height = this.previewElement.offsetHeight + 'px';
+    
+    // Fix any background images in the clone
+    const clonedBgImage = clone.querySelector('.ad-image');
+    if (clonedBgImage) {
+      (clonedBgImage as HTMLElement).style.objectFit = 'cover';
+      (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
+      (clonedBgImage as HTMLElement).style.width = '100%';
+      (clonedBgImage as HTMLElement).style.height = '100%';
+    }
+
     const config = {
       quality: 0.9, // Slightly reduced quality for better performance
       scale: 2,
@@ -254,8 +383,22 @@ export class ImageGenerator {
 
     // Skip extra processing for cross-origin images to improve performance
     try {
-      const dataUrl = await domtoimage.toPng(this.previewElement, config);
+      const dataUrl = await domtoimage.toPng(clone, config);
       console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
+      
+      // Remove the clone from the DOM
+      document.body.removeChild(clone);
+      
+      // Restore original image styles
+      if (bgImage && bgImageContainer) {
+        Object.entries(originalImageStyles).forEach(([prop, value]) => {
+          (bgImage as HTMLElement).style[prop as any] = value;
+        });
+        
+        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
+          (bgImageContainer as HTMLElement).style[prop as any] = value;
+        });
+      }
       
       // Reset hover effect
       resetEffect();
@@ -264,6 +407,22 @@ export class ImageGenerator {
       return dataUrl;
     } catch (error) {
       console.error('Fallback capture failed:', error);
+      
+      // Remove the clone from the DOM if it exists
+      if (clone.parentNode) {
+        document.body.removeChild(clone);
+      }
+      
+      // Restore original image styles
+      if (bgImage && bgImageContainer) {
+        Object.entries(originalImageStyles).forEach(([prop, value]) => {
+          (bgImage as HTMLElement).style[prop as any] = value;
+        });
+        
+        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
+          (bgImageContainer as HTMLElement).style[prop as any] = value;
+        });
+      }
       
       // Reset hover effect
       resetEffect();
