@@ -132,9 +132,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height = containerWidth / imageAspect;
     }
     
-    // Apply additional scaling to ensure no borders are visible
-    // Scale up by an extra 10% to eliminate any potential gaps
-    const scale = 1.1;
+    // Apply significant additional scaling to ensure no borders are visible
+    // Scale up by 20% to guarantee full coverage
+    const scale = 1.2;
     width *= scale;
     height *= scale;
     

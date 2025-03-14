@@ -167,8 +167,8 @@ serve(async (req) => {
       destHeight = data.width / imageAspect;
     }
     
-    // Apply a stronger scaling factor (10%) to ensure no black borders
-    const scale = 1.1;
+    // Apply a much stronger scaling factor (20%) to absolutely ensure no black borders
+    const scale = 1.2;
     destWidth *= scale;
     destHeight *= scale;
     
@@ -200,7 +200,7 @@ serve(async (req) => {
       }
       
       // Apply additional scaling for the luxury template
-      drawHeight *= 1.1;
+      drawHeight *= 1.2;
       
       const drawX = padding;
       const drawY = Math.max(padding, (data.height - drawHeight) / 2);
