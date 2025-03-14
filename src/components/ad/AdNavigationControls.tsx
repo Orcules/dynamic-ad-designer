@@ -8,6 +8,7 @@ interface AdNavigationControlsProps {
   onNext: () => void;
   currentIndex: number;
   totalImages: number;
+  hidden?: boolean; // New prop to hide controls during generation
 }
 
 export function AdNavigationControls({
@@ -15,9 +16,10 @@ export function AdNavigationControls({
   onNext,
   currentIndex,
   totalImages,
+  hidden = false,
 }: AdNavigationControlsProps) {
-  // Don't render anything if there's only one or no images
-  if (totalImages <= 1) return null;
+  // Don't render anything if there's only one or no images or if hidden is true
+  if (totalImages <= 1 || hidden) return null;
   
   return (
     <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4">
@@ -26,11 +28,6 @@ export function AdNavigationControls({
         size="icon"
         className="rounded-full bg-white/80 hover:bg-white text-gray-800 pointer-events-auto h-12 w-12 border-2 border-white shadow-lg z-10"
         onClick={onPrevious}
-        style={{ 
-          // Ensure button is always visible for html2canvas
-          opacity: 1,
-          visibility: 'visible'
-        }}
       >
         <ArrowLeft className="h-6 w-6" />
       </Button>
@@ -39,23 +36,11 @@ export function AdNavigationControls({
         size="icon"
         className="rounded-full bg-white/80 hover:bg-white text-gray-800 pointer-events-auto h-12 w-12 border-2 border-white shadow-lg z-10"
         onClick={onNext}
-        style={{ 
-          // Ensure button is always visible for html2canvas
-          opacity: 1,
-          visibility: 'visible'
-        }}
       >
         <ArrowRight className="h-6 w-6" />
       </Button>
       
-      <div 
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10"
-        style={{ 
-          // Ensure pagination dots are always visible for html2canvas
-          opacity: 1, 
-          visibility: 'visible' 
-        }}
-      >
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
         {Array.from({ length: totalImages }).map((_, index) => (
           <div
             key={index}

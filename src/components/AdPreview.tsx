@@ -9,12 +9,9 @@ import { AdContent } from "./ad/AdContent";
 import { AdPreviewImage } from "./ad/AdPreviewImage";
 import { PageFlip } from "./ad/PageFlip";
 import { Button } from "./ui/button";
+import { Download } from "lucide-react";
 import { ImageGenerator } from "@/utils/ImageGenerator";
 import { cn } from "@/lib/utils";
-import { Download, ZoomIn, Settings2 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Label } from "./ui/label";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 
 interface Position {
   x: number;
@@ -49,6 +46,7 @@ interface AdPreviewProps {
   onImageLoaded?: () => void;
   fastRenderMode?: boolean;
   preloadedImage?: HTMLImageElement | null;
+  isGenerating?: boolean; // New prop to hide navigation during generation
 }
 
 export function AdPreview({ 
@@ -78,15 +76,13 @@ export function AdPreview({
   language = "en",
   onImageLoaded,
   fastRenderMode = false,
-  preloadedImage = null
+  preloadedImage = null,
+  isGenerating = false, // Default to false
 }: AdPreviewProps) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [fontFamily, setFontFamily] = useState<string>('');
   const [isCapturing, setIsCapturing] = useState(false);
-  const [isHighResCapturing, setIsHighResCapturing] = useState(false);
-  const [renderMethod, setRenderMethod] = useState<'html2canvas' | 'dom-to-image' | 'html-to-image'>('html2canvas');
-  
-  const imageGenerator = useRef<ImageGenerator | null>(null);
+  const imageGenerator = useRef<ImageGenerator>();
   const isRTL = language === 'he' || language === 'ar';
   const currentImageUrl = useRef<string | undefined>(imageUrl);
   const fontLoaded = useRef<boolean>(false);
@@ -102,14 +98,9 @@ export function AdPreview({
     renderStartTime.current = performance.now();
     
     if (!imageGenerator.current) {
-      imageGenerator.current = new ImageGenerator('.ad-content', {
-        outputScale: 2,
-        renderMethod: renderMethod
-      });
-    } else {
-      imageGenerator.current.setRenderMethod(renderMethod);
+      imageGenerator.current = new ImageGenerator('.ad-content');
     }
-  }, [renderMethod]);
+  }, []);
 
   useEffect(() => {
     if (imageUrl !== currentImageUrl.current) {
@@ -212,29 +203,11 @@ export function AdPreview({
     try {
       setIsCapturing(true);
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      imageGenerator.current.setOutputDimensions(width, height, 2);
-      
       await imageGenerator.current.downloadImage('ad-preview.png');
     } catch (error) {
       console.error('Error generating image:', error);
     } finally {
       setIsCapturing(false);
-    }
-  };
-  
-  const handleHighResDownload = async () => {
-    if (!imageGenerator.current) return;
-
-    try {
-      setIsHighResCapturing(true);
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      await imageGenerator.current.downloadHighResolution('ad-high-res.png', 3);
-    } catch (error) {
-      console.error('Error generating high-resolution image:', error);
-    } finally {
-      setIsHighResCapturing(false);
     }
   };
 
@@ -278,10 +251,6 @@ export function AdPreview({
     if (onNext && typeof onNext === 'function') {
       onNext();
     }
-  };
-
-  const handleRenderMethodChange = (value: string) => {
-    setRenderMethod(value as 'html2canvas' | 'dom-to-image' | 'html-to-image');
   };
 
   const renderLuxuryJewelryTemplate = () => {
@@ -330,6 +299,7 @@ export function AdPreview({
               onNext={handleNext}
               currentIndex={currentIndex}
               totalImages={imageUrls.length}
+              hidden={isGenerating} // Pass the isGenerating prop here
             />
           )}
           {showPageFlip && (
@@ -396,6 +366,7 @@ export function AdPreview({
                 onNext={handleNext}
                 currentIndex={currentIndex}
                 totalImages={imageUrls.length}
+                hidden={isGenerating} // Pass the isGenerating prop here
               />
             )}
             {showPageFlip && (
@@ -419,62 +390,16 @@ export function AdPreview({
     <Card className="h-fit w-full">
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Preview</CardTitle>
-        <div className="flex items-center gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center gap-2"
-              >
-                <Settings2 className="h-4 w-4" />
-                Render Options
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-60">
-              <div className="space-y-4">
-                <h4 className="font-medium">Rendering Method</h4>
-                <RadioGroup 
-                  defaultValue={renderMethod} 
-                  onValueChange={handleRenderMethodChange}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="html2canvas" id="r1" />
-                    <Label htmlFor="r1">html2canvas</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="html-to-image" id="r2" />
-                    <Label htmlFor="r2">html-to-image</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="dom-to-image" id="r3" />
-                    <Label htmlFor="r3">dom-to-image</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleHighResDownload}
-            className="flex items-center gap-2"
-            disabled={isCapturing || isHighResCapturing}
-          >
-            <ZoomIn className="h-4 w-4" />
-            {isHighResCapturing ? 'Generating...' : 'High-Res Download'}
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleDownload}
-            className="flex items-center gap-2"
-            disabled={isCapturing || isHighResCapturing}
-          >
-            <Download className="h-4 w-4" />
-            {isCapturing ? 'Generating...' : 'Download Preview'}
-          </Button>
-        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleDownload}
+          className="flex items-center gap-2"
+          disabled={isCapturing}
+        >
+          <Download className="h-4 w-4" />
+          {isCapturing ? 'Generating...' : 'Download Preview'}
+        </Button>
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative w-full">

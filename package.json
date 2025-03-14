@@ -47,7 +47,6 @@
     "date-fns": "^3.6.0",
     "dom-to-image-more": "^3.5.0",
     "embla-carousel-react": "^8.3.0",
-    "html-to-image": "^1.11.11",
     "html2canvas": "^1.4.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",

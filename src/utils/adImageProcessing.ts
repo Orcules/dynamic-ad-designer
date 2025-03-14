@@ -32,14 +32,11 @@ export const processImages = async (
   let successCount = 0;
   let retryCount = 0;
   const maxRetries = 3;
-  const imageGenerator = new ImageGenerator('.ad-content', {
-    renderMethod: 'html-to-image' // Use html-to-image as default for better reliability
-  });
+  const imageGenerator = new ImageGenerator('.ad-content');
   
   for (let i = 0; i < images.length; i++) {
     const currentImage = images[i];
     Logger.info(`Processing image ${i + 1}/${images.length}`);
-    retryCount = 0; // Reset retry count for each image
 
     while (retryCount < maxRetries) {
       try {
@@ -48,9 +45,9 @@ export const processImages = async (
           throw new Error('Preview element not found');
         }
 
-        // Capture preview using the safer method
+        // Capture preview
         Logger.info('Generating preview image...');
-        const previewUrl = await imageGenerator.getImageUrlSafe();
+        const previewUrl = await imageGenerator.getImageUrl();
         Logger.info('Preview URL generated successfully');
 
         // Convert base64 URL to file
@@ -118,9 +115,11 @@ export const processImages = async (
           const backoffTime = Math.pow(2, retryCount) * 1000;
           Logger.info(`Retrying in ${backoffTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
+          continue;
         }
       }
     }
+    retryCount = 0; // Reset retry count for next image
   }
   
   if (successCount > 0) {

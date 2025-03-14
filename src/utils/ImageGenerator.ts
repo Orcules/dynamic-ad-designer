@@ -1,83 +1,14 @@
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
-import * as htmlToImage from 'html-to-image';
-import { applyImageEffect, createProportionalCanvas, optimizeCanvasRendering, ensureElementsVisible, fixRTLTextRendering } from './imageEffects';
-
-// Define the Options interface for html-to-image since it's not exported
-interface HtmlToImageOptions {
-  pixelRatio?: number;
-  quality?: number;
-  backgroundColor?: string | null;
-  skipFonts?: boolean;
-  canvasWidth?: number;
-  canvasHeight?: number;
-  cacheBust?: boolean;
-  filter?: (node: HTMLElement) => boolean;
-}
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
   private lastCaptureTime: number = 0;
   private captureInProgress: boolean = false;
   private captureQueue: Array<() => void> = [];
-  private outputWidth: number | null = null;
-  private outputHeight: number | null = null;
-  private outputScale: number = 2;
-  private imageEffect: 'sepia' | 'none' | 'highres' = 'none';
-  private renderMethod: 'html2canvas' | 'dom-to-image' | 'html-to-image' = 'html2canvas';
 
-  constructor(
-    previewSelector = '.ad-content', 
-    options?: { 
-      outputWidth?: number; 
-      outputHeight?: number; 
-      outputScale?: number;
-      effect?: 'sepia' | 'none' | 'highres';
-      renderMethod?: 'html2canvas' | 'dom-to-image' | 'html-to-image';
-    }
-  ) {
+  constructor(previewSelector = '.ad-content') {
     this.previewElement = document.querySelector(previewSelector);
-    
-    if (options) {
-      if (options.outputWidth) this.outputWidth = options.outputWidth;
-      if (options.outputHeight) this.outputHeight = options.outputHeight;
-      if (options.outputScale) this.outputScale = options.outputScale;
-      if (options.effect) this.imageEffect = options.effect;
-      if (options.renderMethod) this.renderMethod = options.renderMethod;
-    }
-    
-    console.log(`ImageGenerator initialized with dimensions: ${this.outputWidth}x${this.outputHeight}, scale: ${this.outputScale}, method: ${this.renderMethod}`);
-  }
-
-  /**
-   * Set the output dimensions for the generated image
-   * @param width The width in pixels for the output image (null to use original)
-   * @param height The height in pixels for the output image (null to use original)
-   * @param scale The scale factor for the output image (default: 2)
-   */
-  public setOutputDimensions(width: number | null, height: number | null, scale: number = 2): void {
-    this.outputWidth = width;
-    this.outputHeight = height;
-    this.outputScale = scale;
-    console.log(`Output dimensions set to: ${width}x${height}, scale: ${scale}`);
-  }
-  
-  /**
-   * Set the image effect to apply during generation
-   * @param effect The effect to apply ('sepia', 'none', or 'highres')
-   */
-  public setImageEffect(effect: 'sepia' | 'none' | 'highres'): void {
-    this.imageEffect = effect;
-    console.log(`Image effect set to: ${effect}`);
-  }
-
-  /**
-   * Set the rendering method to use
-   * @param method The rendering method ('html2canvas', 'dom-to-image', or 'html-to-image')
-   */
-  public setRenderMethod(method: 'html2canvas' | 'dom-to-image' | 'html-to-image'): void {
-    this.renderMethod = method;
-    console.log(`Render method set to: ${method}`);
   }
 
   private async waitForImages(maxWaitTime = 2000): Promise<void> {
@@ -117,7 +48,7 @@ export class ImageGenerator {
       Promise.all([
         ...imagePromises,
         document.fonts.ready,
-        new Promise<void>(resolve => setTimeout(resolve, 300)) // Wait for fonts to load
+        new Promise<void>(resolve => setTimeout(resolve, 300)) // Reduced waiting time
       ]),
       new Promise<void>(resolve => setTimeout(() => {
         console.warn(`Maximum wait time for images reached (${maxWaitTime}ms)`);
@@ -133,91 +64,56 @@ export class ImageGenerator {
       return () => {};
     }
 
-    // Store and remove transformations temporarily to avoid scaling issues
-    const elementsWithTransform = Array.from(this.previewElement.querySelectorAll('*[style*="transform"]'));
-    const originalTransforms = new Map<Element, string>();
-    const originalBoxShadows = new Map<Element, string>();
-    const originalBorders = new Map<Element, string>();
-    const originalGradients = new Map<Element, string>();
+    // Simulate hover effect on button - fix the selector
+    const ctaButton = this.previewElement.querySelector('button');
+    console.log('CTA Button found:', ctaButton !== null);
     
-    // Store original styles
-    elementsWithTransform.forEach(el => {
-      const computedStyle = window.getComputedStyle(el);
-      originalTransforms.set(el, computedStyle.transform);
+    // Find text elements - now using the class names we added
+    const headlineElement = this.previewElement.querySelector('h2');
+    const descriptionElement = this.previewElement.querySelector('p');
+    const buttonTextElement = ctaButton?.querySelector('.cta-text');
+    
+    // Find arrow element separately
+    const arrowElement = ctaButton?.querySelector('.cta-arrow');
+    
+    // Store original positions to restore later
+    const originalPositions = new Map<Element, string>();
+    
+    // Helper to move elements up
+    const moveElementUp = (element: Element | null, pixels: number = 7) => {
+      if (!element) return;
       
-      // Don't remove positioning transforms completely, just scale transforms
-      const elStyle = (el as HTMLElement).style;
-      if (elStyle.transform.includes('scale')) {
-        elStyle.transform = elStyle.transform.replace(/scale\([^)]+\)/g, 'scale(1)');
+      const currentTransform = window.getComputedStyle(element).transform;
+      originalPositions.set(element, currentTransform);
+      
+      // Apply transform to move up
+      if (currentTransform && currentTransform !== 'none') {
+        (element as HTMLElement).style.transform = `${currentTransform} translateY(-${pixels}px)`;
+      } else {
+        (element as HTMLElement).style.transform = `translateY(-${pixels}px)`;
       }
-    });
-    
-    // Handle box-shadow and border which can cause rendering issues
-    const elementsWithShadow = Array.from(this.previewElement.querySelectorAll('*[style*="box-shadow"]'));
-    elementsWithShadow.forEach(el => {
-      const computedStyle = window.getComputedStyle(el);
-      originalBoxShadows.set(el, computedStyle.boxShadow);
       
-      // Temporarily remove box-shadow for capture
-      (el as HTMLElement).style.boxShadow = 'none';
-    });
+      console.log(`Moved element up by ${pixels}px:`, element);
+    };
     
-    const elementsWithBorder = Array.from(this.previewElement.querySelectorAll('*[style*="border"]'));
-    elementsWithBorder.forEach(el => {
-      const computedStyle = window.getComputedStyle(el);
-      originalBorders.set(el, computedStyle.border);
-      
-      // Make sure borders are solid for better rendering
-      if ((el as HTMLElement).style.borderStyle === 'dashed' || (el as HTMLElement).style.borderStyle === 'dotted') {
-        (el as HTMLElement).style.borderStyle = 'solid';
-      }
-    });
+    // Move text elements up but NOT the arrow
+    moveElementUp(headlineElement);
+    moveElementUp(descriptionElement);
+    moveElementUp(buttonTextElement);
     
-    // Fix gradient elements that might cause rendering issues
-    const elementsWithGradient = Array.from(this.previewElement.querySelectorAll('*[style*="gradient"]'));
-    elementsWithGradient.forEach(el => {
-      const elStyle = (el as HTMLElement).style;
-      const backgroundImage = elStyle.backgroundImage;
-      originalGradients.set(el, backgroundImage);
-      
-      // If this is a complex gradient that might cause issues, simplify it temporarily
-      if (backgroundImage.includes('gradient') && 
-          (backgroundImage.includes('NaN') || backgroundImage.includes('Infinity') || 
-           backgroundImage.includes('undefined'))) {
-        elStyle.backgroundImage = 'none';
-        elStyle.backgroundColor = '#ffffff';
-      }
-    });
-    
-    // Ensure all navigation elements are visible for capture
-    ensureElementsVisible(this.previewElement);
-    
-    // Fix RTL text rendering issues before capture
-    fixRTLTextRendering(this.previewElement);
+    // We do NOT modify the arrow position here to keep it static
+    if (arrowElement) {
+      console.log('Arrow found, keeping it static during rendering');
+      // Just store the original transform to restore later
+      const svgElement = arrowElement as SVGElement;
+      originalPositions.set(svgElement, svgElement.style.transform);
+    }
     
     return () => {
-      // Restore original styles
-      originalTransforms.forEach((originalTransform, element) => {
-        if (element instanceof HTMLElement) {
+      // Restore original positions
+      originalPositions.forEach((originalTransform, element) => {
+        if (element instanceof SVGElement || element instanceof HTMLElement) {
           element.style.transform = originalTransform;
-        }
-      });
-      
-      originalBoxShadows.forEach((originalBoxShadow, element) => {
-        if (element instanceof HTMLElement) {
-          element.style.boxShadow = originalBoxShadow;
-        }
-      });
-      
-      originalBorders.forEach((originalBorder, element) => {
-        if (element instanceof HTMLElement) {
-          element.style.border = originalBorder;
-        }
-      });
-      
-      originalGradients.forEach((originalGradient, element) => {
-        if (element instanceof HTMLElement) {
-          element.style.backgroundImage = originalGradient;
         }
       });
     };
@@ -232,78 +128,40 @@ export class ImageGenerator {
     
     // Wait for all images to load
     await this.waitForImages(2000);
+    
     console.log(`Image waiting completed in ${performance.now() - startTime}ms`);
 
-    // Prepare element for capture (remove transforms, ensure visibility)
+    // Trigger hover effect
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
     
-    // Give time for prep changes to take effect
+    // Give time for animation to take effect
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-      console.log(`Using ${this.renderMethod} for image capture...`);
+      console.log('Using html2canvas...');
       
-      // Choose the rendering method based on configuration
-      if (this.renderMethod === 'html-to-image') {
-        return this.captureWithHtmlToImage(resetEffect);
-      } else if (this.renderMethod === 'dom-to-image') {
-        return this.captureWithDomToImage(resetEffect);
-      } else {
-        return this.captureWithHtml2Canvas(resetEffect);
-      }
-    } catch (error) {
-      console.error('Primary capture method failed:', error);
-      resetEffect();
+      // Initialize variables before using them
+      const originalStyles = new Map<Element, string>();
+      const elementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
       
-      // If the primary method fails, fall back to a different method
-      console.warn('Trying fallback method...');
-      if (this.renderMethod !== 'html-to-image') {
-        try {
-          return await this.captureWithHtmlToImage(() => {});
-        } catch (htmlToImageError) {
-          console.error('html-to-image fallback failed:', htmlToImageError);
-        }
-      }
-      
-      // If all else fails, try dom-to-image as a last resort
-      console.warn('Trying dom-to-image as last resort...');
-      return this.fallbackCapture();
-    }
-  }
-
-  private async captureWithHtml2Canvas(resetEffect: () => void): Promise<string> {
-    try {
-      const startTime = performance.now();
-      
-      // Create a clone to avoid modifying the original
-      const clone = this.previewElement!.cloneNode(true) as HTMLElement;
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.top = '-9999px';
-      container.style.left = '-9999px';
-      container.appendChild(clone);
-      document.body.appendChild(container);
-      
-      // Process and fix any problematic elements that might cause gradient errors
-      const elementsWithGradient = Array.from(clone.querySelectorAll('*[style*="gradient"]'));
-      elementsWithGradient.forEach(el => {
-        if (el instanceof HTMLElement) {
-          const backgroundImage = el.style.backgroundImage;
-          // Check for potential problematic values
-          if (backgroundImage.includes('gradient') && 
-              (backgroundImage.includes('NaN') || backgroundImage.includes('Infinity') || 
-               backgroundImage.includes('undefined'))) {
-            // Replace with a solid color
-            el.style.backgroundImage = 'none';
-            el.style.backgroundColor = '#ffffff';
-          }
-        }
+      elementsToFixPosition.forEach(el => {
+        originalStyles.set(el, el.getAttribute('style') || '');
+        const computedStyle = window.getComputedStyle(el);
+        const currentLeft = computedStyle.left;
+        const currentTop = computedStyle.top;
+        const currentTransform = computedStyle.transform;
+        
+        // Apply computed position directly
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
-      
-      // Set up html2canvas options with fixes for stretching
-      const options: any = {
+
+      // Fix: Call html2canvas as a function with proper options
+      const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -312,10 +170,7 @@ export class ImageGenerator {
         scrollX: 0,
         scrollY: 0,
         imageTimeout: 0,
-        scale: this.outputScale || window.devicePixelRatio || 2,
-        letterRendering: true, // Better text rendering
-        onclone: (documentClone: Document) => {
-          // Copy over font face rules to ensure text renders correctly
+        onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -331,227 +186,112 @@ export class ImageGenerator {
               // Silently fail for cross-origin stylesheets
             }
           });
-          
-          // Fix background-size on elements to prevent stretching
-          const bgElements = documentClone.querySelectorAll('[style*="background"]');
-          bgElements.forEach(el => {
-            if (el instanceof HTMLElement) {
-              if (el.style.backgroundSize === '200%' || el.style.backgroundSize === '200% auto') {
-                el.style.backgroundSize = '200% 200%';
-              }
-              // Ensure backgrounds maintain aspect ratio
-              if (!el.style.backgroundSize) {
-                el.style.backgroundSize = 'contain';
-                el.style.backgroundRepeat = 'no-repeat';
-                el.style.backgroundPosition = 'center';
-              }
-            }
-          });
-          
-          // Fix gradient elements in the clone
-          const gradientElements = documentClone.querySelectorAll('[style*="gradient"]');
-          gradientElements.forEach(el => {
-            if (el instanceof HTMLElement) {
-              const backgroundImage = el.style.backgroundImage;
-              if (backgroundImage.includes('gradient') && 
-                 (backgroundImage.includes('NaN') || backgroundImage.includes('Infinity') || 
-                  backgroundImage.includes('undefined'))) {
-                // Replace problematic gradients
-                el.style.backgroundImage = 'none';
-                el.style.backgroundColor = '#ffffff';
-              }
-            }
-          });
         }
-      };
-      
-      // Apply custom dimensions if specified
-      if (this.outputWidth && this.outputHeight) {
-        options.width = this.outputWidth;
-        options.height = this.outputHeight;
-        console.log(`Using custom dimensions: ${this.outputWidth}x${this.outputHeight}, scale: ${this.outputScale}`);
-      } else {
-        // Use exact element dimensions to prevent stretching
-        options.width = clone.offsetWidth;
-        options.height = clone.offsetHeight;
-        console.log(`Using element dimensions: ${clone.offsetWidth}x${clone.offsetHeight}, scale: ${this.outputScale}`);
-      }
-
-      // Generate the canvas with optimized settings
-      const canvas = await html2canvas(clone, options);
-      
-      // Clean up the cloned element
-      document.body.removeChild(container);
-      
-      // Ensure the canvas maintains the proper aspect ratio
-      let finalCanvas = canvas;
-      if (this.outputWidth && this.outputHeight) {
-        finalCanvas = createProportionalCanvas(canvas, this.outputWidth, this.outputHeight);
-      }
-      
-      // Optimize canvas rendering
-      const ctx = finalCanvas.getContext('2d', { willReadFrequently: true });
-      if (ctx) {
-        // Disable image smoothing for sharper lines
-        ctx.imageSmoothingEnabled = false;
-        optimizeCanvasRendering(ctx);
-      }
-
-      // Apply any image effects to the canvas
-      const dataUrl = await applyImageEffect(finalCanvas, this.imageEffect);
+      });
 
       const renderTime = performance.now() - startTime;
-      console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms with html2canvas`);
+      console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
       
-      // Reset the element after capture
-      resetEffect();
-      
-      this.lastCaptureTime = performance.now();
-      return dataUrl;
-    } catch (error) {
-      console.error('html2canvas error:', error);
-      resetEffect();
-      
-      // If we encounter a gradient error, try to recover by using fallbackCapture
-      if (error instanceof Error && 
-          (error.message.includes('addColorStop') || 
-           error.message.includes('non-finite') || 
-           error.message.includes('gradient'))) {
-        console.warn('Gradient error detected, trying fallback method');
-        return this.captureWithHtmlToImage(() => {});
-      }
-      
-      throw error;
-    }
-  }
-
-  private async captureWithHtmlToImage(resetEffect: () => void): Promise<string> {
-    try {
-      const startTime = performance.now();
-      
-      // Configure the html-to-image options
-      const options: HtmlToImageOptions = {
-        pixelRatio: this.outputScale,
-        quality: 1.0,
-        backgroundColor: null,
-        skipFonts: false,
-        canvasWidth: this.outputWidth || undefined,
-        canvasHeight: this.outputHeight || undefined,
-        cacheBust: true, // Add cache busting to ensure fresh rendering
-        filter: (node) => {
-          // Filter out any unwanted nodes (e.g., hidden elements)
-          return node.nodeName !== 'SCRIPT';
+      // Restore original styles
+      elementsToFixPosition.forEach(el => {
+        const original = originalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
         }
-      };
+      });
       
-      // Use toPng method for best quality
-      const dataUrl = await htmlToImage.toPng(this.previewElement!, options);
-      
-      const renderTime = performance.now() - startTime;
-      console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms with html-to-image`);
-      
-      // Apply effects if needed
-      const effectResult = await this.applyEffectsToDataUrl(dataUrl);
-      
-      // Reset element styles
+      // Reset hover effect after capture
+      console.log('Resetting text positions and hover effect');
       resetEffect();
       
       this.lastCaptureTime = performance.now();
-      return effectResult;
-    } catch (error) {
-      console.error('html-to-image error:', error);
-      resetEffect();
-      throw error;
-    }
-  }
-
-  private async captureWithDomToImage(resetEffect: () => void): Promise<string> {
-    try {
-      const startTime = performance.now();
+      return canvas.toDataURL('image/png', 0.9); // Slightly reduced quality for better performance
+    } catch (html2canvasError) {
+      console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      // Configure dom-to-image options
-      const config: any = {
-        quality: 1.0,
-        bgcolor: null,
-        scale: this.outputScale,
-        style: {
-          'transform-origin': 'top left',
-        },
-        width: this.outputWidth,
-        height: this.outputHeight,
-        imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
-      };
+      // Fix: Define a local scope copy of these variables before using them in this catch block
+      const localElementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
+      const localOriginalStyles = new Map<Element, string>();
       
-      // Use toPng method for best quality
-      const dataUrl = await domtoimage.toPng(this.previewElement!, config);
+      // Restore original styles before fallback
+      localElementsToFixPosition.forEach(el => {
+        const original = localOriginalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
+        }
+      });
       
-      const renderTime = performance.now() - startTime;
-      console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms with dom-to-image`);
-      
-      // Apply effects if needed
-      const effectResult = await this.applyEffectsToDataUrl(dataUrl);
-      
-      // Reset element styles
+      // Reset hover effect
       resetEffect();
       
-      this.lastCaptureTime = performance.now();
-      return effectResult;
-    } catch (error) {
-      console.error('dom-to-image error:', error);
-      resetEffect();
-      throw error;
+      return this.fallbackCapture();
     }
-  }
-
-  private async applyEffectsToDataUrl(dataUrl: string): Promise<string> {
-    // Only apply effects if needed
-    if (this.imageEffect === 'none') {
-      return dataUrl;
-    }
-    
-    // Create a canvas from the data URL
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = reject;
-      img.src = dataUrl;
-    });
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width;
-    canvas.height = img.height;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw new Error('Failed to get canvas context');
-    
-    ctx.drawImage(img, 0, 0);
-    return applyImageEffect(canvas, this.imageEffect);
   }
 
   private async fallbackCapture(): Promise<string> {
-    console.warn('All primary rendering methods failed, using basic fallback...');
-    
     if (!this.previewElement) {
       throw new Error('Preview element not found');
     }
     
-    // Create a very simple canvas as a last resort
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Failed to get canvas context');
+    const startTime = performance.now();
+    await this.waitForImages(1500); // Reduced waiting time
     
-    const rect = this.previewElement.getBoundingClientRect();
-    canvas.width = this.outputWidth || rect.width;
-    canvas.height = this.outputHeight || rect.height;
-    
-    // Fill with a background color as placeholder
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = '20px Arial';
-    ctx.fillStyle = '#000000';
-    ctx.textAlign = 'center';
-    ctx.fillText('Image generation failed', canvas.width / 2, canvas.height / 2);
-    
-    return canvas.toDataURL('image/png');
+    // Trigger hover effect
+    const resetEffect = await this.prepareForCapture();
+
+    console.log('Using dom-to-image fallback...');
+    const config = {
+      quality: 0.9, // Slightly reduced quality for better performance
+      scale: 2,
+      bgcolor: null,
+      style: {
+        'transform-origin': 'top left',
+      },
+      imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    };
+
+    // Skip extra processing for cross-origin images to improve performance
+    try {
+      const dataUrl = await domtoimage.toPng(this.previewElement, config);
+      console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
+      
+      // Reset hover effect
+      resetEffect();
+      
+      this.lastCaptureTime = performance.now();
+      return dataUrl;
+    } catch (error) {
+      console.error('Fallback capture failed:', error);
+      
+      // Reset hover effect
+      resetEffect();
+      
+      // Last resort: try to get a screenshot with a simpler approach
+      try {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Failed to get canvas context');
+        
+        const rect = this.previewElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        
+        // Fill with a background color as placeholder
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#000000';
+        ctx.textAlign = 'center';
+        ctx.fillText('Image generation failed', canvas.width / 2, canvas.height / 2);
+        
+        return canvas.toDataURL('image/png');
+      } catch (lastError) {
+        console.error('Last resort failed:', lastError);
+        throw error;
+      }
+    }
   }
 
   // Rate-limited getImageUrl to prevent performance issues
@@ -621,80 +361,6 @@ export class ImageGenerator {
     } catch (error) {
       console.error('Error downloading image:', error);
       throw error;
-    }
-  }
-  
-  /**
-   * Generate a high-resolution version of the image
-   * Useful for creating images suitable for printing or high-quality sharing
-   * @param filename Optional filename for download
-   * @param scale Scale factor for the high-resolution image
-   */
-  async downloadHighResolution(filename = 'ad-high-res.png', scale = 3): Promise<void> {
-    try {
-      console.log(`Starting high-resolution download (scale: ${scale})...`);
-      
-      // Store original settings
-      const originalWidth = this.outputWidth;
-      const originalHeight = this.outputHeight;
-      const originalScale = this.outputScale;
-      const originalMethod = this.renderMethod;
-      
-      // Set high-resolution settings
-      if (originalWidth && originalHeight) {
-        this.setOutputDimensions(originalWidth * scale / originalScale, originalHeight * scale / originalScale, scale);
-      } else {
-        this.setOutputDimensions(null, null, scale);
-      }
-      
-      // Use html-to-image for high-res rendering as it typically gives better results
-      this.setRenderMethod('html-to-image');
-      
-      // Generate high-resolution image
-      const dataUrl = await this.getImageUrl();
-      
-      // Restore original settings
-      this.setOutputDimensions(originalWidth, originalHeight, originalScale);
-      this.setRenderMethod(originalMethod);
-      
-      // Download the image
-      const link = document.createElement('a');
-      link.download = filename;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      console.log('High-resolution download completed successfully');
-    } catch (error) {
-      console.error('Error downloading high-resolution image:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Generate an image using html-to-image as the primary renderer
-   * This is recommended for cases where html2canvas has issues with gradients
-   */
-  async getImageUrlSafe(): Promise<string> {
-    const currentMethod = this.renderMethod;
-    try {
-      // Set html-to-image as the primary method
-      this.setRenderMethod('html-to-image');
-      return await this.getImageUrl();
-    } catch (error) {
-      console.error('Safe rendering with html-to-image failed:', error);
-      // Try dom-to-image as fallback
-      this.setRenderMethod('dom-to-image');
-      try {
-        return await this.getImageUrl();
-      } catch (fallbackError) {
-        console.error('Fallback dom-to-image failed:', fallbackError);
-        return this.fallbackCapture();
-      }
-    } finally {
-      // Restore original method
-      this.setRenderMethod(currentMethod);
     }
   }
 }
