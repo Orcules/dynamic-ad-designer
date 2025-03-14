@@ -40,6 +40,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const initialLoadComplete = useRef(false);
   const styleUpdateTimeoutRef = useRef<number | null>(null);
   const isUnmounted = useRef(false);
+  const renderCount = useRef(0);
 
   // Clean up resources when component unmounts
   useEffect(() => {
@@ -48,14 +49,29 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       if (styleUpdateTimeoutRef.current) {
         window.clearTimeout(styleUpdateTimeoutRef.current);
       }
+      
+      // Clear image element references to help garbage collection
+      imageElementRef.current = null;
+      if (imageRef.current) {
+        // Clear src to stop any ongoing loads
+        imageRef.current.src = '';
+      }
     };
   }, []);
 
-  // Apply physical crop on load
+  // Apply physical crop on load with performance optimizations
   const applyCropOnLoad = (img: HTMLImageElement) => {
     if (!containerRef.current || isUnmounted.current) return;
     
     try {
+      // Limit updates if we're rendering too frequently
+      renderCount.current += 1;
+      if (renderCount.current > 20) {
+        console.log('Too many render cycles in AdPreviewImage, limiting updates');
+        setTimeout(() => { renderCount.current = 0; }, 2000);
+        return;
+      }
+      
       const containerRect = containerRef.current.getBoundingClientRect();
       imageElementRef.current = img;
       
@@ -75,7 +91,10 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         // If the position is (0,0), ensure the image is properly centered
         if (position.x === 0 && position.y === 0) {
           // Let the component render first, then apply initial centering
-          setTimeout(() => {
+          if (styleUpdateTimeoutRef.current) {
+            window.clearTimeout(styleUpdateTimeoutRef.current);
+          }
+          styleUpdateTimeoutRef.current = window.setTimeout(() => {
             if (!isUnmounted.current) updateImageStyle(position);
           }, 50);
         }
@@ -141,7 +160,14 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     let resizeObserver: ResizeObserver;
     try {
       resizeObserver = new ResizeObserver(() => {
-        updateContainerSize();
+        // Debounce resize operations for better performance
+        if (styleUpdateTimeoutRef.current) {
+          window.clearTimeout(styleUpdateTimeoutRef.current);
+        }
+        
+        styleUpdateTimeoutRef.current = window.setTimeout(() => {
+          updateContainerSize();
+        }, 100);
       });
       
       resizeObserver.observe(containerRef.current);
@@ -242,7 +268,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       setTimeout(() => {
         if (isUnmounted.current) return;
         
-        if (imageRef.current) {
+        if (imageRef.current && imageUrl) {
           imageRef.current.src = imageUrl + '?retry=' + Date.now();
         }
       }, 500);

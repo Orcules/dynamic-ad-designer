@@ -54,10 +54,10 @@ const Index = () => {
         console.error("Error setting up accessibility fixes:", accessError);
       }
       
-      // Fetch ads with a small delay to ensure UI loads first
+      // Fetch ads with a longer delay to ensure UI loads completely first
       setTimeout(() => {
         fetchGeneratedAds();
-      }, 100);
+      }, 500);
 
       // Apply again after a short time, to catch dialogs created later
       const timer1 = setTimeout(() => {
@@ -66,7 +66,7 @@ const Index = () => {
         } catch (e) {
           console.error("Error in delayed monkeyPatchDialogContent:", e);
         }
-      }, 500);
+      }, 800);
       
       const timer2 = setTimeout(() => {
         try {
@@ -100,7 +100,7 @@ const Index = () => {
     }
   }, [retryCount]);
 
-  // Optimized fetch function - uses a more resilient approach with smaller queries
+  // Optimized fetch function with smaller batches and delay
   const fetchGeneratedAds = useCallback(async () => {
     if (isUpdating) return;
     
@@ -110,12 +110,12 @@ const Index = () => {
       
       Logger.info("Starting to fetch generated ads with optimized strategy...");
       
-      // Try with a reduced limit and shorter timeout first
+      // Try with a reduced limit and shorter timeout first - reduced from 3 to 2
       try {
         const { data: minimalData, error: minimalError } = await supabase
           .from('generated_ads')
           .select('id, name, image_url, preview_url, platform')
-          .limit(3)
+          .limit(2)
           .order('created_at', { ascending: false })
           .maybeSingle();
           
@@ -139,11 +139,11 @@ const Index = () => {
         try {
           Logger.info("Trying alternate storage-based approach for retrieving ads");
           
-          // List files from storage as a backup approach - limit to 10 for better performance
+          // List files from storage as a backup approach - reduced from 10 to 5 for better initial performance
           const { data: storageFiles, error: storageError } = await supabase.storage
             .from('ad-images')
             .list('full-ads', {
-              limit: 10, // Reduced from 20 for initial load
+              limit: 5,
               sortBy: { column: 'created_at', order: 'desc' }
             });
             
@@ -184,7 +184,7 @@ const Index = () => {
           const { data: simpleData, error: simpleError } = await supabase
             .from('generated_ads')
             .select('id, name, image_url, preview_url, platform')
-            .limit(5);
+            .limit(3); // Reduced from 5 to 3
             
           if (simpleError) {
             throw simpleError;

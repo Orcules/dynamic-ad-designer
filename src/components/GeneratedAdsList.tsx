@@ -2,7 +2,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Download, Eye, Copy, CheckCircle2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Logger } from "@/utils/logger";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -27,72 +27,94 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [storageImages, setStorageImages] = useState<GeneratedAd[]>([]);
   const [copiedLinks, setCopiedLinks] = useState<{ [key: string]: boolean }>({});
-  const [visibleCount, setVisibleCount] = useState(10); // Initially show only 10 ads
+  const [visibleCount, setVisibleCount] = useState(6); // Initially show only 6 ads (reduced from 10)
+  const [isFetchingStorage, setIsFetchingStorage] = useState(false);
+  const storageLoadedRef = useRef(false);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
 
+  // Limit fetch to once on mount with useRef to avoid duplicate fetches
   useEffect(() => {
-    // Load all images from storage bucket directly but limit to 20 for better performance
-    const fetchStorageImages = async () => {
-      try {
-        Logger.info("Fetching images from storage bucket (limited to 20)");
-        const { data: storageFiles, error: storageError } = await supabase.storage
-          .from('ad-images')
-          .list('full-ads', {
-            limit: 20, // Limit to 20 items to reduce initial load
-            sortBy: { column: 'created_at', order: 'desc' }
-          });
-          
-        if (storageError) {
-          Logger.error(`Storage list error: ${storageError.message}`);
-          return;
-        }
-        
-        if (storageFiles && storageFiles.length > 0) {
-          // Convert storage files to ad objects
-          const storageBasedAds = storageFiles
-            .filter(file => file.name && !file.name.includes('.gitkeep'))
-            .map((file, index) => {
-              const { data: { publicUrl } } = supabase.storage
-                .from('ad-images')
-                .getPublicUrl(`full-ads/${file.name}`);
-                
-              // Try to extract a readable name from the filename
-              let displayName = file.name;
-              // Extract the ad name (should be the first part before the date)
-              const nameParts = displayName.split('-');
-              if (nameParts.length > 1) {
-                // First part is the ad name
-                displayName = nameParts[0];
-                // Capitalize and format
-                displayName = displayName.replace(/-/g, ' ');
-                displayName = displayName.split(' ')
-                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(' ');
-              }
-              
-              return {
-                id: `storage-${index}-${file.id || Date.now()}`,
-                name: displayName || `Generated Ad ${index + 1}`,
-                image_url: publicUrl,
-                preview_url: publicUrl,
-                platform: 'unknown',
-                originalFilename: file.name // Store the original filename for downloads
-              };
-            });
-            
-          if (storageBasedAds.length > 0) {
-            Logger.info(`Retrieved ${storageBasedAds.length} ads from storage`);
-            setStorageImages(storageBasedAds);
-          }
-        }
-      } catch (err) {
-        Logger.error(`Error fetching from storage: ${err instanceof Error ? err.message : String(err)}`);
+    // Only fetch storage images if we haven't already
+    if (!storageLoadedRef.current && !isFetchingStorage) {
+      fetchStorageImages();
+    }
+    
+    return () => {
+      // Clean up any previews when component unmounts
+      if (overlayRef.current && document.body.contains(overlayRef.current)) {
+        document.body.removeChild(overlayRef.current);
+        overlayRef.current = null;
       }
     };
-
-    fetchStorageImages();
   }, []);
 
-  useEffect(() => {
+  // Load images from storage bucket but limit to 10 for better initial performance
+  const fetchStorageImages = async () => {
+    if (isFetchingStorage || storageLoadedRef.current) return;
+    
+    try {
+      setIsFetchingStorage(true);
+      Logger.info("Fetching images from storage bucket (limited to 10)");
+      const { data: storageFiles, error: storageError } = await supabase.storage
+        .from('ad-images')
+        .list('full-ads', {
+          limit: 10, // Reduced from 20 to 10
+          sortBy: { column: 'created_at', order: 'desc' }
+        });
+        
+      if (storageError) {
+        Logger.error(`Storage list error: ${storageError.message}`);
+        return;
+      }
+      
+      if (storageFiles && storageFiles.length > 0) {
+        // Convert storage files to ad objects
+        const storageBasedAds = storageFiles
+          .filter(file => file.name && !file.name.includes('.gitkeep'))
+          .map((file, index) => {
+            const { data: { publicUrl } } = supabase.storage
+              .from('ad-images')
+              .getPublicUrl(`full-ads/${file.name}`);
+              
+            // Try to extract a readable name from the filename
+            let displayName = file.name;
+            // Extract the ad name (should be the first part before the date)
+            const nameParts = displayName.split('-');
+            if (nameParts.length > 1) {
+              // First part is the ad name
+              displayName = nameParts[0];
+              // Capitalize and format
+              displayName = displayName.replace(/-/g, ' ');
+              displayName = displayName.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+            }
+            
+            return {
+              id: `storage-${index}-${file.id || Date.now()}`,
+              name: displayName || `Generated Ad ${index + 1}`,
+              image_url: publicUrl,
+              preview_url: publicUrl,
+              platform: 'unknown',
+              originalFilename: file.name // Store the original filename for downloads
+            };
+          });
+          
+        if (storageBasedAds.length > 0) {
+          Logger.info(`Retrieved ${storageBasedAds.length} ads from storage`);
+          setStorageImages(storageBasedAds);
+          storageLoadedRef.current = true;
+        }
+      }
+    } catch (err) {
+      Logger.error(`Error fetching from storage: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsFetchingStorage(false);
+    }
+  };
+
+  // Process ads with useCallback for better performance
+  const processAds = useCallback(() => {
     // Combine ads from props with ads from storage, but limit the total
     const allAds = [...ads];
     
@@ -100,7 +122,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     const existingUrls = new Set(ads.map(ad => ad.image_url));
     const uniqueStorageAds = storageImages
       .filter(ad => !existingUrls.has(ad.image_url))
-      .slice(0, 20); // Limit to 20 storage ads max
+      .slice(0, 10); // Limit to 10 storage ads max (reduced from 20)
     
     allAds.push(...uniqueStorageAds);
     
@@ -123,6 +145,11 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     
     return () => clearTimeout(timer);
   }, [ads, storageImages]);
+
+  // Update display ads when source ads or storage images change
+  useEffect(() => {
+    processAds();
+  }, [ads, storageImages, processAds]);
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, ad: GeneratedAd) => {
     Logger.warn(`Failed to load image for ad ${ad.id}: ${ad.preview_url || ad.image_url}`);
@@ -168,7 +195,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
 
   // Load more items
   const loadMoreItems = () => {
-    setVisibleCount(prev => prev + 10);
+    setVisibleCount(prev => prev + 6); // Load 6 more ads at a time (reduced from 10)
   };
 
   if (isLoading) {
@@ -207,7 +234,15 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
     Logger.info(`Previewing image: ${imageUrl.substring(0, 50)}...`);
     
     try {
+      // Clean up any existing overlay
+      if (overlayRef.current && document.body.contains(overlayRef.current)) {
+        document.body.removeChild(overlayRef.current);
+      }
+      
+      // Create a new overlay
       const overlay = document.createElement('div');
+      overlayRef.current = overlay;
+      
       overlay.style.position = 'fixed';
       overlay.style.top = '0';
       overlay.style.left = '0';
@@ -247,7 +282,10 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       closeButton.style.cursor = 'pointer';
       
       closeButton.onclick = () => {
-        document.body.removeChild(overlay);
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+          overlayRef.current = null;
+        }
       };
       
       overlay.appendChild(img);
@@ -255,7 +293,10 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
       
       overlay.onclick = (e) => {
         if (e.target === overlay) {
-          document.body.removeChild(overlay);
+          if (document.body.contains(overlay)) {
+            document.body.removeChild(overlay);
+            overlayRef.current = null;
+          }
         }
       };
       
@@ -369,7 +410,7 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
                       className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
                       onError={(e) => handleImageError(e, ad)}
                       crossOrigin="anonymous"
-                      loading="lazy" // Add lazy loading
+                      loading="lazy"
                     />
                   )}
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -443,6 +484,14 @@ export const GeneratedAdsList = ({ ads, isLoading = false, onRetryLoad }: Genera
         <div className="flex justify-center mt-6">
           <Button variant="outline" onClick={loadMoreItems}>
             Load More Ads ({visibleCount} of {displayAds.length})
+          </Button>
+        </div>
+      )}
+      
+      {!isFetchingStorage && displayAds.length < 20 && !storageLoadedRef.current && (
+        <div className="flex justify-center mt-4">
+          <Button variant="outline" onClick={fetchStorageImages}>
+            Load More from Storage
           </Button>
         </div>
       )}
