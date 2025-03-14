@@ -31,6 +31,7 @@ export class AdGenerationService {
         data: adData
       });
 
+      // Fix: supabase.functions.invoke only takes a single options object
       const { data: generatedAd, error: generateError } = await supabase.functions
         .invoke('generate-ad', {
           body: formData
