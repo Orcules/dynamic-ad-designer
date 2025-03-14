@@ -38,12 +38,43 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
-  const positionRef = useRef<Position>(position);
+  const isInitialLoad = useRef<boolean>(true);
+  const lastAppliedPosition = useRef<Position>(position);
 
-  // Update the position ref when the position prop changes
+  // Update position when prop changes, but only if not during initial load
   useEffect(() => {
-    positionRef.current = position;
-  }, [position]);
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      lastAppliedPosition.current = position;
+      return;
+    }
+    
+    // Only update position if it has changed significantly to avoid small jumps
+    const positionChanged = 
+      Math.abs(lastAppliedPosition.current.x - position.x) > 1 || 
+      Math.abs(lastAppliedPosition.current.y - position.y) > 1;
+    
+    if (positionChanged && loaded) {
+      lastAppliedPosition.current = position;
+      
+      // Apply the new position with a small delay to smooth out rapid changes
+      const timer = setTimeout(() => {
+        if (naturalSize.width > 0 && containerSize.width > 0) {
+          const newStyle = calculateStyleFromDimensions(
+            naturalSize.width,
+            naturalSize.height,
+            containerSize.width,
+            containerSize.height,
+            position,
+            fastMode
+          );
+          setImageStyle(newStyle);
+        }
+      }, 10); // Very small delay to batch rapid changes
+      
+      return () => clearTimeout(timer);
+    }
+  }, [position, loaded, naturalSize, containerSize, fastMode]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -87,15 +118,17 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
+          // Use the current position prop rather than a ref
           const newStyle = calculateStyleFromDimensions(
             cachedImg.naturalWidth, 
             cachedImg.naturalHeight,
             containerRect.width,
             containerRect.height,
-            positionRef.current, // Use the ref instead of the prop for more stability
+            position,
             fastMode
           );
           setImageStyle(newStyle);
+          lastAppliedPosition.current = position;
         }
         
         if (onImageLoaded) {
@@ -112,26 +145,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage]);
-
-  // Added debounce for applying position changes to prevent jumps
-  useEffect(() => {
-    if (loaded && containerRef.current && naturalSize.width > 0 && naturalSize.height > 0) {
-      const timer = setTimeout(() => {
-        const newStyle = calculateStyleFromDimensions(
-          naturalSize.width,
-          naturalSize.height,
-          containerSize.width,
-          containerSize.height,
-          position,
-          fastMode
-        );
-        setImageStyle(newStyle);
-      }, 50); // Small debounce to prevent rapid jumps
-      
-      return () => clearTimeout(timer);
-    }
-  }, [position, containerSize, naturalSize, loaded, fastMode]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage, position]);
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
@@ -172,7 +186,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${transformX}px, ${transformY}px)`,
       width: `${width}px`,
       height: `${height}px`,
-      transition: useFastMode ? 'none' : 'transform 0.2s ease-out', // Smoother transition
+      transition: useFastMode ? 'none' : 'transform 0.15s ease-out', // Smoother transition
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
@@ -190,16 +204,21 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    // Use the current position from the ref for more stability
-    return calculateStyleFromDimensions(
+    // Use the current position prop instead of a ref for more accurate positioning
+    const style = calculateStyleFromDimensions(
       imgWidth,
       imgHeight,
       containerWidth,
       containerHeight,
-      positionRef.current,
+      position,
       fastMode
     );
-  }, [calculateStyleFromDimensions, fastMode]);
+    
+    // Update lastAppliedPosition to prevent jumps
+    lastAppliedPosition.current = position;
+    
+    return style;
+  }, [calculateStyleFromDimensions, fastMode, position]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
