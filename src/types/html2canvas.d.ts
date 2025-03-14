@@ -6,14 +6,14 @@ declare module 'html2canvas' {
     useCORS: boolean;
     allowTaint: boolean;
     logging: boolean;
-    width?: number;
-    height?: number;
+    width: number;  // עדכון: הפיכת width לשדה חובה
+    height: number; // עדכון: הפיכת height לשדה חובה
     scrollX: number;
     scrollY: number;
     x: number;
     y: number;
-    windowWidth: number;  // Now properly defined in the interface
-    windowHeight: number; // Now properly defined in the interface
+    windowWidth: number;
+    windowHeight: number;
     foreignObjectRendering?: boolean;
     onclone?: (document: Document) => void | Promise<void>;
     ignoreElements?: (element: Element) => boolean;
@@ -21,7 +21,6 @@ declare module 'html2canvas' {
     removeContainer?: boolean;
   }
   
-  // Add the default export definition
   function html2canvas(element: HTMLElement, options?: Partial<Options>): Promise<HTMLCanvasElement>;
   export default html2canvas;
 }

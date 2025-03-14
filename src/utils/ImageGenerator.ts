@@ -191,9 +191,13 @@ export class ImageGenerator {
         el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
       });
 
-      // Use explicit windowWidth and windowHeight as suggested
-      const fixedWidth = 1920; // Use a fixed reference width for consistent rendering
-      const fixedHeight = Math.round(fixedWidth * (rect.height / rect.width));
+      // יצירת החלון הקבוע - שימוש ברוחב קבוע ושמירה על יחסי גובה/רוחב מקוריים
+      const originalAspectRatio = rect.height / rect.width;
+      const fixedWidth = 1920; // רוחב קבוע לכל המכשירים
+      const fixedHeight = Math.round(fixedWidth * originalAspectRatio);
+      
+      console.log(`Original dimensions: ${rect.width}x${rect.height}, ratio: ${originalAspectRatio}`);
+      console.log(`Fixed dimensions: ${fixedWidth}x${fixedHeight}`);
       
       const canvas = await html2canvas(this.previewElement, {
         backgroundColor: null,
@@ -205,8 +209,10 @@ export class ImageGenerator {
         y: 0,
         scrollX: 0,
         scrollY: 0,
-        windowWidth: fixedWidth, // Fixed reference width for better consistency
-        windowHeight: fixedHeight, // Keep aspect ratio
+        windowWidth: fixedWidth,
+        windowHeight: fixedHeight,
+        width: rect.width, // שמירה על הרוחב המקורי של האלמנט
+        height: rect.height, // שמירה על הגובה המקורי של האלמנט
         imageTimeout: 0,
         onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
