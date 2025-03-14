@@ -120,23 +120,31 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    let width, height;
+    let width, height, widthPercent, heightPercent;
     
     // Use cover instead of contain to ensure the image fills the container without black margins
     if (imageAspect > containerAspect) {
       // Image is wider than container - scale to fit height
       height = containerHeight;
       width = containerHeight * imageAspect;
+      heightPercent = 100;
+      widthPercent = (width / containerWidth) * 100;
     } else {
       // Image is taller than container - scale to fit width
       width = containerWidth;
       height = containerWidth / imageAspect;
+      widthPercent = 100;
+      heightPercent = (height / containerHeight) * 100;
     }
     
+    // Convert position values to percentages
+    const xPercent = (pos.x / containerWidth) * 100;
+    const yPercent = (pos.y / containerHeight) * 100;
+    
     return {
-      transform: `translate(${pos.x}px, ${pos.y}px)`,
-      width: `${width}px`,
-      height: `${height}px`,
+      transform: `translate(${xPercent}%, ${yPercent}%)`,
+      width: `${widthPercent}%`,
+      height: `${heightPercent}%`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
@@ -158,23 +166,31 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imageAspect = imgWidth / imgHeight;
     const containerAspect = containerWidth / containerHeight;
     
-    let width, height;
+    let width, height, widthPercent, heightPercent;
     
     // Use cover instead of contain to ensure the image fills the container without black margins
     if (imageAspect > containerAspect) {
       // Image is wider than container - scale to fit height
       height = containerHeight;
       width = containerHeight * imageAspect;
+      heightPercent = 100;
+      widthPercent = (width / containerWidth) * 100;
     } else {
       // Image is taller than container - scale to fit width
       width = containerWidth;
       height = containerWidth / imageAspect;
+      widthPercent = 100;
+      heightPercent = (height / containerHeight) * 100;
     }
     
+    // Convert position values to percentages
+    const xPercent = (position.x / containerWidth) * 100;
+    const yPercent = (position.y / containerHeight) * 100;
+    
     return {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${position.x}px, ${position.y}px)`,
+      width: `${widthPercent}%`,
+      height: `${heightPercent}%`,
+      transform: `translate(${xPercent}%, ${yPercent}%)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,
       objectFit: 'cover' as ObjectFit,
@@ -203,7 +219,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   const placeholderStyle: React.CSSProperties = {
     filter: 'blur(1px)',
-    transform: `translate(${position.x}px, ${position.y}px)`,
+    transform: `translate(${(position.x / containerSize.width) * 100}%, ${(position.y / containerSize.height) * 100}%)`,
     width: '100%',
     height: '100%',
     objectFit: 'cover' as ObjectFit,
@@ -221,6 +237,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     <div 
       ref={containerRef} 
       className={`absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center ${!noBackgroundColor ? 'bg-black' : ''}`}
+      data-testid="image-container"
     >
       <img
         key={`img-${imageKey}`}
@@ -236,6 +253,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
+        data-testid="preview-image"
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">

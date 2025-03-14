@@ -20,6 +20,7 @@ export class AdGenerationService {
     // Extract metadata if it exists in the DataURL
     let scaleFactor = 2; // Default scale factor
     let elementDimensions = null;
+    let usePercentageLayout = true; // Always use percentage layout
     
     // Check if the source image URL has metadata
     if (adData.sourceImageUrl && adData.sourceImageUrl.includes('#metadata=')) {
@@ -41,14 +42,16 @@ export class AdGenerationService {
       ...getDimensions(adData.platform),
       overlayOpacity: 0.4,
       scaleFactor,
-      elementDimensions
+      elementDimensions,
+      usePercentageLayout
     }));
 
     console.log('Sending to edge function:', {
       imageType: imageFile.type,
       imageSize: imageFile.size,
       data: adData,
-      scaleFactor
+      scaleFactor,
+      usePercentageLayout
     });
 
     // Fix: Pass a single options object to the invoke method

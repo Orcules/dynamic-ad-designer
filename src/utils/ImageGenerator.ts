@@ -1,3 +1,4 @@
+
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
@@ -105,6 +106,54 @@ export class ImageGenerator {
     };
   }
 
+  private convertToPercentageStyles(element: HTMLElement): void {
+    // Apply percentage-based styles to all positioned elements
+    const processElements = (el: HTMLElement) => {
+      const imgElements = el.querySelectorAll('img');
+      const parent = el;
+      const parentRect = parent.getBoundingClientRect();
+      const parentWidth = parentRect.width;
+      const parentHeight = parentRect.height;
+      
+      imgElements.forEach(img => {
+        const style = window.getComputedStyle(img);
+        const rect = img.getBoundingClientRect();
+        
+        // Calculate percentage values
+        const widthPercent = (rect.width / parentWidth) * 100;
+        const heightPercent = (rect.height / parentHeight) * 100;
+        
+        // For transform, extract translation values
+        let translateX = 0, translateY = 0;
+        const transform = style.transform;
+        if (transform && transform !== 'none') {
+          const match = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
+          if (match) {
+            translateX = parseFloat(match[1]);
+            translateY = parseFloat(match[2]);
+          } else {
+            // Try to match translateX and translateY separate functions
+            const matchX = transform.match(/translateX\(([^)]+)\)/);
+            const matchY = transform.match(/translateY\(([^)]+)\)/);
+            if (matchX) translateX = parseFloat(matchX[1]);
+            if (matchY) translateY = parseFloat(matchY[1]);
+          }
+        }
+        
+        // Convert to percentages
+        const xPercent = (translateX / parentWidth) * 100;
+        const yPercent = (translateY / parentHeight) * 100;
+        
+        // Apply percentage styles
+        img.style.width = `${widthPercent}%`;
+        img.style.height = `${heightPercent}%`;
+        img.style.transform = `translate(${xPercent}%, ${yPercent}%)`;
+      });
+    };
+    
+    processElements(this.previewElement as HTMLElement);
+  }
+
   private async captureElement(): Promise<string> {
     if (!this.previewElement) {
       throw new Error('Preview element not found');
@@ -118,6 +167,9 @@ export class ImageGenerator {
 
     console.log('Preparing for capture...');
     const resetEffect = await this.prepareForCapture();
+    
+    // Convert all positioned elements to use percentage-based styling
+    this.convertToPercentageStyles(this.previewElement as HTMLElement);
     
     await new Promise(resolve => setTimeout(resolve, 100));
 
@@ -158,6 +210,8 @@ export class ImageGenerator {
         y: 0,
         scrollX: 0,
         scrollY: 0,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
         imageTimeout: 0,
         onclone: (documentClone) => {
           const styleSheets = Array.from(document.styleSheets);
