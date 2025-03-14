@@ -152,6 +152,8 @@ export class ImageGenerator {
         useCORS: true,
         allowTaint: true,
         logging: false,
+        width: rect.width,
+        height: rect.height,
         x: 0,
         y: 0,
         scrollX: 0,

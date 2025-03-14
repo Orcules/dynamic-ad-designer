@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { cleanImageUrl } from '@/utils/imageEffects';
 
 interface Position {
   x: number;
@@ -213,6 +214,9 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
 
   if (!imageUrl) return null;
 
+  // Clean the image URL to remove any metadata
+  const cleanedImageUrl = cleanImageUrl(imageUrl);
+
   return (
     <div 
       ref={containerRef} 
@@ -220,7 +224,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     >
       <img
         key={`img-${imageKey}`}
-        src={imageUrl}
+        src={cleanedImageUrl}
         alt="Ad preview"
         className={`absolute transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         style={imageStyle}

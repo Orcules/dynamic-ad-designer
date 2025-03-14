@@ -1,4 +1,3 @@
-
 export const applyImageEffect = async (
   canvas: HTMLCanvasElement,
   effect: 'sepia' | 'none'
@@ -80,7 +79,7 @@ export const ensureElementsVisible = (container: HTMLElement): void => {
     element.style.visibility = 'visible';
     element.style.display = 'block';
   });
-}
+};
 
 // Add function to account for scale factor in positioning
 export const adjustPositionForScale = (position: { x: number, y: number }, scaleFactor: number = 1): { x: number, y: number } => {

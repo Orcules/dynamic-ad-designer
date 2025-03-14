@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDimensions } from "@/utils/adDimensions";
+import { cleanImageUrl } from "@/utils/imageEffects";
 
 export interface GeneratedAdResult {
   imageUrl: string;
@@ -64,7 +65,7 @@ export class AdGenerationService {
     // Process the generated URL to ensure it doesn't have metadata
     let imageUrl = generatedAd.imageUrl;
     if (imageUrl && imageUrl.includes('#metadata=')) {
-      imageUrl = imageUrl.split('#metadata=')[0];
+      imageUrl = cleanImageUrl(imageUrl);
       generatedAd.imageUrl = imageUrl;
     }
 
