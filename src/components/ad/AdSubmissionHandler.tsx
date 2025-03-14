@@ -1,5 +1,5 @@
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { toast } from "sonner";
 import { fetchWithRetry } from "@/utils/adSubmissionUtils";
 import { AdStorageService } from "@/services/adStorageService";
@@ -7,9 +7,6 @@ import { AdGenerationService } from "@/services/adGenerationService";
 
 export function useAdSubmission() {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const uploadedFiles = useRef<string[]>([]);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const handleSubmission = async (
     adData: any,
@@ -17,25 +14,11 @@ export function useAdSubmission() {
     previewRef: React.RefObject<HTMLDivElement>,
     onSuccess: (newAd: any) => void
   ) => {
-    // Abort any ongoing submission
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create a new abort controller for this submission
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-    
     setIsGenerating(true);
-    setIsSubmitting(true);
     const uploadId = crypto.randomUUID();
-    uploadedFiles.current = [];
+    const uploadedFiles: string[] = [];
     
     try {
-      if (signal.aborted) {
-        throw new Error('Submission was aborted');
-      }
-      
       console.log(`Starting ad generation process [${uploadId}]`, { adData });
       
       let imageBlob: Blob;
@@ -44,29 +27,8 @@ export function useAdSubmission() {
         console.log(`Using uploaded file [${uploadId}]`);
       } else {
         console.log(`Fetching image from URL [${uploadId}]:`, imageFile);
-        // Add timeout to prevent hanging fetch requests
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
-        
-        try {
-          // Fixed: Passing only the URL to fetchWithRetry
-          const response = await fetchWithRetry(imageFile);
-          clearTimeout(timeoutId);
-          
-          if (signal.aborted) {
-            throw new Error('Submission was aborted');
-          }
-          
-          imageBlob = await response.blob();
-        } catch (fetchError) {
-          clearTimeout(timeoutId);
-          console.error(`Fetch error [${uploadId}]:`, fetchError);
-          throw new Error(`Failed to fetch image: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
-        }
-      }
-      
-      if (signal.aborted) {
-        throw new Error('Submission was aborted');
+        const response = await fetchWithRetry(imageFile);
+        imageBlob = await response.blob();
       }
       
       const { path: originalPath } = await AdStorageService.uploadOriginalImage(
@@ -74,11 +36,7 @@ export function useAdSubmission() {
         imageFile instanceof File ? imageFile.name : 'image.jpg',
         uploadId
       );
-      uploadedFiles.current.push(originalPath);
-
-      if (signal.aborted) {
-        throw new Error('Submission was aborted');
-      }
+      uploadedFiles.push(originalPath);
 
       const { imageUrl } = await AdGenerationService.generateAd(adData, imageBlob);
       
@@ -91,39 +49,21 @@ export function useAdSubmission() {
       
       onSuccess({ ...adData, imageUrl });
       
-      // Help garbage collection
-      imageBlob = null as any;
-      
     } catch (error: any) {
-      if (error.name === 'AbortError' || signal.aborted) {
-        console.log(`Submission aborted [${uploadId}]`);
-        return; // Don't show error toast for aborted requests
-      }
-      
       console.error(`Error in handleSubmission [${uploadId}]:`, error);
       
-      if (uploadedFiles.current.length > 0) {
+      if (uploadedFiles.length > 0) {
         console.log(`Cleaning up uploaded files [${uploadId}]...`);
-        try {
-          await Promise.all(
-            uploadedFiles.current.map(filePath => AdStorageService.deleteFile(filePath))
-          );
-        } catch (cleanupError) {
-          console.error(`Cleanup error [${uploadId}]:`, cleanupError);
-        }
+        await Promise.all(
+          uploadedFiles.map(filePath => AdStorageService.deleteFile(filePath))
+        );
       }
       
       toast.error(error.message || 'Error creating ad');
     } finally {
-      if (!signal.aborted) {
-        setIsGenerating(false);
-        setIsSubmitting(false);
-        // Clear references
-        uploadedFiles.current = [];
-        abortControllerRef.current = null;
-      }
+      setIsGenerating(false);
     }
   };
 
-  return { isGenerating, isSubmitting, handleSubmission };
+  return { isGenerating, handleSubmission };
 }

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -162,14 +163,14 @@ serve(async (req) => {
     const backgroundImage = await loadImage(imageArrayBuffer);
     console.log(`[${uploadId}] Image loaded:`, backgroundImage.width, 'x', backgroundImage.height);
     
-    // Use the image position from the client, or default to centering if no position provided
-    const imagePosition = data.imagePosition && (data.imagePosition.x !== 0 || data.imagePosition.y !== 0) 
-      ? data.imagePosition 
-      : { x: 0, y: 0 };
+    // Use the exact image positioning from the preview to maintain consistency
+    const imagePosition = data.imagePosition || { x: 0, y: 0 };
     
-    console.log(`[${uploadId}] Using image position:`, imagePosition);
+    // Calculate dimensions for precise cropping to match the preview
+    const imageAspect = backgroundImage.width / backgroundImage.height;
+    const canvasAspect = data.width / data.height;
     
-    // Helper function that exactly mirrors the client-side calculateCoverDimensions
+    // Helper function that mirrors the calculateCoverDimensions logic from the front-end
     const calculateCoverDimensionsServer = (
       imageWidth: number,
       imageHeight: number,
@@ -181,57 +182,50 @@ serve(async (req) => {
       const imageAspect = imageWidth / imageHeight;
       const containerAspect = containerWidth / containerHeight;
       
-      // Default starting position (centered)
       let width, height, x, y;
       
       if (imageAspect > containerAspect) {
-        // Image is wider than container - scale height to match container
+        // Image is wider than container - scale to match height and center horizontally
         height = containerHeight;
-        width = height * imageAspect;
+        width = containerHeight * imageAspect;
         y = 0;
-        x = (containerWidth - width) / 2; // Center horizontally
+        x = (containerWidth - width) / 2;
       } else {
-        // Image is taller than container - scale width to match container
+        // Image is taller than container - scale to match width and center vertically
         width = containerWidth;
-        height = width / imageAspect;
+        height = containerWidth / imageAspect;
         x = 0;
-        y = (containerHeight - height) / 2; // Center vertically
+        y = (containerHeight - height) / 2;
       }
       
-      // Apply user-defined offsets - ensure they actually move the image
-      if (offsetX !== 0) x += offsetX;
-      if (offsetY !== 0) y += offsetY;
+      // Apply offsets
+      x += offsetX;
+      y += offsetY;
       
-      // Ensure the image always covers the entire container even after applying offsets
-      // Enhanced to ensure better coverage with wider safety margins
-      if (x > 0 || (x + width) < containerWidth || y > 0 || (y + height) < containerHeight) {
-        // Calculate how much we need to scale up to ensure coverage
-        const scaleX = x > 0 || (x + width) < containerWidth 
-          ? containerWidth / (width - Math.abs(x) * 2) 
-          : 1;
-        
-        const scaleY = y > 0 || (y + height) < containerHeight 
-          ? containerHeight / (height - Math.abs(y) * 2) 
-          : 1;
-        
-        // Use the larger scale factor for uniform scaling with increased safety margin
-        const scale = Math.max(scaleX, scaleY) * 1.2; // Increased from 1.1 to 1.2 for better coverage
-        
-        // Scale the image dimensions
-        const newWidth = width * scale;
-        const newHeight = height * scale;
-        
-        // Adjust position to maintain the visual center point considering offsets
-        const newX = x - (newWidth - width) / 2;
-        const newY = y - (newHeight - height) / 2;
-        
-        return { width: newWidth, height: newHeight, x: newX, y: newY };
+      // Ensure dimensions are large enough to cover the entire container
+      const scaleFactor = 1.5; // Use increased scale factor to ensure full coverage
+      
+      if (width < containerWidth * scaleFactor) {
+        const ratio = (containerWidth * scaleFactor) / width;
+        width *= ratio;
+        height *= ratio;
+        // Recenter based on the new dimensions
+        x = (containerWidth - width) / 2 + offsetX;
+      }
+      
+      if (height < containerHeight * scaleFactor) {
+        const ratio = (containerHeight * scaleFactor) / height;
+        width *= ratio;
+        height *= ratio;
+        // Recenter based on the new dimensions
+        y = (containerHeight - height) / 2 + offsetY;
       }
       
       return { width, height, x, y };
     };
     
     // Calculate dimensions ensuring image covers the container completely
+    // This uses the same logic as calculateCoverDimensions in imageEffects.ts
     const coverDimensions = calculateCoverDimensionsServer(
       backgroundImage.width,
       backgroundImage.height,
@@ -246,11 +240,18 @@ serve(async (req) => {
     const destX = coverDimensions.x;
     const destY = coverDimensions.y;
     
+    // Ensure image maintains proper aspect ratio by using imageSmoothingQuality
+    ctx.imageSmoothingEnabled = true;
+    if ('imageSmoothingQuality' in ctx) {
+      // @ts-ignore: Property exists but TypeScript doesn't recognize it
+      ctx.imageSmoothingQuality = 'high';
+    }
+    
     // Log positioning information for debugging
-    console.log(`[${uploadId}] Final image dimensions:`, {
+    console.log(`[${uploadId}] Image dimensions:`, {
       source: { width: backgroundImage.width, height: backgroundImage.height },
       dest: { width: destWidth, height: destHeight, x: destX, y: destY },
-      clientPosition: imagePosition
+      aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
     // Draw the image with the calculated dimensions to ensure full coverage
@@ -305,7 +306,7 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // Draw the image with exact positioning to match the preview
+      // Draw the image with exact positioning to match the preview for non-luxury templates
       ctx.drawImage(
         backgroundImage, 
         0, 0, backgroundImage.width, backgroundImage.height, // Source rectangle (entire original image)

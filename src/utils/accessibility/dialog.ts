@@ -12,34 +12,18 @@ export const suppressDialogWarnings = () => {
     }
 
     const originalError = console.error;
-    const originalWarn = console.warn;
     
-    // Suppress errors and warnings related to Dialog accessibility
     console.error = (...args) => {
       if (args[0] && typeof args[0] === 'string' && (
           args[0].includes('Missing `Description`') || 
           args[0].includes('aria-describedby={undefined}') ||
           args[0].includes('DialogContent') ||
-          args[0].includes('requires a `DialogTitle`') ||
           args[0].includes('dialog') && args[0].includes('accessibility')
       )) {
         Logger.info(`Dialog accessibility warning suppressed: ${args[0].substring(0, 100)}...`);
         return;
       }
       originalError.apply(console, args);
-    };
-    
-    console.warn = (...args) => {
-      if (args[0] && typeof args[0] === 'string' && (
-          args[0].includes('DialogContent') ||
-          args[0].includes('requires a `DialogTitle`') ||
-          args[0].includes('Description') ||
-          args[0].includes('aria-describedby')
-      )) {
-        Logger.info(`Dialog accessibility warning suppressed: ${args[0].substring(0, 100)}...`);
-        return;
-      }
-      originalWarn.apply(console, args);
     };
 
     (window as any).__dialogWarningsSuppressed = true;
@@ -55,10 +39,7 @@ export const enhanceDialogAccessibility = () => {
     return () => {};
   }
 
-  suppressDialogWarnings();
-
   const fixExistingDialogs = () => {
-    // Find dialogs without descriptions
     const dialogContents = document.querySelectorAll('[role="dialog"]:not([aria-describedby])');
     
     dialogContents.forEach((dialog, index) => {
@@ -80,60 +61,23 @@ export const enhanceDialogAccessibility = () => {
         }
       }
     });
-    
-    // Find dialogs without titles
-    const dialogsWithoutTitles = document.querySelectorAll('[role="dialog"]:not([aria-labelledby])');
-    
-    dialogsWithoutTitles.forEach((dialog, index) => {
-      if (dialog instanceof HTMLElement) {
-        const titleId = `dialog-title-${Date.now()}-${index}`;
-        const existingTitle = dialog.querySelector('[id^="dialog-title"]');
-        
-        if (existingTitle) {
-          dialog.setAttribute('aria-labelledby', existingTitle.id);
-          Logger.info(`Fixed existing dialog using existing title: ${existingTitle.id}`);
-        } else {
-          const title = document.createElement('div');
-          title.id = titleId;
-          title.style.display = 'none';
-          title.textContent = 'Dialog';
-          dialog.appendChild(title);
-          dialog.setAttribute('aria-labelledby', titleId);
-          Logger.info(`Fixed existing dialog with new title: ${titleId}`);
-        }
-      }
-    });
   };
 
   setTimeout(fixExistingDialogs, 100);
   
   const analyzeAndFixNode = (node: Node) => {
     if (node instanceof HTMLElement) {
-      if (node.getAttribute('role') === 'dialog') {
-        // Add description if missing
-        if (!node.getAttribute('aria-describedby')) {
-          const descId = `dialog-description-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-          const descEl = document.createElement('div');
-          descEl.id = descId;
-          descEl.style.display = 'none';
-          descEl.textContent = 'Dialog content';
-          node.appendChild(descEl);
-          node.setAttribute('aria-describedby', descId);
-        }
-        
-        // Add title if missing
-        if (!node.getAttribute('aria-labelledby')) {
-          const titleId = `dialog-title-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-          const titleEl = document.createElement('div');
-          titleEl.id = titleId;
-          titleEl.style.display = 'none';
-          titleEl.textContent = 'Dialog';
-          node.appendChild(titleEl);
-          node.setAttribute('aria-labelledby', titleId);
-        }
+      if (node.getAttribute('role') === 'dialog' && !node.getAttribute('aria-describedby')) {
+        const descId = `dialog-description-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+        const descEl = document.createElement('div');
+        descEl.id = descId;
+        descEl.style.display = 'none';
+        descEl.textContent = 'Dialog content';
+        node.appendChild(descEl);
+        node.setAttribute('aria-describedby', descId);
       }
       
-      node.querySelectorAll('[role="dialog"]').forEach(dialog => {
+      node.querySelectorAll('[role="dialog"]:not([aria-describedby])').forEach(dialog => {
         if (dialog instanceof HTMLElement) {
           analyzeAndFixNode(dialog);
         }
@@ -160,7 +104,7 @@ export const enhanceDialogAccessibility = () => {
     childList: true, 
     subtree: true,
     attributes: true,
-    attributeFilter: ['role', 'aria-describedby', 'aria-labelledby']
+    attributeFilter: ['role', 'aria-describedby']
   });
   
   return () => observer.disconnect();
@@ -177,17 +121,17 @@ export const monkeyPatchDialogContent = () => {
   }
 
   // Ensure React core is available in global scope or import it
-  if (typeof React === 'undefined' || typeof React.createElement === 'undefined') {
+  if (typeof React.createElement === 'undefined') {
     console.warn('React not available in expected form, cannot patch DialogContent');
     return;
   }
 
-  // Add code to locate dialog components of any type and add descriptions to those who need it
+  // We'll try to capture the radix-ui DialogContent module
   setTimeout(() => {
     try {
-      document.querySelectorAll('[role="dialog"]').forEach((dialog, index) => {
+      // Add code to locate dialog components of any type and add descriptions to those who need it
+      document.querySelectorAll('[role="dialog"]:not([aria-describedby])').forEach((dialog, index) => {
         if (dialog instanceof HTMLElement) {
-          // Add description if missing
           if (!dialog.getAttribute('aria-describedby')) {
             const descId = `auto-dialog-desc-${Date.now()}-${index}`;
             const descEl = document.createElement('div');
@@ -197,18 +141,6 @@ export const monkeyPatchDialogContent = () => {
             dialog.appendChild(descEl);
             dialog.setAttribute('aria-describedby', descId);
             Logger.info(`Added aria-describedby to dialog: ${descId}`);
-          }
-          
-          // Add title if missing
-          if (!dialog.getAttribute('aria-labelledby')) {
-            const titleId = `auto-dialog-title-${Date.now()}-${index}`;
-            const titleEl = document.createElement('div');
-            titleEl.id = titleId;
-            titleEl.style.display = 'none';
-            titleEl.textContent = 'Dialog';
-            dialog.appendChild(titleEl);
-            dialog.setAttribute('aria-labelledby', titleId);
-            Logger.info(`Added aria-labelledby to dialog: ${titleId}`);
           }
         }
       });

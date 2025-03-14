@@ -1,3 +1,4 @@
+
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { FontSelector } from "./FontSelector";
@@ -93,7 +94,6 @@ export function AdForm({
   const [selectedLanguage, setSelectedLanguage] = useState("en");
   const [imageUrls, setImageUrls] = useState<ImageUrlState[]>([{ url: "", isValid: true, isChecking: false }]);
   const [uploadedImages, setUploadedImages] = useState<ImagePreview[]>([]);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const checkImageUrl = async (url: string): Promise<boolean> => {
     if (!url) return false;
@@ -137,10 +137,6 @@ export function AdForm({
         .filter(item => item.url && item.isValid)
         .map(item => item.url);
       onImageUrlsChange(validUrls);
-      
-      if (isValid) {
-        setCurrentImageIndex(index);
-      }
     }
 
     if (index === imageUrls.length - 1 && newUrl) {
@@ -155,14 +151,7 @@ export function AdForm({
         file,
         preview: URL.createObjectURL(file)
       }));
-      
-      const newUploadedImages = [...uploadedImages, ...newPreviews];
-      setUploadedImages(newUploadedImages);
-      
-      if (newUploadedImages.length > 0) {
-        setCurrentImageIndex(newUploadedImages.length - 1);
-      }
-      
+      setUploadedImages(prev => [...prev, ...newPreviews]);
       onImageChange(e);
     }
   };
@@ -252,29 +241,7 @@ export function AdForm({
         </CardHeader>
         <CardContent className="space-y-6">
           <div>
-            <Label className="flex justify-between items-center">
-              <span>Background Image Position</span>
-              {(uploadedImages.length > 1 || imageUrls.filter(u => u.url && u.isValid).length > 1) && (
-                <select 
-                  className="text-xs border rounded p-1"
-                  value={currentImageIndex}
-                  onChange={(e) => setCurrentImageIndex(Number(e.target.value))}
-                >
-                  {uploadedImages.map((_, i) => (
-                    <option key={`uploaded-${i}`} value={i}>
-                      Uploaded Image {i + 1}
-                    </option>
-                  ))}
-                  {imageUrls
-                    .filter(u => u.url && u.isValid)
-                    .map((_, i) => (
-                      <option key={`url-${i}`} value={i + uploadedImages.length}>
-                        URL Image {i + 1}
-                      </option>
-                    ))}
-                </select>
-              )}
-            </Label>
+            <Label>Background Image Position</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
               <div>
                 <Label htmlFor="image-x" className="text-xs">X</Label>

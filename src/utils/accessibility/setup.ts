@@ -1,3 +1,4 @@
+
 import { suppressDialogWarnings, enhanceDialogAccessibility } from './dialog';
 import { ensureFocusableElementsAreNotHidden, fixAriaHiddenFocusableIssue } from './focus';
 import { Logger } from '@/utils/logger';
@@ -23,9 +24,6 @@ export function setupAccessibilityFixes() {
     
     const cleanupEnhanceDialog = safeExecute(enhanceDialogAccessibility, 'enhanceDialogAccessibility');
     
-    // Keep track of processed dialogs to avoid duplication
-    const processedDialogs = new WeakSet();
-    
     const observer = new MutationObserver(mutations => {
       try {
         safeExecute(fixAriaHiddenFocusableIssue, 'fixAriaHiddenFocusableIssue');
@@ -35,9 +33,7 @@ export function setupAccessibilityFixes() {
             setTimeout(() => {
               try {
                 document.querySelectorAll('[role="dialog"]:not([aria-describedby])').forEach((dialog, idx) => {
-                  if (dialog instanceof HTMLElement && !processedDialogs.has(dialog)) {
-                    processedDialogs.add(dialog);
-                    
+                  if (dialog instanceof HTMLElement) {
                     const descId = `dialog-desc-${Date.now()}-${idx}`;
                     const descEl = document.createElement('div');
                     descEl.id = descId;
@@ -45,17 +41,6 @@ export function setupAccessibilityFixes() {
                     descEl.textContent = 'Dialog content';
                     dialog.appendChild(descEl);
                     dialog.setAttribute('aria-describedby', descId);
-                    
-                    // Add title if missing
-                    if (!dialog.getAttribute('aria-labelledby')) {
-                      const titleId = `dialog-title-${Date.now()}-${idx}`;
-                      const titleEl = document.createElement('div');
-                      titleEl.id = titleId;
-                      titleEl.style.display = 'none';
-                      titleEl.textContent = 'Dialog';
-                      dialog.appendChild(titleEl);
-                      dialog.setAttribute('aria-labelledby', titleId);
-                    }
                   }
                 });
               } catch (error) {
@@ -84,41 +69,6 @@ export function setupAccessibilityFixes() {
     } catch (error) {
       console.error('Error adding focusin event listener:', error);
     }
-    
-    // Fix existing dialogs immediately
-    setTimeout(() => {
-      try {
-        document.querySelectorAll('[role="dialog"]').forEach((dialog, idx) => {
-          if (dialog instanceof HTMLElement && !processedDialogs.has(dialog)) {
-            processedDialogs.add(dialog);
-            
-            // Add description if missing
-            if (!dialog.getAttribute('aria-describedby')) {
-              const descId = `dialog-desc-init-${Date.now()}-${idx}`;
-              const descEl = document.createElement('div');
-              descEl.id = descId;
-              descEl.style.display = 'none';
-              descEl.textContent = 'Dialog content';
-              dialog.appendChild(descEl);
-              dialog.setAttribute('aria-describedby', descId);
-            }
-            
-            // Add title if missing
-            if (!dialog.getAttribute('aria-labelledby')) {
-              const titleId = `dialog-title-init-${Date.now()}-${idx}`;
-              const titleEl = document.createElement('div');
-              titleEl.id = titleId;
-              titleEl.style.display = 'none';
-              titleEl.textContent = 'Dialog';
-              dialog.appendChild(titleEl);
-              dialog.setAttribute('aria-labelledby', titleId);
-            }
-          }
-        });
-      } catch (error) {
-        console.error('Error fixing existing dialogs:', error);
-      }
-    }, 100);
     
     return () => {
       try {
