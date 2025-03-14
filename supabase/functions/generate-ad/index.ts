@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -158,15 +159,18 @@ serve(async (req) => {
     let destY = 0;
     let destWidth, destHeight;
 
+    // Use the same scaling logic as in the AdPreviewImage component
     if (imageAspect > canvasAspect) {
+      // Image is wider than canvas - fit height first and center horizontally
       destHeight = data.height;
       destWidth = data.height * imageAspect;
       destX = (data.width - destWidth) / 2 + imagePosition.x;
-      destY = 0;
+      destY = 0 + imagePosition.y;
     } else {
+      // Image is taller than canvas - fit width first and center vertically
       destWidth = data.width;
       destHeight = data.width / imageAspect;
-      destX = 0;
+      destX = 0 + imagePosition.x;
       destY = (data.height - destHeight) / 2 + imagePosition.y;
     }
     
@@ -206,25 +210,26 @@ serve(async (req) => {
           0, 0, destWidth, destHeight
         );
         
-        tempCtx.save();
-        tempCtx.beginPath();
-        tempCtx.moveTo(drawX + cornerRadius, drawY);
-        tempCtx.lineTo(drawX + drawWidth - cornerRadius, drawY);
-        tempCtx.arcTo(drawX + drawWidth, drawY, drawX + drawWidth, drawY + cornerRadius, cornerRadius);
-        tempCtx.lineTo(drawX + drawWidth, drawY + drawHeight - cornerRadius);
-        tempCtx.arcTo(drawX + drawWidth, drawY + drawHeight, drawX + drawWidth - cornerRadius, drawY + drawHeight, cornerRadius);
-        tempCtx.lineTo(drawX + cornerRadius, drawY + drawHeight);
-        tempCtx.arcTo(drawX, drawY + drawHeight, drawX, drawY + drawHeight - cornerRadius, cornerRadius);
-        tempCtx.lineTo(drawX, drawY + cornerRadius);
-        tempCtx.arcTo(drawX, drawY, drawX + cornerRadius, drawY, cornerRadius);
-        tempCtx.closePath();
-        tempCtx.clip();
-        tempCtx.drawImage(
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(drawX + cornerRadius, drawY);
+        ctx.lineTo(drawX + drawWidth - cornerRadius, drawY);
+        ctx.arcTo(drawX + drawWidth, drawY, drawX + drawWidth, drawY + cornerRadius, cornerRadius);
+        ctx.lineTo(drawX + drawWidth, drawY + drawHeight - cornerRadius);
+        ctx.arcTo(drawX + drawWidth, drawY + drawHeight, drawX + drawWidth - cornerRadius, drawY + drawHeight, cornerRadius);
+        ctx.lineTo(drawX + cornerRadius, drawY + drawHeight);
+        ctx.arcTo(drawX, drawY + drawHeight, drawX, drawY + drawHeight - cornerRadius, cornerRadius);
+        ctx.lineTo(drawX, drawY + cornerRadius);
+        ctx.arcTo(drawX, drawY, drawX + cornerRadius, drawY, cornerRadius);
+        ctx.closePath();
+        ctx.clip();
+        
+        ctx.drawImage(
           tempCanvas, 
           0, 0, destWidth, destHeight,
           drawX, drawY, drawWidth, drawHeight
         );
-        tempCtx.restore();
+        ctx.restore();
       } else {
         throw new Error('Failed to get temporary canvas context');
       }

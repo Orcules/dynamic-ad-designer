@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Position {
@@ -161,40 +162,15 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - fit height first and center horizontally
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    } else {
-      // Image is taller than container - fit width first and center vertically
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    }
-    
-    // Calculate position to center the image
-    const xCenter = (containerWidth - width) / 2;
-    const yCenter = (containerHeight - height) / 2;
-    
-    // Apply user position adjustment
-    const xPos = xCenter + position.x;
-    const yPos = yCenter + position.y;
-    
-    return {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${xPos}px, ${yPos}px)`,
-      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
-      position: 'absolute' as const,
-      objectFit: 'contain' as ObjectFit,
-      willChange: 'transform',
-      objectPosition: '50% 50%',
-    };
-  }, [position, fastMode]);
+    return calculateStyleFromDimensions(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight,
+      position,
+      fastMode
+    );
+  }, [position, fastMode, calculateStyleFromDimensions]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
