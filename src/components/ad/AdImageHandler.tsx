@@ -27,6 +27,8 @@ export function useAdImageHandler({
   const imageChangeConfirmed = useRef<boolean>(false);
   const imageChangeInProgress = useRef<boolean>(false);
   const imageNavigationLock = useRef<boolean>(false);
+  const pendingIndexChangeRef = useRef<number | null>(null);
+  const indexChangeAttemptCount = useRef<number>(0);
   
   const generateImageHash = (img: HTMLImageElement): string => {
     const canvas = document.createElement('canvas');
@@ -72,6 +74,9 @@ export function useAdImageHandler({
       
       Logger.info(`Preloaded image: ${url.substring(0, 50)}...`);
     };
+    img.onerror = () => {
+      Logger.warn(`Failed to preload image: ${url.substring(0, 50)}...`);
+    };
     img.src = url;
   };
 
@@ -84,11 +89,23 @@ export function useAdImageHandler({
     lastImageLoadTime.current = Date.now();
     Logger.info(`Image change confirmed at ${lastImageLoadTime.current}`);
     
-    // Release navigation lock after a short delay to ensure rendering is complete
-    setTimeout(() => {
-      imageNavigationLock.current = false;
-      Logger.info("Navigation lock released");
-    }, 200);
+    // Process pending index changes if any
+    if (pendingIndexChangeRef.current !== null && 
+        pendingIndexChangeRef.current !== currentPreviewIndex) {
+      const targetIndex = pendingIndexChangeRef.current;
+      pendingIndexChangeRef.current = null;
+      
+      // Delay slightly to ensure UI is updated
+      setTimeout(() => {
+        setCurrentPreviewIndexSafely(targetIndex, 3);
+      }, 200);
+    } else {
+      // Release navigation lock after a short delay to ensure rendering is complete
+      setTimeout(() => {
+        imageNavigationLock.current = false;
+        Logger.info("Navigation lock released");
+      }, 200);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -116,11 +133,11 @@ export function useAdImageHandler({
       
       setImageUrls(prevUrls => {
         const newUrls = [...prevUrls, ...uniqueUrls];
-        setTimeout(() => onImageChange(newUrls), 0);
+        onImageChange(newUrls);
         return newUrls;
       });
       
-      if (imageUrls.length === 0) {
+      if (imageUrls.length === 0 && uniqueUrls.length > 0) {
         setCurrentPreviewIndex(0);
         onCurrentIndexChange(0);
       }
@@ -146,24 +163,25 @@ export function useAdImageHandler({
         return url;
       });
       
-      const deduplicatedUrls: string[] = [];
-      const seenUrlHashes = new Set<string>();
-      
       const uniqueUrls = Array.from(new Set(secureUrls));
       Logger.info(`Deduplicating URLs: ${secureUrls.length} -> ${uniqueUrls.length}`);
       
-      Promise.all(uniqueUrls.map(url => {
-        preloadImage(url);
-        return new Promise<void>((resolve) => {
-          setTimeout(resolve, 50);
-        });
-      }));
+      // Preload all images
+      uniqueUrls.forEach(url => preloadImage(url));
+      
+      // Reset index tracking
+      imageNavigationLock.current = false;
+      isChangingIndex.current = false;
       
       setImageUrls(uniqueUrls);
-      setCurrentPreviewIndex(0);
-      previousIndex.current = 0;
+      // Make sure current index is valid
+      const safeIndex = uniqueUrls.length > 0 ? 0 : 0;
+      setCurrentPreviewIndex(safeIndex);
+      previousIndex.current = safeIndex;
+      
+      // Communicate changes to parent components
       onImageChange(uniqueUrls);
-      onCurrentIndexChange(0);
+      onCurrentIndexChange(safeIndex);
       
       processedIndexes.current = new Set();
       processedImageUrls.current = new Set();
@@ -244,6 +262,21 @@ export function useAdImageHandler({
   const setCurrentPreviewIndexSafely = async (index: number, maxRetries = 3): Promise<boolean> => {
     Logger.info(`Ensuring preview index is set to ${index}, current: ${currentPreviewIndex}`);
     
+    // Input validation - guard against invalid indexes
+    if (index < 0 || index >= imageUrls.length) {
+      Logger.warn(`Invalid preview index ${index}, valid range is 0-${imageUrls.length - 1}`);
+      if (imageUrls.length > 0) {
+        index = Math.min(Math.max(0, index), imageUrls.length - 1);
+      } else {
+        Logger.error('Cannot set preview index: no images available');
+        return false;
+      }
+    }
+    
+    // Store the target index in case we need to retry after other operations complete
+    pendingIndexChangeRef.current = index;
+    
+    // If locked, wait for it to be released
     if (isChangingIndex.current || imageNavigationLock.current) {
       Logger.info(`Waiting for ongoing index change/navigation lock to complete before setting to ${index}`);
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -274,6 +307,7 @@ export function useAdImageHandler({
     if (currentPreviewIndex === index) {
       if (imageChangeConfirmed.current) {
         Logger.info(`Preview index is already ${index} and image is confirmed`);
+        pendingIndexChangeRef.current = null;
         return true;
       } else {
         Logger.info(`Preview index is ${index} but image change not confirmed yet`);
@@ -289,16 +323,25 @@ export function useAdImageHandler({
       attempts++;
       Logger.info(`Attempt ${attempts}/${maxRetries} to set preview index to ${index}`);
       
+      // Reset any existing flags to ensure a clean state for this attempt
       imageChangeConfirmed.current = false;
       imageChangeInProgress.current = true;
       isChangingIndex.current = true;
       imageNavigationLock.current = true;
       
       success = await new Promise<boolean>(resolve => {
+        // Log the state change to help track issues
+        Logger.info(JSON.stringify({
+          message: "Current index changed",
+          index: index
+        }));
+        
+        // Update the state and trigger the callback
         setCurrentPreviewIndex(index);
-        previousIndex.current = index;
+        previousIndex.current = currentPreviewIndex;
         onCurrentIndexChange(index);
         
+        // Give time for the state to update before proceeding
         setTimeout(() => {
           Logger.info(`Index set to ${index}`);
           isChangingIndex.current = false;
@@ -331,6 +374,7 @@ export function useAdImageHandler({
         }
         
         Logger.info(`Image change confirmed: ${imageChangeConfirmed.current}`);
+        pendingIndexChangeRef.current = null;
         return true;
       }
       
@@ -343,8 +387,24 @@ export function useAdImageHandler({
     if (!success) {
       Logger.error(`Failed to set preview index to ${index} after ${maxRetries} attempts`);
       imageNavigationLock.current = false; // Release lock in case of failure
+      
+      // Force a final attempt with direct state update
+      if (indexChangeAttemptCount.current < 2) {
+        indexChangeAttemptCount.current++;
+        setCurrentPreviewIndex(index);
+        onCurrentIndexChange(index);
+        
+        // Wait a bit and check if it worked
+        await new Promise(resolve => setTimeout(resolve, 500));
+        if (currentPreviewIndex === index) {
+          Logger.info(`Index finally set to ${index} after all attempts`);
+          pendingIndexChangeRef.current = null;
+          return true;
+        }
+      }
     }
     
+    pendingIndexChangeRef.current = null;
     return success;
   };
 
@@ -353,6 +413,11 @@ export function useAdImageHandler({
   };
 
   const markIndexProcessed = (index: number) => {
+    if (index < 0 || index >= imageUrls.length) {
+      Logger.warn(`Cannot mark invalid index ${index} as processed (valid range: 0-${imageUrls.length - 1})`);
+      return;
+    }
+    
     processedIndexes.current.add(index);
     
     if (index >= 0 && index < imageUrls.length) {
@@ -442,6 +507,27 @@ export function useAdImageHandler({
       return () => clearTimeout(timer);
     }
   }, [imageUrls.length, preloadedImagesRef.current.size]);
+
+  // Clean up memory when component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up blob URLs to prevent memory leaks
+      imageUrls.forEach(url => {
+        if (url.startsWith('blob:')) {
+          try {
+            URL.revokeObjectURL(url);
+          } catch (e) {
+            // Ignore errors when revoking URLs
+          }
+        }
+      });
+      
+      // Clear caches
+      imageCacheRef.current.clear();
+      preloadedImagesRef.current.clear();
+      uniqueImageHashes.current.clear();
+    };
+  }, []);
 
   return {
     selectedImages,
