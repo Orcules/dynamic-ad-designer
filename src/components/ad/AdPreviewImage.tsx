@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 
 interface Position {
@@ -14,6 +15,9 @@ interface AdPreviewImageProps {
   noBackgroundColor?: boolean;
   preloadedImage?: HTMLImageElement | null;
 }
+
+// Define the correct ObjectFit type
+type ObjectFit = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
 
 export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   imageUrl,
@@ -131,7 +135,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'contain',
+      objectFit: 'contain' as ObjectFit,
       willChange: 'transform',
     };
   }, []);
@@ -166,7 +170,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${position.x}px, ${position.y}px)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,
-      objectFit: 'contain',
+      objectFit: 'contain' as ObjectFit,
       willChange: 'transform',
     };
   }, [position, fastMode]);
@@ -190,13 +194,13 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     }
   }, [imageUrl, onImageLoaded, calculateImageStyle]);
 
-  const placeholderStyle = {
+  const placeholderStyle: React.CSSProperties = {
     filter: 'blur(1px)',
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'contain' as const,
-    objectPosition: 'center' as const,
+    objectFit: 'contain' as ObjectFit,
+    objectPosition: 'center',
     backgroundColor: '#333',
     willChange: 'transform'
   };
