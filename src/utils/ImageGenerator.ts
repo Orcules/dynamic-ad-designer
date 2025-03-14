@@ -65,54 +65,56 @@ export class ImageGenerator {
       return () => {};
     }
 
-    // Find all positioned elements and store their original styles
-    const originalStyles = new Map<Element, {
-      transform: string;
-      transition: string;
-      style: string;
-    }>();
+    // Simulate hover effect on button - fix the selector
+    const ctaButton = this.previewElement.querySelector('button');
+    console.log('CTA Button found:', ctaButton !== null);
     
-    // Select all elements with transform or position styles
-    const positionedElements = this.previewElement.querySelectorAll('[style*="transform"], [style*="position"], .absolute');
+    // Find text elements - now using the class names we added
+    const headlineElement = this.previewElement.querySelector('h2');
+    const descriptionElement = this.previewElement.querySelector('p');
+    const buttonTextElement = ctaButton?.querySelector('.cta-text');
     
-    // Save the original styles before modification
-    positionedElements.forEach(el => {
-      const computedStyle = window.getComputedStyle(el);
+    // Find arrow element separately
+    const arrowElement = ctaButton?.querySelector('.cta-arrow');
+    
+    // Store original positions to restore later
+    const originalPositions = new Map<Element, string>();
+    
+    // Helper to move elements up
+    const moveElementUp = (element: Element | null, pixels: number = 7) => {
+      if (!element) return;
       
-      originalStyles.set(el, {
-        transform: computedStyle.transform,
-        transition: computedStyle.transition,
-        style: (el as HTMLElement).getAttribute('style') || ''
-      });
+      const currentTransform = window.getComputedStyle(element).transform;
+      originalPositions.set(element, currentTransform);
       
-      // Freeze transitions during capture
-      if (el instanceof HTMLElement) {
-        if (computedStyle.transition !== 'none') {
-          el.style.transition = 'none';
-        }
+      // Apply transform to move up
+      if (currentTransform && currentTransform !== 'none') {
+        (element as HTMLElement).style.transform = `${currentTransform} translateY(-${pixels}px)`;
+      } else {
+        (element as HTMLElement).style.transform = `translateY(-${pixels}px)`;
       }
-    });
-    
-    // Find and fix the background image specifically
-    const backgroundImage = this.previewElement.querySelector('img:not(.placeholder)');
-    if (backgroundImage && backgroundImage instanceof HTMLElement) {
-      // Ensure object-fit is properly set
-      backgroundImage.style.objectFit = 'cover';
       
-      // Make sure transform is preserved exactly as it is
-      // Don't modify the transform, just ensure transitions are disabled
-      backgroundImage.style.transition = 'none';
+      console.log(`Moved element up by ${pixels}px:`, element);
+    };
+    
+    // Move text elements up but NOT the arrow
+    moveElementUp(headlineElement);
+    moveElementUp(descriptionElement);
+    moveElementUp(buttonTextElement);
+    
+    // We do NOT modify the arrow position here to keep it static
+    if (arrowElement) {
+      console.log('Arrow found, keeping it static during rendering');
+      // Just store the original transform to restore later
+      const svgElement = arrowElement as SVGElement;
+      originalPositions.set(svgElement, svgElement.style.transform);
     }
     
-    // Return function to restore original styles
     return () => {
-      positionedElements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          const original = originalStyles.get(el);
-          if (original) {
-            // Restore the entire style attribute to its original state
-            el.setAttribute('style', original.style);
-          }
+      // Restore original positions
+      originalPositions.forEach((originalTransform, element) => {
+        if (element instanceof SVGElement || element instanceof HTMLElement) {
+          element.style.transform = originalTransform;
         }
       });
     };
@@ -130,74 +132,94 @@ export class ImageGenerator {
     
     console.log(`Image waiting completed in ${performance.now() - startTime}ms`);
 
-    // Prepare for capture - freeze transitions and styles
+    // Trigger hover effect
     console.log('Preparing for capture...');
-    const resetStyles = await this.prepareForCapture();
+    const resetEffect = await this.prepareForCapture();
     
-    // Give time for any style changes to take effect
-    await new Promise(resolve => setTimeout(resolve, 50));
+    // Give time for animation to take effect
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
       console.log('Using html2canvas...');
       
+      // Initialize variables before using them
+      const originalStyles = new Map<Element, string>();
+      const elementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
+      
+      elementsToFixPosition.forEach(el => {
+        originalStyles.set(el, el.getAttribute('style') || '');
+        const computedStyle = window.getComputedStyle(el);
+        const currentLeft = computedStyle.left;
+        const currentTop = computedStyle.top;
+        const currentTransform = computedStyle.transform;
+        
+        // Apply computed position directly
+        el.setAttribute('style', `${el.getAttribute('style') || ''}; position: absolute; left: ${currentLeft}; top: ${currentTop}; transform: ${currentTransform};`);
+      });
+
+      // Find and fix the background image to prevent stretching
+      const bgImageContainer = this.previewElement.querySelector('.ad-image-container');
+      const bgImage = this.previewElement.querySelector('.ad-image');
+      
+      let originalImageStyles: Record<string, string> = {};
+      let originalContainerStyles: Record<string, string> = {};
+      
+      if (bgImage && bgImageContainer) {
+        // Save original styles
+        const imgStyle = window.getComputedStyle(bgImage);
+        const containerStyle = window.getComputedStyle(bgImageContainer);
+        
+        // Record original styles
+        originalImageStyles = {
+          objectFit: imgStyle.objectFit,
+          objectPosition: imgStyle.objectPosition,
+          width: imgStyle.width,
+          height: imgStyle.height,
+          transform: imgStyle.transform
+        };
+        
+        originalContainerStyles = {
+          overflow: containerStyle.overflow,
+          position: containerStyle.position
+        };
+        
+        // Force object-fit: cover on the image to prevent stretching
+        (bgImage as HTMLElement).style.objectFit = 'cover';
+        (bgImage as HTMLElement).style.objectPosition = 'center center';
+        (bgImage as HTMLElement).style.width = '100%';
+        (bgImage as HTMLElement).style.height = '100%';
+        
+        // Ensure container has overflow hidden
+        (bgImageContainer as HTMLElement).style.overflow = 'hidden';
+        (bgImageContainer as HTMLElement).style.position = 'relative';
+      }
+
       // Clone the node to avoid modifying the original DOM
       const clone = this.previewElement.cloneNode(true) as HTMLElement;
       document.body.appendChild(clone);
       
-      // Position the clone off-screen
+      // Make the clone visible but off-screen
       clone.style.position = 'fixed';
       clone.style.left = '-9999px';
       clone.style.top = '0';
       clone.style.width = this.previewElement.offsetWidth + 'px';
       clone.style.height = this.previewElement.offsetHeight + 'px';
-      clone.style.transition = 'none';
       
       // Fix any background images in the clone
-      const clonedImage = clone.querySelector('img:not(.placeholder)');
-      if (clonedImage && clonedImage instanceof HTMLElement) {
-        clonedImage.style.objectFit = 'cover';
-        clonedImage.style.objectPosition = 'center center'; 
-        clonedImage.style.transition = 'none';
-        
-        // Preserve exact transform from original
-        const originalImage = this.previewElement.querySelector('img:not(.placeholder)');
-        if (originalImage) {
-          const transform = window.getComputedStyle(originalImage).transform;
-          if (transform && transform !== 'none') {
-            clonedImage.style.transform = transform;
-          }
-        }
+      const clonedBgImage = clone.querySelector('.ad-image');
+      if (clonedBgImage) {
+        (clonedBgImage as HTMLElement).style.objectFit = 'cover';
+        (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
+        (clonedBgImage as HTMLElement).style.width = '100%';
+        (clonedBgImage as HTMLElement).style.height = '100%';
       }
 
-      // Fix all positioned elements in the clone to have exact positions
-      const positionedElements = clone.querySelectorAll('[style*="transform"], [style*="position"], .absolute');
-      positionedElements.forEach(clonedEl => {
-        if (clonedEl instanceof HTMLElement) {
-          // Find corresponding original element
-          const originalSelector = this.getUniqueSelector(clonedEl);
-          const originalEl = this.previewElement?.querySelector(originalSelector);
-          
-          if (originalEl) {
-            const computedStyle = window.getComputedStyle(originalEl);
-            
-            // Preserve transform exactly
-            if (computedStyle.transform && computedStyle.transform !== 'none') {
-              clonedEl.style.transform = computedStyle.transform;
-            }
-            
-            // Ensure no transitions
-            clonedEl.style.transition = 'none';
-          }
-        }
-      });
-
-      // Set a scaling factor for better quality
-      const scaleFactor = 1.5;
-      
-      // Call html2canvas with proper options
+      // Fix: Call html2canvas as a function with proper options
       const canvas = await html2canvas(clone, {
         backgroundColor: null,
-        scale: scaleFactor,
+        scale: 2,
         useCORS: true,
         allowTaint: true,
         logging: false,
@@ -207,7 +229,6 @@ export class ImageGenerator {
         scrollY: 0,
         imageTimeout: 0,
         onclone: (documentClone) => {
-          // Copy font faces for proper rendering
           const styleSheets = Array.from(document.styleSheets);
           styleSheets.forEach(sheet => {
             try {
@@ -223,16 +244,6 @@ export class ImageGenerator {
               // Silently fail for cross-origin stylesheets
             }
           });
-          
-          // Fix cloned images
-          const clonedImages = documentClone.querySelectorAll('img:not(.placeholder)');
-          clonedImages.forEach(img => {
-            if (img instanceof HTMLElement) {
-              img.style.objectFit = 'cover';
-              img.style.objectPosition = 'center center';
-              img.style.transition = 'none';
-            }
-          });
         }
       });
       
@@ -242,40 +253,53 @@ export class ImageGenerator {
       const renderTime = performance.now() - startTime;
       console.log(`Canvas generated successfully in ${renderTime.toFixed(2)}ms`);
       
-      // Reset styles to original
-      resetStyles();
+      // Restore original styles
+      elementsToFixPosition.forEach(el => {
+        const original = originalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
+        }
+      });
+      
+      // Restore original image styles
+      if (bgImage && bgImageContainer) {
+        Object.entries(originalImageStyles).forEach(([prop, value]) => {
+          (bgImage as HTMLElement).style[prop as any] = value;
+        });
+        
+        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
+          (bgImageContainer as HTMLElement).style[prop as any] = value;
+        });
+      }
+      
+      // Reset hover effect after capture
+      console.log('Resetting text positions and hover effect');
+      resetEffect();
       
       this.lastCaptureTime = performance.now();
-      return canvas.toDataURL('image/png', 0.9);
+      return canvas.toDataURL('image/png', 0.9); // Slightly reduced quality for better performance
     } catch (html2canvasError) {
       console.warn('html2canvas failed, trying dom-to-image fallback:', html2canvasError);
       
-      // Reset styles before trying fallback
-      resetStyles();
+      // Fix: Define a local scope copy of these variables before using them in this catch block
+      const localElementsToFixPosition = this.previewElement ? 
+        Array.from(this.previewElement.querySelectorAll('.absolute, [style*="position: absolute"]')) : 
+        [];
+      const localOriginalStyles = new Map<Element, string>();
+      
+      // Restore original styles before fallback
+      localElementsToFixPosition.forEach(el => {
+        const original = localOriginalStyles.get(el);
+        if (original !== undefined) {
+          el.setAttribute('style', original);
+        }
+      });
+      
+      // Reset hover effect
+      resetEffect();
       
       return this.fallbackCapture();
     }
-  }
-  
-  // Helper method to get a relatively unique selector for an element
-  private getUniqueSelector(el: Element): string {
-    // Try to use existing ID
-    if (el.id) {
-      return `#${el.id}`;
-    }
-    
-    // Try to create a selector with classes
-    if (el.classList.length > 0) {
-      const classes = Array.from(el.classList).join('.');
-      return `.${classes}`;
-    }
-    
-    // Fallback to tag name and position
-    const tagName = el.tagName.toLowerCase();
-    const siblings = Array.from(el.parentElement?.children || []);
-    const index = siblings.indexOf(el);
-    
-    return `${tagName}:nth-child(${index + 1})`;
   }
 
   private async fallbackCapture(): Promise<string> {
@@ -284,86 +308,126 @@ export class ImageGenerator {
     }
     
     const startTime = performance.now();
-    await this.waitForImages(1500);
+    await this.waitForImages(1500); // Reduced waiting time
     
-    // Prepare for capture with style freezing
-    const resetStyles = await this.prepareForCapture();
+    // Trigger hover effect
+    const resetEffect = await this.prepareForCapture();
 
     console.log('Using dom-to-image fallback...');
+
+    // Find and fix the background image to prevent stretching
+    const bgImageContainer = this.previewElement.querySelector('.ad-image-container');
+    const bgImage = this.previewElement.querySelector('.ad-image');
+    
+    let originalImageStyles: Record<string, string> = {};
+    let originalContainerStyles: Record<string, string> = {};
+    
+    if (bgImage && bgImageContainer) {
+      // Save original styles
+      const imgStyle = window.getComputedStyle(bgImage);
+      const containerStyle = window.getComputedStyle(bgImageContainer);
+      
+      // Record original styles
+      originalImageStyles = {
+        objectFit: imgStyle.objectFit,
+        objectPosition: imgStyle.objectPosition,
+        width: imgStyle.width,
+        height: imgStyle.height
+      };
+      
+      originalContainerStyles = {
+        overflow: containerStyle.overflow,
+        position: containerStyle.position
+      };
+      
+      // Force object-fit: cover on the image to prevent stretching
+      (bgImage as HTMLElement).style.objectFit = 'cover';
+      (bgImage as HTMLElement).style.objectPosition = 'center center';
+      (bgImage as HTMLElement).style.width = '100%';
+      (bgImage as HTMLElement).style.height = '100%';
+      
+      // Ensure container has overflow hidden
+      (bgImageContainer as HTMLElement).style.overflow = 'hidden';
+      (bgImageContainer as HTMLElement).style.position = 'relative';
+    }
 
     // Clone the node to avoid modifying the original DOM
     const clone = this.previewElement.cloneNode(true) as HTMLElement;
     document.body.appendChild(clone);
     
-    // Position the clone off-screen
+    // Make the clone visible but off-screen
     clone.style.position = 'fixed';
     clone.style.left = '-9999px';
     clone.style.top = '0';
     clone.style.width = this.previewElement.offsetWidth + 'px';
     clone.style.height = this.previewElement.offsetHeight + 'px';
-    clone.style.transition = 'none';
     
-    // Fix background images in the clone
-    const clonedImage = clone.querySelector('img:not(.placeholder)');
-    if (clonedImage && clonedImage instanceof HTMLElement) {
-      clonedImage.style.objectFit = 'cover';
-      clonedImage.style.objectPosition = 'center center'; 
-      clonedImage.style.transition = 'none';
-      
-      // Copy the exact transform from the original
-      const originalImage = this.previewElement.querySelector('img:not(.placeholder)');
-      if (originalImage) {
-        const computedStyle = window.getComputedStyle(originalImage);
-        if (computedStyle.transform && computedStyle.transform !== 'none') {
-          clonedImage.style.transform = computedStyle.transform;
-        }
-      }
+    // Fix any background images in the clone
+    const clonedBgImage = clone.querySelector('.ad-image');
+    if (clonedBgImage) {
+      (clonedBgImage as HTMLElement).style.objectFit = 'cover';
+      (clonedBgImage as HTMLElement).style.objectPosition = 'center center'; 
+      (clonedBgImage as HTMLElement).style.width = '100%';
+      (clonedBgImage as HTMLElement).style.height = '100%';
     }
-    
-    // Fix positioned elements in the clone
-    const positionedElements = clone.querySelectorAll('[style*="transform"], [style*="position"], .absolute');
-    positionedElements.forEach(el => {
-      if (el instanceof HTMLElement) {
-        // Ensure transitions are disabled
-        el.style.transition = 'none';
-      }
-    });
 
     const config = {
-      quality: 0.9,
-      scale: 1.5,
+      quality: 0.9, // Slightly reduced quality for better performance
+      scale: 2,
       bgcolor: null,
       style: {
         'transform-origin': 'top left',
-        'transition': 'none',
       },
       imagePlaceholder: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
     };
 
+    // Skip extra processing for cross-origin images to improve performance
     try {
       const dataUrl = await domtoimage.toPng(clone, config);
       console.log(`Dom-to-image generated successfully in ${performance.now() - startTime}ms`);
       
-      // Clean up clone
+      // Remove the clone from the DOM
       document.body.removeChild(clone);
       
-      // Reset original styles
-      resetStyles();
+      // Restore original image styles
+      if (bgImage && bgImageContainer) {
+        Object.entries(originalImageStyles).forEach(([prop, value]) => {
+          (bgImage as HTMLElement).style[prop as any] = value;
+        });
+        
+        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
+          (bgImageContainer as HTMLElement).style[prop as any] = value;
+        });
+      }
+      
+      // Reset hover effect
+      resetEffect();
       
       this.lastCaptureTime = performance.now();
       return dataUrl;
     } catch (error) {
       console.error('Fallback capture failed:', error);
       
-      // Clean up
+      // Remove the clone from the DOM if it exists
       if (clone.parentNode) {
         document.body.removeChild(clone);
       }
       
-      // Reset styles
-      resetStyles();
+      // Restore original image styles
+      if (bgImage && bgImageContainer) {
+        Object.entries(originalImageStyles).forEach(([prop, value]) => {
+          (bgImage as HTMLElement).style[prop as any] = value;
+        });
+        
+        Object.entries(originalContainerStyles).forEach(([prop, value]) => {
+          (bgImageContainer as HTMLElement).style[prop as any] = value;
+        });
+      }
       
-      // Last resort fallback
+      // Reset hover effect
+      resetEffect();
+      
+      // Last resort: try to get a screenshot with a simpler approach
       try {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');

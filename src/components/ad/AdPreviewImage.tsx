@@ -38,43 +38,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
-  const isInitialLoad = useRef<boolean>(true);
-  const lastAppliedPosition = useRef<Position>(position);
-
-  // Update position when prop changes, but only if not during initial load
-  useEffect(() => {
-    if (isInitialLoad.current) {
-      isInitialLoad.current = false;
-      lastAppliedPosition.current = position;
-      return;
-    }
-    
-    // Only update position if it has changed significantly to avoid small jumps
-    const positionChanged = 
-      Math.abs(lastAppliedPosition.current.x - position.x) > 1 || 
-      Math.abs(lastAppliedPosition.current.y - position.y) > 1;
-    
-    if (positionChanged && loaded) {
-      lastAppliedPosition.current = position;
-      
-      // Apply the new position with a small delay to smooth out rapid changes
-      const timer = setTimeout(() => {
-        if (naturalSize.width > 0 && containerSize.width > 0) {
-          const newStyle = calculateStyleFromDimensions(
-            naturalSize.width,
-            naturalSize.height,
-            containerSize.width,
-            containerSize.height,
-            position,
-            fastMode
-          );
-          setImageStyle(newStyle);
-        }
-      }, 10); // Very small delay to batch rapid changes
-      
-      return () => clearTimeout(timer);
-    }
-  }, [position, loaded, naturalSize, containerSize, fastMode]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -118,7 +81,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
-          // Use the current position prop rather than a ref
           const newStyle = calculateStyleFromDimensions(
             cachedImg.naturalWidth, 
             cachedImg.naturalHeight,
@@ -128,7 +90,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
             fastMode
           );
           setImageStyle(newStyle);
-          lastAppliedPosition.current = position;
         }
         
         if (onImageLoaded) {
@@ -145,7 +106,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         setImageKey(prev => prev + 1);
       }
     }
-  }, [imageUrl, currentImageUrl, onImageLoaded, fastMode, preloadedImage, position]);
+  }, [imageUrl, currentImageUrl, onImageLoaded, position, fastMode, preloadedImage]);
 
   const calculateStyleFromDimensions = useCallback((
     imgWidth: number,
@@ -186,7 +147,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${transformX}px, ${transformY}px)`,
       width: `${width}px`,
       height: `${height}px`,
-      transition: useFastMode ? 'none' : 'transform 0.15s ease-out', // Smoother transition
+      transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
       objectFit: 'cover' as ObjectFit,
       willChange: 'transform',
@@ -204,21 +165,32 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    // Use the current position prop instead of a ref for more accurate positioning
-    const style = calculateStyleFromDimensions(
-      imgWidth,
-      imgHeight,
-      containerWidth,
-      containerHeight,
-      position,
-      fastMode
-    );
+    const imageAspect = imgWidth / imgHeight;
+    const containerAspect = containerWidth / containerHeight;
     
-    // Update lastAppliedPosition to prevent jumps
-    lastAppliedPosition.current = position;
+    let width, height;
     
-    return style;
-  }, [calculateStyleFromDimensions, fastMode, position]);
+    // Use cover instead of contain to ensure the image fills the container without black margins
+    if (imageAspect > containerAspect) {
+      // Image is wider than container - scale to fit height
+      height = containerHeight;
+      width = containerHeight * imageAspect;
+    } else {
+      // Image is taller than container - scale to fit width
+      width = containerWidth;
+      height = containerWidth / imageAspect;
+    }
+    
+    return {
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `translate(${position.x}px, ${position.y}px)`,
+      transition: fastMode ? 'none' : 'transform 0.1s ease-out',
+      position: 'absolute' as const,
+      objectFit: 'cover' as ObjectFit,
+      willChange: 'transform',
+    };
+  }, [position, fastMode]);
 
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -229,8 +201,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       imageCache.current.set(imageUrl, img);
     }
     
-    const newStyle = calculateImageStyle(img);
-    setImageStyle(newStyle);
+    setImageStyle(calculateImageStyle(img));
     setLoaded(true);
     
     if (onImageLoaded) {
@@ -272,7 +243,6 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         }}
         loading={fastMode ? 'eager' : 'lazy'}
         decoding="async"
-        draggable={false} // Prevent accidental dragging
       />
       {!loaded && !error && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-800">
