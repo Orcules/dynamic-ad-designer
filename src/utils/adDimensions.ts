@@ -37,3 +37,28 @@ export const getPlatformFromDimensions = (width: number, height: number): string
   
   return null;
 };
+
+// Calculate dimensions that fit within a container while preserving aspect ratio
+export const calculateFitDimensions = (
+  originalWidth: number, 
+  originalHeight: number, 
+  containerWidth: number, 
+  containerHeight: number
+) => {
+  const originalAspectRatio = originalWidth / originalHeight;
+  const containerAspectRatio = containerWidth / containerHeight;
+  
+  let width, height;
+  
+  if (originalAspectRatio > containerAspectRatio) {
+    // Original is wider than container
+    width = containerWidth;
+    height = width / originalAspectRatio;
+  } else {
+    // Original is taller than container
+    height = containerHeight;
+    width = height * originalAspectRatio;
+  }
+  
+  return { width, height };
+};

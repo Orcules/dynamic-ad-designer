@@ -44,14 +44,17 @@ export function useAdImageHandler({
     }
     
     if (imageUrls.length > 0) {
+      // Always preload the current image
       preloadImage(imageUrls[currentPreviewIndex]);
       
+      // Preload next few images
       for (let i = 1; i <= 2; i++) {
         if (currentPreviewIndex + i < imageUrls.length) {
           preloadImage(imageUrls[currentPreviewIndex + i]);
         }
       }
       
+      // Preload previous images
       for (let i = 1; i <= 2; i++) {
         if (currentPreviewIndex - i >= 0) {
           preloadImage(imageUrls[currentPreviewIndex - i]);
@@ -119,12 +122,15 @@ export function useAdImageHandler({
         return url;
       });
       
+      // Preload all images before setting them
       Promise.all(secureUrls.map(url => {
         preloadImage(url);
         return new Promise<void>((resolve) => {
           setTimeout(resolve, 50);
         });
-      }));
+      })).then(() => {
+        Logger.info("All images preloaded successfully");
+      });
       
       setImageUrls(secureUrls);
       setCurrentPreviewIndex(0);
@@ -144,6 +150,7 @@ export function useAdImageHandler({
     isChangingIndex.current = true;
     const newIndex = currentPreviewIndex > 0 ? currentPreviewIndex - 1 : imageUrls.length - 1;
     
+    Logger.info(`Navigating to previous image, from ${currentPreviewIndex} to ${newIndex}`);
     setCurrentPreviewIndex(newIndex);
     previousIndex.current = newIndex;
     onCurrentIndexChange(newIndex);
@@ -159,6 +166,7 @@ export function useAdImageHandler({
     isChangingIndex.current = true;
     const newIndex = currentPreviewIndex < imageUrls.length - 1 ? currentPreviewIndex + 1 : 0;
     
+    Logger.info(`Navigating to next image, from ${currentPreviewIndex} to ${newIndex}`);
     setCurrentPreviewIndex(newIndex);
     previousIndex.current = newIndex;
     onCurrentIndexChange(newIndex);
@@ -241,7 +249,11 @@ export function useAdImageHandler({
   };
 
   const getPreloadedImage = (url: string): HTMLImageElement | null => {
-    return preloadedImagesRef.current.get(url) || null;
+    const img = preloadedImagesRef.current.get(url) || null;
+    if (!img && url) {
+      Logger.info(`No preloaded image found for ${url.substring(0, 30)}...`);
+    }
+    return img;
   };
 
   const markIndexProcessed = (index: number) => {

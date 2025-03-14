@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getDimensions } from "@/utils/adDimensions";
 import { cleanImageUrl, extractImageMetadata } from "@/utils/imageEffects";
+import { Logger } from "@/utils/logger";
 
 export interface GeneratedAdResult {
   imageUrl: string;
@@ -29,10 +30,10 @@ export class AdGenerationService {
         if (metadata) {
           elementDimensions = metadata;
           scaleFactor = metadata.scaleFactor || 2;
-          console.log('Extracted metadata:', elementDimensions);
+          Logger.info('Extracted metadata:', elementDimensions);
         }
       } catch (error) {
-        console.warn('Failed to parse image metadata:', error);
+        Logger.warn('Failed to parse image metadata:', error);
       }
     }
     
@@ -44,7 +45,8 @@ export class AdGenerationService {
     // Get dimensions for the platform and make sure they're used consistently
     const platformDimensions = getDimensions(adData.platform);
     
-    formData.append('data', JSON.stringify({
+    // Create image data with all required information
+    const imageData = {
       ...adData,
       ...platformDimensions,
       overlayOpacity: 0.4,
@@ -55,15 +57,18 @@ export class AdGenerationService {
         width: platformDimensions.width,
         height: platformDimensions.height
       }
-    }));
+    };
+    
+    formData.append('data', JSON.stringify(imageData));
 
-    console.log('Sending to edge function:', {
+    Logger.info('Sending to edge function:', {
       imageType: imageFile.type,
       imageSize: imageFile.size,
       data: {
         ...adData,
         dimensions: platformDimensions,
-        scaleFactor
+        scaleFactor,
+        preserveAspectRatio: true
       }
     });
 
@@ -74,7 +79,7 @@ export class AdGenerationService {
       });
 
     if (generateError) {
-      console.error('Generate ad error:', generateError);
+      Logger.error('Generate ad error:', generateError);
       throw new Error('Failed to generate ad');
     }
 

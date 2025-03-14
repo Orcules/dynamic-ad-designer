@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { cleanImageUrl, preserveAspectRatio } from '@/utils/imageEffects';
+import { Logger } from '@/utils/logger';
 
 interface Position {
   x: number;
@@ -73,12 +74,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       const cleanUrl = cleanImageUrl(imageUrl);
       
       if (cleanUrl !== cleanedImageUrl) {
-        console.log('Image URL changed and cleaned from', cleanedImageUrl, 'to', cleanUrl);
+        Logger.info(`Image URL changed and cleaned from ${cleanedImageUrl} to ${cleanUrl}`);
         
         const cachedImg = imageCache.current.get(cleanUrl) || preloadedImage;
         
         if (cachedImg) {
-          console.log('Using cached image for faster rendering');
+          Logger.info('Using cached image for faster rendering');
           setLoaded(true);
           setNaturalSize({ width: cachedImg.naturalWidth, height: cachedImg.naturalHeight });
           
@@ -100,7 +101,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           if (onImageLoaded) {
             setTimeout(() => {
               const renderTime = performance.now() - renderStartTime.current;
-              console.log(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
+              Logger.info(`Fast cached image render completed in ${renderTime.toFixed(2)}ms`);
               onImageLoaded();
             }, 20);
           }
@@ -152,7 +153,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     const imgWidth = img.naturalWidth;
     const imgHeight = img.naturalHeight;
     
-    console.log(`Image dimensions: ${imgWidth}x${imgHeight}, Container: ${containerWidth}x${containerHeight}`);
+    Logger.info(`Image dimensions: ${imgWidth}x${imgHeight}, Container: ${containerWidth}x${containerHeight}`);
     
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
@@ -182,7 +183,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
     const loadTime = performance.now() - renderStartTime.current;
-    console.log(`Image loaded in ${loadTime.toFixed(2)}ms, dimensions: ${img.naturalWidth}x${img.naturalHeight}`);
+    Logger.info(`Image loaded in ${loadTime.toFixed(2)}ms, dimensions: ${img.naturalWidth}x${img.naturalHeight}`);
     
     if (cleanedImageUrl && !imageCache.current.has(cleanedImageUrl)) {
       imageCache.current.set(cleanedImageUrl, img);
@@ -193,7 +194,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     
     if (onImageLoaded) {
       const completeTime = performance.now() - renderStartTime.current;
-      console.log(`Image processing completed in ${completeTime.toFixed(2)}ms`);
+      Logger.info(`Image processing completed in ${completeTime.toFixed(2)}ms`);
       onImageLoaded();
     }
   }, [cleanedImageUrl, onImageLoaded, calculateImageStyle]);
@@ -225,7 +226,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
         crossOrigin="anonymous"
         onLoad={handleImageLoad}
         onError={(e) => {
-          console.error('Error loading image:', e);
+          Logger.error('Error loading image:', e);
           setError(true);
         }}
         loading={fastMode ? 'eager' : 'lazy'}
