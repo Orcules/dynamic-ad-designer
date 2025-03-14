@@ -22,7 +22,7 @@ export function AdNavigationControls({
   if (totalImages <= 1 || hidden) return null;
   
   return (
-    <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4 z-20">
+    <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-4">
       <Button
         variant="outline"
         size="icon"

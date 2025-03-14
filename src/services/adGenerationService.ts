@@ -1,8 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getDimensions } from "@/utils/adDimensions";
-import { cleanImageUrl } from "@/utils/imageEffects";
-import { Logger } from "@/utils/logger";
 
 export interface GeneratedAdResult {
   imageUrl: string;
@@ -14,7 +12,7 @@ export class AdGenerationService {
   static async generateAd(adData: any, imageBlob: Blob): Promise<GeneratedAdResult> {
     const formData = new FormData();
     
-    // Create a file from the blob
+    // בדיקה שה-blob הוא תקין ויצירת קובץ ממנו
     const imageFile = new File([imageBlob], 'image.png', { type: 'image/png' });
     formData.append('image', imageFile);
     
@@ -23,80 +21,51 @@ export class AdGenerationService {
     let elementDimensions = null;
     
     // Check if the source image URL has metadata
-    if (adData.sourceImageUrl) {
+    if (adData.sourceImageUrl && adData.sourceImageUrl.includes('#metadata=')) {
       try {
-        // Extract metadata from the URL if present
-        const metadataMatch = adData.sourceImageUrl.match(/metadata=([^;]+)/);
-        if (metadataMatch && metadataMatch[1]) {
-          try {
-            elementDimensions = JSON.parse(decodeURIComponent(metadataMatch[1]));
-            scaleFactor = elementDimensions.scaleFactor || 2;
-            Logger.info('Extracted metadata:', elementDimensions);
-          } catch (parseError) {
-            Logger.warn('Failed to parse metadata JSON:', parseError);
-          }
+        const metadataPart = adData.sourceImageUrl.split('#metadata=')[1];
+        if (metadataPart) {
+          const decodedMetadata = atob(metadataPart);
+          elementDimensions = JSON.parse(decodedMetadata);
+          scaleFactor = elementDimensions.scaleFactor || 2;
+          console.log('Extracted metadata:', elementDimensions);
         }
       } catch (error) {
-        Logger.warn('Failed to parse image metadata:', error);
+        console.warn('Failed to parse image metadata:', error);
       }
     }
     
-    // Clean the source image URL before sending - removed the second parameter that was causing errors
-    if (adData.sourceImageUrl) {
-      adData.cleanSourceImageUrl = cleanImageUrl(adData.sourceImageUrl);
-    }
-    
-    // Get dimensions for the platform and make sure they're used consistently
-    const platformDimensions = getDimensions(adData.platform);
-    
-    // Create image data with all required information
-    const imageData = {
+    formData.append('data', JSON.stringify({
       ...adData,
-      ...platformDimensions,
+      ...getDimensions(adData.platform),
       overlayOpacity: 0.4,
       scaleFactor,
-      elementDimensions,
-      preserveAspectRatio: true, // Add flag to preserve aspect ratio
-      originalDimensions: {
-        width: platformDimensions.width,
-        height: platformDimensions.height
-      }
-    };
-    
-    formData.append('data', JSON.stringify(imageData));
+      elementDimensions
+    }));
 
-    Logger.info('Sending to edge function:', {
+    console.log('Sending to edge function:', {
       imageType: imageFile.type,
       imageSize: imageFile.size,
-      data: {
-        ...adData,
-        dimensions: platformDimensions,
-        scaleFactor,
-        preserveAspectRatio: true
-      }
+      data: adData,
+      scaleFactor
     });
 
-    // Send the data to the edge function
+    // Fix: Pass a single options object to the invoke method
     const { data: generatedAd, error: generateError } = await supabase.functions
       .invoke('generate-ad', {
         body: formData
       });
 
     if (generateError) {
-      Logger.error('Generate ad error:', generateError);
+      console.error('Generate ad error:', generateError);
       throw new Error('Failed to generate ad');
     }
 
-    // Process the generated URL to ensure it doesn't have metadata - fixed by removing second parameter
+    // Process the generated URL to ensure it doesn't have metadata
     let imageUrl = generatedAd.imageUrl;
-    if (imageUrl) {
-      imageUrl = cleanImageUrl(imageUrl);
+    if (imageUrl && imageUrl.includes('#metadata=')) {
+      imageUrl = imageUrl.split('#metadata=')[0];
       generatedAd.imageUrl = imageUrl;
-    }
-
-    // Also clean previewUrl if it exists - fixed by removing second parameter
-    if (generatedAd.previewUrl) {
-      generatedAd.previewUrl = cleanImageUrl(generatedAd.previewUrl);
     }
 
     return {

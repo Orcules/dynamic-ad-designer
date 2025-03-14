@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.1/mod.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.1.0';
@@ -49,16 +50,10 @@ serve(async (req) => {
       // Process the rendered preview - it should be a base64 data URL
       if (typeof renderedPreview === 'string' && renderedPreview.startsWith('data:')) {
         try {
-          // Ensure we strip any metadata from the preview
-          let cleanRenderedPreview = renderedPreview;
-          if (renderedPreview.includes('#metadata=')) {
-            cleanRenderedPreview = renderedPreview.split('#metadata=')[0];
-          }
-          
           // Upload the rendered preview directly with all metadata
           const { renderedUrl } = await storageManager.uploadRenderedPreview(
             uploadId, 
-            cleanRenderedPreview, 
+            renderedPreview, 
             adName,
             language,
             fontName,
@@ -91,13 +86,7 @@ serve(async (req) => {
     if (imageFile instanceof File || imageFile instanceof Blob) {
       imageArrayBuffer = await imageFile.arrayBuffer();
     } else if (typeof imageFile === 'string') {
-      // Clean the image URL if it's a string with metadata
-      let cleanImageUrl = imageFile;
-      if (typeof imageFile === 'string' && imageFile.includes('#metadata=')) {
-        cleanImageUrl = imageFile.split('#metadata=')[0];
-      }
-      
-      const response = await fetch(cleanImageUrl);
+      const response = await fetch(imageFile);
       imageArrayBuffer = await response.arrayBuffer();
     } else {
       throw new Error('Invalid image data type');
@@ -216,10 +205,6 @@ serve(async (req) => {
       aspect: { image: imageAspect, canvas: canvasAspect }
     });
     
-    // Clean up destX and destY to center the image properly
-    destX = (data.width - destWidth) / 2 + (imagePosition.x || 0);
-    destY = (data.height - destHeight) / 2 + (imagePosition.y || 0);
-    
     // For luxury jewelry template, draw with rounded corners
     if (isLuxuryJewelry) {
       // Add padding (4% of the canvas width)
@@ -283,12 +268,15 @@ serve(async (req) => {
         throw new Error('Failed to get temporary canvas context');
       }
     } else {
-      // For standard templates, use correct positioning to avoid stretching
+      // For standard templates, center the image and fill the container
+      const drawX = (data.width - destWidth) / 2 + imagePosition.x;
+      const drawY = (data.height - destHeight) / 2 + imagePosition.y;
+      
       // Draw the image with proper positioning and preserved aspect ratio
       ctx.drawImage(
         backgroundImage, 
         sourceX, sourceY, sourceWidth, sourceHeight, 
-        destX, destY, destWidth, destHeight
+        drawX, drawY, destWidth, destHeight
       );
     }
 
