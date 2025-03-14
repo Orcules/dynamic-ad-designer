@@ -1,18 +1,40 @@
-
 export const applyImageEffect = async (
   canvas: HTMLCanvasElement,
-  effect: 'sepia' | 'none' = 'none'
+  effect: 'sepia' | 'none' | 'highres' = 'none'
 ): Promise<string> => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: false });
   
   if (!ctx) {
     console.error('Failed to get canvas context');
     return canvas.toDataURL('image/jpeg', 0.95);
   }
   
+  // Create a new optimized canvas to prevent stretching
+  const optimizedCanvas = document.createElement('canvas');
+  const optimizedCtx = optimizedCanvas.getContext('2d', { alpha: false });
+  
+  if (!optimizedCtx) {
+    console.error('Failed to get optimized canvas context');
+    return canvas.toDataURL('image/jpeg', 0.95);
+  }
+  
+  // Set explicit dimensions to match original
+  optimizedCanvas.width = canvas.width;
+  optimizedCanvas.height = canvas.height;
+  
+  // Enable high-quality image rendering
+  optimizedCtx.imageSmoothingEnabled = true;
+  if ('imageSmoothingQuality' in optimizedCtx) {
+    // @ts-ignore: Property exists but TypeScript doesn't recognize it
+    optimizedCtx.imageSmoothingQuality = 'high';
+  }
+  
+  // Draw the original canvas onto the optimized one with explicit dimensions
+  optimizedCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+  
   if (effect === 'sepia') {
     // Get image data
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const imageData = optimizedCtx.getImageData(0, 0, optimizedCanvas.width, optimizedCanvas.height);
     const data = imageData.data;
     
     // Apply sepia effect
@@ -27,11 +49,87 @@ export const applyImageEffect = async (
     }
     
     // Put the sepia data back
-    ctx.putImageData(imageData, 0, 0);
+    optimizedCtx.putImageData(imageData, 0, 0);
+  } else if (effect === 'highres') {
+    // For high-resolution output, we keep the pixel data but improve JPEG quality
+    // This effect doesn't modify pixels, just affects final output quality
   }
   
-  // Return the canvas data URL with high quality
-  return canvas.toDataURL('image/jpeg', 0.95);
+  // Return the optimized canvas data URL with high quality
+  return optimizedCanvas.toDataURL('image/jpeg', effect === 'highres' ? 0.98 : 0.95);
+};
+
+// Add a new function to create a canvas with proper proportions
+export const createProportionalCanvas = (
+  sourceCanvas: HTMLCanvasElement,
+  targetWidth: number,
+  targetHeight: number
+): HTMLCanvasElement => {
+  // Create a new canvas with the target dimensions
+  const newCanvas = document.createElement('canvas');
+  newCanvas.width = targetWidth;
+  newCanvas.height = targetHeight;
+  
+  const ctx = newCanvas.getContext('2d', { alpha: false });
+  if (!ctx) {
+    console.error('Failed to get context for proportional canvas');
+    return sourceCanvas; // Return original if we can't create new one
+  }
+  
+  // Set high quality rendering
+  ctx.imageSmoothingEnabled = true;
+  if ('imageSmoothingQuality' in ctx) {
+    // @ts-ignore: Property exists but TypeScript doesn't recognize it
+    ctx.imageSmoothingQuality = 'high';
+  }
+  
+  // Calculate the scaling to maintain aspect ratio
+  const sourceAspect = sourceCanvas.width / sourceCanvas.height;
+  const targetAspect = targetWidth / targetHeight;
+  
+  let drawWidth = targetWidth;
+  let drawHeight = targetHeight;
+  let offsetX = 0;
+  let offsetY = 0;
+  
+  // Adjust dimensions to maintain aspect ratio
+  if (sourceAspect > targetAspect) {
+    // Source is wider - scale to match height
+    drawHeight = targetHeight;
+    drawWidth = sourceAspect * drawHeight;
+    offsetX = (targetWidth - drawWidth) / 2;
+  } else {
+    // Source is taller - scale to match width
+    drawWidth = targetWidth;
+    drawHeight = drawWidth / sourceAspect;
+    offsetY = (targetHeight - drawHeight) / 2;
+  }
+  
+  // Fill with background color (prevents transparency issues)
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, targetWidth, targetHeight);
+  
+  // Draw with calculated dimensions to maintain aspect ratio
+  ctx.drawImage(
+    sourceCanvas,
+    0, 0, sourceCanvas.width, sourceCanvas.height,
+    offsetX, offsetY, drawWidth, drawHeight
+  );
+  
+  return newCanvas;
+};
+
+// Optimize canvas rendering settings for better quality
+export const optimizeCanvasRendering = (ctx: CanvasRenderingContext2D): void => {
+  // Enable high-quality image rendering
+  ctx.imageSmoothingEnabled = true;
+  if ('imageSmoothingQuality' in ctx) {
+    // @ts-ignore: Property exists but TypeScript doesn't recognize it
+    ctx.imageSmoothingQuality = 'high';
+  }
+  
+  // Set composition mode for better text rendering
+  ctx.globalCompositeOperation = 'source-over';
 };
 
 // Add a new function to ensure page flip and navigation elements are included in the capture

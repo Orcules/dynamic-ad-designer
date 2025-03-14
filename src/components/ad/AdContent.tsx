@@ -63,6 +63,11 @@ export function AdContent({
       direction: isRTL ? 'rtl' : 'ltr',
       textAlign: isRTL ? 'right' : 'center',
       unicodeBidi: 'embed',
+      // Fix for html2canvas rendering - ensure proper text display
+      fontSize: textStyle.fontSize,
+      fontWeight: textStyle.fontWeight || 'bold',
+      lineHeight: textStyle.lineHeight || 1.2,
+      maxWidth: '100%',
     };
   }, [textStyle, isRTL]);
   
@@ -72,6 +77,11 @@ export function AdContent({
       direction: isRTL ? 'rtl' : 'ltr',
       textAlign: isRTL ? 'right' : 'center',
       unicodeBidi: 'embed',
+      // Fix for html2canvas rendering - ensure proper text display
+      fontSize: descriptionStyle?.fontSize,
+      fontWeight: descriptionStyle?.fontWeight || 'normal',
+      lineHeight: descriptionStyle?.lineHeight || 1.5,
+      maxWidth: '100%',
     };
   }, [descriptionStyle, isRTL]);
 
@@ -92,6 +102,7 @@ export function AdContent({
     <div 
       className="absolute inset-0 flex flex-col pointer-events-auto"
       dir={isRTL ? "rtl" : "ltr"}
+      lang={isRTL ? "he" : "en"} // Add language attribute for better RTL handling
     >
       <div className={cn(
         "relative flex-1 flex flex-col items-center justify-center gap-4 p-4",
@@ -100,7 +111,11 @@ export function AdContent({
         {isLuxuryJewelry ? (
           <div className="relative w-full h-full flex flex-col items-center justify-between py-8">
             {/* Top text section */}
-            <div className="text-center z-10 mt-4">
+            <div className="text-center z-10 mt-4" style={{ 
+              // Fix RTL rendering in html2canvas
+              direction: isRTL ? 'rtl' : 'ltr',
+              textAlign: isRTL ? 'right' : 'center'
+            }}>
               <AdHeadline
                 headline={safeHeadline}
                 textStyle={headlineTextStyle}
@@ -130,7 +145,12 @@ export function AdContent({
           <div className={cn(
             "relative w-full flex flex-col min-h-[300px] max-w-[90%] mx-auto",
             isBottomOverlay && "bg-gradient-to-t from-black/80 to-transparent",
-          )}>
+          )}
+          style={{
+            // Fix RTL rendering in html2canvas
+            direction: isRTL ? 'rtl' : 'ltr',
+            textAlign: isRTL ? 'right' : 'center'
+          }}>
             <AdHeadline
               headline={safeHeadline}
               textStyle={headlineTextStyle}

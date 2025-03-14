@@ -26,6 +26,11 @@ export function AdNavigationControls({
         size="icon"
         className="rounded-full bg-white/80 hover:bg-white text-gray-800 pointer-events-auto h-12 w-12 border-2 border-white shadow-lg z-10"
         onClick={onPrevious}
+        style={{ 
+          // Ensure button is always visible for html2canvas
+          opacity: 1,
+          visibility: 'visible'
+        }}
       >
         <ArrowLeft className="h-6 w-6" />
       </Button>
@@ -34,11 +39,23 @@ export function AdNavigationControls({
         size="icon"
         className="rounded-full bg-white/80 hover:bg-white text-gray-800 pointer-events-auto h-12 w-12 border-2 border-white shadow-lg z-10"
         onClick={onNext}
+        style={{ 
+          // Ensure button is always visible for html2canvas
+          opacity: 1,
+          visibility: 'visible'
+        }}
       >
         <ArrowRight className="h-6 w-6" />
       </Button>
       
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+      <div 
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10"
+        style={{ 
+          // Ensure pagination dots are always visible for html2canvas
+          opacity: 1, 
+          visibility: 'visible' 
+        }}
+      >
         {Array.from({ length: totalImages }).map((_, index) => (
           <div
             key={index}
