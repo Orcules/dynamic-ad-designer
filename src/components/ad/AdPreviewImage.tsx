@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { cleanImageUrl } from '@/utils/imageEffects';
+import { calculateOptimalCrop, CropArea, getScaledDimensions } from '@/utils/imageCropper';
 
 interface Position {
   x: number;
@@ -36,9 +37,12 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(imageUrl);
   const [imageKey, setImageKey] = useState(0);
   const [imageStyle, setImageStyle] = useState<React.CSSProperties>({});
+  const [cropArea, setCropArea] = useState<CropArea | null>(null);
+  const [croppedImageUrl, setCroppedImageUrl] = useState<string | undefined>();
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const renderStartTime = useRef<number>(performance.now());
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -82,6 +86,16 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
           const containerRect = containerRef.current.getBoundingClientRect();
           setContainerSize({ width: containerRect.width, height: containerRect.height });
           
+          // Calculate optimal crop
+          const optimalCrop = calculateOptimalCrop(
+            cachedImg.naturalWidth,
+            cachedImg.naturalHeight,
+            containerRect.width,
+            containerRect.height
+          );
+          setCropArea(optimalCrop);
+          
+          // Set image style with the calculated dimensions
           const newStyle = calculateStyleFromDimensions(
             cachedImg.naturalWidth, 
             cachedImg.naturalHeight,
@@ -117,21 +131,13 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     pos: Position,
     useFastMode: boolean
   ): React.CSSProperties => {
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
-    
-    let width, height;
-    
-    // Use "contain" to preserve the image's aspect ratio
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    } else {
-      // Image is taller than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    }
+    // Get dimensions that maintain aspect ratio
+    const { width, height } = getScaledDimensions(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight
+    );
     
     return {
       transform: `translate(${pos.x}px, ${pos.y}px)`,
@@ -139,7 +145,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       height: `${height}px`,
       transition: useFastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute',
-      objectFit: 'contain' as ObjectFit, // Changed from 'cover' to 'contain'
+      objectFit: 'contain' as ObjectFit,
       willChange: 'transform',
     };
   }, []);
@@ -155,21 +161,22 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     setNaturalSize({ width: imgWidth, height: imgHeight });
     setContainerSize({ width: containerWidth, height: containerHeight });
     
-    const imageAspect = imgWidth / imgHeight;
-    const containerAspect = containerWidth / containerHeight;
+    // Calculate the optimal crop area
+    const optimalCrop = calculateOptimalCrop(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight
+    );
+    setCropArea(optimalCrop);
     
-    let width, height;
-    
-    // Use "contain" to preserve the image's aspect ratio
-    if (imageAspect > containerAspect) {
-      // Image is wider than container - scale to fit width
-      width = containerWidth;
-      height = containerWidth / imageAspect;
-    } else {
-      // Image is taller than container - scale to fit height
-      height = containerHeight;
-      width = containerHeight * imageAspect;
-    }
+    // Get dimensions that maintain aspect ratio
+    const { width, height } = getScaledDimensions(
+      imgWidth,
+      imgHeight,
+      containerWidth,
+      containerHeight
+    );
     
     return {
       width: `${width}px`,
@@ -177,13 +184,14 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       transform: `translate(${position.x}px, ${position.y}px)`,
       transition: fastMode ? 'none' : 'transform 0.1s ease-out',
       position: 'absolute' as const,
-      objectFit: 'contain' as ObjectFit, // Changed from 'cover' to 'contain'
+      objectFit: 'contain' as ObjectFit,
       willChange: 'transform',
     };
   }, [position, fastMode]);
 
-  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+  const handleImageLoad = useCallback(async (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
+    imageRef.current = img;
     const loadTime = performance.now() - renderStartTime.current;
     console.log(`Image loaded in ${loadTime.toFixed(2)}ms`);
     
@@ -191,7 +199,8 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
       imageCache.current.set(imageUrl, img);
     }
     
-    setImageStyle(calculateImageStyle(img));
+    const newStyle = calculateImageStyle(img);
+    setImageStyle(newStyle);
     setLoaded(true);
     
     if (onImageLoaded) {
@@ -206,7 +215,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     transform: `translate(${position.x}px, ${position.y}px)`,
     width: '100%',
     height: '100%',
-    objectFit: 'contain' as ObjectFit, // Changed from 'cover' to 'contain'
+    objectFit: 'contain' as ObjectFit,
     objectPosition: 'center',
     backgroundColor: '#333',
     willChange: 'transform'
@@ -224,6 +233,7 @@ export const AdPreviewImage: React.FC<AdPreviewImageProps> = ({
     >
       <img
         key={`img-${imageKey}`}
+        ref={(el) => { if (el) imageRef.current = el; }}
         src={cleanedImageUrl}
         alt="Ad preview"
         className={`absolute transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}

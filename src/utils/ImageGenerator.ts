@@ -1,6 +1,7 @@
 
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
+import { calculateOptimalCrop, cropImage } from './imageCropper';
 
 export class ImageGenerator {
   private previewElement: HTMLElement | null;
